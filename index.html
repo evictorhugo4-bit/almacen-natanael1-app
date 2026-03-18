@@ -1968,6 +1968,7 @@ GUARDAR PRODUCTO
                     <table class="w-full text-[10px]">
                         <thead>
                             <tr class="border-b border-slate-700">
+                                <th class="py-2 pr-3 text-center text-slate-400 font-black">INICIO</th>
                                 <th class="py-2 pr-3 text-left text-slate-400 font-black">PRODUCTO</th>
                                 <th class="py-2 pr-3 text-center text-slate-400 font-black">ACCIÓN</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VERIFICADO</th>
@@ -2084,6 +2085,39 @@ GUARDAR PRODUCTO
             </div>
 
         </div><!-- /tabProductos -->
+
+    <!-- MODAL INICIO MENSUAL (por producto) -->
+    <div id="modalInicio" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#0f172a;border:1px solid #4f46e5;border-radius:24px;padding:24px;width:100%;max-width:400px;box-shadow:0 0 40px #7c3aed44;">
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <p style="font-size:12px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;">🚀 Inicio Mensual</p>
+                <button onclick="cerrarModalInicio()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:10px;padding:5px 12px;font-weight:900;font-size:13px;cursor:pointer;">✕</button>
+            </div>
+            <!-- Producto -->
+            <div style="background:#1e293b;border:1px solid #4f46e5;border-radius:14px;padding:16px;margin-bottom:16px;">
+                <p style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Producto</p>
+                <p id="modalInicioNombre" style="font-size:12px;font-weight:900;color:#f1f5f9;margin-bottom:12px;"></p>
+                <div style="margin-bottom:12px;">
+                    <p style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Stock Inicial Mensual</p>
+                    <input type="number" id="modalInicioStock" min="0" step="any"
+                        style="width:100%;background:#0f172a;border:2px solid #4f46e5;border-radius:10px;padding:10px 14px;font-size:20px;font-weight:900;color:#a78bfa;font-family:monospace;outline:none;text-align:center;"
+                        onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#4f46e5'">
+                </div>
+                <div style="text-align:right;">
+                    <p style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Fecha y hora</p>
+                    <p id="modalInicioFecha" style="font-size:10px;font-weight:900;color:#94a3b8;margin-top:2px;font-family:monospace;"></p>
+                </div>
+            </div>
+            <p style="font-size:10px;color:#94a3b8;font-weight:700;margin-bottom:16px;line-height:1.5;">
+                ⚠️ Esto va a <span style="color:#f59e0b;">sobrescribir</span> <span style="color:#a78bfa;">STOCK INICIAL MENSUAL</span> y <span style="color:#a78bfa;">FECHA INICIAL</span> de este producto en el sheet.
+            </p>
+            <button onclick="confirmarInicio()" id="btnConfirmarInicio" style="width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:900;font-size:12px;text-transform:uppercase;border:none;border-radius:14px;cursor:pointer;letter-spacing:.06em;box-shadow:0 0 20px #7c3aed44;">
+                ✅ CONFIRMAR INICIO
+            </button>
+            <div id="modalInicioStatus" style="display:none;margin-top:12px;padding:12px;border-radius:12px;font-size:11px;font-weight:900;text-align:center;"></div>
+        </div>
+    </div>
 
         <!-- TAB REGISTROS -->
         <div id="tabRegistros" class="hidden space-y-4">
@@ -11687,8 +11721,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzHB_4qsJ1rZc2rk7OYiGerpLsHKG6SVWCaqLpbv7kA-M8NQC_1Yon2ErgMSU77AT-B/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzHB_4qsJ1rZc2rk7OYiGerpLsHKG6SVWCaqLpbv7kA-M8NQC_1Yon2ErgMSU77AT-B/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbwg_pNAKh-YByBhnKk8BVWrN7-jWgfG59-C_sWPYiDj4yEdn7EWmNStqa1wFIG9uPF7/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbwg_pNAKh-YByBhnKk8BVWrN7-jWgfG59-C_sWPYiDj4yEdn7EWmNStqa1wFIG9uPF7/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -13689,6 +13723,12 @@ console.log("FILTRADAS:", filtradas.length);
                 const _idxProd = _sheetProductos.findIndex(x => x.nombre === p.nombre);
 
                 return `<tr class="hover:bg-slate-800/50 border-b border-slate-800">
+                    <td class="py-2 pr-3 text-center">
+                        <button onclick="ejecutarInicioProd(${_idxProd})"
+                            style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:900;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">
+                            🚀 INICIO
+                        </button>
+                    </td>
                     <td class="py-2 pr-3 font-bold text-white">${p.nombre}</td>
                     <td class="py-2 pr-3 text-center">
                         <button onclick="abrirVerificarStock(${_idxProd})"
@@ -14873,6 +14913,94 @@ console.log("FILTRADAS:", filtradas.length);
                     <p class="text-base font-black text-white font-mono">$${Utils.fmt(sumTot)}</p>
                     <p class="text-[8px] text-slate-500">${rowsFiltradas.length} registros</p>
                 </div>`;
+        }
+
+        // ══════════════════════════════════════════
+        //  INICIO MENSUAL POR PRODUCTO
+        // ══════════════════════════════════════════
+        function _fmtFechaInicio(d) {
+            const pad = n => String(n).padStart(2,'0');
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        function _getStockActualProd(prod) {
+            if (prod.stockCalculado !== undefined && prod.stockCalculado !== null && !isNaN(prod.stockCalculado)) {
+                return prod.stockCalculado;
+            }
+            return parseFloat(prod.stock) || 0;
+        }
+
+        let _inicioProdIdx = null;
+
+        function ejecutarInicioProd(idx) {
+            const prod = _sheetProductos[idx];
+            if (!prod) return;
+            _inicioProdIdx = idx;
+            const stock = _getStockActualProd(prod);
+            const ahora = new Date();
+            const fechaStr = _fmtFechaInicio(ahora);
+
+            const modal = document.getElementById('modalInicio');
+            if (!modal) return;
+            document.getElementById('modalInicioFecha').textContent = fechaStr;
+            document.getElementById('modalInicioNombre').textContent = prod.nombre || '—';
+            document.getElementById('modalInicioStock').value = stock;
+            const st = document.getElementById('modalInicioStatus');
+            if (st) st.style.display = 'none';
+            const btn = document.getElementById('btnConfirmarInicio');
+            if (btn) { btn.disabled = false; btn.textContent = '✅ CONFIRMAR INICIO'; btn.style.background = 'linear-gradient(135deg,#7c3aed,#4f46e5)'; }
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModalInicio() {
+            const modal = document.getElementById('modalInicio');
+            if (modal) modal.style.display = 'none';
+            _inicioProdIdx = null;
+        }
+
+        async function confirmarInicio() {
+            if (_inicioProdIdx === null) return;
+            const prod = _sheetProductos[_inicioProdIdx];
+            if (!prod) return;
+            const btn = document.getElementById('btnConfirmarInicio');
+            const statusEl = document.getElementById('modalInicioStatus');
+            btn.disabled = true;
+            btn.textContent = '⏳ Guardando...';
+            if (statusEl) statusEl.style.display = 'none';
+
+            const ahora = new Date();
+            const fechaStr = _fmtFechaInicio(ahora);
+            const stockVal = parseFloat(document.getElementById('modalInicioStock').value) || 0;
+
+            try {
+                await fetchSheets({
+                    method: 'POST',
+                    body: JSON.stringify({
+                        tipo: 'stock_inicial_mensual',
+                        id:     prod.id || prod.numeroProd,
+                        nombre: prod.nombre,
+                        stockInicialMensual: stockVal,
+                        fechaInicial: fechaStr
+                    })
+                });
+                // actualizar memoria local
+                prod.stockInicio      = stockVal;
+                prod.fechaStockInicio = fechaStr;
+                prod['STOCK INICIAL MENSUAL'] = stockVal;
+                prod['FECHA INICIAL']          = fechaStr;
+
+                if (statusEl) { statusEl.style.cssText = 'display:block;margin-top:12px;padding:12px;border-radius:12px;font-size:11px;font-weight:900;text-align:center;background:#064e3b;border:1px solid #065f46;color:#34d399;'; statusEl.textContent = '✅ Stock inicial guardado correctamente'; }
+                btn.textContent = '✅ GUARDADO';
+                btn.style.background = '#059669';
+                recalcularTodosLosStocks && recalcularTodosLosStocks();
+                renderStockProveedor && renderStockProveedor();
+                setTimeout(() => cerrarModalInicio(), 1500);
+            } catch(e) {
+                if (statusEl) { statusEl.style.cssText = 'display:block;margin-top:12px;padding:12px;border-radius:12px;font-size:11px;font-weight:900;text-align:center;background:#7f1d1d;border:1px solid #991b1b;color:#fca5a5;'; statusEl.textContent = '❌ Error al guardar. Intentá de nuevo.'; }
+                btn.disabled = false;
+                btn.textContent = '✅ CONFIRMAR INICIO';
+                btn.style.background = 'linear-gradient(135deg,#7c3aed,#4f46e5)';
+            }
         }
 
         // ══════════════════════════════════════════
