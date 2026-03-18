@@ -2087,7 +2087,7 @@ GUARDAR PRODUCTO
 
         <!-- TAB REGISTROS -->
         <div id="tabRegistros" class="hidden space-y-4">
-            <!-- Filtros -->
+            <!-- Filtros fecha -->
             <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
                 <div class="flex flex-col gap-1">
                     <label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label>
@@ -2098,10 +2098,29 @@ GUARDAR PRODUCTO
                     <input type="datetime-local" id="regHasta" onchange="renderRegistros()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
                 </div>
                 <button onclick="renderRegistros()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
-                <button onclick="regSetPeriodo(1)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">HOY</button>
-                <button onclick="regSetPeriodo(7)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">7D</button>
-                <button onclick="regSetPeriodo(30)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">30D</button>
-                <button onclick="document.getElementById('regDesde').value='';document.getElementById('regHasta').value='';renderRegistros();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">TODO</button>
+                <button onclick="regSetPeriodo(1)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">HOY</button>
+                <button onclick="regLimpiarFiltros()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">LIMPIAR</button>
+            </div>
+            <!-- Filtros por columna (selects dinámicos) -->
+            <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
+                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Operación</label>
+                    <select id="regFiltroOp" onchange="renderRegistros()" class="text-xs px-3 py-2 rounded-xl w-full" style="background:#0f172a;border:1px solid #334155;color:white;outline:none;cursor:pointer;">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cliente/Proveedor</label>
+                    <select id="regFiltroQui" onchange="renderRegistros()" class="text-xs px-3 py-2 rounded-xl w-full" style="background:#0f172a;border:1px solid #334155;color:white;outline:none;cursor:pointer;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto/Categoría</label>
+                    <select id="regFiltroDet" onchange="renderRegistros()" class="text-xs px-3 py-2 rounded-xl w-full" style="background:#0f172a;border:1px solid #334155;color:white;outline:none;cursor:pointer;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
             </div>
             <!-- Tabla -->
             <div class="glass-card rounded-2xl border border-slate-700 overflow-x-auto">
@@ -14534,6 +14553,18 @@ console.log("FILTRADAS:", filtradas.length);
             renderRegistros();
         }
 
+        function regLimpiarFiltros() {
+            document.getElementById('regDesde').value = '';
+            document.getElementById('regHasta').value = '';
+            var op  = document.getElementById('regFiltroOp');
+            var qui = document.getElementById('regFiltroQui');
+            var det = document.getElementById('regFiltroDet');
+            if (op)  { op.innerHTML  = '<option value="">Todos</option>'; op.value  = ''; }
+            if (qui) { qui.innerHTML = '<option value="">Todos</option>'; qui.value = ''; }
+            if (det) { det.innerHTML = '<option value="">Todos</option>'; det.value = ''; }
+            renderRegistros();
+        }
+
         // Estado de checks: idx → 'ok' | 'err' | null
         // Cargar checks desde localStorage al iniciar
         const _regChecks = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}');
@@ -14640,28 +14671,30 @@ console.log("FILTRADAS:", filtradas.length);
             (_sheetIngresos||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
                 const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
-                rows.push({ tipo:'INGRESO', color:'#3b82f6', quien: '—', fecha: r.fechaISO||r.fecha, detalle: r.concepto||r.proveedor||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: false });
+                const supercat = String(r.proveedor||r.supercategoria||'').trim() || '—';
+                rows.push({ tipo:'INGRESO', color:'#3b82f6', quien: supercat, fecha: r.fechaISO||r.fecha, detalle: r.concepto||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: false, esSinCliente: true });
             });
 
             // ── EGRESOS ──
             (_sheetEgresos||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
                 const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
-                rows.push({ tipo:'EGRESO', color:'#ef4444', quien: '—', fecha: r.fechaISO||r.fecha, detalle: r.concepto||r.proveedor||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: true });
+                const supercat = String(r.proveedor||r.supercategoria||'').trim() || '—';
+                rows.push({ tipo:'EGRESO', color:'#ef4444', quien: supercat, fecha: r.fechaISO||r.fecha, detalle: r.concepto||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: true, esSinCliente: true });
             });
 
             // ── INGRESOS NEGOCIO ──
             (_sheetIngresosNegocio||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
                 const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
-                rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'—', fecha: r.fechaISO||r.fecha, detalle: r.concepto||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: false });
+                rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'—', fecha: r.fechaISO||r.fecha, detalle: 'PRÉSTAMO', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: false });
             });
 
             // ── EGRESOS NEGOCIO ──
             (_sheetEgresosNegocio||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
                 const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
-                rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'—', fecha: r.fechaISO||r.fecha, detalle: r.concepto||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: true });
+                rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'—', fecha: r.fechaISO||r.fecha, detalle: 'PRÉSTAMO', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: true });
             });
 
             // ── PAGO VENTAS ──
@@ -14696,20 +14729,43 @@ console.log("FILTRADAS:", filtradas.length);
             (_sheetPagoIngNeg||[]).forEach(p => {
                 if (!enRango(p.fecha||p.fechaISO)) return;
                 const m = Number(p.monto||p.MONTO||0);
-                rows.push({ tipo:'PAGO ING.NEG', color:'#22d3ee', quien: '—', fecha: p.fecha||p.fechaISO, detalle: '—', prodFotoKey:'', ef: m, cr: 0, tot: m, ts: new Date(p.fecha||p.fechaISO).getTime(), esEgreso: false });
+                rows.push({ tipo:'PAGO ING.NEG', color:'#22d3ee', quien: '—', fecha: p.fecha||p.fechaISO, detalle: 'PRÉSTAMO', prodFotoKey:'', ef: m, cr: 0, tot: m, ts: new Date(p.fecha||p.fechaISO).getTime(), esEgreso: false });
             });
 
             // ── PAGO EGR. NEGOCIO ──
             (_pagoEgrNegSheet||[]).forEach(p => {
                 if (!enRango(p.fecha)) return;
                 const m = Number(p.monto||0);
-                rows.push({ tipo:'PAGO EGR.NEG', color:'#f472b6', quien: '—', fecha: p.fecha, detalle: '—', prodFotoKey:'', ef: m, cr: 0, tot: m, ts: new Date(p.fecha).getTime(), esEgreso: true });
+                rows.push({ tipo:'PAGO EGR.NEG', color:'#f472b6', quien: '—', fecha: p.fecha, detalle: 'PRÉSTAMO', prodFotoKey:'', ef: m, cr: 0, tot: m, ts: new Date(p.fecha).getTime(), esEgreso: true });
             });
 
             // Ordenar por fecha desc
             rows.sort((a,b) => (b.ts||0) - (a.ts||0));
 
-            if (!rows.length) {
+            // ── Poblar selects con opciones únicas de los datos actuales ──
+            const _poblarSelect = (id, values) => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const prev = sel.value;
+                const opts = [...new Set(values.map(v => String(v||'').trim()).filter(v => v && v !== '—'))].sort();
+                sel.innerHTML = '<option value="">Todos</option>' + opts.map(o => `<option value="${o}"${prev===o?' selected':''}>${o}</option>`).join('');
+            };
+            _poblarSelect('regFiltroOp',  rows.map(r => r.tipo));
+            _poblarSelect('regFiltroQui', rows.map(r => r.quien));
+            _poblarSelect('regFiltroDet', rows.map(r => r.detalle));
+
+            // ── Filtros por columna ──
+            const fOp  = (document.getElementById('regFiltroOp') ?.value||'').trim();
+            const fQui = (document.getElementById('regFiltroQui')?.value||'').trim();
+            const fDet = (document.getElementById('regFiltroDet')?.value||'').trim();
+            const rowsFiltradas = rows.filter(r => {
+                if (fOp  && r.tipo    !== fOp)  return false;
+                if (fQui && r.quien   !== fQui) return false;
+                if (fDet && r.detalle !== fDet) return false;
+                return true;
+            });
+
+            if (!rowsFiltradas.length) {
                 tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500 font-bold uppercase">Sin registros en el período</td></tr>';
                 if (totEl) totEl.innerHTML = '';
                 return;
@@ -14729,24 +14785,26 @@ console.log("FILTRADAS:", filtradas.length);
             // Para saldo acumulado calculamos de atrás hacia adelante
             let saldoEf = 0, saldoCr = 0;
             // Primero calcular totales para empezar desde 0 en orden desc
-            rows.forEach(r => {
+            rowsFiltradas.forEach(r => {
                 if (r.esEgreso) { saldoEf -= r.ef; saldoCr -= r.cr; }
                 else            { saldoEf += r.ef; saldoCr += r.cr; }
             });
             // Ahora asignar saldo por fila de arriba a abajo (desc)
             let acumEf = saldoEf, acumCr = saldoCr;
-            rows.forEach(r => {
+            rowsFiltradas.forEach(r => {
                 r.saldoEf = acumEf;
                 r.saldoCr = acumCr;
                 if (r.esEgreso) { acumEf += r.ef; acumCr += r.cr; }
                 else            { acumEf -= r.ef; acumCr -= r.cr; }
             });
 
-            tbody.innerHTML = rows.map((r, idx) => {
-                const cliObj = _cliMap[String(r.quien||'').trim().toUpperCase()];
-                const cliFoto = cliObj?.foto
-                    ? `<img src="${driveUrl(cliObj.foto)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid ${r.color}33;" onerror="this.style.display='none'">`
-                    : `<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,${r.color}33,#1e293b);border:2px solid ${r.color}55;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:${r.color};flex-shrink:0;">${String(r.quien||'?')[0].toUpperCase()}</span>`;
+            tbody.innerHTML = rowsFiltradas.map((r, idx) => {
+                const cliObj = r.esSinCliente ? null : _cliMap[String(r.quien||'').trim().toUpperCase()];
+                const cliFoto = r.esSinCliente
+                    ? `<span style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,${r.color}33,#1e293b);border:2px solid ${r.color}55;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">${r.tipo==='INGRESO'?'📥':'📤'}</span>`
+                    : cliObj?.foto
+                        ? `<img src="${driveUrl(cliObj.foto)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid ${r.color}33;" onerror="this.style.display='none'">`
+                        : `<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,${r.color}33,#1e293b);border:2px solid ${r.color}55;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:${r.color};flex-shrink:0;">${String(r.quien||'?')[0].toUpperCase()}</span>`;
 
                 const prodObj = _prodMap[r.prodFotoKey||''];
                 const prodFoto = (prodObj?.foto||prodObj?.imagen)
@@ -14798,9 +14856,9 @@ console.log("FILTRADAS:", filtradas.length);
             }).join('');
 
             // Totales
-            const sumEf  = rows.reduce((s,r)=>s+r.ef, 0);
-            const sumCr  = rows.reduce((s,r)=>s+r.cr, 0);
-            const sumTot = rows.reduce((s,r)=>s+r.tot, 0);
+            const sumEf  = rowsFiltradas.reduce((s,r)=>s+r.ef, 0);
+            const sumCr  = rowsFiltradas.reduce((s,r)=>s+r.cr, 0);
+            const sumTot = rowsFiltradas.reduce((s,r)=>s+r.tot, 0);
             if (totEl) totEl.innerHTML = `
                 <div class="glass-card rounded-xl p-3 text-center border border-emerald-500/30">
                     <p class="text-[8px] font-black text-emerald-400 uppercase">Total Efectivo</p>
@@ -14813,7 +14871,7 @@ console.log("FILTRADAS:", filtradas.length);
                 <div class="glass-card rounded-xl p-3 text-center border border-slate-600">
                     <p class="text-[8px] font-black text-white uppercase">Total General</p>
                     <p class="text-base font-black text-white font-mono">$${Utils.fmt(sumTot)}</p>
-                    <p class="text-[8px] text-slate-500">${rows.length} registros</p>
+                    <p class="text-[8px] text-slate-500">${rowsFiltradas.length} registros</p>
                 </div>`;
         }
 
