@@ -4925,7 +4925,7 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                 const d = new Date(nuevaFecha);
                 if (!isNaN(d)) {
                     v.fechaISO = d.toISOString();
-                    v.fecha = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+                    v.fecha = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
                     // Enviar al sheet
                     editarEnSheet({
                         tipo: 'actualizar_venta',
@@ -12706,7 +12706,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
                         try {
                             if (fechaRaw && (fechaRaw.includes('T') || fechaRaw.includes('-'))) {
                                 const d = new Date(fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
 
@@ -12807,7 +12807,7 @@ Object.keys(catsMap || {}).forEach(k => {
                         try {
                             if (fechaRaw && (fechaRaw.includes('T') || fechaRaw.includes('-'))) {
                                 const d = new Date(fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
 
@@ -12891,7 +12891,7 @@ Object.keys(catsMap || {}).forEach(k => {
                         try {
                             if (fechaRaw && (fechaRaw.includes('T') || fechaRaw.includes('-'))) {
                                 const d = new Date(fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
 
@@ -13001,7 +13001,7 @@ if (indicator) indicator.classList.remove('hidden');
             rows.forEach(row => {
                 let fechaRaw = String(row['FECHA']||row['Fecha']||row['Fecha...']||'').trim();
                 let fechaDisplay = fechaRaw;
-                try { if (fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))) { const d=new Date(fechaRaw); if(!isNaN(d)) fechaDisplay=d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); } } catch(e){}
+                try { if (fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))) { const d=new Date(fechaRaw); if(!isNaN(d)) fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); } } catch(e){}
                 const idRow = String(row['IDINGRESOSNEGOCIO']||row['IDEGRESOSNEGOCIO']||row['NUMERO DE INGRESOS NEGOCIO']||row['NUMERO DE EGRESOS']||row['ID_INGRESOS']||row['Id_Gastos']||'').trim();
                 const total = parseFloat(row['PAGO TOTAL']||row['Pago Total'])||0;
                 const key = idRow||(fechaRaw+'|'+String(row['Supercategoria']||'').trim()+'|'+total);
@@ -13044,7 +13044,7 @@ if (indicator) indicator.classList.remove('hidden');
                     data.ingresos.forEach(row => {
                         let fechaRaw = String(row['FECHA']||row['Fecha']||'').trim();
                         let fechaDisplay = fechaRaw;
-                        try { if(fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))){const d=new Date(fechaRaw);if(!isNaN(d))fechaDisplay=d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}}catch(e){}
+                        try { if(fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))){const d=new Date(fechaRaw);if(!isNaN(d))fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}}catch(e){}
                         const idIngreso = String(row['IDINGRESOS']||row['Id_Ingresos']||'').trim();
                         const pagoTotal = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
                         const key = idIngreso || (fechaRaw+'|'+normI(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
@@ -13075,7 +13075,7 @@ if (indicator) indicator.classList.remove('hidden');
                     src.forEach(row => {
                         let fechaRaw=String(row['FECHA']||row['Fecha']||'').trim();
                         let fechaDisplay=fechaRaw;
-                        try{if(fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))){const d=new Date(fechaRaw);if(!isNaN(d))fechaDisplay=d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}}catch(e){}
+                        try{if(fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))){const d=new Date(fechaRaw);if(!isNaN(d))fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}}catch(e){}
                         const idGasto=String(row['Id_Gastos']||row['ID_GASTOS']||row['IDEGRESOS']||'').trim();
                         const pagoTotal=parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
                         const key=idGasto||(fechaRaw+'|'+normE(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
@@ -14831,8 +14831,7 @@ console.log("FILTRADAS:", filtradas.length);
                 if (!raw) return '—';
                 const d = new Date(raw);
                 if (isNaN(d)) return raw;
-                return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' +
-                       d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+                return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
             };
 
             const rows = [];
