@@ -2903,6 +2903,80 @@ CONFIRMAR PAGO
         </div>
     </div>
 
+    <!-- MODAL MOVIMIENTOS PRODUCTO (STOCK POR PROVEEDOR) -->
+    <div id="modalMovimientosProdProv" class="modal-overlay" style="z-index:360;">
+        <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-3 border border-blue-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center">
+                <h3 id="mmpTitulo" class="text-sm font-black text-blue-400 uppercase"></h3>
+                <button onclick="toggleModal('modalMovimientosProdProv',false)" class="text-slate-500 hover:text-white text-lg font-black">✕</button>
+            </div>
+            <div id="mmpProducto" class="text-[10px] font-black text-slate-400 uppercase"></div>
+            <div id="mmpLista" class="space-y-1"></div>
+            <button onclick="toggleModal('modalMovimientosProdProv',false)" class="w-full py-2 rounded-xl text-xs font-black uppercase" style="background:#1e293b;color:#94a3b8;">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE VENTA (KARDEX) -->
+    <div id="modalDetalleVentaKardex" class="modal-overlay" style="z-index:370;">
+        <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4 border border-red-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-black text-red-400 uppercase">🛒 Detalle de Venta</h3>
+                <button onclick="toggleModal('modalDetalleVentaKardex',false)" class="text-slate-500 hover:text-white text-lg font-black">✕</button>
+            </div>
+            <div id="dvkFecha" class="text-[9px] font-black text-slate-400 uppercase"></div>
+            <div id="dvkCliente" class="text-base font-black text-white uppercase"></div>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="rounded-xl p-3" style="background:#0f172a;border:1px solid #1e293b;">
+                    <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Efectivo</p>
+                    <p id="dvkEfectivo" class="text-sm font-black text-emerald-400"></p>
+                </div>
+                <div class="rounded-xl p-3" style="background:#0f172a;border:1px solid #1e293b;">
+                    <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Crédito</p>
+                    <p id="dvkCredito" class="text-sm font-black text-red-400"></p>
+                </div>
+                <div class="rounded-xl p-3" style="background:#0f172a;border:1px solid #1e293b;">
+                    <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Total</p>
+                    <p id="dvkTotal" class="text-sm font-black text-white"></p>
+                </div>
+            </div>
+            <div>
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Productos</p>
+                <div id="dvkItems" class="space-y-1"></div>
+            </div>
+            <button onclick="toggleModal('modalDetalleVentaKardex',false)" class="w-full py-2 rounded-xl text-xs font-black uppercase" style="background:#1e293b;color:#94a3b8;">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE COMPRA (KARDEX) -->
+    <div id="modalDetalleCompraKardex" class="modal-overlay" style="z-index:370;">
+        <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4 border border-emerald-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-black text-emerald-400 uppercase">📦 Detalle de Compra</h3>
+                <button onclick="toggleModal('modalDetalleCompraKardex',false)" class="text-slate-500 hover:text-white text-lg font-black">✕</button>
+            </div>
+            <div id="dckFecha" class="text-[9px] font-black text-slate-400 uppercase"></div>
+            <div id="dckProveedor" class="text-base font-black text-white uppercase"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="rounded-xl p-3" style="background:#0f172a;border:1px solid #1e293b;">
+                    <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Efectivo</p>
+                    <p id="dckEfectivo" class="text-sm font-black text-emerald-400"></p>
+                </div>
+                <div class="rounded-xl p-3" style="background:#0f172a;border:1px solid #1e293b;">
+                    <p class="text-[8px] font-black text-slate-500 uppercase mb-1">Crédito</p>
+                    <p id="dckCredito" class="text-sm font-black text-red-400"></p>
+                </div>
+            </div>
+            <div>
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Productos</p>
+                <div id="dckItems" class="space-y-1"></div>
+            </div>
+            <div id="dckTicketWrap" style="display:none;">
+                <button id="dckBtnTicket" class="w-full py-2 rounded-xl text-xs font-black uppercase" style="background:#1e3a5f;color:#60a5fa;">🧾 Ver Ticket</button>
+            </div>
+            <button onclick="toggleModal('modalDetalleCompraKardex',false)" class="w-full py-2 rounded-xl text-xs font-black uppercase" style="background:#1e293b;color:#94a3b8;">Cerrar</button>
+        </div>
+    </div>
+
     <!-- MODAL CATÁLOGO COMPRA -->
     <div id="modalCatalogoCompra" class="modal-overlay" style="z-index:199999999;">
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
@@ -3423,7 +3497,10 @@ _sheetProductos.forEach(p => {
         'modalVerificarStock',
         'modalDetalleProveedor',
         'modalPagoEgreso',
-        'modalPagoRapido'
+        'modalPagoRapido',
+        'modalDetalleCompraKardex',
+        'modalDetalleVentaKardex',
+        'modalMovimientosProdProv'
     ];
 
     // Si el modal a abrir/cerrar es "coexistente", no cerrar los otros coexistentes
@@ -13739,8 +13816,12 @@ console.log("FILTRADAS:", filtradas.length);
                     ${verifHtml}
                     ${difHtml}
                     <td class="py-2 pr-3 text-right text-slate-300">${Utils.fmt(r.stockInicial)}</td>
-                    <td class="py-2 pr-3 text-right text-blue-400 font-black">${Utils.fmt(r.compras)}</td>
-                    <td class="py-2 pr-3 text-right text-orange-400 font-black">${Utils.fmt(r.ventas)}</td>
+                    <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras > 0 ? 'cursor:pointer;' : ''}" onclick="${r.compras > 0 ? `verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdTs||'null'},${fhTs||'null'})` : ''}">
+                        ${r.compras > 0 ? `<span style="text-decoration:underline dotted;">${Utils.fmt(r.compras)}</span>` : Utils.fmt(r.compras)}
+                    </td>
+                    <td class="py-2 pr-3 text-right text-orange-400 font-black" style="${r.ventas > 0 ? 'cursor:pointer;' : ''}" onclick="${r.ventas > 0 ? `verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','VENTA',${fdTs||'null'},${fhTs||'null'})` : ''}">
+                        ${r.ventas > 0 ? `<span style="text-decoration:underline dotted;">${Utils.fmt(r.ventas)}</span>` : Utils.fmt(r.ventas)}
+                    </td>
                     <td class="py-2 pr-3 text-right font-black ${saColor}">${Utils.fmt(r.stockEsperado)}</td>
                 </tr>`;
             }).join('');
@@ -15173,6 +15254,127 @@ console.log("FILTRADAS:", filtradas.length);
             if (arrow) arrow.style.transform = arrow.style.transform.includes('rotate(-90deg)') ? '' : 'rotate(-90deg)';
         }
 
+        function verMovimientosProdProv(nombreProd, tipo, fdTs, fhTs) {
+            const nombreUp = String(nombreProd).trim().toUpperCase();
+            const esCompra = tipo === 'COMPRA';
+            const titulo   = esCompra ? '📦 Compras — ' : '🛒 Ventas — ';
+            document.getElementById('mmpTitulo').textContent   = titulo + (esCompra ? 'entradas' : 'salidas');
+            document.getElementById('mmpProducto').textContent = nombreProd;
+
+            const listaEl = document.getElementById('mmpLista');
+
+            if (esCompra) {
+                const todasC = _sheetCompras || [];
+                const movs = [];
+                todasC.forEach(cp => {
+                    const ts = new Date(cp.fechaISO || cp.fecha || '').getTime() || 0;
+                    if (fdTs && ts < fdTs) return;
+                    if (fhTs && ts > fhTs) return;
+                    (cp.items||[]).forEach(it => {
+                        if (String(it.nombre||'').trim().toUpperCase() !== nombreUp) return;
+                        movs.push({ fecha: cp.fecha||cp.fechaISO||'', detalle: cp.proveedor||'—', cantidad: parseFloat(it.cantidad)||0, id: cp.id||'' });
+                    });
+                });
+                movs.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                if (!movs.length) { listaEl.innerHTML = '<p style="font-size:10px;color:#475569;text-align:center;padding:12px;">Sin compras en este período</p>'; }
+                else listaEl.innerHTML = movs.map(m => `
+                    <div onclick="verDetalleCompraKardex('${String(m.id).replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;cursor:pointer;" class="hover:border-blue-500/50">
+                        <div>
+                            <div style="font-size:9px;color:#10b981;font-weight:900;">${String(m.fecha).substring(0,16)}</div>
+                            <div style="font-size:10px;color:#e2e8f0;font-weight:700;">${Utils.escHtml(m.detalle)}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:13px;font-weight:900;color:#60a5fa;">+${Utils.fmt(m.cantidad)}</span>
+                            <span style="font-size:9px;color:#60a5fa;">🔗</span>
+                        </div>
+                    </div>`).join('');
+            } else {
+                const todasV = [...(typeof historial!=='undefined'?historial:[]),
+                    ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                const movs = [];
+                todasV.forEach(v => {
+                    const ts = new Date(v.fechaISO || v.fecha || '').getTime() || 0;
+                    if (fdTs && ts < fdTs) return;
+                    if (fhTs && ts > fhTs) return;
+                    (v.items||[]).forEach(it => {
+                        if (String(it.nombre||'').trim().toUpperCase() !== nombreUp) return;
+                        movs.push({ fecha: v.fecha||v.fechaISO||'', detalle: v.cliente||'Consumidor Final', cantidad: parseFloat(it.cantidad)||0, id: v.id||'' });
+                    });
+                });
+                movs.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                if (!movs.length) { listaEl.innerHTML = '<p style="font-size:10px;color:#475569;text-align:center;padding:12px;">Sin ventas en este período</p>'; }
+                else listaEl.innerHTML = movs.map(m => `
+                    <div onclick="verDetalleVentaKardex('${String(m.id).replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;cursor:pointer;" class="hover:border-orange-500/50">
+                        <div>
+                            <div style="font-size:9px;color:#f59e0b;font-weight:900;">${String(m.fecha).substring(0,16)}</div>
+                            <div style="font-size:10px;color:#e2e8f0;font-weight:700;">${Utils.escHtml(m.detalle)}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:13px;font-weight:900;color:#f97316;">-${Utils.fmt(m.cantidad)}</span>
+                            <span style="font-size:9px;color:#60a5fa;">🔗</span>
+                        </div>
+                    </div>`).join('');
+            }
+            toggleModal('modalMovimientosProdProv', true);
+        }
+
+        function verDetalleVentaKardex(ventaId) {
+            const todasV = [...(typeof historial!=='undefined'?historial:[]),
+                ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+            const v = todasV.find(x => String(x.id||'').trim() === String(ventaId).trim());
+            if (!v) { mostrarToast('Venta no encontrada'); return; }
+            document.getElementById('dvkFecha').textContent   = v.fecha || v.fechaISO || '';
+            document.getElementById('dvkCliente').textContent = v.cliente || 'Consumidor Final';
+            document.getElementById('dvkEfectivo').textContent = v.efectivo > 0 ? '$' + Utils.fmt(v.efectivo) : '—';
+            const credito = Math.max(0, v.deuda || 0);
+            document.getElementById('dvkCredito').textContent = credito > 0 ? '$' + Utils.fmt(credito) : '—';
+            document.getElementById('dvkTotal').textContent   = '$' + Utils.fmt(v.total || 0);
+            const itemsEl = document.getElementById('dvkItems');
+            itemsEl.innerHTML = (v.items||[]).length
+                ? (v.items||[]).map(i => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;">
+                        <span style="font-size:11px;color:#e2e8f0;font-weight:700;">${Utils.escHtml(i.nombre||'')}</span>
+                        <span style="font-size:11px;color:#94a3b8;font-weight:900;">x${i.cantidad||1}</span>
+                        ${(i.precio||i.precioVenta)>0?`<span style="font-size:10px;color:#64748b;font-family:monospace;">$${Utils.fmt((i.precio||i.precioVenta||0)*(i.cantidad||1))}</span>`:''}
+                    </div>`).join('')
+                : '<p style="font-size:10px;color:#475569;">Sin productos registrados</p>';
+            toggleModal('modalDetalleVentaKardex', true);
+        }
+
+        function verDetalleCompraKardex(compraId) {
+            const c = _sheetCompras.find(x => String(x.id||'').trim() === String(compraId).trim());
+            if (!c) { mostrarToast('Compra no encontrada'); return; }
+            document.getElementById('dckFecha').textContent      = c.fecha || c.fechaISO || '';
+            document.getElementById('dckProveedor').textContent  = c.proveedor || '—';
+            document.getElementById('dckEfectivo').textContent   = c.efectivo > 0 ? '$' + Utils.fmt(c.efectivo) : '—';
+            document.getElementById('dckCredito').textContent    = c.credito  > 0 ? '$' + Utils.fmt(c.credito)  : '—';
+            // Items
+            const itemsEl = document.getElementById('dckItems');
+            const todosItems = c.items || [];
+            itemsEl.innerHTML = todosItems.length
+                ? todosItems.map(i => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;">
+                        <span style="font-size:11px;color:#e2e8f0;font-weight:700;">${Utils.escHtml(i.nombre||'')}</span>
+                        <span style="font-size:11px;color:#94a3b8;font-weight:900;">x${i.cantidad||1}</span>
+                        ${i.costo>0?`<span style="font-size:10px;color:#64748b;font-family:monospace;">$${Utils.fmt((i.costo||0)*(i.cantidad||1))}</span>`:''}
+                    </div>`).join('')
+                : '<p style="font-size:10px;color:#475569;">Sin productos registrados</p>';
+            // Ticket
+            const tickets = c.tickets || (c.ticket ? [c.ticket] : []);
+            const ticketWrap = document.getElementById('dckTicketWrap');
+            const ticketBtn  = document.getElementById('dckBtnTicket');
+            if (tickets.length > 0) {
+                ticketWrap.style.display = 'block';
+                ticketBtn.onclick = function() {
+                    const idx = _sheetCompras.indexOf(c);
+                    verTicketIdx(idx, 0);
+                };
+            } else {
+                ticketWrap.style.display = 'none';
+            }
+            toggleModal('modalDetalleCompraKardex', true);
+        }
+
         function renderKardex() {
             const nombreSel = document.getElementById('kardexProducto').value;
             const desde = document.getElementById('kardexDesde').value;
@@ -15224,7 +15426,8 @@ console.log("FILTRADAS:", filtradas.length);
                     if (String(it.nombre||'').trim().toUpperCase() !== nombreUp) return;
                     movimientos.push({ fecha: rawFecha, fechaNum: fnum,
                         tipo:'VENTA', detalle: v.cliente||'Consumidor Final',
-                        entrada:0, salida: parseFloat(it.cantidad)||0 });
+                        entrada:0, salida: parseFloat(it.cantidad)||0,
+                        ventaId: v.id||'' });
                 });
             });
 
@@ -15239,7 +15442,8 @@ console.log("FILTRADAS:", filtradas.length);
                     if (String(it.nombre||'').trim().toUpperCase() !== nombreUp) return;
                     movimientos.push({ fecha: cp.fecha||cp.fechaISO||'', fechaNum: fnum,
                         tipo:'COMPRA', detalle: cp.proveedor||'-',
-                        entrada: parseFloat(it.cantidad)||0, salida:0 });
+                        entrada: parseFloat(it.cantidad)||0, salida:0,
+                        compraId: cp.id||'' });
                 });
             });
 
@@ -15281,10 +15485,22 @@ console.log("FILTRADAS:", filtradas.length);
                 const tc = r.tipo==='VENTA'?'text-red-400':r.tipo==='COMPRA'?'text-emerald-400':'text-purple-400';
                 const ic = r.tipo==='VENTA'?'↓':r.tipo==='COMPRA'?'↑':'★';
                 const sc = r.saldo<0?'text-red-400':r.saldo===0?'text-slate-400':'text-white';
-                return `<tr class="hover:bg-slate-800/50 border-b border-slate-800">
+                const isCompraClickable = r.tipo==='COMPRA' && r.compraId;
+                const isVentaClickable  = r.tipo==='VENTA'  && r.ventaId;
+                const isClickable = isCompraClickable || isVentaClickable;
+                const trStyle   = isClickable ? 'cursor:pointer;' : '';
+                const tronclick = isCompraClickable
+                    ? `onclick="verDetalleCompraKardex('${String(r.compraId).replace(/'/g,"\\'")}')"` 
+                    : isVentaClickable
+                    ? `onclick="verDetalleVentaKardex('${String(r.ventaId).replace(/'/g,"\\'")}')"` 
+                    : '';
+                const detalleTd = isClickable
+                    ? `<td class="py-2 pr-3 text-slate-300">${r.detalle} <span style="font-size:9px;color:#60a5fa;font-weight:900;">🔗 ver</span></td>`
+                    : `<td class="py-2 pr-3 text-slate-300">${r.detalle}</td>`;
+                return `<tr class="hover:bg-slate-800/50 border-b border-slate-800" style="${trStyle}" ${tronclick}>
                     <td class="py-2 pr-3 text-slate-400">${String(r.fecha).substring(0,16)}</td>
                     <td class="py-2 pr-3 font-black ${tc}">${ic} ${r.tipo}</td>
-                    <td class="py-2 pr-3 text-slate-300">${r.detalle}</td>
+                    ${detalleTd}
                     <td class="py-2 pr-3 text-right text-emerald-400 font-bold">${r.entrada>0?'+'+Utils.fmt(r.entrada):'—'}</td>
                     <td class="py-2 pr-3 text-right text-red-400 font-bold">${r.salida>0?'-'+Utils.fmt(r.salida):'—'}</td>
                     <td class="py-2 text-right font-black ${sc}">${Utils.fmt(r.saldo)}</td>
