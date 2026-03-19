@@ -1899,7 +1899,6 @@ GUARDAR PRODUCTO
                     <input type="datetime-local" id="resumenHasta" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
                 </div>
                 <button onclick="renderResumen()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
-                <button onclick="debugResumen()" class="px-3 py-2 bg-slate-600 hover:bg-slate-500 text-yellow-400 font-black text-[10px] rounded-xl btn-action">🔍 DEBUG</button>
                 <button onclick="resumenSetPeriodo(1)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">HOY</button>
                 <button onclick="resumenSetPeriodo(7)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">7D</button>
                 <button onclick="resumenSetPeriodo(30)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">30D</button>
@@ -1908,6 +1907,11 @@ GUARDAR PRODUCTO
                     <button id="resumenFiltroBtn_total"    onclick="_resumenFiltro='total';   renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-amber-500 text-black">Total</button>
                     <button id="resumenFiltroBtn_efectivo" onclick="_resumenFiltro='efectivo';renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Efectivo</button>
                     <button id="resumenFiltroBtn_credito"  onclick="_resumenFiltro='credito'; renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Crédito</button>
+                </div>
+                <div class="flex gap-1 ml-2 border-l border-slate-700 pl-2">
+                    <button id="resumenCatBtn_total"    onclick="_resumenCategoria='total';   renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-white text-black">Total</button>
+                    <button id="resumenCatBtn_negocio"  onclick="_resumenCategoria='negocio'; renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Negocio</button>
+                    <button id="resumenCatBtn_personal" onclick="_resumenCategoria='personal';renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Personal</button>
                 </div>
             </div>
             <!-- KPIs grilla -->
@@ -13955,7 +13959,8 @@ console.log("FILTRADAS:", filtradas.length);
             renderResumen();
         }
 
-        let _resumenFiltro = 'total'; // 'total' | 'efectivo' | 'credito'
+        let _resumenFiltro    = 'total'; // 'total' | 'efectivo' | 'credito'
+        let _resumenCategoria = 'total'; // 'total' | 'negocio' | 'personal'
 
         function debugResumen() {
             const desdeVal = document.getElementById('resumenDesde').value;
@@ -14260,23 +14265,55 @@ console.log("FILTRADAS:", filtradas.length);
             const peTotal  = sumPago(_sheetPagoEgresos||[]);
             const penTotal = sumPago(_pagoEgrNegSheet||_sheetPagoEgrNeg||[]);
 
-            // ── Totales generales ──
-            const totalEntradas = vTotal + ing.total + ingNeg.total + pvTotal + piTotal + pinTotal;
-            const totalSalidas  = comp.total + egr.total + egrNeg.total + pcTotal + peTotal + penTotal;
-            const balance       = totalEntradas - totalSalidas;
+            // ── Totales generales — respetan categoría Y filtro ef/cr ──
+            const _cat = _resumenCategoria;
+            const _incNeg = _cat === 'total' || _cat === 'negocio';
+            const _incPer = _cat === 'total' || _cat === 'personal';
 
             // ── Ganancias totales ──
             const ganTotal = vGanTotal + ing.gan + ingNeg.gan;
             const ganEf    = vGanEf;
             const ganCr    = vGanCr;
 
-            // ── Dinero en efectivo que debería haber en caja ──
-            // Las tablas PAGO* tienen MONTO = siempre efectivo (cobros/pagos de crédito)
-            // Entradas EF = ventas ef + ingresos ef + ingNeg ef + cobros de crédito (pago ventas + pago ingresos + pago ingNeg)
-            // Salidas EF  = compras ef + egresos ef + egrNeg ef + pagos de crédito  (pago compras + pago egresos + pago egrNeg)
-            // Los pagos NO se suman como "vEf/ing.ef" porque son crédito que se cobra/paga después
-            const entEf = vEf + ing.ef + ingNeg.ef + pvTotal + piTotal + pinTotal;
-            const salEf = comp.ef + egr.ef + egrNeg.ef + pcTotal + peTotal + penTotal;
+            // Seleccionar el valor correcto según filtro ef/cr/total para cada fuente
+            const _vT   = _resumenFiltro==='efectivo' ? vEf       : _resumenFiltro==='credito' ? vCr       : vTotal;
+            const _ingT = _resumenFiltro==='efectivo' ? ing.ef     : _resumenFiltro==='credito' ? ing.cr     : ing.total;
+            const _ingNT= _resumenFiltro==='efectivo' ? ingNeg.ef  : _resumenFiltro==='credito' ? ingNeg.cr  : ingNeg.total;
+            const _cmpT = _resumenFiltro==='efectivo' ? comp.ef    : _resumenFiltro==='credito' ? comp.cr    : comp.total;
+            const _egrT = _resumenFiltro==='efectivo' ? egr.ef     : _resumenFiltro==='credito' ? egr.cr     : egr.total;
+            const _egrNT= _resumenFiltro==='efectivo' ? egrNeg.ef  : _resumenFiltro==='credito' ? egrNeg.cr  : egrNeg.total;
+
+            const totalEntradas = (_incNeg ? _vT + _ingNT + pvTotal + pinTotal : 0)
+                                + (_incPer ? _ingT + piTotal : 0)
+                                + (_cat === 'personal' ? (
+                                    _resumenFiltro === 'efectivo' ? ganEf :
+                                    _resumenFiltro === 'credito'  ? ganCr :
+                                    ganTotal
+                                ) : 0)
+                                - (_cat === 'negocio' ? (
+                                    _resumenFiltro === 'efectivo' ? ganEf :
+                                    _resumenFiltro === 'credito'  ? ganCr :
+                                    ganTotal
+                                ) : 0);
+            const totalSalidas  = (_incNeg ? _cmpT + _egrNT + pcTotal + penTotal : 0)
+                                + (_incPer ? _egrT + peTotal : 0);
+            const balance       = totalEntradas - totalSalidas;
+
+            // ── Dinero en efectivo que debería haber en caja — respeta categoría ──
+            const entEf = (_incNeg ? vEf + ingNeg.ef + pvTotal + pinTotal : 0)
+                        + (_incPer ? ing.ef + piTotal : 0)
+                        + (_cat === 'personal' ? (
+                            _resumenFiltro === 'efectivo' ? ganEf :
+                            _resumenFiltro === 'credito'  ? ganCr :
+                            ganTotal
+                        ) : 0)
+                        - (_cat === 'negocio' ? (
+                            _resumenFiltro === 'efectivo' ? ganEf :
+                            _resumenFiltro === 'credito'  ? ganCr :
+                            ganTotal
+                        ) : 0);
+            const salEf = (_incNeg ? comp.ef + egrNeg.ef + pcTotal + penTotal : 0)
+                        + (_incPer ? egr.ef + peTotal : 0);
             const efectivoEnCaja = entEf - salEf;
 
             // ── Actualizar botones filtro visual ──
@@ -14286,24 +14323,34 @@ console.log("FILTRADAS:", filtradas.length);
                     (f === _resumenFiltro ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             });
 
+            // ── Actualizar botones categoría visual ──
+            ['total','negocio','personal'].forEach(c => {
+                const btn = document.getElementById('resumenCatBtn_'+c);
+                if (btn) btn.className = 'px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action ' +
+                    (c === _resumenCategoria ? 'bg-white text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            });
+
             const colorMap = {emerald:'#10b981',blue:'#3b82f6',cyan:'#06b6d4',orange:'#f97316',red:'#ef4444',pink:'#ec4899'};
             // kpiData se mantiene para la tabla de detalle
             const kpiData = [
-                { label:'Ventas',              total:vTotal,       ef:vEf,       cr:vCr,       color:'emerald' },
-                { label:'Pago Ventas',         total:pvTotal,      ef:pvTotal,   cr:0,          color:'emerald' },
-                { label:'Ingresos',            total:ing.total,    ef:ing.ef,    cr:ing.cr,     color:'blue' },
-                { label:'Pago Ingresos',       total:piTotal,      ef:piTotal,   cr:0,          color:'blue' },
-                { label:'Ingresos Negocio',    total:ingNeg.total, ef:ingNeg.ef, cr:ingNeg.cr,  color:'cyan' },
-                { label:'Pago Ing. Negocio',   total:pinTotal,     ef:pinTotal,  cr:0,          color:'cyan' },
-                { label:'Compras',             total:comp.total,   ef:comp.ef,   cr:comp.cr,    color:'orange' },
-                { label:'Pago Compras',        total:pcTotal,      ef:pcTotal,   cr:0,          color:'orange' },
-                { label:'Egresos',             total:egr.total,    ef:egr.ef,    cr:egr.cr,     color:'red' },
-                { label:'Pago Egresos',        total:peTotal,      ef:peTotal,   cr:0,          color:'red' },
-                { label:'Egresos Negocio',     total:egrNeg.total, ef:egrNeg.ef, cr:egrNeg.cr,  color:'pink' },
-                { label:'Pago Egr. Negocio',   total:penTotal,     ef:penTotal,  cr:0,          color:'pink' },
+                { label:'Ventas',              total:vTotal,       ef:vEf,       cr:vCr,       color:'emerald', cat:'negocio' },
+                { label:'Pago Ventas',         total:pvTotal,      ef:pvTotal,   cr:0,          color:'emerald', cat:'negocio' },
+                { label:'Ingresos',            total:ing.total,    ef:ing.ef,    cr:ing.cr,     color:'blue',    cat:'personal' },
+                { label:'Pago Ingresos',       total:piTotal,      ef:piTotal,   cr:0,          color:'blue',    cat:'personal' },
+                { label:'Ingresos Negocio',    total:ingNeg.total, ef:ingNeg.ef, cr:ingNeg.cr,  color:'cyan',    cat:'negocio' },
+                { label:'Pago Ing. Negocio',   total:pinTotal,     ef:pinTotal,  cr:0,          color:'cyan',    cat:'negocio' },
+                { label:'Compras',             total:comp.total,   ef:comp.ef,   cr:comp.cr,    color:'orange',  cat:'negocio' },
+                { label:'Pago Compras',        total:pcTotal,      ef:pcTotal,   cr:0,          color:'orange',  cat:'negocio' },
+                { label:'Egresos',             total:egr.total,    ef:egr.ef,    cr:egr.cr,     color:'red',     cat:'personal' },
+                { label:'Pago Egresos',        total:peTotal,      ef:peTotal,   cr:0,          color:'red',     cat:'personal' },
+                { label:'Egresos Negocio',     total:egrNeg.total, ef:egrNeg.ef, cr:egrNeg.cr,  color:'pink',    cat:'negocio' },
+                { label:'Pago Egr. Negocio',   total:penTotal,     ef:penTotal,  cr:0,          color:'pink',    cat:'negocio' },
             ];
-            const kpiIngresos = kpiData.slice(0,6);
-            const kpiEgresos  = kpiData.slice(6,12);
+
+            // Filtrar por categoría
+            const catFilter = k => _resumenCategoria === 'total' || k.cat === _resumenCategoria;
+            const kpiIngresos = kpiData.slice(0,6).filter(catFilter);
+            const kpiEgresos  = kpiData.slice(6,12).filter(catFilter);
             const cardIng = k => `<div class="glass-card rounded-2xl p-3 border" style="border-color:#10b98144;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">
                 <p style="font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#10b981;margin-bottom:3px;">▲ ${k.label}</p>
                 <p style="font-size:1.1rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(k.total)}</p>
