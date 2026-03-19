@@ -2737,6 +2737,18 @@ CONFIRMAR PAGO
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Efectivo</label>
                 <input type="number" id="editIngEgrEfectivo" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm text-right font-mono">
             </div>
+            <div id="editIngEgrTicketWrap" style="display:none;">
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Ticket (foto o PDF)</label>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                    <label style="flex:1;padding:8px 12px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;text-align:center;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                        📎 Adjuntar ticket
+                        <input type="file" id="editIngEgrTicket" accept="image/*,application/pdf" style="display:none;" onchange="previewEditIngEgrTicket(this)">
+                    </label>
+                    <button id="btnVerTicketIngEgr" onclick="verTicketEditIngEgr()" style="display:none;padding:7px 10px;background:#1e3a5f;color:#34d399;border:none;border-radius:8px;cursor:pointer;font-size:13px;" title="Ver ticket">🧾</button>
+                    <button id="btnQuitarTicketIngEgr" onclick="quitarTicketEditIngEgr()" style="display:none;padding:7px 10px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:900;" title="Quitar ticket">✕</button>
+                </div>
+                <p id="labelTicketIngEgr" style="font-size:9px;color:#475569;margin-top:3px;"></p>
+            </div>
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="toggleModal('modalEditarIngEgr',false)" class="py-3 bg-slate-800 text-slate-300 font-black text-xs rounded-xl uppercase">Cancelar</button>
                 <button onclick="confirmarEditarIngEgr()" class="py-3 bg-emerald-500 text-black font-black text-xs rounded-xl uppercase">Guardar</button>
@@ -9311,6 +9323,44 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             label.style.color = '#475569';
         };
 
+        window.previewEditIngEgrTicket = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                window._editIngEgrTicketData = e.target.result;
+                document.getElementById('btnVerTicketIngEgr').style.display = 'inline-block';
+                document.getElementById('btnQuitarTicketIngEgr').style.display = 'inline-block';
+                const label = document.getElementById('labelTicketIngEgr');
+                label.textContent = '✅ ' + file.name;
+                label.style.color = '#34d399';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.verTicketEditIngEgr = function() {
+            const ticket = window._editIngEgrTicketData;
+            if (!ticket) return;
+            const overlay = document.getElementById('modalTicketViewer');
+            const inner   = document.getElementById('ticketViewerInner');
+            document.getElementById('ticketViewerTitulo').textContent = 'TICKET';
+            inner.innerHTML = ticket.startsWith('data:application/pdf')
+                ? `<iframe src="${ticket}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`
+                : `<img src="${ticket}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'flex';
+        };
+
+        window.quitarTicketEditIngEgr = function() {
+            window._editIngEgrTicketData = null;
+            document.getElementById('editIngEgrTicket').value = '';
+            document.getElementById('btnVerTicketIngEgr').style.display = 'none';
+            document.getElementById('btnQuitarTicketIngEgr').style.display = 'none';
+            const label = document.getElementById('labelTicketIngEgr');
+            label.textContent = 'Sin ticket';
+            label.style.color = '#475569';
+        };
+
         function guardarEditarCompra() {
             console.log('[TICKET DBG] guardarEditarCompra() llamada, _editandoCompraIdx:', _editandoCompraIdx);
             if (_editandoCompraIdx === -1) return;
@@ -10753,6 +10803,25 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             document.getElementById('editIngEgrProveedor').value = r.proveedor || '';
             document.getElementById('editIngEgrConcepto').value  = r.concepto  || '';
             document.getElementById('editIngEgrEfectivo').value  = r.efectivo  || '';
+            // Ticket — solo para egresos
+            const ticketWrap = document.getElementById('editIngEgrTicketWrap');
+            ticketWrap.style.display = tipo === 'egreso' ? 'block' : 'none';
+            document.getElementById('editIngEgrTicket').value = '';
+            window._editIngEgrTicketData = r.ticket || null;
+            const btnVer    = document.getElementById('btnVerTicketIngEgr');
+            const btnQuitar = document.getElementById('btnQuitarTicketIngEgr');
+            const label     = document.getElementById('labelTicketIngEgr');
+            if (r.ticket) {
+                btnVer.style.display = 'inline-block';
+                btnQuitar.style.display = 'inline-block';
+                label.textContent = '✅ Ticket adjunto';
+                label.style.color = '#34d399';
+            } else {
+                btnVer.style.display = 'none';
+                btnQuitar.style.display = 'none';
+                label.textContent = 'Sin ticket';
+                label.style.color = '#475569';
+            }
             toggleModal('modalEditarIngEgr', true);
         }
 
@@ -10772,13 +10841,24 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
 
     r.credito = Math.max(0, r.total - r.efectivo);
 
+    // Ticket (solo egresos)
+    if (ingEgrTipo === 'egreso' && window._editIngEgrTicketData !== undefined) {
+        r.ticket = window._editIngEgrTicketData;
+    }
+
     // Solo actualizar proveedor y concepto — NO sobreescribir montos
-    editarEnSheet({
+    const payload = {
         tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
         id: r.id,
         proveedor: r.proveedor,
         concepto: r.concepto
-    });
+    };
+    editarEnSheet(payload);
+
+    // Ticket: enviar por separado usando el handler específico (solo egresos)
+    if (ingEgrTipo === 'egreso' && window._editIngEgrTicketData !== undefined && window._editIngEgrTicketData !== null) {
+        fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'egreso_ticket', id: r.idSheet || r.id, ticket: window._editIngEgrTicketData }) });
+    }
 
     renderIngEgr(ingEgrTipo);
 
