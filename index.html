@@ -4608,19 +4608,30 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             slice.forEach(function(v) {
                 const realIdx = historial.indexOf(v);
                 const credito = Math.max(0, v.deuda || 0);
-                const prods = (v.items||[]).map(function(i){ return (i.cantidad||1)+'x '+i.nombre; }).join(', ') || '-';
-                const prodCorto = prods.length > 40 ? prods.substring(0,38)+'…' : prods;
+                const itemsVenta = v.items || [];
 
                 rows += '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:8px;margin-bottom:4px;">';
                 // Line 1: fecha + cliente
-                rows += '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">';
+                rows += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
                 rows += '<span style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">' + Utils.escHtml(v.fecha||'') + '</span>';
                 rows += '<span style="font-size:9px;font-weight:800;color:#e2e8f0;text-transform:uppercase;">' + Utils.escHtml(v.cliente||'-') + '</span>';
                 rows += '</div>';
-                // Line 2: productos
-                rows += '<div style="margin-bottom:5px;">';
-                rows += '<span style="font-size:9px;color:#94a3b8;">' + Utils.escHtml(prodCorto) + '</span>';
-                rows += '</div>';
+                // Line 2: productos (uno por línea, estilo compras)
+                if (itemsVenta.length > 0) {
+                    rows += '<div style="margin-bottom:5px;border-top:1px solid #1e293b;padding-top:5px;">';
+                    itemsVenta.forEach(function(i) {
+                        const nombreItem = (i.cantidad > 1 ? i.cantidad + 'x ' : '') + (i.nombre||'');
+                        const precioItem = (i.precio||0) * (i.cantidad||1);
+                        rows += '<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid #1e293b30;">';
+                        rows += '<span style="font-size:9px;color:#f59e0b;">●</span>';
+                        rows += '<span style="font-size:10px;color:#cbd5e1;flex:1;">' + Utils.escHtml(nombreItem) + '</span>';
+                        if (precioItem > 0) rows += '<span style="font-size:9px;color:#64748b;font-family:monospace;">$' + Utils.fmt(precioItem) + '</span>';
+                        rows += '</div>';
+                    });
+                    rows += '</div>';
+                } else {
+                    rows += '<div style="margin-bottom:5px;"><span style="font-size:9px;color:#475569;">-</span></div>';
+                }
                 // Estado: Pendiente si deuda > 0, Finalizado si pagado completo
                 const estadoVenta = credito > 0 ? 'PENDIENTE' : 'FINALIZADO';
                 const estadoColor = credito > 0 ? '#f87171' : '#34d399';
