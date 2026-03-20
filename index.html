@@ -2933,6 +2933,12 @@ CONFIRMAR PAGO
                 <!-- Derecha: totales y pago -->
                 <div class="w-full md:w-[260px] p-4 bg-black/20 flex flex-col justify-between gap-3 shrink-0">
                     <div class="space-y-3">
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                            <label class="text-[9px] font-black text-amber-400 uppercase">🚚 Flete / Envío</label>
+                            <input type="number" id="inputCompraFlete" oninput="calcularCompra()" placeholder="0" min="0"
+                                class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-amber-400 mt-1 focus:border-amber-500 outline-none">
+                            <p id="fletePorItem" class="text-[9px] text-amber-500/70 font-bold mt-1 text-right hidden">distribuido en items</p>
+                        </div>
                         <div class="bg-slate-900 px-4 py-3 rounded-2xl border border-emerald-500/20 text-center">
                             <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total</span>
                             <div id="compraTotalDisplay" class="text-3xl font-black text-white font-mono">$0</div>
@@ -7740,8 +7746,11 @@ function selGeneroIngEgr(val){
             carritoCompra = [];
             document.getElementById('inputCompraProveedor').value = '';
             document.getElementById('inputCompraEfectivo').value = '';
+            document.getElementById('inputCompraFlete').value = '';
             document.getElementById('compraCredito').textContent = '$0';
             document.getElementById('compraTotalDisplay').textContent = '$0';
+            const fletePorItem = document.getElementById('fletePorItem');
+            if (fletePorItem) fletePorItem.classList.add('hidden');
             renderCarritoCompra();
             toggleModal('modalCompra', true);
             lucide.createIcons();
@@ -8311,27 +8320,43 @@ function filtrarProductosCompra(query) {
 
 
 function calcularCompra() {
+    const flete = parseFloat(document.getElementById('inputCompraFlete')?.value) || 0;
+    const subtotalBase = carritoCompra.reduce((s, i) => s + ((parseFloat(i.costo)||0) * (parseFloat(i.cantidad)||0)), 0);
+    const total = subtotalBase + flete;
 
-    const total = carritoCompra.reduce((s, i) => {
-        return s + ((parseFloat(i.costo) || 0) * (parseFloat(i.cantidad) || 0));
-    }, 0);
+    // Distribuir flete por % proporcional al subtotal de cada ítem
+    carritoCompra.forEach(i => {
+        const subItem = (parseFloat(i.costo)||0) * (parseFloat(i.cantidad)||0);
+        const pct = subtotalBase > 0 ? subItem / subtotalBase : (1 / (carritoCompra.length||1));
+        i._pctFlete       = Math.round(pct * 10000) / 100; // ej: 80.00
+        i._fletePorItem   = flete > 0 ? Math.round(pct * flete * 100) / 100 : 0;
+        const cant = parseFloat(i.cantidad) || 1;
+        i._costoConFlete  = parseFloat(i.costo||0) + (i._fletePorItem / cant);
+    });
 
     const efectivo = parseFloat(document.getElementById('inputCompraEfectivo')?.value) || 0;
-
-    const credito = Math.max(0, total - efectivo);
+    const credito  = Math.max(0, total - efectivo);
 
     document.getElementById('compraTotalDisplay').textContent = `$${Utils.fmt(total)}`;
-    document.getElementById('compraCredito').textContent = `$${Utils.fmt(credito)}`;
+    document.getElementById('compraCredito').textContent      = `$${Utils.fmt(credito)}`;
 
-    const contenedor = document.getElementById('contenedorFormaCredito');
-
-    if (contenedor) {
-        if (credito > 0) {
-            contenedor.classList.remove('hidden');
+    const fletePorItem = document.getElementById('fletePorItem');
+    if (fletePorItem) {
+        if (flete > 0 && carritoCompra.length > 0) {
+            fletePorItem.textContent = `$${Utils.fmt(flete)} distribuido proporcionalmente`;
+            fletePorItem.classList.remove('hidden');
         } else {
-            contenedor.classList.add('hidden');
+            fletePorItem.classList.add('hidden');
         }
     }
+
+    const contenedor = document.getElementById('contenedorFormaCredito');
+    if (contenedor) {
+        if (credito > 0) contenedor.classList.remove('hidden');
+        else contenedor.classList.add('hidden');
+    }
+
+    if (flete > 0) _renderCarritoCompraSinCalc();
 }
 
 
@@ -8448,6 +8473,11 @@ function eliminarDeCarritoCompra(itemId) {
         }
 
         function renderCarritoCompra() {
+            _renderCarritoCompraSinCalc();
+            calcularCompra();
+        }
+
+        function _renderCarritoCompraSinCalc() {
             const container = document.getElementById('carritoCompra');
             if (carritoCompra.length === 0) {
                 container.innerHTML = '<p class="text-[10px] text-slate-600 font-bold uppercase text-center italic mt-6">Sin productos agregados</p>';
@@ -8488,8 +8518,18 @@ const editando = String(itemEnEdicion) === String(item.itemId);
         <button onclick="cambiarCantidadCompra('${item.itemId}', 1)"
                 style="background:#1e293b;color:white;border:none;padding:2px 10px;border-radius:6px;font-size:15px;font-weight:bold;">+</button>
     </div>
-    <span style="flex:1;"></span>
-    <span style="font-family:monospace;font-weight:900;color:white;font-size:15px;">$${Utils.fmt(subtotal)}</span>
+        <span style="flex:1;"></span>
+    <div style="text-align:right;">
+        <span style="font-family:monospace;font-weight:900;color:white;font-size:15px;">$${Utils.fmt(subtotal + (item._fletePorItem||0))}</span>
+        ${item._fletePorItem > 0 ? `
+        <span style="display:block;font-size:9px;color:#94a3b8;font-family:monospace;margin-top:1px;">sin flete $${Utils.fmt(subtotal)}</span>
+        <span style="display:block;font-size:9px;color:#f59e0b;font-family:monospace;">
+            🚚 ${item._pctFlete}% = +$${Utils.fmt(item._fletePorItem)}
+        </span>
+        <span style="display:block;font-size:9px;color:#fcd34d;font-family:monospace;">
+            c/u $${Utils.fmt(item._costoConFlete)}
+        </span>` : ''}
+    </div>
 </div>
 
 ${editando ? `
@@ -8511,7 +8551,6 @@ ${editando ? `
 
 </div>`;
             }).join('');
-            calcularCompra();
             lucide.createIcons();
         }
 
