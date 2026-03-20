@@ -1792,6 +1792,7 @@ GUARDAR PRODUCTO
                 <div class="flex gap-2 flex-wrap">
                     <button id="tabBtnResumen" onclick="switchStatsTab('resumen')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Resumen</button>
                     <button id="tabBtnProveedor" onclick="switchStatsTab('proveedor')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Proveedor</button>
+                    <button id="tabBtnTarjeta" onclick="switchStatsTab('tarjeta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💳 Tarjeta</button>
                     <button id="tabBtnVentas" onclick="switchStatsTab('ventas')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-emerald-500 text-black btn-action">Ventas</button>
                     <button id="tabBtnProductos" onclick="switchStatsTab('productos')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Productos</button>
                     <button id="tabBtnRegistros" onclick="switchStatsTab('registros')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Registros</button>
@@ -1939,6 +1940,133 @@ GUARDAR PRODUCTO
             </div>
             <!-- Tabla detalle -->
             <div id="resumenTabla" class="glass-card rounded-2xl p-4 border border-slate-700 overflow-x-auto"></div>
+        </div>
+
+
+        <!-- TAB TARJETA DE CRÉDITO -->
+        <div id="tabTarjeta" class="hidden space-y-4">
+
+            <!-- HERO: tarjeta visual + resumen -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Tarjeta visual animada -->
+                <div style="background:linear-gradient(135deg,#4c1d95,#6d28d9,#7c3aed,#a855f7);border-radius:20px;padding:22px;position:relative;overflow:hidden;min-height:160px;box-shadow:0 20px 60px rgba(139,92,246,0.4);">
+                    <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.07);"></div>
+                    <div style="position:absolute;bottom:-40px;left:-20px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);"></div>
+                    <div style="position:relative;z-index:1;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+                            <div>
+                                <p style="font-size:9px;font-weight:900;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:2px;margin-bottom:3px;">Tarjeta de Crédito</p>
+                                <p style="font-size:11px;font-weight:900;color:white;text-transform:uppercase;">Natanael POS</p>
+                            </div>
+                            <div style="display:flex;gap:4px;">
+                                <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,100,50,0.8);"></div>
+                                <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,180,0,0.8);margin-left:-12px;"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <p style="font-size:9px;color:rgba(255,255,255,0.5);font-weight:700;margin-bottom:2px;">DEUDA PENDIENTE</p>
+                            <p id="tcHeroCredito" style="font-size:26px;font-weight:900;color:white;font-family:monospace;line-height:1;">$0</p>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                            <div>
+                                <p style="font-size:8px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;">Total gastado</p>
+                                <p id="tcHeroTotal" style="font-size:13px;font-weight:900;color:rgba(255,255,255,0.85);font-family:monospace;">$0</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <p style="font-size:8px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;">Operaciones</p>
+                                <p id="tcHeroOps" style="font-size:13px;font-weight:900;color:rgba(255,255,255,0.85);font-family:monospace;">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de progreso deuda/pagado + mini stats -->
+                <div class="glass-card rounded-2xl p-4 border border-purple-500/30 space-y-3">
+                    <p class="text-[9px] font-black text-purple-400 uppercase tracking-widest">Estado de deuda</p>
+                    <!-- Barra progreso -->
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                            <span style="font-size:9px;color:#34d399;font-weight:900;">✓ Pagado</span>
+                            <span style="font-size:9px;color:#f87171;font-weight:900;">⚠ Pendiente</span>
+                        </div>
+                        <div style="height:10px;background:#1e293b;border-radius:999px;overflow:hidden;border:1px solid #334155;">
+                            <div id="tcBarraPagado" style="height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:999px;width:0%;transition:width 0.8s ease;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                            <span id="tcPctPagado" style="font-size:9px;color:#34d399;font-weight:900;">0%</span>
+                            <span id="tcPctCredito" style="font-size:9px;color:#f87171;font-weight:900;">0%</span>
+                        </div>
+                    </div>
+                    <!-- Mini grid stats -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+                        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px;text-align:center;">
+                            <p style="font-size:8px;color:#34d399;font-weight:900;text-transform:uppercase;margin-bottom:3px;">💚 Pagado</p>
+                            <p id="tcTotalPagado" style="font-size:14px;font-weight:900;color:#34d399;font-family:monospace;">$0</p>
+                        </div>
+                        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px;text-align:center;">
+                            <p style="font-size:8px;color:#f87171;font-weight:900;text-transform:uppercase;margin-bottom:3px;">🔴 A Crédito</p>
+                            <p id="tcTotalCredito" style="font-size:14px;font-weight:900;color:#f87171;font-family:monospace;">$0</p>
+                        </div>
+                        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px;text-align:center;">
+                            <p style="font-size:8px;color:#3b82f6;font-weight:900;text-transform:uppercase;margin-bottom:3px;">🛒 Compras</p>
+                            <p id="tcStatCompras" style="font-size:14px;font-weight:900;color:#3b82f6;font-family:monospace;">0</p>
+                        </div>
+                        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px;text-align:center;">
+                            <p style="font-size:8px;color:#f97316;font-weight:900;text-transform:uppercase;margin-bottom:3px;">📋 Egresos</p>
+                            <p id="tcStatEgresos" style="font-size:14px;font-weight:900;color:#f97316;font-family:monospace;">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico donut + filtros -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Donut -->
+                <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-col items-center justify-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Compras vs Egresos</p>
+                    <canvas id="tcDonut" width="140" height="140"></canvas>
+                    <div style="display:flex;gap:12px;margin-top:10px;">
+                        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;"></div><span style="font-size:9px;color:#94a3b8;font-weight:700;">Compras</span></div>
+                        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:50%;background:#f97316;"></div><span style="font-size:9px;color:#94a3b8;font-weight:700;">Egresos</span></div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="glass-card rounded-2xl p-4 border border-slate-700 space-y-3 md:col-span-2">
+                    <p class="text-[9px] font-black text-purple-400 uppercase tracking-widest">Filtros</p>
+                    <div class="flex flex-wrap gap-2 items-end">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] font-black text-slate-500 uppercase">Desde</label>
+                            <input type="date" id="tcDesde" onchange="renderTarjetaCredito()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] font-black text-slate-500 uppercase">Hasta</label>
+                            <input type="date" id="tcHasta" onchange="renderTarjetaCredito()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="tcSetPeriodo(7)"  class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-[10px] rounded-xl btn-action border border-slate-700">7D</button>
+                            <button onclick="tcSetPeriodo(30)" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-[10px] rounded-xl btn-action border border-slate-700">30D</button>
+                            <button onclick="tcSetPeriodo(90)" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-[10px] rounded-xl btn-action border border-slate-700">90D</button>
+                            <button onclick="tcSetPeriodo(0)"  class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-[10px] rounded-xl btn-action border border-slate-700">Todo</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <div class="flex gap-1">
+                            <button id="tcFiltroBtn_todos"   onclick="_tcFiltro='todos';   renderTarjetaCredito()" class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action bg-purple-600 text-white border border-purple-500">Todos</button>
+                            <button id="tcFiltroBtn_credito" onclick="_tcFiltro='credito'; renderTarjetaCredito()" class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action bg-slate-800 text-slate-400 border border-slate-700 hover:border-red-500">🔴 Pendiente</button>
+                            <button id="tcFiltroBtn_pagado"  onclick="_tcFiltro='pagado';  renderTarjetaCredito()" class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action bg-slate-800 text-slate-400 border border-slate-700 hover:border-emerald-500">✅ Pagado</button>
+                        </div>
+                        <div class="flex gap-1">
+                            <button id="tcTipoBtn_todos"   onclick="_tcTipo='todos';   renderTarjetaCredito()" class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action bg-white text-black border border-white">Todo</button>
+                            <button id="tcTipoBtn_compras" onclick="_tcTipo='compras'; renderTarjetaCredito()" class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action bg-slate-800 text-slate-400 border border-slate-700 hover:border-blue-500">🛒 Compras</button>
+                            <button id="tcTipoBtn_egresos" onclick="_tcTipo='egresos'; renderTarjetaCredito()" class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action bg-slate-800 text-slate-400 border border-slate-700 hover:border-orange-500">📋 Egresos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de operaciones: dos columnas -->
+            <div id="tcLista" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;"></div>
         </div>
 
         <div id="tabProductos" class="hidden space-y-5">
@@ -12753,6 +12881,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
                                 total: 0,
                                 efectivo: 0,
                                 credito: 0,
+                                formaPago: String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase(),
                                 estado: String(row['ESTADO'] || row['Estado'] || '').trim(),
                                 tickets: String(row['TICKET'] || row['Ticket'] || '').trim() ? [String(row['TICKET'] || row['Ticket'] || '').trim()] : [],
                                 fromSheet: true,
@@ -12763,6 +12892,9 @@ window._pagoVentasSheet = _pagoVentasSheet;
                         comprasMap[key].total   += parseSheetNum(row['PAGO TOTAL']    || row['Pago Total']   || 0);
                         comprasMap[key].efectivo+= parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']|| 0);
                         comprasMap[key].credito += parseSheetNum(row['PAGO CREDITO']  || row['Pago credito'] || row['Pago Credito'] || 0);
+                        // Tomar formaPago de cualquier fila que tenga valor
+                        const fpRow = String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase();
+                        if (fpRow && !comprasMap[key].formaPago) comprasMap[key].formaPago = fpRow;
                         const tkVal = String(row['TICKET']||row['Ticket']||'').trim();
                         if (tkVal && !comprasMap[key].tickets.includes(tkVal)) comprasMap[key].tickets.push(tkVal);
                         const itemNombre = String(row['PRODUCTO'] || row['Producto'] || '').trim();
@@ -12782,8 +12914,9 @@ window._pagoVentasSheet = _pagoVentasSheet;
 
 
 _sheetCompras = comprasSheet;
-
 console.log('✓ Compras Sheet cargadas:', _sheetCompras.length);
+const fpResumen = {}; _sheetCompras.forEach(c=>{ const fp=c.formaPago||'(vacío)'; fpResumen[fp]=(fpResumen[fp]||0)+1; });
+console.log('📊 Compras por formaPago:', fpResumen);
                     if (agregados > 0 || actualizados > 0) {
                       
                         const vistaCompras = document.getElementById('vistaCompras');
@@ -14556,6 +14689,256 @@ console.log("FILTRADAS:", filtradas.length);
         }
 
 
+        // ── TARJETA DE CRÉDITO ─────────────────────────────────────────────
+        let _tcFiltro = 'todos';
+        let _tcTipo   = 'todos';
+        let _tcDonutChart = null;
+
+        function tcSetPeriodo(dias) {
+            const hoy = new Date();
+            const hasta = hoy.toISOString().slice(0,10);
+            let desde = '';
+            if (dias > 0) {
+                const d = new Date(hoy); d.setDate(d.getDate() - dias + 1);
+                desde = d.toISOString().slice(0,10);
+            }
+            const dEl = document.getElementById('tcDesde');
+            const hEl = document.getElementById('tcHasta');
+            if (dEl) dEl.value = desde;
+            if (hEl) hEl.value = hasta;
+            renderTarjetaCredito();
+        }
+
+        function renderTarjetaCredito() {
+            const container = document.getElementById('tcLista');
+            if (!container) return;
+
+            const el = id => document.getElementById(id);
+            const desde = el('tcDesde')?.value || '';
+            const hasta = el('tcHasta')?.value || '';
+
+            // Estilos botones filtro
+            ['todos','credito','pagado'].forEach(f => {
+                const btn = el('tcFiltroBtn_' + f);
+                if (!btn) return;
+                btn.className = 'px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action ' + (f === _tcFiltro
+                    ? (f==='todos'?'bg-purple-600 text-white border border-purple-500':f==='credito'?'bg-red-600 text-white border border-red-500':'bg-emerald-600 text-white border border-emerald-500')
+                    : 'bg-slate-800 text-slate-400 border border-slate-700');
+            });
+            ['todos','compras','egresos'].forEach(t => {
+                const btn = el('tcTipoBtn_' + t);
+                if (!btn) return;
+                btn.className = 'px-3 py-1.5 rounded-xl font-black text-[10px] uppercase btn-action ' + (t === _tcTipo
+                    ? (t==='todos'?'bg-white text-black border border-white':t==='compras'?'bg-blue-600 text-white border border-blue-500':'bg-orange-600 text-white border border-orange-500')
+                    : 'bg-slate-800 text-slate-400 border border-slate-700');
+            });
+
+            // Recolectar registros SOLO formaPago TARJETA
+            let compras = [], egresos = [];
+
+            if (_tcTipo === 'todos' || _tcTipo === 'compras') {
+                (_sheetCompras||[]).forEach(c => {
+                    if ((c.formaPago||'').toUpperCase() !== 'TARJETA') return;
+                    const fd = (c.fechaISO||c.fecha||'').substring(0,10);
+                    if (desde && fd < desde) return;
+                    if (hasta && fd > hasta) return;
+                    const compraObj = c;
+                    const reg = {
+                        tipo:'COMPRA', fecha:c.fecha||'', fechaISO:c.fechaISO||c.fecha||'',
+                        concepto:c.proveedor||'—',
+                        credito:c.credito||0, pagado:Math.max(0,(c.total||0)-(c.credito||0)), total:c.total||0,
+                        items: c.items||[]
+                    };
+                    if (_tcFiltro === 'credito' && reg.credito <= 0) return;
+                    if (_tcFiltro === 'pagado'  && reg.pagado < reg.total) return;
+                    compras.push(reg);
+                });
+            }
+
+            if (_tcTipo === 'todos' || _tcTipo === 'egresos') {
+                (_sheetEgresos||[]).forEach(e => {
+                    if ((e.formaPago||'').toUpperCase() !== 'TARJETA') return;
+                    const fd = (e.fechaISO||e.fecha||'').substring(0,10);
+                    if (desde && fd < desde) return;
+                    if (hasta && fd > hasta) return;
+                    const reg = {
+                        tipo:'EGRESO', fecha:e.fecha||'', fechaISO:e.fechaISO||e.fecha||'',
+                        concepto:e.proveedor||e.concepto||'—',
+                        detalle:e.concepto||e.detalle||'',
+                        credito:e.credito||0, pagado:e.efectivo||0, total:e.total||0,
+                        items:[]
+                    };
+                    if (_tcFiltro === 'credito' && reg.credito <= 0) return;
+                    if (_tcFiltro === 'pagado'  && reg.pagado < reg.total) return;
+                    egresos.push(reg);
+                });
+            }
+
+            compras.sort((a,b) => (b.fechaISO||'').localeCompare(a.fechaISO||''));
+            egresos.sort((a,b) => (b.fechaISO||'').localeCompare(a.fechaISO||''));
+
+            // KPIs hero (sin filtro fecha ni estado)
+            let heroTotal=0, heroCredito=0, heroOps=0;
+            (_sheetCompras||[]).forEach(c => {
+                if ((c.formaPago||'').toUpperCase()!=='TARJETA') return;
+                heroTotal += c.total||0; heroCredito += c.credito||0; heroOps++;
+            });
+            (_sheetEgresos||[]).forEach(e => {
+                if ((e.formaPago||'').toUpperCase()!=='TARJETA') return;
+                heroTotal += e.total||0; heroCredito += e.credito||0; heroOps++;
+            });
+            if (el('tcHeroCredito')) el('tcHeroCredito').textContent = '$' + Utils.fmt(heroCredito);
+            if (el('tcHeroTotal'))   el('tcHeroTotal').textContent   = '$' + Utils.fmt(heroTotal);
+            if (el('tcHeroOps'))     el('tcHeroOps').textContent     = heroOps;
+
+            // KPIs período
+            const todos = [...compras, ...egresos];
+            const sumCredito = todos.reduce((s,r)=>s+r.credito,0);
+            const sumPagado  = todos.reduce((s,r)=>s+r.pagado,0);
+            const sumTotal   = todos.reduce((s,r)=>s+r.total,0);
+            const pctPagado  = sumTotal > 0 ? Math.round((sumPagado/sumTotal)*100) : 0;
+            if (el('tcTotalCredito')) el('tcTotalCredito').textContent = '$' + Utils.fmt(sumCredito);
+            if (el('tcTotalPagado'))  el('tcTotalPagado').textContent  = '$' + Utils.fmt(sumPagado);
+            if (el('tcStatCompras'))  el('tcStatCompras').textContent  = compras.length;
+            if (el('tcStatEgresos'))  el('tcStatEgresos').textContent  = egresos.length;
+            const barra = el('tcBarraPagado');
+            if (barra) setTimeout(() => { barra.style.width = pctPagado + '%'; }, 50);
+            if (el('tcPctPagado'))  el('tcPctPagado').textContent  = pctPagado + '% pagado';
+            if (el('tcPctCredito')) el('tcPctCredito').textContent = (100-pctPagado) + '% pendiente';
+
+            // Donut
+            const canvas = el('tcDonut');
+            if (canvas) {
+                const tc = compras.reduce((s,r)=>s+r.total,0);
+                const te = egresos.reduce((s,r)=>s+r.total,0);
+                if (_tcDonutChart) { _tcDonutChart.destroy(); _tcDonutChart = null; }
+                if (window.Chart && (tc+te) > 0) {
+                    _tcDonutChart = new Chart(canvas, {
+                        type:'doughnut',
+                        data:{ labels:['Compras','Egresos'], datasets:[{ data:[tc,te], backgroundColor:['#3b82f6','#10b981'], borderColor:['#1e3a5f','#064e3b'], borderWidth:2, hoverOffset:6 }] },
+                        options:{ responsive:false, cutout:'68%', plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ' $' + Utils.fmt(ctx.parsed) }}}}
+                    });
+                }
+            }
+
+            // Render sección
+            function buildSeccion(lista, color, titulo) {
+                if (lista.length === 0) return `<div style="background:#0f172a;border:1px solid #1e293b;border-top:3px solid ${color};border-radius:14px;padding:30px;text-align:center;color:#334155;font-size:10px;font-weight:900;text-transform:uppercase;">Sin registros</div>`;
+
+                const tot  = lista.reduce((s,r)=>s+r.total,0);
+                const cred = lista.reduce((s,r)=>s+r.credito,0);
+
+                // Agrupar por proveedor
+                const porProveedor = {};
+                lista.forEach(r => {
+                    const key = (r.concepto||'—').toUpperCase();
+                    if (!porProveedor[key]) porProveedor[key] = { nombre: r.concepto, registros: [] };
+                    porProveedor[key].registros.push(r);
+                });
+
+                let h = `<div style="background:#0f172a;border:1px solid ${color}22;border-top:3px solid ${color};border-radius:14px;overflow:hidden;">
+                    <div style="padding:10px 14px;background:${color}0a;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:10px;font-weight:900;color:${color};text-transform:uppercase;">${titulo}</span>
+                            <span style="font-size:8px;color:#475569;background:#1e293b;padding:1px 6px;border-radius:8px;font-weight:700;">${lista.length}</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:13px;font-weight:900;color:white;font-family:monospace;">$${Utils.fmt(tot)}</span>
+                            ${cred>0?`<span style="display:block;font-size:8px;color:#f87171;font-weight:700;">Pend $${Utils.fmt(cred)}</span>`:''}
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 36px 90px;padding:5px 12px;background:#080e1a;border-bottom:1px solid #1e293b;">
+                        <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;">Proveedor / Fecha / Producto</span>
+                        <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:center;">Cant</span>
+                        <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">Total</span>
+                    </div>`;
+
+                Object.values(porProveedor).forEach(grupo => {
+                    const totalProv = grupo.registros.reduce((s,r)=>s+r.total,0);
+                    const credProv  = grupo.registros.reduce((s,r)=>s+r.credito,0);
+                    const esCred    = credProv > 0;
+                    const sc = esCred ? '#f87171' : '#34d399';
+                    const sl = esCred ? '⚠' : '✓';
+
+                    // Fila cabecera del proveedor
+                    h += `<div style="background:#0a1120;border-bottom:1px solid #1e293b33;">
+                        <div style="display:grid;grid-template-columns:1fr 36px 90px;padding:9px 12px;align-items:center;">
+                            <div style="display:flex;align-items:center;gap:5px;min-width:0;">
+                                <span style="font-size:10px;color:${sc};font-weight:900;flex-shrink:0;">${sl}</span>
+                                <span style="font-size:12px;font-weight:900;color:#e2e8f0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escHtml(grupo.nombre)}</span>
+                                <span style="font-size:8px;color:#475569;background:#1e293b;padding:1px 5px;border-radius:6px;font-weight:700;flex-shrink:0;">${grupo.registros.length} compra${grupo.registros.length>1?'s':''}</span>
+                            </div>
+                            <span></span>
+                            <div style="text-align:right;">
+                                <span style="font-size:12px;font-weight:900;color:white;font-family:monospace;">$${Utils.fmt(totalProv)}</span>
+                                ${credProv>0?`<span style="display:block;font-size:8px;color:#f87171;font-family:monospace;">Cr $${Utils.fmt(credProv)}</span>`:''}
+                            </div>
+                        </div>
+                    </div>`;
+
+                    // Sub-grupos por fecha con toggle
+                    grupo.registros.forEach(r => {
+                        const esCr2 = r.credito > 0 && r.pagado < r.total;
+                        const sc2 = esCr2 ? '#f87171' : '#34d399';
+                        const uid = 'tcf_' + Math.random().toString(36).slice(2,9);
+                        const nProd = (r.items||[]).length;
+
+                        h += `<div style="background:#0f172a;border-bottom:1px solid #1e293b22;">
+                            <div onclick="(function(){var b=document.getElementById('${uid}');var a=document.getElementById('${uid}_a');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})()"
+                                style="display:grid;grid-template-columns:1fr 36px 90px;padding:6px 12px 6px 22px;align-items:center;cursor:pointer;user-select:none;">
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span id="${uid}_a" style="color:${color};font-size:9px;font-weight:900;transition:transform 0.2s;display:inline-block;">▼</span>
+                                    <span style="font-size:9px;color:#64748b;font-weight:700;">${Utils.escHtml(r.fecha)}</span>
+                                    <span style="font-size:8px;color:#334155;background:#1e293b;padding:1px 5px;border-radius:6px;">${nProd} prod</span>
+                                </div>
+                                <span></span>
+                                <div style="text-align:right;">
+                                    <span style="font-size:10px;font-weight:900;color:#94a3b8;font-family:monospace;">$${Utils.fmt(r.total)}</span>
+                                    ${esCr2?`<span style="display:block;font-size:8px;color:${sc2};font-family:monospace;">Cr $${Utils.fmt(r.credito)}</span>`:''}
+                                </div>
+                            </div>
+                            <div id="${uid}" style="display:block;">`;
+
+                        if (r.items && r.items.length > 0) {
+                            r.items.forEach(item => {
+                                const prodObj = (_sheetProductos||[]).find(p=>(p.nombre||'').trim().toUpperCase()===(item.nombre||'').trim().toUpperCase());
+                                const fotoUrl = item.foto||(prodObj&&prodObj.foto)||'';
+                                const ini = (item.nombre||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+                                const thumb = fotoUrl
+                                    ? `<img src="${driveUrl(fotoUrl)}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none';this.nextSibling.style.display='flex';" alt=""><div style="display:none;width:22px;height:22px;border-radius:4px;background:#1e3a5f;color:#60a5fa;font-size:7px;font-weight:900;align-items:center;justify-content:center;flex-shrink:0;">${Utils.escHtml(ini)}</div>`
+                                    : `<div style="width:22px;height:22px;border-radius:4px;background:#1e293b;color:#475569;font-size:7px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${Utils.escHtml(ini)}</div>`;
+                                const precio = (item.costo||0)*(item.cantidad||1);
+                                h += `<div style="display:grid;grid-template-columns:1fr 36px 90px;padding:4px 12px 4px 34px;align-items:center;border-top:1px solid #1e293b15;background:${color}05;">
+                                    <div style="display:flex;align-items:center;gap:5px;min-width:0;">${thumb}<span style="font-size:9px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escHtml(item.nombre||'')}</span></div>
+                                    <span style="font-size:9px;font-weight:900;color:#60a5fa;font-family:monospace;text-align:center;">${item.cantidad||1}</span>
+                                    <span style="font-size:9px;color:#64748b;font-family:monospace;text-align:right;">${precio>0?'$'+Utils.fmt(precio):''}</span>
+                                </div>`;
+                            });
+                        } else if (r.detalle && r.detalle !== r.concepto) {
+                            h += `<div style="padding:3px 12px 6px 34px;background:${color}05;border-top:1px solid #1e293b15;">
+                                <span style="font-size:9px;color:#64748b;">${Utils.escHtml(r.detalle)}</span>
+                            </div>`;
+                        }
+
+                        h += `</div></div>`; // cierre colapsable + fila fecha
+                    });
+                });
+
+                h += `</div>`;
+                return h;
+            }
+
+            if (compras.length === 0 && egresos.length === 0) {
+                container.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#334155;font-size:11px;font-weight:900;text-transform:uppercase;">Sin operaciones con tarjeta para el período seleccionado</div>';
+                return;
+            }
+
+            container.innerHTML =
+                `<div>${buildSeccion(compras, '#3b82f6', '🛒 Compras con Tarjeta')}</div>` +
+                `<div>${buildSeccion(egresos, '#10b981', '📋 Egresos con Tarjeta')}</div>`;
+        }
+        // ── FIN TARJETA DE CRÉDITO ─────────────────────────────────────────
+
         function switchStatsTab(tab) {
             _statsTab = tab;
             const isVentas    = tab === 'ventas';
@@ -14563,12 +14946,14 @@ console.log("FILTRADAS:", filtradas.length);
             const isResumen   = tab === 'resumen';
             const isRegistros = tab === 'registros';
             const isProveedor = tab === 'proveedor';
+            const isTarjeta   = tab === 'tarjeta';
 
             document.getElementById('tabBtnVentas').className    = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isVentas    ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             document.getElementById('tabBtnProductos').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isProductos ? 'bg-blue-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             document.getElementById('tabBtnResumen').className    = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isResumen   ? 'bg-amber-500 text-black'   : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             document.getElementById('tabBtnRegistros').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isRegistros ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             document.getElementById('tabBtnProveedor').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isProveedor ? 'bg-blue-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            document.getElementById('tabBtnTarjeta').className    = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isTarjeta   ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
 
             const filtros = document.getElementById('statsFiltrosFecha');
             if (filtros) filtros.classList.toggle('hidden', !isVentas);
@@ -14580,10 +14965,12 @@ console.log("FILTRADAS:", filtradas.length);
             const tabResumen   = document.getElementById('tabResumen');
             const tabRegistros = document.getElementById('tabRegistros');
             const tabProveedor = document.getElementById('tabProveedor');
+            const tabTarjeta   = document.getElementById('tabTarjeta');
             if (tabProd)      tabProd.classList.toggle('hidden', !isProductos);
             if (tabResumen)   tabResumen.classList.toggle('hidden', !isResumen);
             if (tabRegistros) tabRegistros.classList.toggle('hidden', !isRegistros);
             if (tabProveedor) tabProveedor.classList.toggle('hidden', !isProveedor);
+            if (tabTarjeta)   tabTarjeta.classList.toggle('hidden', !isTarjeta);
 
             if (isProductos) renderEstadisticasProductos();
             if (isResumen)   renderResumen();
@@ -14600,7 +14987,6 @@ console.log("FILTRADAS:", filtradas.length);
                 renderRegistros();
             }
             if (isProveedor) {
-                // Poblar select de proveedores
                 const sel = document.getElementById('provStatSelect');
                 if (sel) {
                     const provs = [...new Set((_sheetProductos||[]).map(p=>String(p.proveedor||'').trim()).filter(Boolean))].sort();
@@ -14609,6 +14995,10 @@ console.log("FILTRADAS:", filtradas.length);
                         provs.map(p=>`<option value="${p}" ${p===prev?'selected':''}>${p}</option>`).join('');
                 }
                 renderTabProveedor();
+            }
+            if (isTarjeta) {
+                if (!document.getElementById('tcDesde')?.value) tcSetPeriodo(30);
+                else renderTarjetaCredito();
             }
         }
 
