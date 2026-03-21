@@ -3034,16 +3034,25 @@ CONFIRMAR PAGO
                     <p class="text-[8px] text-slate-500 mt-1">Ej: ARROZ X1KG:5</p>
                 </div>
                 <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Ticket (foto o PDF)</label>
-                    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-                        <label style="flex:1;padding:8px 12px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;text-align:center;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
-                            📎 Adjuntar ticket
-                            <input type="file" id="editCompraTicket" accept="image/*,application/pdf" style="display:none;" onchange="previewEditCompraTicket(this)">
-                        </label>
-                        <button id="btnVerTicketEdit" onclick="verTicketEditCompra()" style="display:none;padding:7px 10px;background:#1e3a5f;color:#34d399;border:none;border-radius:8px;cursor:pointer;font-size:13px;" title="Ver ticket">🧾</button>
-                        <button id="btnQuitarTicketEdit" onclick="quitarTicketEditCompra()" style="display:none;padding:7px 10px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:900;" title="Quitar ticket">✕</button>
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Tickets / Fotos</label>
+                    <div id="editCompraTicketsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;"></div>
+                    <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:9px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                        📎 Agregar imagen / PDF
+                        <input type="file" id="editCompraTicketInput" accept="image/*,application/pdf" multiple style="display:none;" onchange="agregarTicketsEditCompra(this)">
+                    </label>
+                    <button onclick="document.getElementById('editCompraTicketInput').click();abrirCamaraEditCompra()" style="display:none"></button>
+                    <button onclick="abrirCamaraEditCompra()" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:7px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                        📷 Usar cámara
+                    </button>
+                    <!-- Cámara -->
+                    <div id="camaraEditCompra" class="hidden" style="margin-top:6px;">
+                        <video id="videoEditCompra" autoplay playsinline style="width:100%;border-radius:8px;max-height:180px;object-fit:cover;"></video>
+                        <div style="display:flex;gap:4px;margin-top:4px;">
+                            <button onclick="capturarFotoEditCompra()" style="flex:1;padding:7px;background:#10b981;color:black;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">📸 Capturar</button>
+                            <button onclick="cerrarCamaraEditCompra()" style="padding:7px 10px;background:#334155;color:#94a3b8;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">✕</button>
+                        </div>
+                        <canvas id="canvasEditCompra" style="display:none;"></canvas>
                     </div>
-                    <p id="labelTicketEdit" style="font-size:9px;color:#475569;margin-top:3px;"></p>
                 </div>
             </div>
             <div class="flex gap-2">
@@ -8363,6 +8372,11 @@ function calcularCompra() {
 function activarEdicionCompra(itemId){
     itemEnEdicion = itemId;
     renderCarritoCompra();
+    // Calcular precio sugerido automáticamente con flete incluido
+    setTimeout(() => {
+        const item = carritoCompra.find(i => String(i.itemId) === String(itemId));
+        if (item && item.costo) calcularPrecioSugerido(itemId, item.costo);
+    }, 50);
 }
 
 
@@ -8446,18 +8460,26 @@ if(!prod) return;
 // margen del producto
 const margen = parseFloat(String(prod.margenBruto || 0).replace('%','')) || 0;
 
-// costo que escribe el usuario
+// costo unitario base
 const costoUnitario = parseFloat(costo) || 0;
-
 if(!costoUnitario) return;
 
-// fórmula correcta
-const sugerido = costoUnitario / (1 - (margen / 100));
+// flete por unidad (si existe)
+const cant = parseFloat(item.cantidad) || 1;
+const fleteUnitario = item._fletePorItem > 0 ? (item._fletePorItem / cant) : 0;
+const costoTotal = costoUnitario + fleteUnitario;
+
+// fórmula: precio = costo / (1 - margen%)
+const sugerido = costoTotal / (1 - (margen / 100));
 
 const campo = document.getElementById("precioSugerido_"+itemId);
-
 if(campo){
-campo.value = sugerido.toFixed(2);
+    campo.value = sugerido.toFixed(2);
+    // Indicar si incluye flete
+    campo.title = fleteUnitario > 0
+        ? `Costo $${costoUnitario} + flete $${fleteUnitario.toFixed(2)} = $${costoTotal.toFixed(2)} | Margen ${margen}%`
+        : `Costo $${costoUnitario} | Margen ${margen}%`;
+    campo.style.borderColor = fleteUnitario > 0 ? '#f59e0b44' : '';
 }
 
 }
@@ -8535,16 +8557,28 @@ const editando = String(itemEnEdicion) === String(item.itemId);
 ${editando ? `
 <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;border-top:1px solid #334155;padding-top:10px;">
     <div style="font-size:11px;color:#10b981;font-weight:900;text-transform:uppercase;">✏️ Editar precios</div>
-    <input type="number" value="${item.costo}"
-        oninput="guardarCosto('${item.itemId}', this.value); calcularPrecioSugerido('${item.itemId}', this.value)"
-        placeholder="PRECIO COSTO"
-        style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;color:#10b981;font-weight:bold;font-size:14px;box-sizing:border-box;">
-    <input id="precioSugerido_${item.itemId}" readonly placeholder="PRECIO SUGERIDO"
-        style="width:100%;background:#020617;border:1px solid #334155;border-radius:8px;padding:10px;color:#22c55e;font-weight:bold;font-size:14px;box-sizing:border-box;">
-    <input type="number" value="${item.venta || 0}"
-        onchange="guardarVenta('${item.itemId}', this.value)"
-        placeholder="PRECIO VENTA"
-        style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;color:white;font-weight:bold;font-size:14px;box-sizing:border-box;">
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;">
+        <div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Costo unitario</div>
+        <input type="number" value="${item.costo}"
+            oninput="guardarCosto('${item.itemId}', this.value); calcularPrecioSugerido('${item.itemId}', this.value)"
+            placeholder="PRECIO COSTO"
+            style="width:100%;background:transparent;border:none;color:#10b981;font-weight:900;font-size:16px;outline:none;box-sizing:border-box;">
+        ${item._fletePorItem > 0 ? `<div style="font-size:9px;color:#f59e0b;margin-top:2px;">+ flete $${Utils.fmt(item._fletePorItem / (parseFloat(item.cantidad)||1))} c/u = <strong style="color:#fcd34d;">$${Utils.fmt(item._costoConFlete)}</strong> costo real</div>` : ''}
+    </div>
+    <div style="background:#020617;border:1px solid ${item._fletePorItem > 0 ? '#f59e0b44' : '#334155'};border-radius:8px;padding:8px 10px;">
+        <div style="font-size:9px;color:${item._fletePorItem > 0 ? '#f59e0b' : '#475569'};font-weight:700;text-transform:uppercase;margin-bottom:2px;">
+            Precio sugerido ${item._fletePorItem > 0 ? '(margen + flete)' : '(margen bruto)'}
+        </div>
+        <input id="precioSugerido_${item.itemId}" readonly
+            style="width:100%;background:transparent;border:none;color:#22c55e;font-weight:900;font-size:16px;outline:none;box-sizing:border-box;">
+    </div>
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;">
+        <div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Precio de venta</div>
+        <input type="number" value="${item.venta || 0}"
+            onchange="guardarVenta('${item.itemId}', this.value)"
+            placeholder="PRECIO VENTA"
+            style="width:100%;background:transparent;border:none;color:white;font-weight:900;font-size:16px;outline:none;box-sizing:border-box;">
+    </div>
     <button onclick="itemEnEdicion=null;renderCarritoCompra();"
         style="background:#22c55e;color:black;font-weight:900;padding:10px;border-radius:8px;border:none;width:100%;font-size:13px;">CERRAR</button>
 </div>` : ''}
@@ -9457,65 +9491,107 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             document.getElementById('editCompraEfectivo').value  = c.efectivo || 0;
             document.getElementById('editCompraCredito').value   = c.credito  || 0;
             document.getElementById('editCompraItems').value     = (c.items||[]).map(i => `${i.nombre}:${i.cantidad}`).join('\n');
-            // Ticket
-            document.getElementById('editCompraTicket').value = '';
-            window._editCompraTicketData = c.ticket || null;
-            const btnVer    = document.getElementById('btnVerTicketEdit');
-            const btnQuitar = document.getElementById('btnQuitarTicketEdit');
-            const label     = document.getElementById('labelTicketEdit');
-            if (c.ticket) {
-                btnVer.style.display = 'inline-block';
-                btnQuitar.style.display = 'inline-block';
-                label.textContent = '✅ Ticket adjunto';
-                label.style.color = '#34d399';
-            } else {
-                btnVer.style.display = 'none';
-                btnQuitar.style.display = 'none';
-                label.textContent = 'Sin ticket';
-                label.style.color = '#475569';
+            // Cargar tickets existentes (soporta array tickets[] y campo legacy ticket)
+            window._editCompraTickets = [];
+            if (c.tickets && c.tickets.length > 0) {
+                c.tickets.forEach((t, i) => window._editCompraTickets.push({ data: t, nombre: 'Ticket ' + (i+1) }));
+            } else if (c.ticket) {
+                window._editCompraTickets.push({ data: c.ticket, nombre: 'Ticket 1' });
             }
+            renderEditCompraTicketsGrid();
             toggleModal('modalEditarCompra', true);
         }
 
-        window.previewEditCompraTicket = function(input) {
-            const file = input.files[0];
-            console.log('[TICKET DBG] previewEditCompraTicket llamada, file:', file ? file.name : 'ninguno');
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                window._editCompraTicketData = e.target.result;
-                console.log('[TICKET DBG] FileReader ok, _editCompraTicketData seteado, length:', e.target.result.length);
-                document.getElementById('btnVerTicketEdit').style.display = 'inline-block';
-                document.getElementById('btnQuitarTicketEdit').style.display = 'inline-block';
-                const label = document.getElementById('labelTicketEdit');
-                label.textContent = '✅ ' + file.name;
-                label.style.color = '#34d399';
-            };
-            reader.readAsDataURL(file);
+        // ── TICKETS MÚLTIPLES EN EDITAR COMPRA ─────────────────────────────
+        window._editCompraTickets = []; // array de { data, nombre }
+        let _streamEditCompra = null;
+
+        function renderEditCompraTicketsGrid() {
+            const grid = document.getElementById('editCompraTicketsGrid');
+            if (!grid) return;
+            if (window._editCompraTickets.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/-1;font-size:9px;color:#475569;text-align:center;padding:8px;">Sin tickets adjuntos</p>';
+                return;
+            }
+            grid.innerHTML = window._editCompraTickets.map((t, i) => {
+                const isImg = !t.data.startsWith('data:application/pdf') && !t.data.startsWith('http');
+                const isPdf = t.data.startsWith('data:application/pdf');
+                const isUrl = t.data.startsWith('http');
+                const thumb = isUrl
+                    ? `<img src="${t.data}" style="width:100%;height:60px;object-fit:cover;border-radius:6px;" onerror="this.style.display='none'">`
+                    : isImg
+                        ? `<img src="${t.data}" style="width:100%;height:60px;object-fit:cover;border-radius:6px;">`
+                        : `<div style="width:100%;height:60px;display:flex;align-items:center;justify-content:center;background:#1e293b;border-radius:6px;font-size:22px;">📄</div>`;
+                return `<div style="position:relative;border:1px solid #334155;border-radius:8px;overflow:hidden;">
+                    <div onclick="verTicketEditCompraIdx(${i})" style="cursor:pointer;">${thumb}</div>
+                    <button onclick="quitarTicketEditCompraIdx(${i})" style="position:absolute;top:2px;right:2px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:4px;width:18px;height:18px;font-size:10px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+                    <p style="font-size:7px;color:#475569;padding:2px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.nombre||'Ticket '+(i+1)}</p>
+                </div>`;
+            }).join('');
+        }
+
+        window.agregarTicketsEditCompra = function(input) {
+            const files = Array.from(input.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    window._editCompraTickets.push({ data: e.target.result, nombre: file.name });
+                    renderEditCompraTicketsGrid();
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
         };
 
-        window.verTicketEditCompra = function() {
-            const ticket = window._editCompraTicketData;
-            if (!ticket) return;
+        window.quitarTicketEditCompraIdx = function(idx) {
+            window._editCompraTickets.splice(idx, 1);
+            renderEditCompraTicketsGrid();
+        };
+
+        window.verTicketEditCompraIdx = function(idx) {
+            const t = window._editCompraTickets[idx];
+            if (!t) return;
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
-            document.getElementById('ticketViewerTitulo').textContent = 'TICKET';
-            inner.innerHTML = ticket.startsWith('data:application/pdf')
-                ? `<iframe src="${ticket}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`
-                : `<img src="${ticket}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
+            document.getElementById('ticketViewerTitulo').textContent = t.nombre || 'TICKET';
+            inner.innerHTML = t.data.startsWith('data:application/pdf')
+                ? `<iframe src="${t.data}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`
+                : `<img src="${t.data}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
             overlay.classList.remove('hidden');
             overlay.style.display = 'flex';
         };
 
-        window.quitarTicketEditCompra = function() {
-            window._editCompraTicketData = null;
-            document.getElementById('editCompraTicket').value = '';
-            document.getElementById('btnVerTicketEdit').style.display = 'none';
-            document.getElementById('btnQuitarTicketEdit').style.display = 'none';
-            const label = document.getElementById('labelTicketEdit');
-            label.textContent = 'Sin ticket';
-            label.style.color = '#475569';
+        window.abrirCamaraEditCompra = function() {
+            document.getElementById('camaraEditCompra').classList.remove('hidden');
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => { _streamEditCompra = stream; document.getElementById('videoEditCompra').srcObject = stream; })
+                .catch(() => { mostrarToast('No se pudo acceder a la cámara'); cerrarCamaraEditCompra(); });
         };
+
+        window.cerrarCamaraEditCompra = function() {
+            if (_streamEditCompra) { _streamEditCompra.getTracks().forEach(t => t.stop()); _streamEditCompra = null; }
+            document.getElementById('camaraEditCompra').classList.add('hidden');
+        };
+
+        window.capturarFotoEditCompra = function() {
+            const video  = document.getElementById('videoEditCompra');
+            const canvas = document.getElementById('canvasEditCompra');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            cerrarCamaraEditCompra();
+            const n = window._editCompraTickets.length + 1;
+            window._editCompraTickets.push({ data: dataUrl, nombre: `foto_${n}.jpg` });
+            renderEditCompraTicketsGrid();
+        };
+
+        // Mantener compatibilidad con código viejo que usa _editCompraTicketData
+        window.previewEditCompraTicket = function(input) {
+            agregarTicketsEditCompra(input);
+        };
+        window.verTicketEditCompra    = function() { if (window._editCompraTickets.length) verTicketEditCompraIdx(0); };
+        window.quitarTicketEditCompra = function() { window._editCompraTickets = []; renderEditCompraTicketsGrid(); };
+        // ── FIN TICKETS MÚLTIPLES ────────────────────────────────────────────
 
         window.previewEditIngEgrTicket = function(input) {
             const file = input.files[0];
@@ -9556,7 +9632,6 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         };
 
         function guardarEditarCompra() {
-            console.log('[TICKET DBG] guardarEditarCompra() llamada, _editandoCompraIdx:', _editandoCompraIdx);
             if (_editandoCompraIdx === -1) return;
             const compra  = _sheetCompras[_editandoCompraIdx];
             const prov    = document.getElementById('editCompraProveedor').value.trim() || compra.proveedor;
@@ -9578,47 +9653,47 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                 const prod = _sheetProductos.find(p => p.nombre === item.nombre);
                 if (prod) prod.stock = (prod.stock||0) + (item.cantidad||0);
             });
-            
 
             compra.proveedor = prov;
             compra.efectivo  = efect;
             compra.credito   = cred;
             compra.total     = efect + cred;
             compra.items     = items;
-            if (window._editCompraTicketData !== undefined) compra.ticket = window._editCompraTicketData;
 
-            // Actualizar filas existentes — NO insertar nuevas
-            const ticketFinal = compra.ticket || null;
             const _idParaSheet = compra.idSheet || compra.id;
-            console.log('[TICKET DBG] _editCompraTicketData:', window._editCompraTicketData ? window._editCompraTicketData.substring(0,40) : window._editCompraTicketData);
-            console.log('[TICKET DBG] compra.ticket:', compra.ticket ? String(compra.ticket).substring(0,40) : compra.ticket);
-            console.log('[TICKET DBG] ticketFinal:', ticketFinal ? String(ticketFinal).substring(0,40) : ticketFinal);
-            console.log('[TICKET DBG] compra.id:', compra.id, '| compra.idSheet:', compra.idSheet, '| _idParaSheet:', _idParaSheet);
-            if (ticketFinal) {
-                // Si hay ticket nuevo, subirlo a ImgBB primero
-                if (ticketFinal.startsWith('data:')) {
-                    console.log('[TICKET DBG] → subiendo a ImgBB...');
-                    subirTicketImgBB(ticketFinal, function(url) {
-                        console.log('[TICKET DBG] → ImgBB url:', url ? url.substring(0,60) : url);
-                        compra.ticket = url || ticketFinal;
-                        const payloadFinal = { tipo: 'actualizar_compra', idCompra: _idParaSheet, fecha: compra.fechaISO || compra.fecha || '', proveedor: prov, ticket: compra.ticket };
-                        console.log('[TICKET DBG] → payload a enviar:', JSON.stringify(payloadFinal).substring(0,200));
-                        editarEnSheet(payloadFinal);
-                    });
-                } else {
-                    console.log('[TICKET DBG] → ticket ya es URL, enviando directo');
-                    editarEnSheet({ tipo: 'actualizar_compra', idCompra: _idParaSheet, fecha: compra.fechaISO || compra.fecha || '', proveedor: prov, ticket: ticketFinal });
-                }
-            } else {
-                console.log('[TICKET DBG] → ticketFinal vacío, enviando SIN ticket');
-                editarEnSheet({ tipo: 'actualizar_compra', idCompra: _idParaSheet, fecha: compra.fechaISO || compra.fecha || '', proveedor: prov });
-            }
+            const ticketsNuevos = window._editCompraTickets || [];
 
-            toggleModal('modalEditarCompra', false);
-            _editandoCompraIdx = -1;
-            renderCompras();
-            renderInventario();
-            mostrarToast('✓ Compra actualizada y sincronizada');
+            // Separar tickets que ya son URL (ya subidos) de los base64 nuevos
+            const ticketsUrl    = ticketsNuevos.filter(t => t.data.startsWith('http')).map(t => t.data);
+            const ticketsBase64 = ticketsNuevos.filter(t => t.data.startsWith('data:'));
+
+            mostrarToast('⏳ Guardando tickets...');
+
+            // Subir todos los base64 a ImgBB en paralelo
+            const subirPromesas = ticketsBase64.map(t => new Promise(resolve => {
+                subirTicketImgBB(t.data, url => resolve(url || t.data));
+            }));
+
+            Promise.all(subirPromesas).then(urlsSubidas => {
+                const todosUrls = [...ticketsUrl, ...urlsSubidas];
+                compra.tickets = todosUrls;
+                compra.ticket  = todosUrls[0] || null;
+
+                editarEnSheet({
+                    tipo: 'actualizar_compra',
+                    idCompra: _idParaSheet,
+                    fecha: compra.fechaISO || compra.fecha || '',
+                    proveedor: prov,
+                    ticket: todosUrls[0] || null,
+                    tickets: todosUrls
+                });
+
+                toggleModal('modalEditarCompra', false);
+                _editandoCompraIdx = -1;
+                renderCompras();
+                renderInventario();
+                mostrarToast('✓ Compra actualizada');
+            });
         }
 
         // ============================================================
