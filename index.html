@@ -694,22 +694,17 @@ z-index:999999999;
                     <div id="listaHistorial" class="space-y-1"><p style="font-size:10px;color:#475569;font-weight:700;text-align:center;padding:1.5rem;text-transform:uppercase;">Sin ventas registradas</p></div>
                 </div>
                 <div class="space-y-4">
-                    <div class="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efectivo en Caja</span>
-                            <button onclick="abrirModalHorarioCaja()" title="Configurar horario de corte" class="text-slate-500 hover:text-emerald-400 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="clock" aria-hidden="true" class="lucide lucide-clock w-4 h-4"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
-                            </button>
-                        </div>
-                        <div id="totalCaja" class="text-4xl font-black text-emerald-400 font-mono mt-1">$0</div>
-                        <div id="cajaSinceInfo" class="text-[9px] text-slate-600 font-bold mt-1 hidden"></div>
-                    </div>
-                    <div class="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldos Pendientes</span>
-                        <div id="totalDeudas" class="text-4xl font-black text-red-400 font-mono mt-1">$0</div>
-                    </div>
+                    <!-- Columna derecha del panel vacía -->
+                    <!-- IDs requeridos por JS — ocultos -->
+                    <div id="totalCaja" style="display:none;">$0</div>
+                    <div id="cajaSinceInfo" style="display:none;"></div>
+                    <div id="totalDeudas" style="display:none;">$0</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    
+
 
     <!-- ═══════════════════════ PAGOS ═══════════════════════ -->
     <div id="vistaPagos" class="flex-1 p-4 lg:p-6 overflow-y-auto h-screen custom-scrollbar hidden">
@@ -6758,7 +6753,7 @@ clienteDetalleId = null;
             if (!c) return;
             let restante = monto;
             const ahora = new Date();
-            const fechaFmt = fechaSheet(ahora); // dd/MM/yyyy HH:mm:ss
+            const fechaFmt = fechaSheet(ahora);
             const pagos = [];
             _pagoRapidoPendientes.forEach(p => {
                 if (restante <= 0.005) return;
@@ -6766,25 +6761,41 @@ clienteDetalleId = null;
                 restante = Math.max(0, restante - pago);
                 pagos.push({ ...p, pagado: pago });
             });
-            console.log('[PAGO RAPIDO] monto:', monto, '| pagos:', pagos.length, '| total pagado:', pagos.reduce((s,p)=>s+p.pagado,0));
+
+            if (pagos.length === 0) { mostrarToast('Sin pagos a procesar', 'error'); return; }
+
+            console.log('[PAGO RAPIDO] monto:', monto, '| pagos:', pagos.length);
+
+            // Cerrar modal antes de procesar
+            toggleModal('modalPagoRapido', false);
+            mostrarToast(`⏳ Procesando ${pagos.length} pago${pagos.length!==1?'s':''}...`);
+
             let contadorId = Date.now();
-            const promesas = [];
+            let procesados = 0;
+
+            // Enviar SECUENCIALMENTE con delay para no congelar el sheet
             for (const p of pagos) {
                 const idPago = String(contadorId++);
-                if (p.tipo === 'venta') {
-                    const reg = { id:idPago, IDPAGODEVENTAS:idPago, idVenta:p.idVenta, IDVENTAS:p.idVenta, fecha:fechaFmt, fechaISO:fechaFmt, idCliente:p.idCliente, cliente:p.cliente, producto:p.producto, proveedor:p.proveedor||'', formaPago:'EFECTIVO', monto:p.pagado, MONTO:p.pagado, fechaOriginal:p.fecha };
-                    _pagoVentasSheet.push(reg);
-                    promesas.push(fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'pago_venta', id:idPago, IDPAGODEVENTAS:idPago, IDVENTAS:p.idVenta, fecha:fechaFmt, idCliente:p.idCliente, cliente:p.cliente, producto:p.producto, proveedor:p.proveedor||'', formaPago:'EFECTIVO', monto:p.pagado, fechaOriginal:p.fecha }) }));
-                } else {
-                    const reg = { id:idPago, fecha:fechaFmt, fechaISO:fechaFmt, IDINGRESOSNEGOCIO:p.idIngNeg, idCliente:p.idCliente, cliente:p.cliente, monto:p.pagado, MONTO:p.pagado, formaPago:'EFECTIVO' };
-                    if (!window._sheetPagoIngNeg) window._sheetPagoIngNeg = [];
-                    window._sheetPagoIngNeg.push(reg);
-                    promesas.push(fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'pago_ingneg', id:idPago, IDINGRESOSNEGOCIO:p.idIngNeg, fecha:fechaFmt, idCliente:p.idCliente, cliente:p.cliente, formaPago:'EFECTIVO', monto:p.pagado, fechaOriginal:p.fecha }) }));
+                try {
+                    if (p.tipo === 'venta') {
+                        const reg = { id:idPago, IDPAGODEVENTAS:idPago, idVenta:p.idVenta, IDVENTAS:p.idVenta, fecha:fechaFmt, fechaISO:fechaFmt, idCliente:p.idCliente, cliente:p.cliente, producto:p.producto, proveedor:p.proveedor||'', formaPago:'EFECTIVO', monto:p.pagado, MONTO:p.pagado, fechaOriginal:p.fecha };
+                        _pagoVentasSheet.push(reg);
+                        await fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'pago_venta', id:idPago, IDPAGODEVENTAS:idPago, IDVENTAS:p.idVenta, fecha:fechaFmt, idCliente:p.idCliente, cliente:p.cliente, producto:p.producto, proveedor:p.proveedor||'', formaPago:'EFECTIVO', monto:p.pagado, fechaOriginal:p.fecha }) });
+                    } else {
+                        const reg = { id:idPago, fecha:fechaFmt, fechaISO:fechaFmt, IDINGRESOSNEGOCIO:p.idIngNeg, idCliente:p.idCliente, cliente:p.cliente, monto:p.pagado, MONTO:p.pagado, formaPago:'EFECTIVO' };
+                        if (!window._sheetPagoIngNeg) window._sheetPagoIngNeg = [];
+                        window._sheetPagoIngNeg.push(reg);
+                        await fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'pago_ingneg', id:idPago, IDINGRESOSNEGOCIO:p.idIngNeg, fecha:fechaFmt, idCliente:p.idCliente, cliente:p.cliente, formaPago:'EFECTIVO', monto:p.pagado, fechaOriginal:p.fecha }) });
+                    }
+                    procesados++;
+                    // Delay entre cada pago para no saturar el sheet
+                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 800));
+                } catch(err) {
+                    console.error('[PAGO RAPIDO] error en pago', procesados + 1, ':', err);
                 }
             }
-            await Promise.all(promesas);
-            toggleModal('modalPagoRapido', false);
-            mostrarToast(`✓ Pago de $${Utils.fmt(monto)} distribuido en ${pagos.length} registro${pagos.length!==1?'s':''}`);
+
+            mostrarToast(`✓ Pago de $${Utils.fmt(monto)} distribuido en ${procesados} registro${procesados!==1?'s':''}`);
             setTimeout(() => { if (clienteDetalleId) abrirDetalleCliente(clienteDetalleId); }, 400);
         }
 
@@ -8763,19 +8774,17 @@ function mostrarAlertasVencimiento(porVencer, vencidos){
 
     const hoy = new Date();
 
-    const todos = [
-        ...vencidos.map(p => {
-            const d = new Date(p.vencimiento);
-            const diff = Math.ceil((d - hoy) / (1000*60*60*24));
-            return { ...p, diff };
-        }),
-        ...porVencer.map(p => ({ ...p }))
-    ];
+    const vencidosOrdenados = vencidos
+        .map(p => { const d = new Date(p.vencimiento); const diff = Math.ceil((d - hoy)/(1000*60*60*24)); return {...p, diff}; })
+        .sort((a, b) => a.diff - b.diff); // más antiguo primero (más negativo)
 
-    todos.sort((a, b) => (a.diff ?? a.dias ?? 0) - (b.diff ?? b.dias ?? 0));
-    const top10 = todos.slice(0, 10);
+    const porVencerOrdenados = porVencer
+        .map(p => ({...p}))
+        .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0)); // más cercano primero
 
-    if (!top10.length) { widget.classList.add('hidden'); return; }
+    const todos = [...vencidosOrdenados, ...porVencerOrdenados].slice(0, 10);
+
+    if (!todos.length) { widget.classList.add('hidden'); return; }
 
     widget.classList.remove('hidden');
     widget.innerHTML = `
@@ -8785,7 +8794,7 @@ function mostrarAlertasVencimiento(porVencer, vencidos){
                 <span style="font-size:10px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;">Vencidos / Por Vencer — Click para editar vencimiento</span>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                ${top10.map(p => {
+                ${todos.map(p => {
                     const dias = p.diff !== undefined ? p.diff : (p.dias ?? 0);
                     const vencido = dias < 0;
                     const texto = vencido ? `hace ${Math.abs(dias)}d` : dias === 0 ? 'hoy' : `en ${dias}d`;
