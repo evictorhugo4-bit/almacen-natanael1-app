@@ -2931,9 +2931,10 @@ CONFIRMAR PAGO
                 </div>
 
                 <!-- Derecha: totales y pago -->
-                <div class="w-full md:w-[260px] p-4 bg-black/20 flex flex-col justify-between gap-3 shrink-0">
-                    <div class="space-y-3">
-                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                <div class="w-full md:w-[260px] bg-black/20 flex flex-col shrink-0" style="max-height:100%;">
+                    <!-- Contenido scrolleable -->
+                    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-amber-500/30">
                             <label class="text-[9px] font-black text-amber-400 uppercase">🚚 Flete / Envío</label>
                             <input type="number" id="inputCompraFlete" oninput="calcularCompra()" placeholder="0" min="0"
                                 class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-amber-400 mt-1 focus:border-amber-500 outline-none">
@@ -2950,56 +2951,30 @@ CONFIRMAR PAGO
                         <div class="bg-slate-900/80 p-3 rounded-xl border border-red-900/30">
                             <label class="text-[9px] font-black text-red-400 uppercase">A Crédito</label>
                             <div id="compraCredito" class="text-2xl font-black text-red-400 font-mono text-right mt-1">$0</div>
-
-
-<div id="contenedorFormaCredito" class="mt-4 hidden">
-    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
-        Forma de pago del saldo
-    </label>
-
-    <select id="formaPagoCredito"
-        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
-        <option value="CREDITO">Credito</option>
-        <option value="TARJETA">Tarjeta</option>
-    </select>
-</div>
-
-
-
-
-                        </div>
-                    </div>
-                    <!-- TICKET ADJUNTO -->
-                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-2">
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Ticket / Factura</label>
-                        <div id="ticketPreview" class="hidden relative">
-                            <div id="ticketPreviewInner" class="w-full rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center" style="min-height:80px;"></div>
-                            <button onclick="quitarTicket()" class="absolute top-1 right-1 bg-red-900 text-red-300 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black border border-red-700" title="Quitar">✕</button>
-                        </div>
-                        <div id="ticketBotones" class="flex gap-2">
-                            <label class="flex-1 flex items-center justify-center gap-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer text-[10px] font-black uppercase transition-all border border-slate-700" title="Subir imagen o PDF">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                Subir
-                                <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" class="hidden" onchange="cargarTicketArchivo(this)">
-                            </label>
-                            <button onclick="abrirCamaraTicket()" class="flex-1 flex items-center justify-center gap-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-black uppercase transition-all border border-slate-700" title="Sacar foto">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                Cámara
-                            </button>
-                        </div>
-                        <!-- Cámara live -->
-                        <div id="camaraContainer" class="hidden space-y-2">
-                            <video id="camaraVideo" autoplay playsinline class="w-full rounded-lg" style="max-height:180px;object-fit:cover;background:#000;"></video>
-                            <div class="flex gap-2">
-                                <button onclick="capturarFotoTicket()" class="flex-1 py-2 bg-emerald-600 text-black font-black text-[10px] uppercase rounded-lg">📸 Capturar</button>
-                                <button onclick="cerrarCamaraTicket()" class="flex-1 py-2 bg-slate-700 text-slate-300 font-black text-[10px] uppercase rounded-lg">✕ Cerrar</button>
+                            <div id="contenedorFormaCredito" class="mt-4 hidden">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Forma de pago del saldo</label>
+                                <select id="formaPagoCredito" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
+                                    <option value="CREDITO">Credito</option>
+                                    <option value="TARJETA">Tarjeta</option>
+                                </select>
                             </div>
-                            <canvas id="camaraCanvas" class="hidden"></canvas>
+                        </div>
+                        <!-- TICKET ADJUNTO -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-2">
+                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Ticket / Factura</label>
+                            <div id="ticketGridNuevaCompra" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
+                            <label style="display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                                📎 Agregar imágenes
+                                <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
+                            </label>
                         </div>
                     </div>
-                    <button onclick="confirmarCompra()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
-                        Confirmar Compra
-                    </button>
+                    <!-- Botón confirmar siempre visible abajo -->
+                    <div class="p-4 border-t border-slate-800 shrink-0">
+                        <button onclick="confirmarCompra()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
+                            Confirmar Compra
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -7844,79 +7819,120 @@ function selGeneroIngEgr(val){
             const c = _sheetCompras.find(x => String(x.id||'').trim() === String(idPago).trim());
             const tks = c ? (c.tickets && c.tickets.length > 0 ? c.tickets : (c.ticket ? [c.ticket] : [])) :
                         ((window._ticketsProvCache && window._ticketsProvCache[idPago]) || []);
-            const t = tks[ti != null ? ti : 0];
-            if (!t) { mostrarToast('Ticket no encontrado'); return; }
+            if (!tks.length) { mostrarToast('Ticket no encontrado'); return; }
 
-            // Resolver URL en máxima calidad — sin thumbnail comprimido
+            let idx = ti != null ? ti : 0;
+
             function resolverUrl(url) {
                 if (!url) return '';
                 if (url.startsWith('data:')) return url;
                 if (!url.includes('drive.google.com') && !url.includes('googleusercontent.com')) return url;
                 const m = url.match(/\/d\/([\w-]+)/) || url.match(/[?&]id=([\w-]+)/);
                 if (!m) return url;
-                // URL de descarga directa = calidad original
                 return 'https://drive.google.com/uc?export=view&id=' + m[1];
             }
 
-            const srcHQ = resolverUrl(t);
-            const srcFallback = t; // URL original sin procesar como último recurso
-
-            // Eliminar overlay anterior si existe
+            // Eliminar overlay anterior
             const old = document.getElementById('_tvProv');
             if (old) old.remove();
+            const oldBtn = document.getElementById('_tvProvBtn');
+            if (oldBtn) oldBtn.remove();
 
-            // Crear overlay y agregarlo DIRECTO al body (nunca dentro del modal)
+            // Overlay principal
             const ov = document.createElement('div');
             ov.id = '_tvProv';
-            ov.style.cssText = [
-                'position:fixed', 'top:0', 'left:0', 'width:100%', 'height:100%',
-                'z-index:2147483647', 'background:rgba(0,0,0,0.95)',
-                'display:flex', 'flex-direction:column',
-                'align-items:center', 'justify-content:center', 'padding:16px',
-                'box-sizing:border-box'
-            ].join(';');
+            ov.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483647;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
             ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
-            document.body.appendChild(ov);
 
-            // Botón cerrar — pegado al body, z-index propio máximo
+            // Botón cerrar
             const btnX = document.createElement('button');
+            btnX.id = '_tvProvBtn';
             btnX.textContent = '✕ Cerrar';
-            btnX.style.cssText = [
-                'position:fixed', 'top:14px', 'right:14px', 'z-index:2147483647',
-                'background:#1e293b', 'color:#fff', 'border:1px solid #475569',
-                'border-radius:10px', 'padding:8px 20px',
-                'font-weight:900', 'font-size:13px', 'cursor:pointer', 'letter-spacing:.04em'
-            ].join(';');
-            btnX.onclick = function(e) { e.stopPropagation(); ov.remove(); };
+            btnX.style.cssText = 'position:fixed;top:14px;right:14px;z-index:2147483647;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:10px;padding:8px 20px;font-weight:900;font-size:13px;cursor:pointer;';
+            btnX.onclick = function(e) { e.stopPropagation(); ov.remove(); btnX.remove(); };
             document.body.appendChild(btnX);
-            // Limpiar botón cuando se cierre el overlay
+
             const origRemove = ov.remove.bind(ov);
             ov.remove = function() { btnX.remove(); origRemove(); };
-            ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
 
-            // Spinner de carga
+            // Contador de imágenes
+            const counter = document.createElement('div');
+            counter.style.cssText = 'color:#94a3b8;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;';
+
+            // Contenedor imagen
+            const imgWrap = document.createElement('div');
+            imgWrap.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:100%;max-height:80vh;';
+
             const spin = document.createElement('div');
-            spin.style.cssText = 'color:#64748b;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;';
+            spin.style.cssText = 'color:#64748b;font-size:11px;font-weight:900;text-transform:uppercase;';
             spin.textContent = '⏳ Cargando...';
-            ov.appendChild(spin);
 
             const img = document.createElement('img');
-            img.style.cssText = 'max-width:100%;max-height:85vh;object-fit:contain;border-radius:10px;display:block;';
-            img.onload = function() { spin.remove(); };
-            img.onerror = function() {
-                if (img.src !== srcFallback) {
-                    img.src = srcFallback;
-                } else {
-                    spin.remove();
-                    const err = document.createElement('div');
-                    err.style.cssText = 'color:#94a3b8;text-align:center;';
-                    err.innerHTML = '<p style="margin-bottom:10px;font-size:13px;">No se puede previsualizar.</p>'
-                        + '<a href="' + srcFallback + '" target="_blank" style="color:#60a5fa;font-weight:900;font-size:13px;">📄 Abrir en nueva pestaña ↗</a>';
-                    ov.appendChild(err);
-                }
-            };
-            img.src = srcHQ;
-            ov.appendChild(img);
+            img.style.cssText = 'max-width:90%;max-height:78vh;object-fit:contain;border-radius:10px;display:block;';
+
+            function cargarTicket(i) {
+                const t = tks[i];
+                const src = resolverUrl(t);
+                counter.textContent = tks.length > 1 ? `Imagen ${i+1} de ${tks.length}` : '';
+                spin.style.display = 'block';
+                img.style.display = 'none';
+                img.onload = function() { spin.style.display = 'none'; img.style.display = 'block'; };
+                img.onerror = function() {
+                    spin.style.display = 'none';
+                    if (img.src !== t) { img.src = t; } else {
+                        imgWrap.innerHTML = `<div style="color:#94a3b8;text-align:center;"><p style="margin-bottom:10px;">No se puede previsualizar.</p><a href="${t}" target="_blank" style="color:#60a5fa;font-weight:900;">📄 Abrir en nueva pestaña ↗</a></div>`;
+                    }
+                };
+                img.src = src;
+                // Actualizar botones nav
+                btnPrev.style.opacity = i > 0 ? '1' : '0.2';
+                btnNext.style.opacity = i < tks.length-1 ? '1' : '0.2';
+                btnPrev.disabled = i === 0;
+                btnNext.disabled = i === tks.length-1;
+            }
+
+            imgWrap.appendChild(spin);
+            imgWrap.appendChild(img);
+
+            // Miniaturas (si hay más de 1)
+            const thumbsRow = document.createElement('div');
+            thumbsRow.style.cssText = 'display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center;';
+            if (tks.length > 1) {
+                tks.forEach((t, i) => {
+                    const th = document.createElement('div');
+                    th.style.cssText = `width:44px;height:44px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ${i===idx?'#10b981':'#334155'};flex-shrink:0;`;
+                    th.innerHTML = `<img src="${resolverUrl(t)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`;
+                    th.onclick = function() {
+                        idx = i;
+                        cargarTicket(idx);
+                        thumbsRow.querySelectorAll('div').forEach((d,j) => d.style.borderColor = j===i?'#10b981':'#334155');
+                    };
+                    thumbsRow.appendChild(th);
+                });
+            }
+
+            // Botones prev/next
+            const navRow = document.createElement('div');
+            navRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
+            const btnPrev = document.createElement('button');
+            const btnNext = document.createElement('button');
+            const navBtnStyle = 'padding:7px 18px;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:8px;font-weight:900;font-size:13px;cursor:pointer;';
+            btnPrev.style.cssText = navBtnStyle;
+            btnNext.style.cssText = navBtnStyle;
+            btnPrev.textContent = '◀ Anterior';
+            btnNext.textContent = 'Siguiente ▶';
+            btnPrev.onclick = function() { if (idx > 0) { idx--; cargarTicket(idx); thumbsRow.querySelectorAll('div').forEach((d,j)=>d.style.borderColor=j===idx?'#10b981':'#334155'); } };
+            btnNext.onclick = function() { if (idx < tks.length-1) { idx++; cargarTicket(idx); thumbsRow.querySelectorAll('div').forEach((d,j)=>d.style.borderColor=j===idx?'#10b981':'#334155'); } };
+
+            if (tks.length > 1) { navRow.appendChild(btnPrev); navRow.appendChild(btnNext); }
+
+            ov.appendChild(counter);
+            ov.appendChild(imgWrap);
+            ov.appendChild(thumbsRow);
+            ov.appendChild(navRow);
+            document.body.appendChild(ov);
+
+            cargarTicket(idx);
         };
 
         window.verTicketProvDirecto = function(encodedUrl, idPago, ti) {
@@ -9025,84 +9041,71 @@ function eliminarItemCompra(itemId){
 
 
         // ─── TICKET ADJUNTO ───────────────────────────────────────────
-        let _ticketDataCompra = null; // base64 o null
+        let _ticketsNuevaCompra = []; // array de { data, nombre } — multi-imagen
         let _camaraStream = null;
 
-        function cargarTicketArchivo(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                _ticketDataCompra = e.target.result; // base64 dataURL
-                mostrarPreviewTicket(file.type, e.target.result, file.name);
-            };
-            reader.readAsDataURL(file);
-            input.value = '';
-        }
+        // ─── TICKETS NUEVA COMPRA (multi-imagen) ─────────────────────────────
+        let _ticketsNuevaCompra = []; // array de { data, nombre }
 
-        function mostrarPreviewTicket(tipo, dataUrl, nombre) {
-            const inner = document.getElementById('ticketPreviewInner');
-            if (tipo === 'application/pdf') {
-                inner.innerHTML = `<div style="padding:14px;text-align:center;">
-                    <div style="font-size:32px;">📄</div>
-                    <div style="color:#94a3b8;font-size:10px;font-weight:900;margin-top:4px;text-transform:uppercase;">${nombre||'Ticket PDF'}</div>
+        function renderTicketGridNuevaCompra() {
+            const grid = document.getElementById('ticketGridNuevaCompra');
+            if (!grid) return;
+            if (_ticketsNuevaCompra.length === 0) { grid.innerHTML = ''; return; }
+            grid.innerHTML = _ticketsNuevaCompra.map((t, i) => {
+                const isPdf = t.data.startsWith('data:application/pdf');
+                const thumb = isPdf
+                    ? `<div style="width:100%;height:54px;display:flex;align-items:center;justify-content:center;background:#1e293b;font-size:20px;border-radius:6px;">📄</div>`
+                    : `<img src="${t.data}" style="width:100%;height:54px;object-fit:cover;border-radius:6px;">`;
+                return `<div style="position:relative;border:1px solid #334155;border-radius:8px;overflow:hidden;cursor:pointer;" onclick="verTicketNuevaCompraIdx(${i})">
+                    ${thumb}
+                    <button onclick="event.stopPropagation();quitarTicketNuevaCompra(${i})" style="position:absolute;top:2px;right:2px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:4px;width:16px;height:16px;font-size:9px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                    <p style="font-size:7px;color:#475569;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.nombre}</p>
                 </div>`;
-            } else {
-                inner.innerHTML = `<img src="${dataUrl}" style="width:100%;max-height:160px;object-fit:contain;border-radius:6px;">`;
-            }
-            document.getElementById('ticketPreview').classList.remove('hidden');
-            document.getElementById('ticketBotones').classList.add('hidden');
+            }).join('');
         }
 
-        function quitarTicket() {
-            _ticketDataCompra = null;
-            document.getElementById('ticketPreview').classList.add('hidden');
-            document.getElementById('ticketBotones').classList.remove('hidden');
-            document.getElementById('ticketPreviewInner').innerHTML = '';
-        }
+        window.cargarTicketsNuevaCompra = function(input) {
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    _ticketsNuevaCompra.push({ data: e.target.result, nombre: file.name });
+                    renderTicketGridNuevaCompra();
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
+        };
 
-        function abrirCamaraTicket() {
-            const container = document.getElementById('camaraContainer');
-            container.classList.remove('hidden');
-            document.getElementById('ticketBotones').classList.add('hidden');
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(stream => {
-                    _camaraStream = stream;
-                    document.getElementById('camaraVideo').srcObject = stream;
-                })
-                .catch(() => {
-                    navigator.mediaDevices.getUserMedia({ video: true })
-                        .then(stream => { _camaraStream = stream; document.getElementById('camaraVideo').srcObject = stream; })
-                        .catch(() => { mostrarToast('No se pudo acceder a la cámara', 'error'); cerrarCamaraTicket(); });
-                });
-        }
+        window.quitarTicketNuevaCompra = function(idx) {
+            _ticketsNuevaCompra.splice(idx, 1);
+            renderTicketGridNuevaCompra();
+        };
 
-        function capturarFotoTicket() {
-            const video = document.getElementById('camaraVideo');
-            const canvas = document.getElementById('camaraCanvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            _ticketDataCompra = dataUrl;
-            mostrarPreviewTicket('image/jpeg', dataUrl, 'Foto');
-            cerrarCamaraTicket();
-        }
+        window.verTicketNuevaCompraIdx = function(idx) {
+            const t = _ticketsNuevaCompra[idx];
+            if (!t) return;
+            const overlay = document.getElementById('modalTicketViewer');
+            const inner   = document.getElementById('ticketViewerInner');
+            if (!overlay || !inner) return;
+            document.getElementById('ticketViewerTitulo').textContent = t.nombre || 'Ticket';
+            inner.innerHTML = t.data.startsWith('data:application/pdf')
+                ? `<iframe src="${t.data}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`
+                : `<img src="${t.data}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'flex';
+        };
 
-        function cerrarCamaraTicket() {
-            if (_camaraStream) { _camaraStream.getTracks().forEach(t => t.stop()); _camaraStream = null; }
-            document.getElementById('camaraContainer').classList.add('hidden');
-            if (!_ticketDataCompra) document.getElementById('ticketBotones').classList.remove('hidden');
-        }
-
-        function resetTicketUI() {
-            _ticketDataCompra = null;
-            cerrarCamaraTicket();
-            document.getElementById('ticketPreview').classList.add('hidden');
-            document.getElementById('ticketBotones').classList.remove('hidden');
-            document.getElementById('ticketPreviewInner').innerHTML = '';
-        }
-        // ─── FIN TICKET ADJUNTO ───────────────────────────────────────
+        // Mantener compatibilidad con código viejo
+        function cargarTicketArchivo(input) { cargarTicketsNuevaCompra(input); }
+        function quitarTicket() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
+        function resetTicketUI() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
+        // _ticketDataCompra sigue existiendo para compatibilidad con confirmarCompra
+        Object.defineProperty(window, '_ticketDataCompra', {
+            get: () => _ticketsNuevaCompra.length > 0 ? _ticketsNuevaCompra[0].data : null,
+            set: () => {},
+            configurable: true
+        });
+        // ─── FIN TICKETS NUEVA COMPRA ─────────────────────────────────────────
         function confirmarCompra() {
 
     if (carritoCompra.length === 0) {
@@ -9147,10 +9150,10 @@ const fecha =
     
 
     // Capturar copia del carrito ANTES de cerrar/resetear (el cierre puede vaciarlo)
-    const _carritoSnapshot = carritoCompra.map(c => Object.assign({}, c));
-    const _totalSnapshot   = total;
+    const _carritoSnapshot  = carritoCompra.map(c => Object.assign({}, c));
+    const _totalSnapshot    = total;
     const _efectivoSnapshot = efectivo;
-    const _ticketSnapshot  = _ticketDataCompra; // ← capturar ticket ANTES de que resetTicketUI lo borre
+    const _ticketsSnapshot  = _ticketsNuevaCompra.slice(); // capturar array ANTES de resetear
 
     cerrarNuevaCompra();
     resetTicketUI();
@@ -9159,13 +9162,11 @@ const fecha =
     mostrarToast(`✓ Compra de $${Utils.fmt(total)} registrada`);
 
     // Envío a Sheets
-    function _construirYEnviarCompra(ticketUrl) {
+    function _construirYEnviarCompra(ticketsUrls) {
         setTimeout(() => {
 
 const idCompraLocal = 'C-' + Date.now();
 
-// Construir productos con cálculo correcto: PAGO TOTAL = cantidad × costo
-// PAGO EFECTIVO y PAGO CREDITO proporcionales al total pagado
 const productosPayload = _carritoSnapshot.map(c => {
     const prod = _sheetProductos.find(p => p.id === c.id) || {};
     const costoFinal    = c.costoModificado ? c.costo : (prod.costo || c.costo || 0);
@@ -9194,24 +9195,29 @@ const payload = {
     fecha,
     fechaISO:      fecha,
     proveedor,
-    ticket:        ticketUrl || null,
+    ticket:        ticketsUrls[0] || null,
+    tickets:       ticketsUrls,
     productos:     productosPayload
 };
 
-// usar la función con reintento
 enviarCompraSheets(payload);
 
         }, 0);
     } // fin _construirYEnviarCompra
 
-    // Si hay ticket base64, subirlo a ImgBB primero (alta calidad)
-    if (_ticketSnapshot && _ticketSnapshot.startsWith('data:')) {
-        mostrarToast('⏳ Subiendo ticket...');
-        subirTicketImgBB(_ticketSnapshot, function(url) {
-            _construirYEnviarCompra(url || _ticketSnapshot);
+    // Subir todos los tickets base64 a ImgBB en paralelo
+    const base64Tickets = _ticketsSnapshot.filter(t => t.data && t.data.startsWith('data:'));
+    const urlTickets    = _ticketsSnapshot.filter(t => t.data && t.data.startsWith('http')).map(t => t.data);
+
+    if (base64Tickets.length > 0) {
+        mostrarToast('⏳ Subiendo tickets...');
+        Promise.all(base64Tickets.map(t => new Promise(resolve => {
+            subirTicketImgBB(t.data, url => resolve(url || t.data));
+        }))).then(urls => {
+            _construirYEnviarCompra([...urlTickets, ...urls]);
         });
     } else {
-        _construirYEnviarCompra(_ticketSnapshot);
+        _construirYEnviarCompra(urlTickets);
     }
 }
 
