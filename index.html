@@ -9045,7 +9045,6 @@ function eliminarItemCompra(itemId){
         let _camaraStream = null;
 
         // ─── TICKETS NUEVA COMPRA (multi-imagen) ─────────────────────────────
-        let _ticketsNuevaCompra = []; // array de { data, nombre }
 
         function renderTicketGridNuevaCompra() {
             const grid = document.getElementById('ticketGridNuevaCompra');
@@ -9099,12 +9098,6 @@ function eliminarItemCompra(itemId){
         function cargarTicketArchivo(input) { cargarTicketsNuevaCompra(input); }
         function quitarTicket() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         function resetTicketUI() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
-        // _ticketDataCompra sigue existiendo para compatibilidad con confirmarCompra
-        Object.defineProperty(window, '_ticketDataCompra', {
-            get: () => _ticketsNuevaCompra.length > 0 ? _ticketsNuevaCompra[0].data : null,
-            set: () => {},
-            configurable: true
-        });
         // ─── FIN TICKETS NUEVA COMPRA ─────────────────────────────────────────
         function confirmarCompra() {
 
