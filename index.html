@@ -8838,7 +8838,8 @@ function revisarVencimientos(){
     _sheetProductos.forEach(p => {
         const venc = String(p.vencimiento || '').trim();
         if (!venc) return; // sin fecha → ignorar
-        if ((Number(p.stock) || 0) <= 0) return; // sin stock → ignorar
+        const stockReal = p.stockCalculado ?? Number(p.stock) ?? 0;
+        if (stockReal <= 0) return; // sin stock → ignorar
 
         const fechaVenc = new Date(venc);
         if (isNaN(fechaVenc.getTime())) return; // fecha inválida → ignorar
@@ -8854,7 +8855,10 @@ function revisarVencimientos(){
         }
     });
 
-    mostrarAlertasVencimiento(porVencer, vencidos);
+    mostrarAlertasVencimiento(
+        porVencer.sort((a, b) => a.dias - b.dias),
+        vencidos.sort((a, b) => new Date(a.vencimiento) - new Date(b.vencimiento))
+    );
 }
 
 
