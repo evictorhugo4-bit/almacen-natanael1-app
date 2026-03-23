@@ -1809,13 +1809,13 @@ GUARDAR PRODUCTO
                 </div>
                 <!-- Tabs -->
                 <div class="flex gap-2 flex-wrap">
+                    <button id="tabBtnHojaRuta" onclick="switchStatsTab('hojaRuta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🗺️ Hoja de Ruta</button>
                     <button id="tabBtnResumen" onclick="switchStatsTab('resumen')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Resumen</button>
                     <button id="tabBtnProveedor" onclick="switchStatsTab('proveedor')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Proveedor</button>
                     <button id="tabBtnCaja" onclick="switchStatsTab('caja')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💰 Caja</button>
                     <button id="tabBtnVentas" onclick="switchStatsTab('ventas')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-emerald-500 text-black btn-action">Ventas</button>
                     <button id="tabBtnProductos" onclick="switchStatsTab('productos')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Productos</button>
                     <button id="tabBtnRegistros" onclick="switchStatsTab('registros')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Registros</button>
-                    <button id="tabBtnHojaRuta" onclick="switchStatsTab('hojaRuta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🗺️ Hoja de Ruta</button>
                 </div>
             </div>
             <!-- Filtros fecha (solo ventas) -->
@@ -2198,6 +2198,72 @@ GUARDAR PRODUCTO
             </div>
         </div>
 
+        <!-- TAB: HOJA DE RUTA -->
+        <div id="tabHojaRuta" class="hidden space-y-4">
+            <div class="glass-card rounded-2xl p-4 border border-slate-700">
+                <div class="flex flex-wrap gap-2 items-center justify-between mb-3">
+                    <span class="text-xs font-black text-slate-300 uppercase tracking-widest">Hoja de Ruta</span>
+                    <div class="flex gap-2">
+                        <button id="hrBtnPersonal" onclick="hrSwitchModo('personal')" class="px-4 py-1.5 rounded-xl font-black text-xs uppercase bg-emerald-500 text-black btn-action">Personal</button>
+                        <button id="hrBtnNegocio" onclick="hrSwitchModo('negocio')" class="px-4 py-1.5 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Negocio</button>
+                    </div>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <button id="hrBtnEfectivo" onclick="hrSwitchPago('efectivo')" class="px-3 py-1 rounded-xl font-black text-[10px] uppercase bg-emerald-500 text-black btn-action">Efectivo</button>
+                    <button id="hrBtnCredito" onclick="hrSwitchPago('credito')" class="px-3 py-1 rounded-xl font-black text-[10px] uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Crédito</button>
+                    <button id="hrBtnTotal" onclick="hrSwitchPago('total')" class="px-3 py-1 rounded-xl font-black text-[10px] uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Total</button>
+                </div>
+            </div>
+            <div id="hrPersonal" class="space-y-4">
+                <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
+                    <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label><input type="date" id="hrDesde" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label><input type="date" id="hrHasta" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
+                    <button onclick="renderHojaRuta()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
+                </div>
+                <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
+                    <div class="flex flex-wrap gap-4 justify-around text-center">
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Efectivo</div><div id="hrGanEfectivo" class="text-lg font-black text-emerald-400">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Crédito</div><div id="hrGanCredito" class="text-lg font-black text-blue-400">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Total</div><div id="hrGanTotal" class="text-lg font-black text-amber-400">$ 0</div></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(16,185,129,0.1);"><span class="text-xs font-black text-emerald-400 uppercase tracking-widest">📥 Ingresos</span></div>
+                        <table class="w-full text-xs"><tbody id="hrIngresosBody"><tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr></tbody>
+                        <tfoot><tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);"><td class="px-4 py-2 font-black text-xs text-emerald-400 uppercase">TOTAL:</td><td id="hrIngresosTotalCell" class="px-4 py-2 font-black text-xs text-emerald-400 text-right">$ 0</td></tr></tfoot></table>
+                    </div>
+                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(239,68,68,0.08);"><span class="text-xs font-black text-red-400 uppercase tracking-widest">📤 Egresos</span></div>
+                        <table class="w-full text-xs"><tbody id="hrEgresosBody"><tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr></tbody>
+                        <tfoot><tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);"><td class="px-4 py-2 font-black text-xs text-red-400 uppercase">TOTAL:</td><td id="hrEgresosTotalCell" class="px-4 py-2 font-black text-xs text-red-400 text-right">$ 0</td></tr></tfoot></table>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-4 border border-slate-700">
+                    <div class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3">🍽️ Comida Familiar</div>
+                    <div class="flex flex-wrap gap-4 justify-around text-center">
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Efectivo</div><div id="hrComidaEf" class="text-sm font-black text-slate-200">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Crédito</div><div id="hrComidaCr" class="text-sm font-black text-slate-200">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Total</div><div id="hrComidaTo" class="text-sm font-black text-slate-200">$ 0</div></div>
+                    </div>
+                </div>
+            </div>
+            <div id="hrNegocio" class="hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(16,185,129,0.1);"><span class="text-xs font-black text-emerald-400 uppercase tracking-widest">📈 Ventas / Ingresos Negocio</span></div>
+                        <table class="w-full text-xs"><tbody id="hrVentasBody"><tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr></tbody>
+                        <tfoot><tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);"><td class="px-4 py-2 font-black text-xs text-emerald-400 uppercase">TOTAL:</td><td id="hrVentasTotalCell" class="px-4 py-2 font-black text-xs text-emerald-400 text-right">$ 0</td></tr></tfoot></table>
+                    </div>
+                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(239,68,68,0.08);"><span class="text-xs font-black text-red-400 uppercase tracking-widest">📉 Compras / Egresos Negocio</span></div>
+                        <table class="w-full text-xs"><tbody id="hrComprasBody"><tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr></tbody>
+                        <tfoot><tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);"><td class="px-4 py-2 font-black text-xs text-red-400 uppercase">TOTAL:</td><td id="hrComprasTotalCell" class="px-4 py-2 font-black text-xs text-red-400 text-right">$ 0</td></tr></tfoot></table>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /tabHojaRuta -->
+
         <div id="tabProductos" class="hidden space-y-5">
 
             <!-- STOCK POR PROVEEDOR -->
@@ -2440,160 +2506,6 @@ GUARDAR PRODUCTO
             </div>
             <div id="tablaRegistrosTotales" class="grid grid-cols-3 gap-3"></div>
         </div>
-
-        <!-- TAB: HOJA DE RUTA -->
-        <div id="tabHojaRuta" class="hidden space-y-4">
-            <!-- Selector Personal / Negocio -->
-            <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                <div class="flex flex-wrap gap-2 items-center justify-between mb-3">
-                    <span class="text-xs font-black text-slate-300 uppercase tracking-widest">Hoja de Ruta</span>
-                    <div class="flex gap-2">
-                        <button id="hrBtnPersonal" onclick="hrSwitchModo('personal')" class="px-4 py-1.5 rounded-xl font-black text-xs uppercase bg-emerald-500 text-black btn-action">Personal</button>
-                        <button id="hrBtnNegocio" onclick="hrSwitchModo('negocio')" class="px-4 py-1.5 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Negocio</button>
-                    </div>
-                </div>
-                <!-- Filtro tipo pago -->
-                <div class="flex gap-2 flex-wrap">
-                    <button id="hrBtnEfectivo" onclick="hrSwitchPago('efectivo')" class="px-3 py-1 rounded-xl font-black text-[10px] uppercase bg-emerald-500 text-black btn-action">Efectivo</button>
-                    <button id="hrBtnCredito" onclick="hrSwitchPago('credito')" class="px-3 py-1 rounded-xl font-black text-[10px] uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Crédito</button>
-                    <button id="hrBtnTotal" onclick="hrSwitchPago('total')" class="px-3 py-1 rounded-xl font-black text-[10px] uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Total</button>
-                </div>
-            </div>
-
-            <!-- MODO PERSONAL -->
-            <div id="hrPersonal" class="space-y-4">
-                <!-- Filtros fecha -->
-                <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label>
-                        <input type="date" id="hrDesde" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label>
-                        <input type="date" id="hrHasta" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
-                    </div>
-                    <button onclick="renderHojaRuta()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
-                </div>
-
-                <!-- Ganancia resumen -->
-                <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
-                    <div class="flex flex-wrap gap-4 justify-around text-center">
-                        <div>
-                            <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Efectivo</div>
-                            <div id="hrGanEfectivo" class="text-lg font-black text-emerald-400">$ 0</div>
-                        </div>
-                        <div>
-                            <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Crédito</div>
-                            <div id="hrGanCredito" class="text-lg font-black text-blue-400">$ 0</div>
-                        </div>
-                        <div>
-                            <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Total</div>
-                            <div id="hrGanTotal" class="text-lg font-black text-amber-400">$ 0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tabla Ingresos / Egresos Personal -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- INGRESOS -->
-                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(16,185,129,0.1);">
-                            <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">📥 Ingresos</span>
-                            <span class="text-[9px] text-slate-400 ml-2">(según tipo seleccionado)</span>
-                        </div>
-                        <table class="w-full text-xs">
-                            <tbody id="hrIngresosBody">
-                                <tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr>
-                            </tbody>
-                            <tfoot>
-                                <tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);">
-                                    <td class="px-4 py-2 font-black text-xs text-emerald-400 uppercase">TOTAL:</td>
-                                    <td id="hrIngresosTotalCell" class="px-4 py-2 font-black text-xs text-emerald-400 text-right">$ 0</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    <!-- EGRESOS -->
-                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(239,68,68,0.08);">
-                            <span class="text-xs font-black text-red-400 uppercase tracking-widest">📤 Egresos</span>
-                            <span class="text-[9px] text-slate-400 ml-2">(según tipo seleccionado)</span>
-                        </div>
-                        <table class="w-full text-xs">
-                            <tbody id="hrEgresosBody">
-                                <tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr>
-                            </tbody>
-                            <tfoot>
-                                <tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);">
-                                    <td class="px-4 py-2 font-black text-xs text-red-400 uppercase">TOTAL:</td>
-                                    <td id="hrEgresosTotalCell" class="px-4 py-2 font-black text-xs text-red-400 text-right">$ 0</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Comida Familiar -->
-                <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                    <div class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3">🍽️ Comida Familiar</div>
-                    <div class="flex flex-wrap gap-4 justify-around text-center">
-                        <div>
-                            <div class="text-[9px] font-black text-slate-400 uppercase mb-1">Efectivo</div>
-                            <div id="hrComidaEf" class="text-sm font-black text-slate-200">$ 0</div>
-                        </div>
-                        <div>
-                            <div class="text-[9px] font-black text-slate-400 uppercase mb-1">Crédito</div>
-                            <div id="hrComidaCr" class="text-sm font-black text-slate-200">$ 0</div>
-                        </div>
-                        <div>
-                            <div class="text-[9px] font-black text-slate-400 uppercase mb-1">Total</div>
-                            <div id="hrComidaTo" class="text-sm font-black text-slate-200">$ 0</div>
-                        </div>
-                    </div>
-                </div>
-            </div><!-- /hrPersonal -->
-
-            <!-- MODO NEGOCIO -->
-            <div id="hrNegocio" class="hidden space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- VENTAS / INGRESOS NEGOCIO -->
-                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(16,185,129,0.1);">
-                            <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">📈 Ventas / Ingresos Negocio</span>
-                        </div>
-                        <table class="w-full text-xs">
-                            <tbody id="hrVentasBody">
-                                <tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr>
-                            </tbody>
-                            <tfoot>
-                                <tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);">
-                                    <td class="px-4 py-2 font-black text-xs text-emerald-400 uppercase">TOTAL:</td>
-                                    <td id="hrVentasTotalCell" class="px-4 py-2 font-black text-xs text-emerald-400 text-right">$ 0</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    <!-- COMPRAS / EGRESOS NEGOCIO -->
-                    <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(239,68,68,0.08);">
-                            <span class="text-xs font-black text-red-400 uppercase tracking-widest">📉 Compras / Egresos Negocio</span>
-                        </div>
-                        <table class="w-full text-xs">
-                            <tbody id="hrComprasBody">
-                                <tr><td colspan="2" class="py-3 px-4 text-slate-500 text-center text-[10px]">Cargando...</td></tr>
-                            </tbody>
-                            <tfoot>
-                                <tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);">
-                                    <td class="px-4 py-2 font-black text-xs text-red-400 uppercase">TOTAL:</td>
-                                    <td id="hrComprasTotalCell" class="px-4 py-2 font-black text-xs text-red-400 text-right">$ 0</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div><!-- /hrNegocio -->
-
-        </div><!-- /tabHojaRuta -->
 
     </div><!-- /vistaEstadisticas -->
 
@@ -7514,32 +7426,27 @@ clienteDetalleId = null;
                 return s + Math.max(0, (parseFloat(v.deuda)||0) - pagV);
             }, 0);
 
-            // Préstamos con saldo pendiente
-            const _pvSet = new Set();
-            const pagoEgrAll_pdf = [...(_pagoEgrNegSheet||[]), ...(_sheetPagoEgrNeg||[])].filter(p => {
-                const k = String(p.id||p.IDPAGOEGRESOSNEGOCIO||'').trim();
-                if (k && _pvSet.has(k)) return false; if (k) _pvSet.add(k); return true;
-            });
-            const egresosTodos_pdf = typeof _sheetEgresosNegocio !== 'undefined' ? _sheetEgresosNegocio : [];
-            const egSheet_pdf = egresosTodos_pdf.filter(e => e.idSheet && e.idCliente);
-            const haySheet_pdf = egSheet_pdf.some(e => String(e.idCliente).trim() === idCl_pdf);
-            const fuenteEgr_pdf = haySheet_pdf ? egSheet_pdf : egresosTodos_pdf;
-            const vistosEgr = new Set();
-            const egresosCliente_pdf = fuenteEgr_pdf.filter(e => {
+            // Préstamos con saldo pendiente — vienen de INGRESOS NEGOCIO (igual que abrirDetalleCliente)
+            const ingNegTodos_pdf = typeof _sheetIngresosNegocio !== 'undefined' ? _sheetIngresosNegocio : [];
+            const _ingNegVistos_pdf = new Set();
+            const ingNegCliente_pdf = ingNegTodos_pdf.filter(e => {
                 const eIdCl = String(e.idCliente||'').trim();
                 const eNom  = String(e.cliente||'').trim().toUpperCase();
-                if (!((eIdCl && eIdCl===idCl_pdf)||(!eIdCl && eNom===nomCl_pdf))) return false;
+                if (!((eIdCl && eIdCl===idCl_pdf)||(eNom && eNom===nomCl_pdf))) return false;
                 const key = String(e.idSheet||(e.fechaISO+'|'+e.credito));
-                if (vistosEgr.has(key)) return false; vistosEgr.add(key); return true;
+                if (_ingNegVistos_pdf.has(key)) return false; _ingNegVistos_pdf.add(key); return true;
             });
-            const prestamosConSaldo = egresosCliente_pdf
+            const prestamosConSaldo = ingNegCliente_pdf
                 .filter(e => (parseFloat(e.credito)||0) > 0)
                 .map(e => {
-                    const idEgr = String(e.idSheet||'').trim();
+                    const idIng = String(e.idSheet||'').trim();
                     const credito = parseFloat(e.credito)||0;
-                    const pagado = pagoEgrAll_pdf
-                        .filter(p => String(p.idCliente||'').trim()===idCl_pdf && (!idEgr||!String(p.idEgresoNeg||'').trim()||String(p.idEgresoNeg||'').trim()===idEgr))
-                        .reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+                    const pagado = (_sheetPagoIngNeg||[])
+                        .filter(p => {
+                            const pIdIng = String(p.IDINGRESOSNEGOCIO||p.idIngNeg||'').trim();
+                            return !idIng || !pIdIng || pIdIng === idIng;
+                        })
+                        .reduce((s,p)=>s+(parseFloat(p.MONTO||p.monto)||0),0);
                     return {...e, saldoPend: Math.max(0, credito-pagado)};
                 })
                 .filter(e => e.saldoPend > 0);
@@ -14801,6 +14708,7 @@ console.log("FILTRADAS:", filtradas.length);
             });
 
             let vTotal=0, vEf=0, vCr=0, vGanTotal=0, vGanEf=0, vGanCr=0, vCnt=0;
+            let vGanCrTodas=0; // ganancia a crédito de TODAS las ventas del período (sin filtro efectivo/crédito)
             const _ventasIdVistas = new Set();
             const _debugVentas = []; // para consola
 
@@ -14833,6 +14741,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const cobradoEf   = ef + pagosVenta;
                 const ganEfVenta  = cobradoEf > dineroRecup ? Math.min(cobradoEf - dineroRecup, ganBruta) : 0;
                 const ganCrVenta  = Math.max(0, ganBruta - ganEfVenta);
+                // Acumular ganancia crédito de TODAS las ventas (sin filtro)
+                if (!esClienteEsp) vGanCrTodas += ganCrVenta;
 
                 if (_resumenFiltro === 'credito'  && (cr <= 0 || esPagadoCr)) return;
                 if (_resumenFiltro === 'efectivo' && ef <= 0) return;
@@ -15119,7 +15029,17 @@ console.log("FILTRADAS:", filtradas.length);
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div class="text-center"><p class="text-[8px] font-black text-emerald-400 uppercase">Total Entradas</p><p class="text-xl font-black text-emerald-400 font-mono">$${Utils.fmt(totalEntradas)}</p></div>
                         <div class="text-center"><p class="text-[8px] font-black text-red-400 uppercase">Total Salidas</p><p class="text-xl font-black text-red-400 font-mono">$${Utils.fmt(totalSalidas)}</p></div>
-                        <div class="text-center"><p class="text-[8px] font-black text-amber-400 uppercase">Balance</p><p class="text-xl font-black font-mono" style="color:${balance>=0?'#10b981':'#ef4444'}">$${Utils.fmt(balance)}</p></div>
+                        <div class="text-center">
+                            ${(_cat==='negocio' && _resumenFiltro==='credito' && balance<0) ? `
+                                <p class="text-[8px] font-black text-purple-400 uppercase">👤 Préstamo de Personal</p>
+                                <p class="text-xl font-black font-mono text-purple-400">$${Utils.fmt(Math.abs(balance))}</p>
+                                <p class="text-[7px] text-slate-500 mt-1">Negocio tomó del personal</p>
+                            ` : `
+                                <p class="text-[8px] font-black text-amber-400 uppercase">Balance</p>
+                                <p class="text-xl font-black font-mono" style="color:${balance>=0?'#10b981':'#ef4444'}">$${Utils.fmt(balance)}</p>
+                                ${_cat==='personal' && _resumenFiltro==='efectivo' ? `<p class="text-[8px] font-black text-slate-400 mt-1">(Cr: $${Utils.fmt(vGanCrTodas)})</p>` : ''}
+                            `}
+                        </div>
                         <div class="text-center"><p class="text-[8px] font-black text-slate-400 uppercase">Ventas (cant)</p><p class="text-xl font-black text-white font-mono">${vCnt}</p></div>
                     </div>
                 </div>`
@@ -15849,6 +15769,169 @@ console.log("FILTRADAS:", filtradas.length);
         }
         // ── FIN CAJA & PROVEEDORES ─────────────────────────────────────────
 
+        /* ══════════════════════════════════════════
+           HOJA DE RUTA
+        ══════════════════════════════════════════ */
+        let _hrModo = 'personal';
+        let _hrPago = 'efectivo';
+
+        function hrSwitchModo(modo) {
+            _hrModo = modo;
+            const btnP = document.getElementById('hrBtnPersonal');
+            const btnN = document.getElementById('hrBtnNegocio');
+            if (btnP) btnP.className = 'px-4 py-1.5 rounded-xl font-black text-xs uppercase btn-action ' + (modo==='personal'?'bg-emerald-500 text-black':'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            if (btnN) btnN.className = 'px-4 py-1.5 rounded-xl font-black text-xs uppercase btn-action ' + (modo==='negocio'?'bg-emerald-500 text-black':'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            const pEl = document.getElementById('hrPersonal');
+            const nEl = document.getElementById('hrNegocio');
+            if (pEl) pEl.classList.toggle('hidden', modo!=='personal');
+            if (nEl) nEl.classList.toggle('hidden', modo!=='negocio');
+            renderHojaRuta();
+        }
+
+        function hrSwitchPago(tipo) {
+            _hrPago = tipo;
+            ['Efectivo','Credito','Total'].forEach(t => {
+                const btn = document.getElementById('hrBtn'+t);
+                if (btn) btn.className = 'px-3 py-1 rounded-xl font-black text-[10px] uppercase btn-action ' + (tipo===t.toLowerCase()?'bg-emerald-500 text-black':'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            });
+            renderHojaRuta();
+        }
+
+        function hrSetHoy() {
+            const hoy = new Date();
+            const fmt = d => d.toISOString().split('T')[0];
+            const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const dEl = document.getElementById('hrDesde');
+            const hEl = document.getElementById('hrHasta');
+            if (dEl) dEl.value = fmt(inicio);
+            if (hEl) hEl.value = fmt(hoy);
+            renderHojaRuta();
+        }
+
+        function _hrGetVal(row, tipo) {
+            const ef  = parseFloat(row.efectivo||row.pagoEfectivo||0)||0;
+            const cr  = parseFloat(row.credito||row.deuda||row.pagoCredito||0)||0;
+            const tot = parseFloat(row.total||0)||(ef+cr);
+            if (tipo==='efectivo') return ef;
+            if (tipo==='credito')  return cr;
+            return tot;
+        }
+
+        function _hrFmt(n) {
+            return '$ '+(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        }
+
+        function _hrFiltrarPorFecha(arr, campoFecha) {
+            const dEl = document.getElementById('hrDesde');
+            const hEl = document.getElementById('hrHasta');
+            if (!dEl?.value||!hEl?.value) return arr;
+            const fdNum = parseFechaNum(dEl.value);
+            const fhNum = parseFechaNum(hEl.value+'T23:59:59');
+            return arr.filter(r => {
+                const raw = r[campoFecha]||r.fechaISO||r.fecha||'';
+                const fnum = parseFechaNum(raw);
+                if (!fnum) return false;
+                if (fdNum&&fnum<fdNum) return false;
+                if (fhNum&&fnum>fhNum) return false;
+                return true;
+            });
+        }
+
+        function _buildCatRows(arr, pago) {
+            const cats = {};
+            arr.forEach(r => {
+                const cat = (r.categoria||r.cat||r.producto||r.descripcion||'Sin categoría').trim();
+                cats[cat] = (cats[cat]||0) + _hrGetVal(r,pago);
+            });
+            return Object.entries(cats).map(([label,val])=>({label,val})).sort((a,b)=>b.val-a.val);
+        }
+
+        function renderHojaRuta() {
+            try {
+                const modo = _hrModo;
+                const pago = _hrPago;
+                const todasVentas = typeof historial!=='undefined'
+                    ? [...historial,  ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))]
+                    : (_sheetVentas||[]);
+                const ventas      = _hrFiltrarPorFecha(todasVentas,              'fechaISO');
+                const compras     = _hrFiltrarPorFecha(_sheetCompras||[],         'fechaISO');
+                const ingresos    = _hrFiltrarPorFecha(_sheetIngresos||[],        'fechaISO');
+                const egresos     = _hrFiltrarPorFecha(_sheetEgresos||[],         'fechaISO');
+                const ingresosNeg = _hrFiltrarPorFecha(_sheetIngresosNegocio||[], 'fechaISO');
+                const egresosNeg  = _hrFiltrarPorFecha(_sheetEgresosNegocio||[],  'fechaISO');
+
+                if (modo==='personal') {
+                    let _hrGanTotal=0,_hrGanEf=0,_hrGanCr=0;
+                    const _hrVistasIds = new Set();
+                    const _hrPagosV = {};
+                    (_pagoVentasSheet||[]).forEach(p=>{const idV=String(p.idVenta||p.IDVENTAS||'').trim();if(idV)_hrPagosV[idV]=(_hrPagosV[idV]||0)+Number(p.monto||p.MONTO||0);});
+                    ventas.forEach(v=>{
+                        if(_hrVistasIds.has(v.id))return; _hrVistasIds.add(v.id);
+                        const total=Number(v.total||0),ef=Number(v.efectivo||0);
+                        const costoV=(v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                        const dinRec=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+                        const esEsp=['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(String(v.cliente||'').toUpperCase().trim());
+                        const ganBruta=esEsp?0:Math.max(0,total-dinRec);
+                        const cobradoEf=ef+(_hrPagosV[String(v.id)]||0);
+                        const ganEfV=cobradoEf>dinRec?Math.min(cobradoEf-dinRec,ganBruta):0;
+                        const ganCrV=Math.max(0,ganBruta-ganEfV);
+                        _hrGanEf+=ganEfV; _hrGanCr+=ganCrV; _hrGanTotal+=ganEfV+ganCrV;
+                    });
+                    const elGef=document.getElementById('hrGanEfectivo');
+                    const elGcr=document.getElementById('hrGanCredito');
+                    const elGto=document.getElementById('hrGanTotal');
+                    if(elGef)elGef.textContent=_hrFmt(_hrGanEf);
+                    if(elGcr)elGcr.textContent=_hrFmt(_hrGanCr);
+                    if(elGto)elGto.textContent=_hrFmt(_hrGanTotal);
+
+                    const gananciasTotales=pago==='efectivo'?_hrGanEf:pago==='credito'?_hrGanCr:_hrGanTotal;
+                    const ingresosExtra=ingresos.reduce((s,r)=>s+_hrGetVal(r,pago),0);
+                    const ingRows=[{label:'Ganancias Totales',val:gananciasTotales},{label:'Ingresos Extra',val:ingresosExtra}];
+                    const totalIngr=gananciasTotales+ingresosExtra;
+
+                    const _vistasNeg=new Set();
+                    const consumoNeg=ventas.reduce((s,v)=>{
+                        if(_vistasNeg.has(v.id))return s; _vistasNeg.add(v.id);
+                        if(String(v.cliente||'').toUpperCase().trim()!=='CASA ERAZO')return s;
+                        return s+(v.items||[]).reduce((si,i)=>si+Number(i.dineroRecuperado||0),0);
+                    },0);
+                    const consumoFam=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim()==='COMIDA FAMILIAR').reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
+                    const palta=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||r.detalle||r.descripcion||'').toLowerCase().includes('palta')).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
+                    const otrosEgr=egresos.filter(r=>{const c=(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase(),d=(r.detalle||r.descripcion||'').toUpperCase();return c!=='COMIDA FAMILIAR'&&!c.includes('PALTA')&&!d.includes('PALTA');}).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
+                    const egRows=[{label:'Consumo del Negocio',val:consumoNeg},{label:'Consumo Familiar',val:consumoFam},{label:'Palta',val:palta}];
+                    if(otrosEgr>0)egRows.push({label:'Otros Egresos',val:otrosEgr});
+                    const totalEgr=egRows.reduce((s,r)=>s+r.val,0);
+
+                    const rowHtml=(rows,color)=>rows.map(r=>`<tr style="border-bottom:1px solid #1e293b;"><td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td><td class="px-4 py-2.5 text-xs font-black text-right" style="color:${color}">${_hrFmt(r.val)}</td></tr>`).join('');
+                    const ingBody=document.getElementById('hrIngresosBody'); if(ingBody)ingBody.innerHTML=rowHtml(ingRows,'#34d399');
+                    const itc=document.getElementById('hrIngresosTotalCell'); if(itc)itc.textContent=_hrFmt(totalIngr);
+                    const egBody=document.getElementById('hrEgresosBody'); if(egBody)egBody.innerHTML=rowHtml(egRows,'#f87171');
+                    const etc=document.getElementById('hrEgresosTotalCell'); if(etc)etc.textContent=_hrFmt(totalEgr);
+
+                    const comAll=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim()==='COMIDA FAMILIAR');
+                    const cef=document.getElementById('hrComidaEf'),ccr=document.getElementById('hrComidaCr'),cto=document.getElementById('hrComidaTo');
+                    if(cef)cef.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.efectivo||0)||0),0));
+                    if(ccr)ccr.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.credito||0)||0),0));
+                    if(cto)cto.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.total||0)||0),0));
+                } else {
+                    const vtRows=_buildCatRows(ventas,pago);
+                    const cpRows=_buildCatRows(compras,pago);
+                    const ingNegTotal=ingresosNeg.reduce((s,r)=>s+_hrGetVal(r,pago),0);
+                    if(ingNegTotal>0)vtRows.push({label:'Ingresos Negocio',val:ingNegTotal});
+                    const egNegPrest=egresosNeg.filter(r=>(r.categoria||r.supercat||r.cat||'').toLowerCase().includes('prest')).reduce((s,r)=>s+_hrGetVal(r,pago),0);
+                    if(egNegPrest>0)cpRows.push({label:'Préstamos',val:egNegPrest});
+                    const egNegOtros=egresosNeg.filter(r=>!(r.categoria||r.supercat||r.cat||'').toLowerCase().includes('prest')).reduce((s,r)=>s+_hrGetVal(r,pago),0);
+                    if(egNegOtros>0)cpRows.push({label:'Egresos Negocio',val:egNegOtros});
+                    const vtBody=document.getElementById('hrVentasBody');
+                    if(vtBody)vtBody.innerHTML=vtRows.length?vtRows.map(r=>`<tr style="border-bottom:1px solid #1e293b;"><td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td><td class="px-4 py-2.5 text-emerald-400 text-xs font-black text-right">${_hrFmt(r.val)}</td></tr>`).join(''):'<tr><td colspan="2" class="px-4 py-4 text-slate-500 text-center text-[10px]">Sin datos</td></tr>';
+                    const vtc=document.getElementById('hrVentasTotalCell'); if(vtc)vtc.textContent=_hrFmt(vtRows.reduce((s,r)=>s+r.val,0));
+                    const cpBody=document.getElementById('hrComprasBody');
+                    if(cpBody)cpBody.innerHTML=cpRows.length?cpRows.map(r=>`<tr style="border-bottom:1px solid #1e293b;"><td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td><td class="px-4 py-2.5 text-red-400 text-xs font-black text-right">${_hrFmt(r.val)}</td></tr>`).join(''):'<tr><td colspan="2" class="px-4 py-4 text-slate-500 text-center text-[10px]">Sin datos</td></tr>';
+                    const cpc=document.getElementById('hrComprasTotalCell'); if(cpc)cpc.textContent=_hrFmt(cpRows.reduce((s,r)=>s+r.val,0));
+                }
+            } catch(e) { console.error('[renderHojaRuta]',e); }
+        }
+
         function switchStatsTab(tab) {
           try {
             _statsTab = tab;
@@ -15868,8 +15951,8 @@ console.log("FILTRADAS:", filtradas.length);
             if(_sb('tabBtnRegistros')) _sb('tabBtnRegistros').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isRegistros ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnProveedor')) _sb('tabBtnProveedor').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isProveedor ? 'bg-blue-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnTarjeta'))   _sb('tabBtnTarjeta').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isTarjeta   ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
-            if(_sb('tabBtnCaja'))      _sb('tabBtnCaja').className      = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCaja      ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnHojaRuta'))  _sb('tabBtnHojaRuta').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isHojaRuta  ? 'bg-orange-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            if(_sb('tabBtnCaja'))      _sb('tabBtnCaja').className      = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCaja      ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
 
             const filtros = document.getElementById('statsFiltrosFecha');
             if (filtros) filtros.classList.toggle('hidden', !isVentas);
@@ -15888,9 +15971,9 @@ console.log("FILTRADAS:", filtradas.length);
             if (tabRegistros) tabRegistros.classList.toggle('hidden', !isRegistros);
             if (tabProveedor) tabProveedor.classList.toggle('hidden', !isProveedor);
             if (tabTarjeta)   tabTarjeta.classList.toggle('hidden', !isTarjeta);
-            if (tabCaja)      tabCaja.classList.toggle('hidden', !isCaja);
-            const tabHojaRuta = document.getElementById('tabHojaRuta');
+            const tabHojaRuta  = document.getElementById('tabHojaRuta');
             if (tabHojaRuta)  tabHojaRuta.classList.toggle('hidden', !isHojaRuta);
+            if (tabCaja)      tabCaja.classList.toggle('hidden', !isCaja);
 
             if (isProductos) renderEstadisticasProductos();
             if (isResumen)   renderResumen();
@@ -15920,279 +16003,18 @@ console.log("FILTRADAS:", filtradas.length);
                 if (!document.getElementById('tcDesde')?.value) tcSetPeriodo(30);
                 else renderTarjetaCredito();
             }
-            if (isCaja) {
-                if (!document.getElementById('cajaDesde')?.value) cajaSetHoy();
-                else renderCaja();
-            }
             if (isHojaRuta) {
                 if (!document.getElementById('hrDesde')?.value) hrSetHoy();
                 else renderHojaRuta();
+            }
+            if (isCaja) {
+                if (!document.getElementById('cajaDesde')?.value) cajaSetHoy();
+                else renderCaja();
             }
           } catch(err) {
             console.error('[switchStatsTab] ERROR:', err);
             mostrarToast('Error al cambiar tab: ' + err.message, 'error');
           }
-        }
-
-        /* ══════════════════════════════════════════
-           HOJA DE RUTA
-        ══════════════════════════════════════════ */
-        let _hrModo = 'personal'; // 'personal' | 'negocio'
-        let _hrPago = 'efectivo'; // 'efectivo' | 'credito' | 'total'
-
-        function hrSwitchModo(modo) {
-            _hrModo = modo;
-            const btnP = document.getElementById('hrBtnPersonal');
-            const btnN = document.getElementById('hrBtnNegocio');
-            if (btnP) btnP.className = 'px-4 py-1.5 rounded-xl font-black text-xs uppercase btn-action ' + (modo === 'personal' ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
-            if (btnN) btnN.className = 'px-4 py-1.5 rounded-xl font-black text-xs uppercase btn-action ' + (modo === 'negocio'  ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
-            const pEl = document.getElementById('hrPersonal');
-            const nEl = document.getElementById('hrNegocio');
-            if (pEl) pEl.classList.toggle('hidden', modo !== 'personal');
-            if (nEl) nEl.classList.toggle('hidden', modo !== 'negocio');
-            renderHojaRuta();
-        }
-
-        function hrSwitchPago(tipo) {
-            _hrPago = tipo;
-            ['Efectivo','Credito','Total'].forEach(t => {
-                const btn = document.getElementById('hrBtn' + t);
-                if (btn) btn.className = 'px-3 py-1 rounded-xl font-black text-[10px] uppercase btn-action ' + (tipo === t.toLowerCase() ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
-            });
-            renderHojaRuta();
-        }
-
-        function hrSetHoy() {
-            const hoy = new Date();
-            const fmt = d => d.toISOString().split('T')[0];
-            const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-            const dEl = document.getElementById('hrDesde');
-            const hEl = document.getElementById('hrHasta');
-            if (dEl) dEl.value = fmt(inicio);
-            if (hEl) hEl.value = fmt(hoy);
-            renderHojaRuta();
-        }
-
-        function _hrGetVal(row, tipo) {
-            const ef  = parseFloat(row.efectivo  || row.pagoEfectivo || 0) || 0;
-            // ventas usan 'deuda' para crédito, ingresos/egresos usan 'credito'
-            const cr  = parseFloat(row.credito   || row.deuda || row.pagoCredito || 0) || 0;
-            const tot = parseFloat(row.total || 0) || (ef + cr);
-            if (tipo === 'efectivo') return ef;
-            if (tipo === 'credito')  return cr;
-            return tot;
-        }
-
-        function _hrFmt(n) {
-            return '$ ' + (n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        function _hrFiltrarPorFecha(arr, campoFecha) {
-            const dEl = document.getElementById('hrDesde');
-            const hEl = document.getElementById('hrHasta');
-            if (!dEl?.value || !hEl?.value) return arr;
-            // Usar parseFechaNum igual que el resto del sistema
-            const fdNum = parseFechaNum(dEl.value); // YYYY-MM-DD → 20260322000000
-            const fhNum = parseFechaNum(hEl.value + 'T23:59:59'); // fin del día → 20260322235959
-            return arr.filter(r => {
-                const raw = r[campoFecha] || r.fechaISO || r.fecha || '';
-                const fnum = parseFechaNum(raw);
-                if (!fnum) return false;
-                if (fdNum && fnum < fdNum) return false;
-                if (fhNum && fnum > fhNum) return false;
-                return true;
-            });
-        }
-
-        function renderHojaRuta() {
-            try {
-                const modo = _hrModo;
-                const pago = _hrPago;
-
-                // Fuentes de datos exactamente igual que renderResumen/renderCaja
-                const todasVentas = typeof historial !== 'undefined'
-                    ? [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))]
-                    : (_sheetVentas||[]);
-
-                const ventas      = _hrFiltrarPorFecha(todasVentas,                   'fechaISO');
-                const compras     = _hrFiltrarPorFecha(_sheetCompras             || [], 'fechaISO');
-                const ingresos    = _hrFiltrarPorFecha(_sheetIngresos            || [], 'fechaISO');
-                const egresos     = _hrFiltrarPorFecha(_sheetEgresos             || [], 'fechaISO');
-                const ingresosNeg = _hrFiltrarPorFecha(_sheetIngresosNegocio     || [], 'fechaISO');
-                const egresosNeg  = _hrFiltrarPorFecha(_sheetEgresosNegocio      || [], 'fechaISO');
-
-                if (modo === 'personal') {
-                    // ── Ganancias — mismo cálculo que renderResumen (precio − costo por ítem) ──
-                    let _hrGanTotal = 0, _hrGanEf = 0, _hrGanCr = 0;
-                    const _hrVentasIdVistas = new Set();
-                    const _hrPagosPorVenta = {};
-                    (_pagoVentasSheet||[]).forEach(p => {
-                        const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                        if (!idV) return;
-                        _hrPagosPorVenta[idV] = (_hrPagosPorVenta[idV]||0) + Number(p.monto||p.MONTO||0);
-                    });
-                    const _hrVentasCreditoPagadas = new Set();
-                    (_pagoVentasSheet||[]).forEach(p => {
-                        const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                        if (idV) _hrVentasCreditoPagadas.add(idV);
-                    });
-                    ventas.forEach(v => {
-                        if (_hrVentasIdVistas.has(v.id)) return;
-                        _hrVentasIdVistas.add(v.id);
-                        const total = Number(v.total||0);
-                        const ef    = Number(v.efectivo||0);
-                        const cr    = Number(v.deuda||0);
-                        const costoVenta  = (v.items||[]).reduce((s,i)=>(s + (Number(i.costo||0) * (Number(i.cantidad)||1))), 0);
-                        const dineroRecup = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0), 0) || costoVenta;
-                        const esClienteEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(String(v.cliente||'').toUpperCase().trim());
-                        const ganBruta   = esClienteEsp ? 0 : Math.max(0, total - dineroRecup);
-                        const pagosVenta = _hrPagosPorVenta[String(v.id)] || 0;
-                        const cobradoEf  = ef + pagosVenta;
-                        const ganEfVenta = cobradoEf > dineroRecup ? Math.min(cobradoEf - dineroRecup, ganBruta) : 0;
-                        const ganCrVenta = Math.max(0, ganBruta - ganEfVenta);
-                        _hrGanEf    += ganEfVenta;
-                        _hrGanCr    += ganCrVenta;
-                        _hrGanTotal += ganEfVenta + ganCrVenta;
-                    });
-                    const ganEf = _hrGanEf;
-                    const ganCr = _hrGanCr;
-                    const el_gef = document.getElementById('hrGanEfectivo');
-                    const el_gcr = document.getElementById('hrGanCredito');
-                    const el_gto = document.getElementById('hrGanTotal');
-                    if (el_gef) el_gef.textContent = _hrFmt(ganEf);
-                    if (el_gcr) el_gcr.textContent = _hrFmt(ganCr);
-                    if (el_gto) el_gto.textContent = _hrFmt(_hrGanTotal);
-
-                    // ── INGRESOS PERSONALES ──
-                    // Usa la ganancia real (precio − costo) ya calculada arriba, según filtro de pago
-                    const gananciasTotales = pago === 'efectivo' ? _hrGanEf
-                                           : pago === 'credito'  ? _hrGanCr
-                                           : _hrGanTotal;
-                    const ingresosExtra    = ingresos.reduce((s,r)=>s+_hrGetVal(r,pago),0);
-                    const ingRows = [
-                        { label: 'Ganancias Totales', val: gananciasTotales },
-                        { label: 'Ingresos Extra',    val: ingresosExtra    },
-                    ];
-                    const totalIngr = gananciasTotales + ingresosExtra;
-
-                    // ── EGRESOS PERSONALES ──
-                    // Consumo del Negocio = suma DINERO RECUPERADO de ventas donde cliente = CASA ERAZO
-                    const _ventasIdVistasNeg = new Set();
-                    const consumoNeg = ventas.reduce((s, v) => {
-                        if (_ventasIdVistasNeg.has(v.id)) return s;
-                        _ventasIdVistasNeg.add(v.id);
-                        if (String(v.cliente||'').toUpperCase().trim() !== 'CASA ERAZO') return s;
-                        const dr = (v.items||[]).reduce((si,i)=>si+Number(i.dineroRecuperado||0), 0);
-                        return s + dr;
-                    }, 0);
-                    // Consumo Familiar = egresos concepto "COMIDA FAMILIAR", columna PAGO TOTAL segun filtro
-                    const consumoFam = egresos.filter(r=>{
-                        const cat=(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim();
-                        return cat === 'COMIDA FAMILIAR';
-                    }).reduce((s,r)=>{
-                        if (pago === 'efectivo') return s + (parseFloat(r.efectivo||0)||0);
-                        if (pago === 'credito')  return s + (parseFloat(r.credito||0)||0);
-                        return s + (parseFloat(r.total||0)||0);
-                    },0);
-                    const palta = egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||r.detalle||r.descripcion||'').toLowerCase().includes('palta'))
-                                         .reduce((s,r)=>{
-                                             if (pago === 'efectivo') return s + (parseFloat(r.efectivo||0)||0);
-                                             if (pago === 'credito')  return s + (parseFloat(r.credito||0)||0);
-                                             return s + (parseFloat(r.total||0)||0);
-                                         },0);
-                    const otrosEgr = egresos.filter(r=>{
-                        const cat=(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim();
-                        const desc=(r.detalle||r.descripcion||'').toUpperCase();
-                        return cat !== 'COMIDA FAMILIAR' && !cat.includes('PALTA') && !desc.includes('PALTA');
-                    }).reduce((s,r)=>{
-                        if (pago === 'efectivo') return s + (parseFloat(r.efectivo||0)||0);
-                        if (pago === 'credito')  return s + (parseFloat(r.credito||0)||0);
-                        return s + (parseFloat(r.total||0)||0);
-                    },0);
-                    const egRows = [
-                        { label: 'Consumo del Negocio', val: consumoNeg },
-                        { label: 'Consumo Familiar',    val: consumoFam },
-                        { label: 'Palta',               val: palta      },
-                    ];
-                    if (otrosEgr > 0) egRows.push({ label: 'Otros Egresos', val: otrosEgr });
-                    const totalEgr = egRows.reduce((s,r)=>s+r.val,0);
-
-                    const ingBody = document.getElementById('hrIngresosBody');
-                    if (ingBody) ingBody.innerHTML = ingRows.map(r=>`
-                        <tr style="border-bottom:1px solid #1e293b;">
-                            <td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td>
-                            <td class="px-4 py-2.5 text-emerald-400 text-xs font-black text-right">${_hrFmt(r.val)}</td>
-                        </tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500 text-[10px]">Sin datos</td></tr>';
-                    const itc = document.getElementById('hrIngresosTotalCell');
-                    if (itc) itc.textContent = _hrFmt(totalIngr);
-
-                    const egBody = document.getElementById('hrEgresosBody');
-                    if (egBody) egBody.innerHTML = egRows.map(r=>`
-                        <tr style="border-bottom:1px solid #1e293b;">
-                            <td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td>
-                            <td class="px-4 py-2.5 text-red-400 text-xs font-black text-right">${_hrFmt(r.val)}</td>
-                        </tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500 text-[10px]">Sin datos</td></tr>';
-                    const etc = document.getElementById('hrEgresosTotalCell');
-                    if (etc) etc.textContent = _hrFmt(totalEgr);
-
-                    // ── Comida Familiar ── (concepto = "COMIDA FAMILIAR", campos pagoEfectivo/pagoCredito/pagoTotal)
-                    const comEgrAll = egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim() === 'COMIDA FAMILIAR');
-                    const comEf = comEgrAll.reduce((s,r)=>s+(parseFloat(r.efectivo||0)||0),0);
-                    const comCr = comEgrAll.reduce((s,r)=>s+(parseFloat(r.credito||0)||0),0);
-                    const comTo = comEgrAll.reduce((s,r)=>s+(parseFloat(r.total||0)||0),0);
-                    const comEl_ef = document.getElementById('hrComidaEf');
-                    const comEl_cr = document.getElementById('hrComidaCr');
-                    const comEl_to = document.getElementById('hrComidaTo');
-                    if (comEl_ef) comEl_ef.textContent = _hrFmt(comEf);
-                    if (comEl_cr) comEl_cr.textContent = _hrFmt(comCr);
-                    if (comEl_to) comEl_to.textContent = _hrFmt(comTo);
-
-                } else {
-                    // ── MODO NEGOCIO ──
-                    const vtRows = _buildCatRows(ventas, pago);
-                    const cpRows = _buildCatRows(compras, pago);
-
-                    const ingNegTotal = ingresosNeg.reduce((s,r)=>s+_hrGetVal(r,pago),0);
-                    if (ingNegTotal > 0) vtRows.push({ label: 'Ingresos Negocio', val: ingNegTotal });
-
-                    const egNegPrest = egresosNeg.filter(r=>(r.categoria||r.supercat||r.cat||'').toLowerCase().includes('prest')).reduce((s,r)=>s+_hrGetVal(r,pago),0);
-                    if (egNegPrest > 0) cpRows.push({ label: 'Préstamos', val: egNegPrest });
-                    const egNegOtros = egresosNeg.filter(r=>!(r.categoria||r.supercat||r.cat||'').toLowerCase().includes('prest')).reduce((s,r)=>s+_hrGetVal(r,pago),0);
-                    if (egNegOtros > 0) cpRows.push({ label: 'Egresos Negocio', val: egNegOtros });
-
-                    const vtTotal = vtRows.reduce((s,r)=>s+r.val,0);
-                    const cpTotal = cpRows.reduce((s,r)=>s+r.val,0);
-
-                    const vtBody = document.getElementById('hrVentasBody');
-                    if (vtBody) vtBody.innerHTML = vtRows.length ? vtRows.map(r=>`
-                        <tr style="border-bottom:1px solid #1e293b;">
-                            <td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td>
-                            <td class="px-4 py-2.5 text-emerald-400 text-xs font-black text-right">${_hrFmt(r.val)}</td>
-                        </tr>`).join('') : '<tr><td colspan="2" class="px-4 py-4 text-slate-500 text-center text-[10px]">Sin datos en el período</td></tr>';
-                    const vtc = document.getElementById('hrVentasTotalCell');
-                    if (vtc) vtc.textContent = _hrFmt(vtTotal);
-
-                    const cpBody = document.getElementById('hrComprasBody');
-                    if (cpBody) cpBody.innerHTML = cpRows.length ? cpRows.map(r=>`
-                        <tr style="border-bottom:1px solid #1e293b;">
-                            <td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td>
-                            <td class="px-4 py-2.5 text-red-400 text-xs font-black text-right">${_hrFmt(r.val)}</td>
-                        </tr>`).join('') : '<tr><td colspan="2" class="px-4 py-4 text-slate-500 text-center text-[10px]">Sin datos en el período</td></tr>';
-                    const cpc = document.getElementById('hrComprasTotalCell');
-                    if (cpc) cpc.textContent = _hrFmt(cpTotal);
-                }
-            } catch(e) {
-                console.error('[renderHojaRuta]', e);
-            }
-        }
-
-        function _buildCatRows(arr, pago) {
-            const cats = {};
-            arr.forEach(r => {
-                const cat = (r.categoria || r.cat || r.producto || r.descripcion || 'Sin categoría').trim();
-                cats[cat] = (cats[cat] || 0) + _hrGetVal(r, pago);
-            });
-            return Object.entries(cats).map(([label, val]) => ({ label, val })).sort((a,b) => b.val - a.val);
         }
 
         function renderTabProveedor() {
