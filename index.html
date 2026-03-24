@@ -2220,11 +2220,12 @@ GUARDAR PRODUCTO
                     <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label><input type="date" id="hrHasta" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
                     <button onclick="renderHojaRuta()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
                 </div>
-                <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
+                <div class="glass-card rounded-2xl p-4 border border-slate-700">
+                    <div class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3">🍽️ Comida Familiar</div>
                     <div class="flex flex-wrap gap-4 justify-around text-center">
-                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Efectivo</div><div id="hrGanEfectivo" class="text-lg font-black text-emerald-400">$ 0</div></div>
-                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Crédito</div><div id="hrGanCredito" class="text-lg font-black text-blue-400">$ 0</div></div>
-                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Total</div><div id="hrGanTotal" class="text-lg font-black text-amber-400">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Efectivo</div><div id="hrComidaEf" class="text-sm font-black text-slate-200">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Crédito</div><div id="hrComidaCr" class="text-sm font-black text-slate-200">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Total</div><div id="hrComidaTo" class="text-sm font-black text-slate-200">$ 0</div></div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2239,15 +2240,18 @@ GUARDAR PRODUCTO
                         <tfoot><tr style="border-top:2px solid #334155;background:rgba(15,23,42,0.8);"><td class="px-4 py-2 font-black text-xs text-red-400 uppercase">TOTAL:</td><td id="hrEgresosTotalCell" class="px-4 py-2 font-black text-xs text-red-400 text-right">$ 0</td></tr></tfoot></table>
                     </div>
                 </div>
-                <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                    <div class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3">🍽️ Comida Familiar</div>
+                <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
                     <div class="flex flex-wrap gap-4 justify-around text-center">
-                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Efectivo</div><div id="hrComidaEf" class="text-sm font-black text-slate-200">$ 0</div></div>
-                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Crédito</div><div id="hrComidaCr" class="text-sm font-black text-slate-200">$ 0</div></div>
-                        <div><div class="text-[9px] font-black text-slate-400 uppercase mb-1">Total</div><div id="hrComidaTo" class="text-sm font-black text-slate-200">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Efectivo</div><div id="hrGanEfectivo" class="text-lg font-black text-emerald-400">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Crédito</div><div id="hrGanCredito" class="text-lg font-black text-blue-400">$ 0</div></div>
+                        <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Total</div><div id="hrGanTotal" class="text-lg font-black text-amber-400">$ 0</div></div>
                     </div>
                 </div>
             </div>
+
+            <!-- BALANCE DE CONSUMO PROPIO -->
+            <div id="hrBalanceConsumo" class="glass-card rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5"></div>
+
             <div id="hrNegocio" class="hidden space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
@@ -4606,7 +4610,7 @@ function confirmarVenta() {
             const costo = parseFloat(prod.costo || i.costo || 0);
             return s + (costo * i.cantidad);
         }, 0)
-        : carrito.reduce((s, i) => s + (i.precio * i.cantidad), 0);
+        : carrito.reduce((s, i) => s + (i.esPeso ? (i.precioFinal || Math.round(i.precio * i.cantidad)) : i.precio * i.cantidad), 0);
 
     // Público General → siempre efectivo completo, sin deuda
     const efectivoFinal = esClienteEspecial ? totalVenta : esPublicoGeneral ? totalVenta : efectivo;
@@ -4682,7 +4686,7 @@ const costoTotal = esPeso
     : costo * i.cantidad;
 
 const importeVenta = esPeso
-    ? Math.round(i.cantidad * precioUnitario)
+    ? (i.precioFinal || Math.round(i.cantidad * precioUnitario))
     : (i.precio * i.cantidad);
 
 const precioVentaFinal = esClienteEspecial ? costoTotal : precioUnitario;
@@ -15896,9 +15900,9 @@ console.log("FILTRADAS:", filtradas.length);
                         return s+(v.items||[]).reduce((si,i)=>si+Number(i.dineroRecuperado||0),0);
                     },0);
                     const consumoFam=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim()==='COMIDA FAMILIAR').reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
-                    const palta=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||r.detalle||r.descripcion||'').toLowerCase().includes('palta')).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
-                    const otrosEgr=egresos.filter(r=>{const c=(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase(),d=(r.detalle||r.descripcion||'').toUpperCase();return c!=='COMIDA FAMILIAR'&&!c.includes('PALTA')&&!d.includes('PALTA');}).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
-                    const egRows=[{label:'Consumo del Negocio',val:consumoNeg},{label:'Consumo Familiar',val:consumoFam},{label:'Palta',val:palta}];
+                    const diezmo=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||r.detalle||r.descripcion||'').toLowerCase().includes('diezmo')).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
+                    const otrosEgr=egresos.filter(r=>{const c=(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase(),d=(r.detalle||r.descripcion||'').toUpperCase();return c!=='COMIDA FAMILIAR'&&!c.includes('DIEZMO')&&!d.includes('DIEZMO');}).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
+                    const egRows=[{label:'Consumo del Negocio',val:consumoNeg},{label:'Consumo Familiar',val:consumoFam},{label:'Diezmo Maria Jesus',val:diezmo}];
                     if(otrosEgr>0)egRows.push({label:'Otros Egresos',val:otrosEgr});
                     const totalEgr=egRows.reduce((s,r)=>s+r.val,0);
 
@@ -15913,6 +15917,54 @@ console.log("FILTRADAS:", filtradas.length);
                     if(cef)cef.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.efectivo||0)||0),0));
                     if(ccr)ccr.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.credito||0)||0),0));
                     if(cto)cto.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.total||0)||0),0));
+
+                    // ── BALANCE DE CONSUMO PROPIO ──
+                    const balConsBox = document.getElementById('hrBalanceConsumo');
+                    if (balConsBox) {
+                        const balIngresos = _hrGanEf; // solo ganancias en efectivo
+                        const balEgresos  = consumoNeg + consumoFam;
+                        const balDif      = balIngresos - balEgresos;
+                        const balColor    = balDif >= 0 ? '#34d399' : '#f87171';
+                        balConsBox.innerHTML = `
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                                <span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.05em;">⚖️ Balance de Consumo Propio</span>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                                <div style="background:#0f172a;border-radius:10px;padding:10px;">
+                                    <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">📥 Ingresos</p>
+                                    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e293b;">
+                                        <span style="font-size:10px;color:#94a3b8;">Ganancias Efectivo</span>
+                                        <span style="font-size:10px;font-weight:900;color:#34d399;">${_hrFmt(balIngresos)}</span>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;padding:6px 0 2px;">
+                                        <span style="font-size:10px;font-weight:900;color:#34d399;text-transform:uppercase;">Total</span>
+                                        <span style="font-size:11px;font-weight:900;color:#34d399;">${_hrFmt(balIngresos)}</span>
+                                    </div>
+                                </div>
+                                <div style="background:#0f172a;border-radius:10px;padding:10px;">
+                                    <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">📤 Egresos</p>
+                                    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e293b;">
+                                        <span style="font-size:10px;color:#94a3b8;">Consumo del Negocio</span>
+                                        <span style="font-size:10px;font-weight:900;color:#f87171;">${_hrFmt(consumoNeg)}</span>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e293b;">
+                                        <span style="font-size:10px;color:#94a3b8;">Consumo Familiar</span>
+                                        <span style="font-size:10px;font-weight:900;color:#f87171;">${_hrFmt(consumoFam)}</span>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;padding:6px 0 2px;">
+                                        <span style="font-size:10px;font-weight:900;color:#f87171;text-transform:uppercase;">Total</span>
+                                        <span style="font-size:11px;font-weight:900;color:#f87171;">${_hrFmt(balEgresos)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background:#0f172a;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:10px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Diferencia</span>
+                                <div style="text-align:right;">
+                                    <span style="font-size:18px;font-weight:900;color:${balColor};font-family:monospace;">${_hrFmt(balDif)}</span>
+                                    <span style="font-size:10px;color:#475569;margin-left:8px;">(Cr: ${_hrFmt(_hrGanCr)})</span>
+                                </div>
+                            </div>`;
+                    }
                 } else {
                     const vtRows=_buildCatRows(ventas,pago);
                     const cpRows=_buildCatRows(compras,pago);
