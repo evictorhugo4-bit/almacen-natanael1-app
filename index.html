@@ -1909,12 +1909,28 @@ GUARDAR PRODUCTO
 
             <!-- Separar por proveedor — toggle acumulado/período -->
             <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                <div class="flex justify-between items-center mb-1">
+                <div class="flex justify-between items-center mb-2">
                     <h3 class="text-xs font-black text-white uppercase tracking-widest">📦 Dinero a Separar por Proveedor</h3>
                     <div class="flex gap-1">
                         <button id="cajaBtnAcumulado" onclick="cajaSetModoProveedores('acumulado')" class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase btn-action bg-emerald-500 text-black">Acumulado</button>
                         <button id="cajaBtnPeriodo"   onclick="cajaSetModoProveedores('periodo')"   class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase btn-action bg-slate-700 text-slate-400">Período</button>
                     </div>
+                </div>
+                <!-- Filtro de fechas propio -->
+                <div class="flex flex-wrap gap-2 items-center mb-3" style="background:#0f172a;border-radius:10px;padding:8px 10px;">
+                    <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">📅 Período</span>
+                    <div class="flex flex-col gap-0.5">
+                        <label class="text-[8px] font-black text-slate-500 uppercase">Desde</label>
+                        <input type="date" id="provSepDesde" onchange="provSepSincronizar()" class="text-xs px-2 py-1 rounded-lg" style="background:#1e293b;border:1px solid #334155;color:white;">
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                        <label class="text-[8px] font-black text-slate-500 uppercase">Hasta</label>
+                        <input type="date" id="provSepHasta" onchange="provSepSincronizar()" class="text-xs px-2 py-1 rounded-lg" style="background:#1e293b;border:1px solid #334155;color:white;">
+                    </div>
+                    <button onclick="provSepSetHoy()" class="px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-black font-black text-[9px] rounded-lg btn-action">HOY</button>
+                    <button onclick="provSepSetDias(7)"  class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[9px] rounded-lg btn-action">7D</button>
+                    <button onclick="provSepSetDias(30)" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[9px] rounded-lg btn-action">30D</button>
+                    <button onclick="provSepSetDias(0)"  class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[9px] rounded-lg btn-action">Todo</button>
                 </div>
                 <p class="text-[9px] text-slate-500 font-bold mb-3">Debo al proveedor − Valor del stock en mano − Lo que me deben clientes (fiado de ese proveedor)</p>
                 <div id="cajaProveedores" class="space-y-2"></div>
@@ -2220,6 +2236,12 @@ GUARDAR PRODUCTO
                     <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label><input type="date" id="hrDesde" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
                     <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label><input type="date" id="hrHasta" onchange="renderHojaRuta()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
                     <button onclick="renderHojaRuta()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
+                    <!-- Diferencia Ingresos - Egresos -->
+                    <div class="ml-auto flex flex-col items-end justify-center" style="background:#0f172a;border-radius:12px;padding:8px 14px;min-width:160px;border:1px solid #1e293b;">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1" id="hrDifLabel">⚖️ Diferencia</span>
+                        <span id="hrDiferencia" class="text-xl font-black font-mono text-white">$ 0</span>
+                        <span id="hrDifDesc" class="text-[8px] text-slate-600 mt-0.5">Ingresos − Egresos</span>
+                    </div>
                 </div>
                 <div class="glass-card rounded-2xl p-4 border border-slate-700">
                     <div class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3">🍽️ Comida Familiar</div>
@@ -2253,6 +2275,17 @@ GUARDAR PRODUCTO
             </div><!-- /hrPersonal -->
 
             <div id="hrNegocio" class="hidden space-y-4">
+                <!-- Filtro fechas + Diferencia Negocio -->
+                <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
+                    <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label><input type="date" id="hrNegDesde" onchange="hrNegSincronizar()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
+                    <div class="flex flex-col gap-1"><label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label><input type="date" id="hrNegHasta" onchange="hrNegSincronizar()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;"></div>
+                    <button onclick="hrNegSincronizar()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
+                    <div class="ml-auto flex flex-col items-end justify-center" style="background:#0f172a;border-radius:12px;padding:8px 14px;min-width:160px;border:1px solid #1e293b;">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1" id="hrNegDifLabel">⚖️ Diferencia</span>
+                        <span id="hrNegDiferencia" class="text-xl font-black font-mono text-white">$ 0</span>
+                        <span id="hrNegDifDesc" class="text-[8px] text-slate-600 mt-0.5">Ingresos − Egresos</span>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
                         <div class="px-4 py-3 border-b border-slate-700" style="background:rgba(16,185,129,0.1);"><span class="text-xs font-black text-emerald-400 uppercase tracking-widest">📈 Ventas / Ingresos Negocio</span></div>
@@ -8662,6 +8695,7 @@ function filtrarProductosCompra(query) {
         ventaModificada: false,
         costoModificado: false,
         cantidad: qty,
+        foto: productoPendienteCompra.foto || productoPendienteCompra.imagen || productoPendienteCompra.img || '',
         itemId: Utils.genId()
     });
 
@@ -15441,6 +15475,35 @@ console.log("FILTRADAS:", filtradas.length);
         // ── CAJA & PROVEEDORES ─────────────────────────────────────────────
         let cajaModo = 'acumulado'; // 'acumulado' | 'periodo'
 
+        // ── FILTRO FECHAS para "Dinero a Separar por Proveedor" en tab Proveedor ──
+        function provSepSincronizar() {
+            const desde = document.getElementById('provSepDesde')?.value || '';
+            const hasta = document.getElementById('provSepHasta')?.value || '';
+            const cd = document.getElementById('cajaDesde');
+            const ch = document.getElementById('cajaHasta');
+            if (cd) cd.value = desde;
+            if (ch) ch.value = hasta;
+            renderCaja();
+        }
+        function provSepSetHoy() {
+            const hoy = new Date().toISOString().slice(0,10);
+            const d = document.getElementById('provSepDesde');
+            const h = document.getElementById('provSepHasta');
+            if (d) d.value = hoy;
+            if (h) h.value = hoy;
+            provSepSincronizar();
+        }
+        function provSepSetDias(dias) {
+            const hasta = new Date();
+            const desde = dias > 0 ? new Date(Date.now() - (dias-1)*86400000) : new Date(0);
+            const fmt = d => d.toISOString().slice(0,10);
+            const d = document.getElementById('provSepDesde');
+            const h = document.getElementById('provSepHasta');
+            if (d) d.value = dias > 0 ? fmt(desde) : '';
+            if (h) h.value = dias > 0 ? fmt(hasta) : '';
+            provSepSincronizar();
+        }
+
         function cajaSetModoProveedores(modo) {
             cajaModo = modo;
             const btnAcum = document.getElementById('cajaBtnAcumulado');
@@ -15792,6 +15855,15 @@ console.log("FILTRADAS:", filtradas.length);
             const nEl = document.getElementById('hrNegocio');
             if (pEl) pEl.classList.toggle('hidden', modo!=='personal');
             if (nEl) nEl.classList.toggle('hidden', modo!=='negocio');
+            // Sincronizar fechas entre personal y negocio
+            if (modo === 'negocio') {
+                const d = document.getElementById('hrDesde')?.value || '';
+                const h = document.getElementById('hrHasta')?.value || '';
+                const nd = document.getElementById('hrNegDesde');
+                const nh = document.getElementById('hrNegHasta');
+                if (nd && !nd.value && d) nd.value = d;
+                if (nh && !nh.value && h) nh.value = h;
+            }
             renderHojaRuta();
         }
 
@@ -15801,6 +15873,17 @@ console.log("FILTRADAS:", filtradas.length);
                 const btn = document.getElementById('hrBtn'+t);
                 if (btn) btn.className = 'px-3 py-1 rounded-xl font-black text-[10px] uppercase btn-action ' + (tipo===t.toLowerCase()?'bg-emerald-500 text-black':'bg-slate-700 text-slate-300 hover:bg-slate-600');
             });
+            renderHojaRuta();
+        }
+
+        function hrNegSincronizar() {
+            // Sincroniza los inputs de negocio con hrDesde/hrHasta y re-renderiza
+            const nd = document.getElementById('hrNegDesde')?.value || '';
+            const nh = document.getElementById('hrNegHasta')?.value || '';
+            const d = document.getElementById('hrDesde');
+            const h = document.getElementById('hrHasta');
+            if (d) d.value = nd;
+            if (h) h.value = nh;
             renderHojaRuta();
         }
 
@@ -15915,6 +15998,16 @@ console.log("FILTRADAS:", filtradas.length);
                     const egBody=document.getElementById('hrEgresosBody'); if(egBody)egBody.innerHTML=rowHtml(egRows,'#f87171');
                     const etc=document.getElementById('hrEgresosTotalCell'); if(etc)etc.textContent=_hrFmt(totalEgr);
 
+                    // ── DIFERENCIA ──
+                    const dif = totalIngr - totalEgr;
+                    const difEl = document.getElementById('hrDiferencia');
+                    const difLabel = document.getElementById('hrDifLabel');
+                    const difDesc = document.getElementById('hrDifDesc');
+                    const pagoLabel = pago === 'efectivo' ? 'Efectivo' : pago === 'credito' ? 'Crédito' : 'Total';
+                    if (difEl) { difEl.textContent = _hrFmt(dif); difEl.style.color = dif >= 0 ? '#34d399' : '#f87171'; }
+                    if (difLabel) difLabel.textContent = `⚖️ Diferencia (${pagoLabel})`;
+                    if (difDesc) difDesc.textContent = `$${_hrFmt(totalIngr)} − $${_hrFmt(totalEgr)}`;
+
                     const comAll=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim()==='COMIDA FAMILIAR');
                     const cef=document.getElementById('hrComidaEf'),ccr=document.getElementById('hrComidaCr'),cto=document.getElementById('hrComidaTo');
                     if(cef)cef.textContent=_hrFmt(comAll.reduce((s,r)=>s+(parseFloat(r.efectivo||0)||0),0));
@@ -15983,6 +16076,18 @@ console.log("FILTRADAS:", filtradas.length);
                     const cpBody=document.getElementById('hrComprasBody');
                     if(cpBody)cpBody.innerHTML=cpRows.length?cpRows.map(r=>`<tr style="border-bottom:1px solid #1e293b;"><td class="px-4 py-2.5 text-slate-300 text-xs font-bold">${r.label}</td><td class="px-4 py-2.5 text-red-400 text-xs font-black text-right">${_hrFmt(r.val)}</td></tr>`).join(''):'<tr><td colspan="2" class="px-4 py-4 text-slate-500 text-center text-[10px]">Sin datos</td></tr>';
                     const cpc=document.getElementById('hrComprasTotalCell'); if(cpc)cpc.textContent=_hrFmt(cpRows.reduce((s,r)=>s+r.val,0));
+
+                    // ── DIFERENCIA NEGOCIO ──
+                    const negTotalIngr = vtRows.reduce((s,r)=>s+r.val,0);
+                    const negTotalEgr  = cpRows.reduce((s,r)=>s+r.val,0);
+                    const negDif = negTotalIngr - negTotalEgr;
+                    const difElN = document.getElementById('hrNegDiferencia');
+                    const difLabelN = document.getElementById('hrNegDifLabel');
+                    const difDescN = document.getElementById('hrNegDifDesc');
+                    const pagoLabelN = pago === 'efectivo' ? 'Efectivo' : pago === 'credito' ? 'Crédito' : 'Total';
+                    if (difElN) { difElN.textContent = _hrFmt(negDif); difElN.style.color = negDif >= 0 ? '#34d399' : '#f87171'; }
+                    if (difLabelN) difLabelN.textContent = `⚖️ Diferencia (${pagoLabelN})`;
+                    if (difDescN) difDescN.textContent = `${_hrFmt(negTotalIngr)} − ${_hrFmt(negTotalEgr)}`;
                 }
             } catch(e) { console.error('[renderHojaRuta]',e); }
         }
@@ -16056,9 +16161,13 @@ console.log("FILTRADAS:", filtradas.length);
                 // Cargar sección "Dinero a Separar por Proveedor"
                 const _cd = document.getElementById('cajaDesde');
                 const _ch = document.getElementById('cajaHasta');
-                if (_cd && !_cd.value) {
+                const _pd = document.getElementById('provSepDesde');
+                const _ph = document.getElementById('provSepHasta');
+                if (_pd && !_pd.value) {
                     const hoy = new Date().toISOString().slice(0,10);
-                    _cd.value = hoy;
+                    if (_pd) _pd.value = hoy;
+                    if (_ph) _ph.value = hoy;
+                    if (_cd) _cd.value = hoy;
                     if (_ch) _ch.value = hoy;
                 }
                 renderCaja();
