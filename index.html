@@ -2679,7 +2679,10 @@ GUARDAR PRODUCTO
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
                 <div class="relative">
-                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Supercategoría</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Supercategoría</label>
+                        <button type="button" onclick="abrirPanelCrearIngCat('supercategoria')" class="text-[9px] font-black text-emerald-400 border border-emerald-700 bg-emerald-950 hover:bg-emerald-900 rounded-lg px-2 py-0.5 uppercase">＋ Nueva</button>
+                    </div>
                     <input type="text" id="inputIngEgrProveedor" placeholder="Buscar supercategoría..."
                         autocomplete="off"
                         oninput="filtrarSupercatIngEgr(this.value)"
@@ -2689,7 +2692,10 @@ GUARDAR PRODUCTO
                     <div id="ddSupercatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
 <div class="relative">
-    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Género</label>
+    <div class="flex items-center justify-between mb-1">
+        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Género</label>
+        <button type="button" onclick="abrirPanelCrearIngCat('genero')" class="text-[9px] font-black text-sky-400 border border-sky-700 bg-sky-950 hover:bg-sky-900 rounded-lg px-2 py-0.5 uppercase">＋ Nuevo</button>
+    </div>
     <input type="text"
         id="inputIngEgrGenero"
         placeholder="Buscar género..."
@@ -2702,7 +2708,10 @@ GUARDAR PRODUCTO
 </div>
 
                 <div class="relative">
-                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Categoría</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Categoría</label>
+                        <button type="button" onclick="abrirPanelCrearIngCat('categoria')" class="text-[9px] font-black text-violet-400 border border-violet-700 bg-violet-950 hover:bg-violet-900 rounded-lg px-2 py-0.5 uppercase">＋ Nueva</button>
+                    </div>
                     <input type="text" id="inputIngEgrConcepto" placeholder="Buscar categoría..."
                         autocomplete="off"
                         oninput="filtrarCatIngEgr(this.value)"
@@ -2711,8 +2720,28 @@ GUARDAR PRODUCTO
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs">
                     <div id="ddCatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
+                <!-- PANEL CREAR SUPERCAT / GENERO / CATEGORIA — inline dentro del modal -->
+                <div id="panelCrearIngCat" style="display:none;background:#0f172a;border:1.5px solid #334155;border-radius:16px;padding:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <span id="panelCrearIngCatTitulo" style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#10b981;">＋ Nueva Supercategoría</span>
+                        <button type="button" onclick="cerrarPanelCrearIngCat()" style="background:#1e293b;border:1px solid #475569;color:#94a3b8;border-radius:8px;padding:2px 10px;font-weight:900;font-size:12px;cursor:pointer;">✕</button>
+                    </div>
+                    <input id="inputPanelCrearIngCat" type="text" placeholder="Nombre..."
+                        style="width:100%;background:#1e293b;border:1.5px solid #475569;color:#f1f5f9;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;text-transform:uppercase;outline:none;box-sizing:border-box;margin-bottom:8px;"
+                        onfocus="this.style.borderColor=window._panelCrearColor||'#10b981'" onblur="this.style.borderColor='#475569'"
+                        onkeydown="if(event.key==='Enter')confirmarPanelCrearIngCat();if(event.key==='Escape')cerrarPanelCrearIngCat()">
+                    <div id="panelCrearIngCatSCRow" style="display:none;margin-bottom:8px;">
+                        <input id="inputPanelCrearIngCatSC" type="text" placeholder="Supercategoría padre (opcional)..."
+                            style="width:100%;background:#1e293b;border:1.5px solid #475569;color:#f1f5f9;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;text-transform:uppercase;outline:none;box-sizing:border-box;"
+                            onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#475569'">
+                    </div>
+                    <button type="button" onclick="confirmarPanelCrearIngCat()" id="btnPanelCrearIngCat"
+                        style="width:100%;padding:10px;background:#10b981;color:#000;font-weight:900;font-size:12px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;">
+                        Guardar
+                    </button>
+                </div>
+
                 <div>
-                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Detalle</label>
                     <input type="text" id="inputIngEgrDetalle" placeholder="Detalle del movimiento..." class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs">
                 </div>
                 <!-- Forma de Pago -->
@@ -18666,7 +18695,76 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </body>
 
+<script>
+(function(){
+    var _panelTipo = 'supercategoria';
+    window._panelCrearColor = '#10b981';
 
+    window.abrirPanelCrearIngCat = function(tipo) {
+        _panelTipo = tipo;
+        var colors = { supercategoria: '#10b981', genero: '#38bdf8', categoria: '#a78bfa' };
+        var labels = { supercategoria: 'Supercategoría', genero: 'Género', categoria: 'Categoría' };
+        var color  = colors[tipo];
+        window._panelCrearColor = color;
+
+        document.getElementById('panelCrearIngCatTitulo').textContent = '＋ Nueva ' + labels[tipo];
+        document.getElementById('panelCrearIngCatTitulo').style.color = color;
+        document.getElementById('btnPanelCrearIngCat').style.background = color;
+        document.getElementById('panelCrearIngCat').style.borderColor = color + '66';
+        document.getElementById('panelCrearIngCatSCRow').style.display = tipo === 'categoria' ? 'block' : 'none';
+
+        var scInp = document.getElementById('inputPanelCrearIngCatSC');
+        if (scInp) scInp.value = (document.getElementById('inputIngEgrProveedor') || {}).value || '';
+
+        var inp = document.getElementById('inputPanelCrearIngCat');
+        inp.value = '';
+        inp.style.borderColor = '#475569';
+
+        document.getElementById('panelCrearIngCat').style.display = 'block';
+
+        // Scroll para que se vea
+        setTimeout(function(){ inp.focus(); document.getElementById('panelCrearIngCat').scrollIntoView({behavior:'smooth',block:'center'}); }, 60);
+    };
+
+    window.cerrarPanelCrearIngCat = function() {
+        document.getElementById('panelCrearIngCat').style.display = 'none';
+    };
+
+    window.confirmarPanelCrearIngCat = function() {
+        var nombre = (document.getElementById('inputPanelCrearIngCat').value || '').toUpperCase().trim();
+        if (!nombre) { document.getElementById('inputPanelCrearIngCat').focus(); return; }
+
+        if (_panelTipo === 'supercategoria') {
+            if (!window._supercatsIngSheet) window._supercatsIngSheet = [];
+            if (!window._supercatsIngSheet.includes(nombre)) { window._supercatsIngSheet.push(nombre); window._supercatsIngSheet.sort(); }
+            var inp = document.getElementById('inputIngEgrProveedor');
+            if (inp) { inp.value = nombre; }
+            if (typeof mostrarToast === 'function') mostrarToast('✓ Supercategoría "' + nombre + '" creada');
+
+        } else if (_panelTipo === 'genero') {
+            if (!window._generosIngSheet) window._generosIngSheet = [];
+            if (!window._generosIngSheet.includes(nombre)) { window._generosIngSheet.push(nombre); window._generosIngSheet.sort(); }
+            var inp = document.getElementById('inputIngEgrGenero');
+            if (inp) { inp.value = nombre; }
+            if (typeof mostrarToast === 'function') mostrarToast('✓ Género "' + nombre + '" creado');
+
+        } else if (_panelTipo === 'categoria') {
+            if (!window._catsIngSheet) window._catsIngSheet = {};
+            var supercat = (document.getElementById('inputPanelCrearIngCatSC').value || '').toUpperCase().trim()
+                        || (document.getElementById('inputIngEgrProveedor') || {}).value || '';
+            supercat = supercat.toUpperCase().trim();
+            var key = supercat || '__GLOBAL__';
+            if (!window._catsIngSheet[key]) window._catsIngSheet[key] = [];
+            if (!window._catsIngSheet[key].includes(nombre)) { window._catsIngSheet[key].push(nombre); window._catsIngSheet[key].sort(); }
+            var inp = document.getElementById('inputIngEgrConcepto');
+            if (inp) { inp.value = nombre; }
+            if (typeof mostrarToast === 'function') mostrarToast('✓ Categoría "' + nombre + '" creada');
+        }
+
+        window.cerrarPanelCrearIngCat();
+    };
+})();
+</script>
 
     <!-- MODAL EDITAR VENCIMIENTO WIDGET -->
     <div id="modalEditVenc" class="modal-overlay" style="z-index:500;">
