@@ -2684,9 +2684,9 @@ GUARDAR PRODUCTO
                         autocomplete="off"
                         oninput="filtrarSupercatIngEgr(this.value)"
                         onfocus="filtrarSupercatIngEgr(this.value)"
-                        onblur="setTimeout(()=>document.getElementById('ddSupercatIngEgr').classList.add('hidden'),150)"
+                        onblur="setTimeout(()=>document.getElementById('ddSupercatIngEgr').classList.add('hidden'),300)"
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
-                    <div id="ddSupercatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
+                    <div id="ddSupercatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
 <div class="relative">
     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Género</label>
@@ -2696,9 +2696,9 @@ GUARDAR PRODUCTO
         autocomplete="off"
         oninput="filtrarGeneroIngEgr(this.value)"
         onfocus="filtrarGeneroIngEgr(this.value)"
-        onblur="setTimeout(()=>document.getElementById('ddGeneroIngEgr').classList.add('hidden'),150)"
+        onblur="setTimeout(()=>document.getElementById('ddGeneroIngEgr').classList.add('hidden'),300)"
         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
-    <div id="ddGeneroIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
+    <div id="ddGeneroIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
 </div>
 
                 <div class="relative">
@@ -2707,9 +2707,9 @@ GUARDAR PRODUCTO
                         autocomplete="off"
                         oninput="filtrarCatIngEgr(this.value)"
                         onfocus="filtrarCatIngEgr(this.value)"
-                        onblur="setTimeout(()=>document.getElementById('ddCatIngEgr').classList.add('hidden'),150)"
+                        onblur="setTimeout(()=>document.getElementById('ddCatIngEgr').classList.add('hidden'),300)"
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs">
-                    <div id="ddCatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
+                    <div id="ddCatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Detalle</label>
@@ -2799,10 +2799,113 @@ GUARDAR PRODUCTO
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-emerald-500 uppercase italic">Seleccionar Producto</h3>
-                <button onclick="toggleModal('modalCatalogoIngEgr',false)" class="text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-6 h-6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+                <div class="flex items-center gap-2">
+                    <button onclick="abrirCrearProductoIngEgr()" style="background:linear-gradient(135deg,#10b981,#059669);color:#000;border:none;border-radius:10px;padding:7px 13px;font-size:10px;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo
+                    </button>
+                    <button onclick="toggleModal('modalCatalogoIngEgr',false)" class="text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-6 h-6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+                </div>
             </div>
             <input type="text" id="inputBusquedaIngEgr" placeholder="Buscar producto..." oninput="filtrarProductosIngEgr(this.value)" class="search-input">
             <div id="listaProductosCatalogoIngEgr" class="grid grid-cols-1 gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR PRODUCTO DESDE ING/EGR -->
+    <div id="modalCrearProdIngEgr" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:399;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;padding:12px;overflow-y:auto;">
+        <div style="background:#0f172a;border:2px solid rgba(16,185,129,0.35);border-radius:2rem;padding:24px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;margin:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <span style="font-size:13px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.08em;">＋ Crear Producto</span>
+                <button onclick="cerrarCrearProductoIngEgr()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:5px 12px;font-weight:900;font-size:13px;cursor:pointer;">✕</button>
+            </div>
+            <!-- Foto -->
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+                <div style="width:80px;height:80px;border-radius:16px;border:2px solid #334155;background:#1e293b;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('iesFotoInput').click()">
+                    <img id="iesFotoPreview" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:none;">
+                    <span id="iesFotoPlaceholder" style="font-size:28px;">📷</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                    <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Subir imagen
+                        <input type="file" id="iesFotoInput" accept="image/*" style="display:none;" onchange="iesPrevisualizarFoto(this)">
+                    </label>
+                    <button onclick="iesQuitarFoto()" style="font-size:9px;color:#475569;background:none;border:none;cursor:pointer;font-weight:900;text-transform:uppercase;">✕ Quitar foto</button>
+                </div>
+            </div>
+            <!-- Nombre -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Nombre *</label>
+                <input type="text" id="iesNombre" placeholder="Nombre del producto..." style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+            </div>
+            <!-- Precios -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Precio Costo *</label>
+                    <input type="number" id="iesCosto" placeholder="0" min="0" step="any" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" oninput="iesActualizarMargen()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                </div>
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Precio Venta *</label>
+                    <input type="number" id="iesVenta" placeholder="0" min="0" step="any" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" oninput="iesActualizarMargen()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                </div>
+            </div>
+            <!-- Margen Bruto -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Margen Bruto %</label>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <input type="number" id="iesMargen" placeholder="Ej: 35" min="0" max="99" step="0.1" style="flex:1;background:#1e293b;border:1.5px solid #334155;color:#10b981;border-radius:10px;padding:10px 12px;font-size:15px;font-weight:900;outline:none;box-sizing:border-box;font-family:monospace;" oninput="iesMargenCambiado()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                    <span style="font-size:18px;font-weight:900;color:#475569;">%</span>
+                </div>
+                <span style="font-size:9px;color:#475569;font-weight:700;">Se calcula al ingresar costo y venta, o escribilo para recalcular el precio de venta.</span>
+            </div>
+            <!-- Proveedor -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Proveedor</label>
+                <input type="text" id="iesProveedor" placeholder="Nombre del proveedor..." list="iesProveedorList" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                <datalist id="iesProveedorList"></datalist>
+            </div>
+            <!-- Categoria + Forma de Venta -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Categoría</label>
+                    <input type="text" id="iesCategoria" placeholder="Ej: Lácteos..." list="iesCategoriaList" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                    <datalist id="iesCategoriaList"></datalist>
+                </div>
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Forma de Venta</label>
+                    <select id="iesTipoVenta" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                        <option value="Unidad">Unidad</option>
+                        <option value="Gramos">Gramos</option>
+                        <option value="Kg">Kg</option>
+                        <option value="Litro">Litro</option>
+                        <option value="Docena">Docena</option>
+                        <option value="Caja">Caja</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Departamento -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Departamento</label>
+                <input type="text" id="iesDepto" placeholder="Ej: Almacén, Bebidas..." list="iesDeptoList" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                <datalist id="iesDeptoList"></datalist>
+            </div>
+            <!-- Vencimiento -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Vencimiento</label>
+                <input type="date" id="iesVencimiento" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+            </div>
+            <!-- Codigos -->
+            <div style="margin-bottom:20px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Códigos de barras</label>
+                <input type="text" id="iesCodigos" placeholder="Ej: 7790001234567, 779000..." style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                <span style="font-size:9px;color:#475569;font-weight:700;">Podés ingresar múltiples códigos separados por coma</span>
+            </div>
+            <!-- Botones -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button onclick="cerrarCrearProductoIngEgr()" style="padding:13px;background:#1e293b;color:#94a3b8;font-weight:900;font-size:11px;text-transform:uppercase;border:1px solid #334155;border-radius:12px;cursor:pointer;">Cancelar</button>
+                <button onclick="guardarCrearProductoIngEgr()" style="padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#000;font-weight:900;font-size:11px;text-transform:uppercase;border:none;border-radius:12px;cursor:pointer;letter-spacing:.05em;">💾 Guardar Producto</button>
+            </div>
         </div>
     </div>
 
@@ -3348,10 +3451,126 @@ CONFIRMAR PAGO
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-emerald-500 uppercase italic">Seleccionar Producto</h3>
-                <button onclick="cerrarCatalogoCompra()" class="text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-6 h-6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+                <div class="flex items-center gap-2">
+                    <button onclick="abrirCrearProductoCompra()" style="background:linear-gradient(135deg,#10b981,#059669);color:#000;border:none;border-radius:10px;padding:7px 13px;font-size:10px;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo
+                    </button>
+                    <button onclick="cerrarCatalogoCompra()" class="text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-6 h-6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+                </div>
             </div>
             <input type="text" id="inputBusquedaCompra" placeholder="Buscar producto..." oninput="filtrarProductosCompra(this.value)" class="search-input">
             <div id="listaProductosCatalogoCompra" class="grid grid-cols-1 gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR PRODUCTO DESDE COMPRAS -->
+    <div id="modalCrearProdCompra" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:299999999;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;padding:12px;overflow-y:auto;">
+        <div style="background:#0f172a;border:2px solid rgba(16,185,129,0.35);border-radius:2rem;padding:24px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;margin:auto;">
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <span style="font-size:13px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.08em;">＋ Crear Producto</span>
+                <button onclick="cerrarCrearProductoCompra()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:5px 12px;font-weight:900;font-size:13px;cursor:pointer;">✕</button>
+            </div>
+
+            <!-- Foto -->
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+                <div id="cpFotoWrap" style="width:80px;height:80px;border-radius:16px;border:2px solid #334155;background:#1e293b;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('cpFotoInput').click()">
+                    <img id="cpFotoPreview" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:none;">
+                    <span id="cpFotoPlaceholder" style="font-size:28px;">📷</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                    <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Subir imagen
+                        <input type="file" id="cpFotoInput" accept="image/*" style="display:none;" onchange="cpPrevisualizarFoto(this)">
+                    </label>
+                    <button onclick="cpQuitarFoto()" style="font-size:9px;color:#475569;background:none;border:none;cursor:pointer;font-weight:900;text-transform:uppercase;">✕ Quitar foto</button>
+                </div>
+            </div>
+
+            <!-- Nombre -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Nombre *</label>
+                <input type="text" id="cpNombre" placeholder="Nombre del producto..." style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+            </div>
+
+            <!-- Precios fila -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Precio Costo *</label>
+                    <input type="number" id="cpCosto" placeholder="0" min="0" step="any" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" oninput="cpActualizarMargen()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                </div>
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Precio Venta *</label>
+                    <input type="number" id="cpVenta" placeholder="0" min="0" step="any" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" oninput="cpActualizarMargen()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                </div>
+            </div>
+
+            <!-- Margen Bruto editable -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Margen Bruto %</label>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <input type="number" id="cpMargen" placeholder="Ej: 35" min="0" max="99" step="0.1" style="flex:1;background:#1e293b;border:1.5px solid #334155;color:#10b981;border-radius:10px;padding:10px 12px;font-size:15px;font-weight:900;outline:none;box-sizing:border-box;font-family:monospace;" oninput="cpMargenCambiado()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                    <span style="font-size:18px;font-weight:900;color:#475569;">%</span>
+                </div>
+                <span style="font-size:9px;color:#475569;font-weight:700;">Se calcula solo al ingresar costo y venta, o podés escribirlo para recalcular el precio de venta.</span>
+            </div>
+
+            <!-- Proveedor -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Proveedor</label>
+                <div style="position:relative;">
+                    <input type="text" id="cpProveedor" placeholder="Nombre del proveedor..." list="cpProveedorList" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                    <datalist id="cpProveedorList"></datalist>
+                </div>
+            </div>
+
+            <!-- Categoria + Forma de Venta -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Categoría</label>
+                    <input type="text" id="cpCategoria" placeholder="Ej: Lácteos..." list="cpCategoriaList" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                    <datalist id="cpCategoriaList"></datalist>
+                </div>
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Forma de Venta</label>
+                    <select id="cpTipoVenta" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                        <option value="Unidad">Unidad</option>
+                        <option value="Gramos">Gramos</option>
+                        <option value="Kg">Kg</option>
+                        <option value="Litro">Litro</option>
+                        <option value="Docena">Docena</option>
+                        <option value="Caja">Caja</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Departamento -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Departamento</label>
+                <input type="text" id="cpDepto" placeholder="Ej: Almacén, Bebidas..." list="cpDeptoList" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                <datalist id="cpDeptoList"></datalist>
+            </div>
+
+            <!-- Vencimiento -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Vencimiento</label>
+                <input type="date" id="cpVencimiento" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+            </div>
+
+            <!-- Códigos -->
+            <div style="margin-bottom:20px;">
+                <label style="display:block;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Códigos de barras</label>
+                <input type="text" id="cpCodigos" placeholder="Ej: 7790001234567, 779000..." style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                <span style="font-size:9px;color:#475569;font-weight:700;">Podés ingresar múltiples códigos separados por coma</span>
+            </div>
+
+            <!-- Botones -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button onclick="cerrarCrearProductoCompra()" style="padding:13px;background:#1e293b;color:#94a3b8;font-weight:900;font-size:11px;text-transform:uppercase;border:1px solid #334155;border-radius:12px;cursor:pointer;">Cancelar</button>
+                <button onclick="guardarCrearProductoCompra()" style="padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#000;font-weight:900;font-size:11px;text-transform:uppercase;border:none;border-radius:12px;cursor:pointer;letter-spacing:.05em;">💾 Guardar Producto</button>
+            </div>
         </div>
     </div>
 
@@ -7940,21 +8159,34 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             const dd = document.getElementById('ddSupercatIngEgr');
             if (!dd) return;
             const q = (query||'').toUpperCase().trim();
-            const esEgr = ingEgrTipo === 'egreso';
-            const sheetList = esEgr ? _supercatsEgrSheet : _supercatsIngSheet;
-            const dbList = esEgr ? _sheetEgresos : _sheetIngresos;
-            // Combinar sheet + DB, todo en UPPERCASE para consistencia
+            const _tipo = (typeof ingEgrTipo !== 'undefined' ? ingEgrTipo : window.ingEgrTipo) || 'ingreso';
+            const esEgr = _tipo === 'egreso';
+            const sheetList = esEgr ? (window._supercatsEgrSheet||[]) : (window._supercatsIngSheet||[]);
+            const dbList = esEgr ? (window._sheetEgresos||[]) : (window._sheetIngresos||[]);
             const fromSheet = sheetList.map(s => (s||'').toUpperCase().trim()).filter(Boolean);
             const fromDB = [...new Set(dbList.map(r => (r.proveedor||'').toUpperCase().trim()).filter(Boolean))].sort();
             const opciones = [...new Set([...fromSheet, ...fromDB])].sort();
             const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
-            if (!filtradas.length) { dd.classList.add('hidden'); return; }
             const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
-            dd.innerHTML = filtradas.map(o =>
+            const accentColor = esEgr ? '#f87171' : '#10b981';
+            const mostrarCrear = q && !opciones.some(o => o === q);
+            if (!filtradas.length && !mostrarCrear) { dd.classList.add('hidden'); return; }
+            dd.innerHTML = (mostrarCrear ? `<div class="px-3 py-2 text-xs font-black cursor-pointer uppercase flex items-center gap-2" style="border-bottom:1px solid ${accentColor}33;" onmousedown="crearSupercatIngEgr('${q.replace(/'/g,"\\'")}')">
+                <span style="font-size:14px;font-weight:900;color:${accentColor}">＋</span>
+                <span style="color:${accentColor}">Crear supercategoría "<strong>${Utils.escHtml(q)}</strong>"</span>
+            </div>` : '') +
+            filtradas.map(o =>
                 `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase"
-                      onmousedown="selSupercatIngEgr('${o.replace(/'/g, "\'")}')">${o}</div>`
+                      onmousedown="selSupercatIngEgr('${o.replace(/'/g, "\\'")}')">${o}</div>`
             ).join('');
             dd.classList.remove('hidden');
+        }
+
+        function crearSupercatIngEgr(nombre) {
+            nombre = nombre.toUpperCase().trim();
+            if (!nombre) return;
+            selSupercatIngEgr(nombre);
+            mostrarToast(`✓ Supercategoría "${nombre}" lista para usar`);
         }
 
         function selSupercatIngEgr(val) {
@@ -7982,8 +8214,9 @@ function filtrarGeneroIngEgr(query) {
 
     const q = (query||'').toUpperCase().trim();
 
-    const esEgr = ingEgrTipo === 'egreso';
-    const sheetList = esEgr ? _generosEgrSheet : _generosIngSheet;
+    const _tipo = (typeof ingEgrTipo !== 'undefined' ? ingEgrTipo : window.ingEgrTipo) || 'ingreso';
+    const esEgr = _tipo === 'egreso';
+    const sheetList = esEgr ? (window._generosEgrSheet||[]) : (window._generosIngSheet||[]);
 
     const opciones = (sheetList || [])
         .map(g => (g||'').toUpperCase().trim())
@@ -7991,27 +8224,40 @@ function filtrarGeneroIngEgr(query) {
         .sort();
 
     const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
+    const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
+    const accentColor = esEgr ? '#f87171' : '#10b981';
+    const mostrarCrear = q && !opciones.some(o => o === q);
 
-    if (!filtradas.length) {
+    if (!filtradas.length && !mostrarCrear) {
         dd.classList.add('hidden');
         return;
     }
 
-    const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
-
-    dd.innerHTML = filtradas.map(o =>
+    dd.innerHTML = (mostrarCrear ? `<div class="px-3 py-2 text-xs font-black cursor-pointer uppercase flex items-center gap-2" style="border-bottom:1px solid ${accentColor}33;" onmousedown="crearGeneroIngEgr('${q.replace(/'/g,"\\'")}')">
+        <span style="font-size:14px;font-weight:900;color:${accentColor}">＋</span>
+        <span style="color:${accentColor}">Crear género "<strong>${Utils.escHtml(q)}</strong>"</span>
+    </div>` : '') +
+    filtradas.map(o =>
         `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase"
         onmousedown="selGeneroIngEgr('${o.replace(/'/g,"\\'")}')">${o}</div>`
     ).join('');
 
     dd.classList.remove('hidden');
 }
+
+function crearGeneroIngEgr(nombre) {
+    nombre = nombre.toUpperCase().trim();
+    if (!nombre) return;
+    selGeneroIngEgr(nombre);
+    mostrarToast(`✓ Género "${nombre}" listo para usar`);
+}
         function filtrarCatIngEgr(query, supercat) {
             const dd = document.getElementById('ddCatIngEgr');
             if (!dd) return;
-            const esEgr = ingEgrTipo === 'egreso';
-            const sheetMap = esEgr ? _catsEgrSheet : _catsIngSheet;
-            const dbRef   = esEgr ? _sheetEgresos : _sheetIngresos;
+            const _tipo = (typeof ingEgrTipo !== 'undefined' ? ingEgrTipo : window.ingEgrTipo) || 'ingreso';
+            const esEgr = _tipo === 'egreso';
+            const sheetMap = esEgr ? (window._catsEgrSheet||{}) : (window._catsIngSheet||{});
+            const dbRef   = esEgr ? (window._sheetEgresos||[]) : (window._sheetIngresos||[]);
             // sc en UPPERCASE para matchear con las keys del mapa
             const sc = (supercat || document.getElementById('inputIngEgrProveedor')?.value || '').toUpperCase().trim();
             const q  = (query||'').toUpperCase().trim();
@@ -8040,21 +8286,31 @@ function filtrarGeneroIngEgr(query) {
                 opciones = sc && mergedMap[sc] ? mergedMap[sc]
                     : [...new Set(Object.values(mergedMap).flat())].sort();
             } else {
-                opciones = [...new Set(dbRef.map(r => (r.concepto||'').toUpperCase().trim()).filter(Boolean))].sort();
+                opciones = [...new Set((dbRef||[]).map(r => (r.concepto||'').toUpperCase().trim()).filter(Boolean))].sort();
             }
             const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
-            if (!filtradas.length) { dd.classList.add('hidden'); return; }
             const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
-            dd.innerHTML = filtradas.map(o =>
+            const accentColor = esEgr ? '#f87171' : '#10b981';
+            // Botón + Crear si hay texto y no coincide exactamente
+            const mostrarCrear = q && !opciones.some(o => o === q);
+            if (!filtradas.length && !mostrarCrear) { dd.classList.add('hidden'); return; }
+            dd.innerHTML = (mostrarCrear ? `<div class="px-3 py-2 text-xs font-black text-black cursor-pointer uppercase flex items-center gap-2" style="background:${accentColor}20;border-bottom:1px solid ${accentColor}33;" onmousedown="crearCatIngEgr('${q.replace(/'/g,"\\'")}')" >
+                <span style="font-size:14px;font-weight:900;color:${accentColor}">＋</span>
+                <span style="color:${accentColor}">Crear categoría "<strong>${Utils.escHtml(q)}</strong>"</span>
+            </div>` : '') +
+            filtradas.map(o =>
                 `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase"
-                      onmousedown="selCatIngEgr('${o.replace(/'/g, "\'")}')">${o}</div>`
+                      onmousedown="selCatIngEgr('${o.replace(/'/g, "\\'")}')">${o}</div>`
             ).join('');
             dd.classList.remove('hidden');
         }
 
-        function selCatIngEgr(val) {
-            document.getElementById('inputIngEgrConcepto').value = val;
+        function crearCatIngEgr(nombre) {
+            nombre = nombre.toUpperCase().trim();
+            if (!nombre) return;
+            document.getElementById('inputIngEgrConcepto').value = nombre;
             document.getElementById('ddCatIngEgr').classList.add('hidden');
+            mostrarToast(`✓ Categoría "${nombre}" lista para usar`);
         }
 
 function selGeneroIngEgr(val){
@@ -8489,6 +8745,165 @@ function selGeneroIngEgr(val){
 }
 
 
+// ═══════════════════════════════════════════
+// CREAR PRODUCTO DESDE COMPRAS
+// ═══════════════════════════════════════════
+function abrirCrearProductoCompra(nombreInicial) {
+    // Poblar datalists con datos existentes
+    const provs  = [...new Set(_sheetProductos.map(p => String(p.proveedor||'').trim()).filter(Boolean))].sort();
+    const cats   = [...new Set(_sheetProductos.map(p => String(p.categoria||'').trim()).filter(Boolean))].sort();
+    const deptos = [...new Set(_sheetProductos.map(p => String(p.depto||'').trim()).filter(Boolean))].sort();
+
+    const dlProv = document.getElementById('cpProveedorList');
+    if (dlProv) dlProv.innerHTML = provs.map(v => `<option value="${v}">`).join('');
+    const dlCat = document.getElementById('cpCategoriaList');
+    if (dlCat) dlCat.innerHTML = cats.map(v => `<option value="${v}">`).join('');
+    const dlDep = document.getElementById('cpDeptoList');
+    if (dlDep) dlDep.innerHTML = deptos.map(v => `<option value="${v}">`).join('');
+
+    // Limpiar campos
+    document.getElementById('cpNombre').value    = nombreInicial ? nombreInicial.toUpperCase() : '';
+    document.getElementById('cpCosto').value     = '';
+    document.getElementById('cpVenta').value     = '';
+    document.getElementById('cpProveedor').value = '';
+    document.getElementById('cpCategoria').value = '';
+    document.getElementById('cpDepto').value     = '';
+    document.getElementById('cpVencimiento').value = '';
+    document.getElementById('cpCodigos').value   = '';
+    document.getElementById('cpTipoVenta').value = 'Unidad';
+    const cpMargenEl = document.getElementById('cpMargen'); if(cpMargenEl) cpMargenEl.value = '';
+    
+
+    // Limpiar foto
+    cpQuitarFoto();
+
+    // Mostrar modal
+    const m = document.getElementById('modalCrearProdCompra');
+    m.style.display = 'flex';
+    setTimeout(() => document.getElementById('cpNombre').focus(), 100);
+}
+
+function cerrarCrearProductoCompra() {
+    document.getElementById('modalCrearProdCompra').style.display = 'none';
+    // Volver al catálogo de compra
+    document.getElementById('modalCatalogoCompra').classList.add('modal-active');
+}
+
+function cpPrevisualizarFoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = document.getElementById('cpFotoPreview');
+        const ph  = document.getElementById('cpFotoPlaceholder');
+        img.src = e.target.result;
+        img.style.display = 'block';
+        ph.style.display  = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function cpQuitarFoto() {
+    const input = document.getElementById('cpFotoInput');
+    if (input) input.value = '';
+    const img = document.getElementById('cpFotoPreview');
+    const ph  = document.getElementById('cpFotoPlaceholder');
+    img.src = '';
+    img.style.display = 'none';
+    ph.style.display  = 'block';
+}
+
+function cpActualizarMargen() {
+    const costo    = parseFloat(document.getElementById('cpCosto').value) || 0;
+    const venta    = parseFloat(document.getElementById('cpVenta').value) || 0;
+    const margenEl = document.getElementById('cpMargen');
+    if (!margenEl) return;
+    if (costo > 0 && venta > 0) {
+        const margen = ((venta - costo) / venta * 100).toFixed(1);
+        margenEl.value = margen;
+        margenEl.style.color = parseFloat(margen) >= 0 ? '#10b981' : '#f87171';
+    }
+}
+
+function cpMargenCambiado() {
+    const margen = parseFloat(document.getElementById('cpMargen').value);
+    const costo  = parseFloat(document.getElementById('cpCosto').value) || 0;
+    if (!isNaN(margen) && margen > 0 && margen < 100 && costo > 0) {
+        const venta = costo / (1 - margen / 100);
+        document.getElementById('cpVenta').value = venta.toFixed(2);
+    }
+}
+
+function guardarCrearProductoCompra() {
+    const nombre = (document.getElementById('cpNombre').value || '').trim().toUpperCase();
+    const costo  = parseFloat(document.getElementById('cpCosto').value);
+    const precio = parseFloat(document.getElementById('cpVenta').value);
+
+    if (!nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+    if (isNaN(costo) || costo < 0) { mostrarToast('El precio de costo no es válido', 'error'); return; }
+    if (isNaN(precio) || precio < 0) { mostrarToast('El precio de venta no es válido', 'error'); return; }
+
+    const existe = _sheetProductos.find(p => p.nombre === nombre);
+    if (existe) {
+        mostrarToast(`Ya existe "${nombre}". Seleccionándolo...`, 'info');
+        document.getElementById('modalCrearProdCompra').style.display = 'none';
+        seleccionarProductoCompra(_sheetProductos.indexOf(existe));
+        return;
+    }
+
+    const proveedor   = (document.getElementById('cpProveedor').value   || '').trim();
+    const categoria   = (document.getElementById('cpCategoria').value   || '').trim();
+    const depto       = (document.getElementById('cpDepto').value       || '').trim();
+    const tipoVenta   = document.getElementById('cpTipoVenta').value    || 'Unidad';
+    const vencimiento = (document.getElementById('cpVencimiento').value || '').trim();
+    const codigos     = (document.getElementById('cpCodigos').value     || '').trim();
+    const ganancia    = precio - costo;
+    const margenBruto = precio > 0 ? parseFloat(((ganancia / precio) * 100).toFixed(2)) : 0;
+
+    const nuevoId = Utils.genId();
+    const fotoImg = document.getElementById('cpFotoPreview');
+    const fotoData = (!fotoImg.classList.contains('hidden') && fotoImg.src && fotoImg.src.startsWith('data:')) ? fotoImg.src : '';
+
+    const nuevo = {
+        id: nuevoId, nombre, costo, precio, proveedor, categoria,
+        depto, tipoVenta, vencimiento, fechaVencimiento: vencimiento,
+        codigos, codigo: codigos, margenBruto,
+        stock: 0, stockCalculado: 0, foto: ''
+    };
+
+    _sheetProductos.push(nuevo);
+    localStorage.setItem('natanael_inventory_v3', JSON.stringify(_sheetProductos));
+
+    const prodPayload = {
+        tipo: 'producto', id: nuevoId, numeroProd: nuevoId,
+        nombre, margenBruto, proveedor, categoria,
+        tipoVenta, departamento: depto,
+        vencimiento, fechaVencimiento: vencimiento,
+        codigos, codigo: codigos,
+        costo, precioVenta: precio, ganancia,
+        stock1: 0, cantidad: 0
+    };
+
+    if (fotoData) {
+        mostrarToast('⏳ Subiendo imagen...', 'info');
+        subirFotoImgBB(fotoData, function(urlImagen) {
+            prodPayload.foto   = urlImagen;
+            prodPayload.imagen = urlImagen;
+            const idx2 = _sheetProductos.findIndex(p => p.id === nuevoId);
+            if (idx2 !== -1) _sheetProductos[idx2].foto = urlImagen;
+            fetchSheets({ method: 'POST', body: JSON.stringify(prodPayload) });
+        });
+    } else {
+        fetchSheets({ method: 'POST', body: JSON.stringify(prodPayload) });
+    }
+
+    document.getElementById('modalCrearProdCompra').style.display = 'none';
+    mostrarToast(`✓ Producto "${nombre}" creado`);
+
+    const idxNuevo = _sheetProductos.length - 1;
+    seleccionarProductoCompra(idxNuevo);
+}
+
 function crearProductoCompra(nombre){
 
 if(!nombre){
@@ -8584,7 +8999,7 @@ function filtrarProductosCompra(query) {
                 Sin resultados
             </p>
 
-            <button onclick="crearProductoCompra('${query.replace(/'/g,"")}')"
+            <button onclick="abrirCrearProductoCompra('${query.replace(/'/g,"")}')"
                 class="bg-emerald-500 text-black font-bold px-3 py-2 rounded-lg text-xs">
                 + Crear "${Utils.escHtml(query)}"
             </button>
@@ -10062,18 +10477,18 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         // ============================================================
         // MÓDULO INGRESOS / EGRESOS
         // ============================================================
-        let _sheetIngresos = [];
-        let _sheetEgresos = [];
-        let ingEgrTipo = 'ingreso';
+        let _sheetIngresos = []; window._sheetIngresos = _sheetIngresos;
+        let _sheetEgresos = []; window._sheetEgresos = _sheetEgresos;
+        let ingEgrTipo = 'ingreso'; window.ingEgrTipo = ingEgrTipo;
         let carritoIngEgr = [];
         let prodPendienteIngEgr = null;
-        let _supercatsIngSheet = [];
-        let _catsIngSheet      = [];
-        let _supercatsEgrSheet = [];
-        let _catsEgrSheet      = [];
+        let _supercatsIngSheet = []; window._supercatsIngSheet = _supercatsIngSheet;
+        let _catsIngSheet = []; window._catsIngSheet = _catsIngSheet;
+        let _supercatsEgrSheet = []; window._supercatsEgrSheet = _supercatsEgrSheet;
+        let _catsEgrSheet = []; window._catsEgrSheet = _catsEgrSheet;
         let _generosEgrNegSheet = [];
-        let _generosEgrSheet   = [];
-        let _generosIngSheet   = [];
+        let _generosEgrSheet = []; window._generosEgrSheet = _generosEgrSheet;
+        let _generosIngSheet = []; window._generosIngSheet = _generosIngSheet;
 
         // Reconstruir desde DB si las listas están vacías
         
@@ -10225,7 +10640,7 @@ function filtrarGeneroEgr(query) {
         }
 
         function abrirNuevoIngEgr(tipo) {
-            ingEgrTipo = tipo;
+            ingEgrTipo = tipo; window.ingEgrTipo = tipo;
             carritoIngEgr = [];
             document.getElementById('tituloIngEgr').textContent = tipo === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Egreso';
             document.getElementById('btnConfirmarIngEgr').style.background = tipo === 'ingreso' ? '#10b981' : '#ef4444';
@@ -10274,7 +10689,10 @@ function filtrarGeneroEgr(query) {
         function filtrarProductosIngEgr(query) {
             const container = document.getElementById('listaProductosCatalogoIngEgr');
             const filtrados = _sheetProductos.map((p,i) => ({...p,_idx:i})).filter(p => p.nombre.toLowerCase().includes(query.toLowerCase()));
-            if (filtrados.length === 0) { container.innerHTML = '<p class="text-[10px] text-slate-500 text-center py-4 font-bold uppercase">Sin resultados</p>'; return; }
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div class="text-center py-4"><p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Sin resultados</p><button onclick="abrirCrearProductoIngEgr('${query.replace(/'/g,'')}')" class="bg-emerald-500 text-black font-bold px-3 py-2 rounded-lg text-xs">+ Crear "${Utils.escHtml(query)}"</button></div>`;
+                return;
+            }
             const colors = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
             container.innerHTML = filtrados.map(p => {
                 const initials = p.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
@@ -10302,6 +10720,143 @@ function filtrarGeneroEgr(query) {
             renderCarritoIngEgr();
         }
 
+
+// ═══════════════════════════════════════════
+// CREAR PRODUCTO DESDE ING/EGR
+// ═══════════════════════════════════════════
+function abrirCrearProductoIngEgr(nombreInicial) {
+    const provs  = [...new Set(_sheetProductos.map(p => String(p.proveedor||'').trim()).filter(Boolean))].sort();
+    const cats   = [...new Set(_sheetProductos.map(p => String(p.categoria||'').trim()).filter(Boolean))].sort();
+    const deptos = [...new Set(_sheetProductos.map(p => String(p.depto||'').trim()).filter(Boolean))].sort();
+    const dl = (id, arr) => { const el = document.getElementById(id); if(el) el.innerHTML = arr.map(v=>`<option value="${v}">`).join(''); };
+    dl('iesProveedorList', provs); dl('iesCategoriaList', cats); dl('iesDeptoList', deptos);
+
+    document.getElementById('iesNombre').value     = nombreInicial ? nombreInicial.toUpperCase() : '';
+    document.getElementById('iesCosto').value      = '';
+    document.getElementById('iesVenta').value      = '';
+    document.getElementById('iesMargen').value     = '';
+    document.getElementById('iesProveedor').value  = '';
+    document.getElementById('iesCategoria').value  = '';
+    document.getElementById('iesDepto').value      = '';
+    document.getElementById('iesVencimiento').value= '';
+    document.getElementById('iesCodigos').value    = '';
+    document.getElementById('iesTipoVenta').value  = 'Unidad';
+    iesQuitarFoto();
+
+    const m = document.getElementById('modalCrearProdIngEgr');
+    m.style.display = 'flex';
+    setTimeout(() => document.getElementById('iesNombre').focus(), 100);
+}
+
+function cerrarCrearProductoIngEgr() {
+    document.getElementById('modalCrearProdIngEgr').style.display = 'none';
+    toggleModal('modalCatalogoIngEgr', true);
+}
+
+function iesPrevisualizarFoto(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = document.getElementById('iesFotoPreview');
+        const ph  = document.getElementById('iesFotoPlaceholder');
+        img.src = e.target.result; img.style.display = 'block'; ph.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function iesQuitarFoto() {
+    const input = document.getElementById('iesFotoInput'); if(input) input.value = '';
+    const img = document.getElementById('iesFotoPreview');
+    const ph  = document.getElementById('iesFotoPlaceholder');
+    if(img){ img.src=''; img.style.display='none'; }
+    if(ph) ph.style.display='block';
+}
+
+function iesActualizarMargen() {
+    const costo    = parseFloat(document.getElementById('iesCosto').value) || 0;
+    const venta    = parseFloat(document.getElementById('iesVenta').value) || 0;
+    const margenEl = document.getElementById('iesMargen');
+    if (!margenEl) return;
+    if (costo > 0 && venta > 0) {
+        const margen = ((venta - costo) / venta * 100).toFixed(1);
+        margenEl.value = margen;
+        margenEl.style.color = parseFloat(margen) >= 0 ? '#10b981' : '#f87171';
+    }
+}
+
+function iesMargenCambiado() {
+    const margen = parseFloat(document.getElementById('iesMargen').value);
+    const costo  = parseFloat(document.getElementById('iesCosto').value) || 0;
+    if (!isNaN(margen) && margen > 0 && margen < 100 && costo > 0) {
+        document.getElementById('iesVenta').value = (costo / (1 - margen / 100)).toFixed(2);
+    }
+}
+
+function guardarCrearProductoIngEgr() {
+    const nombre = (document.getElementById('iesNombre').value || '').trim().toUpperCase();
+    const costo  = parseFloat(document.getElementById('iesCosto').value);
+    const precio = parseFloat(document.getElementById('iesVenta').value);
+
+    if (!nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+    if (isNaN(costo) || costo < 0) { mostrarToast('El precio de costo no es válido', 'error'); return; }
+    if (isNaN(precio) || precio < 0) { mostrarToast('El precio de venta no es válido', 'error'); return; }
+
+    const existe = _sheetProductos.find(p => p.nombre === nombre);
+    if (existe) {
+        mostrarToast(`Ya existe "${nombre}". Seleccionándolo...`, 'info');
+        document.getElementById('modalCrearProdIngEgr').style.display = 'none';
+        seleccionarProdIngEgr(_sheetProductos.indexOf(existe));
+        return;
+    }
+
+    const proveedor   = (document.getElementById('iesProveedor').value   || '').trim();
+    const categoria   = (document.getElementById('iesCategoria').value   || '').trim();
+    const depto       = (document.getElementById('iesDepto').value       || '').trim();
+    const tipoVenta   = document.getElementById('iesTipoVenta').value    || 'Unidad';
+    const vencimiento = (document.getElementById('iesVencimiento').value || '').trim();
+    const codigos     = (document.getElementById('iesCodigos').value     || '').trim();
+    const ganancia    = precio - costo;
+    const margenBruto = precio > 0 ? parseFloat(((ganancia / precio) * 100).toFixed(2)) : 0;
+    const nuevoId     = Utils.genId();
+
+    const fotoImg  = document.getElementById('iesFotoPreview');
+    const fotoData = (fotoImg && fotoImg.style.display !== 'none' && fotoImg.src && fotoImg.src.startsWith('data:')) ? fotoImg.src : '';
+
+    const nuevo = {
+        id: nuevoId, nombre, costo, precio, proveedor, categoria,
+        depto, tipoVenta, vencimiento, fechaVencimiento: vencimiento,
+        codigos, codigo: codigos, margenBruto,
+        stock: 0, stockCalculado: 0, foto: ''
+    };
+    _sheetProductos.push(nuevo);
+    localStorage.setItem('natanael_inventory_v3', JSON.stringify(_sheetProductos));
+
+    const prodPayload = {
+        tipo: 'producto', id: nuevoId, numeroProd: nuevoId,
+        nombre, margenBruto, proveedor, categoria,
+        tipoVenta, departamento: depto,
+        vencimiento, fechaVencimiento: vencimiento,
+        codigos, codigo: codigos,
+        costo, precioVenta: precio, ganancia,
+        stock1: 0, cantidad: 0
+    };
+
+    if (fotoData) {
+        mostrarToast('⏳ Subiendo imagen...', 'info');
+        subirFotoImgBB(fotoData, function(urlImagen) {
+            prodPayload.foto = urlImagen; prodPayload.imagen = urlImagen;
+            const idx2 = _sheetProductos.findIndex(p => p.id === nuevoId);
+            if (idx2 !== -1) _sheetProductos[idx2].foto = urlImagen;
+            fetchSheets({ method: 'POST', body: JSON.stringify(prodPayload) });
+        });
+    } else {
+        fetchSheets({ method: 'POST', body: JSON.stringify(prodPayload) });
+    }
+
+    document.getElementById('modalCrearProdIngEgr').style.display = 'none';
+    mostrarToast(`✓ Producto "${nombre}" creado`);
+    seleccionarProdIngEgr(_sheetProductos.length - 1);
+}
 
 function eliminarProductoCompra(itemId) {
 
@@ -13429,14 +13984,15 @@ const catsMap = {};
                             catsMap[sc].add(ca);
                         }
                     });
-                   _supercatsIngSheet = [...supercatsSet].sort();
-                   _generosIngSheet   = Object.keys(generosMap).sort();
+                   _supercatsIngSheet = [...supercatsSet].sort(); window._supercatsIngSheet = _supercatsIngSheet;
+                   _generosIngSheet   = Object.keys(generosMap).sort(); window._generosIngSheet = _generosIngSheet;
 
 _catsIngSheet = {};
 
 Object.keys(catsMap || {}).forEach(k => {
     _catsIngSheet[k] = [...catsMap[k]].sort();
 });
+window._catsIngSheet = _catsIngSheet;
 
                     // Sync registros
                     const norm = s => String(s||'').trim().toUpperCase();
@@ -13514,6 +14070,8 @@ data.gastos.forEach(row => {
                     _supercatsEgrSheet = [...supercatsSet].sort();
 _generosEgrSheet = [...generosSet].sort();
 console.log('GENEROS DESDE SHEET:', _generosEgrSheet);
+window._supercatsEgrSheet = _supercatsEgrSheet;
+window._generosEgrSheet = _generosEgrSheet;
 
                     _supercatsEgrSheet = [...supercatsSet].sort();
 
@@ -13522,6 +14080,7 @@ _catsEgrSheet = {};
 Object.keys(catsMap || {}).forEach(k => {
     _catsEgrSheet[k] = [...catsMap[k]].sort();
 });
+window._catsEgrSheet = _catsEgrSheet;
                     // Sync registros
                     const normEgr = s => String(s||'').trim().toUpperCase();
                     data.gastos.forEach(row => {
