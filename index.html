@@ -1895,7 +1895,7 @@ GUARDAR PRODUCTO
             <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
                 <div class="flex flex-col gap-1 flex-1">
                     <label class="text-[9px] font-black text-blue-400 uppercase">Proveedor</label>
-                    <select id="provStatSelect" onchange="renderTabProveedor()"
+                    <select id="provStatSelect" onchange="renderTabProveedor(); renderCaja();"
                         class="text-xs px-3 py-2 rounded-xl font-bold"
                         style="background:#0f172a;border:1px solid #334155;color:white;">
                         <option value="">— Elegir proveedor —</option>
@@ -1905,6 +1905,19 @@ GUARDAR PRODUCTO
 
             <div id="tabProveedorContent" class="space-y-4">
                 <p class="text-center text-slate-500 text-[10px] font-black uppercase py-8">Elegí un proveedor para ver el detalle</p>
+            </div>
+
+            <!-- Separar por proveedor — toggle acumulado/período -->
+            <div class="glass-card rounded-2xl p-4 border border-slate-700">
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="text-xs font-black text-white uppercase tracking-widest">📦 Dinero a Separar por Proveedor</h3>
+                    <div class="flex gap-1">
+                        <button id="cajaBtnAcumulado" onclick="cajaSetModoProveedores('acumulado')" class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase btn-action bg-emerald-500 text-black">Acumulado</button>
+                        <button id="cajaBtnPeriodo"   onclick="cajaSetModoProveedores('periodo')"   class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase btn-action bg-slate-700 text-slate-400">Período</button>
+                    </div>
+                </div>
+                <p class="text-[9px] text-slate-500 font-bold mb-3">Debo al proveedor − Valor del stock en mano − Lo que me deben clientes (fiado de ese proveedor)</p>
+                <div id="cajaProveedores" class="space-y-2"></div>
             </div>
         </div>
 
@@ -2184,18 +2197,6 @@ GUARDAR PRODUCTO
             <!-- IDs ocultos para compatibilidad -->
             <div id="cajaNeta_card" style="display:none;"></div>
 
-            <!-- Separar por proveedor — toggle acumulado/período -->
-            <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                <div class="flex justify-between items-center mb-1">
-                    <h3 class="text-xs font-black text-white uppercase tracking-widest">📦 Dinero a Separar por Proveedor</h3>
-                    <div class="flex gap-1">
-                        <button id="cajaBtnAcumulado" onclick="cajaSetModoProveedores('acumulado')" class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase btn-action bg-emerald-500 text-black">Acumulado</button>
-                        <button id="cajaBtnPeriodo"   onclick="cajaSetModoProveedores('periodo')"   class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase btn-action bg-slate-700 text-slate-400">Período</button>
-                    </div>
-                </div>
-                <p class="text-[9px] text-slate-500 font-bold mb-3">Debo al proveedor − Valor del stock en mano − Lo que me deben clientes (fiado de ese proveedor)</p>
-                <div id="cajaProveedores" class="space-y-2"></div>
-            </div>
         </div>
 
         <!-- TAB: HOJA DE RUTA -->
@@ -2247,10 +2248,9 @@ GUARDAR PRODUCTO
                         <div><div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ganancias Total</div><div id="hrGanTotal" class="text-lg font-black text-amber-400">$ 0</div></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- BALANCE DE CONSUMO PROPIO -->
-            <div id="hrBalanceConsumo" class="glass-card rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5"></div>
+                <!-- Balance de Consumo Propio -->
+                <div id="hrBalanceConsumo" class="glass-card rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5"></div>
+            </div><!-- /hrPersonal -->
 
             <div id="hrNegocio" class="hidden space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -15586,6 +15586,9 @@ console.log("FILTRADAS:", filtradas.length);
             const cont = el('cajaProveedores');
             if (!cont) return;
 
+            // Si hay un proveedor seleccionado en la tab Proveedor, filtrar por él
+            const _provFiltro = (document.getElementById('provStatSelect')?.value || '').trim().toUpperCase();
+
             if (cajaModo === 'acumulado') {
                 // ── ACUMULADO: misma lógica que Proveedores del Negocio ──────
                 const deudaAProv = {};
@@ -15628,7 +15631,7 @@ console.log("FILTRADAS:", filtradas.length);
                     [...new Set(itemsProv.map(i=>(i.proveedor||'').trim().toUpperCase()).filter(Boolean))].forEach(prov=>{ cobrarDeProv[prov]=(cobrarDeProv[prov]||0)+saldoV; });
                 });
 
-                const todosProvs = [...new Set(Object.keys(deudaAProv))].sort();
+                const todosProvs = [...new Set(Object.keys(deudaAProv))].sort().filter(p => !_provFiltro || p === _provFiltro);
                 if (todosProvs.length===0) { cont.innerHTML='<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:20px;text-transform:uppercase;">Sin deudas pendientes</p>'; return; }
 
                 let html = `<div style="display:grid;grid-template-columns:1fr 100px 110px 110px 120px;gap:4px;padding:5px 12px;background:#080e1a;border-radius:8px;margin-bottom:4px;">
@@ -15736,7 +15739,7 @@ console.log("FILTRADAS:", filtradas.length);
                     });
                 });
 
-                const provsList = Object.keys(resProv).sort();
+                const provsList = Object.keys(resProv).sort().filter(p => !_provFiltro || p === _provFiltro);
                 if (!provsList.length) { cont.innerHTML='<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:20px;text-transform:uppercase;">Sin ventas en el período</p>'; return; }
 
                 const totalAPagar  = provsList.reduce((s,p)=>s+resProv[p].aPagar,0);
@@ -16050,6 +16053,15 @@ console.log("FILTRADAS:", filtradas.length);
                         provs.map(p=>`<option value="${p}" ${p===prev?'selected':''}>${p}</option>`).join('');
                 }
                 renderTabProveedor();
+                // Cargar sección "Dinero a Separar por Proveedor"
+                const _cd = document.getElementById('cajaDesde');
+                const _ch = document.getElementById('cajaHasta');
+                if (_cd && !_cd.value) {
+                    const hoy = new Date().toISOString().slice(0,10);
+                    _cd.value = hoy;
+                    if (_ch) _ch.value = hoy;
+                }
+                renderCaja();
             }
             if (isTarjeta) {
                 if (!document.getElementById('tcDesde')?.value) tcSetPeriodo(30);
@@ -16298,8 +16310,9 @@ console.log("FILTRADAS:", filtradas.length);
         const _regChecks = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}');
 
         function _regCheckKey(r) {
-            // Clave única basada en tipo+fecha+cliente+producto — no depende del índice visual
-            return [r.tipo, r.fecha, r.quien, r.detalle].join('|').replace(/\s+/g,'').toUpperCase().slice(0,80);
+            // Normalizar fecha con parseFechaNum para que sea consistente entre sesiones
+            const fn = parseFechaNum(r.fecha) || r.fecha || '';
+            return [r.tipo, String(fn), r.quien, r.detalle].join('|').replace(/\s+/g,'').toUpperCase().slice(0,80);
         }
 
         function _saveRegChecks() {
