@@ -599,11 +599,14 @@ z-index:999999999;
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/><circle cx="18.5" cy="15.5" r="2.5"/><path d="M20.27 17.27 22 19"/></svg>
                 <span class="uppercase" style="font-size:7px;display:block;text-align:center;line-height:1.1;white-space:nowrap;">Prov. Gastos</span>
             </button>
-            <button onclick="abrirModalEditar('supercat')" id="btnEditar" class="nav-link flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:p-3 rounded-xl text-slate-400 font-bold transition-all" style="flex-shrink:0;min-width:52px;" data-navbtn="false">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                <span class="uppercase" style="font-size:7px;display:block;text-align:center;line-height:1.1;white-space:nowrap;">Editar</span>
-            </button>
         </nav>
+        <!-- Botón Editar Imágenes — fuera del nav para evitar conflictos -->
+        <div style="flex-shrink:0;padding:4px 8px;">
+            <button onclick="document.getElementById('modalCatImg').style.display='flex';catImgTab('supercat')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:12px;background:#1e293b;border:1px solid #334155;color:#94a3b8;cursor:pointer;width:100%;font-weight:900;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span style="font-size:7px;text-transform:uppercase;">Editar</span>
+            </button>
+        </div>
         <!-- Firebase config btn -->
         <div style="flex-shrink:0;margin-left:auto;" class="md:mt-auto md:pt-4 md:border-t md:border-slate-800">
             <button onclick="sincronizarSheets();mostrarToast('↺ Sincronizando...','info');document.getElementById('syncDebugPanel').parentElement.classList.toggle('hidden');" class="nav-link flex items-center gap-3 p-3 rounded-xl text-slate-600 hover:text-slate-300 font-bold w-full transition-all" title="Sincronizar y ver log">
@@ -1277,20 +1280,21 @@ GUARDAR PRODUCTO
 
     <!-- VISTA INGRESOS -->
     <main id="vistaIngresos" class="flex-1 p-6 lg:p-8 overflow-y-auto h-screen custom-scrollbar hidden">
-        <div class="max-w-5xl mx-auto space-y-6">
+        <div class="space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic">Ingresos</h1>
                     <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Registro de ingresos de dinero</p>
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
-                    <button onclick="abrirModalCatImg('supercat')" class="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all uppercase">
+                    <button onclick="(function(){var m=document.getElementById('modalCatImg');if(m)m.style.display='flex';})()" class="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all uppercase">
                         🖼 Imágenes
                     </button>
                     <button onclick="abrirNuevoIngEgr('ingreso')" class="bg-emerald-500 text-black px-6 py-3 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-emerald-400 btn-action">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="plus-circle" aria-hidden="true" class="lucide lucide-plus-circle w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg> NUEVO INGRESO
                     </button>
                 </div>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="glass-card p-5 rounded-2xl text-center">
                     <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Total Ingresos</span>
@@ -1378,14 +1382,14 @@ GUARDAR PRODUCTO
 
     <!-- VISTA EGRESOS -->
     <main id="vistaEgresos" class="flex-1 p-6 lg:p-8 overflow-y-auto h-screen custom-scrollbar hidden">
-        <div class="max-w-5xl mx-auto space-y-6">
+        <div class="space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic">Egresos</h1>
                     <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Registro de salidas de dinero</p>
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
-                    <button onclick="abrirModalCatImg('supercat')" class="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all uppercase">
+                    <button onclick="(function(){var m=document.getElementById('modalCatImg');if(m)m.style.display='flex';})()" class="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all uppercase">
                         🖼 Imágenes
                     </button>
                     <button onclick="abrirNuevoIngEgr('egreso')" class="bg-red-500 text-white px-6 py-3 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-red-400 btn-action">
@@ -11077,14 +11081,9 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                     <div class="flex justify-between items-start gap-3">
                         <div class="flex-1 min-w-0">
                             <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
-                            <div class="flex items-center gap-2">
-                                ${(()=>{const img=_getCatImg('supercat',c.proveedor);return img?`<img src="${img}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">`:''})()}
-                                <div class="min-w-0">
-                                    <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
-                                    ${c.genero?`<div class="flex items-center gap-1">${(()=>{const img=_getCatImg('genero',c.genero);return img?`<img src="${img}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">`:''})()}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>`:''}
-                                    ${c.concepto?`<div class="flex items-center gap-1">${(()=>{const img=_getCatImg('categoria',c.concepto);return img?`<img src="${img}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">`:''})()}<span class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</span></div>`:''}
-                                </div>
-                            </div>
+                            <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
+                            ${c.genero?`<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span>`:''}
+                            ${c.concepto?`<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>`:''}
                             ${c.formaPago?`<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>`:''}
                             ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">🏦 ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
                             ${(c.items||[]).length>0?`<p class="text-[9px] text-slate-500">${c.items.map(i=>i.nombre).join(', ').substring(0,60)}</p>`:''}
@@ -18450,9 +18449,6 @@ dialog#modalEditarPrecios input {
 
 
 /* Ocultar todo lo demás cuando el modal está abierto */
-dialog#modalEditarPrecios[open] ~ * {
-    pointer-events: none;
-}
 </style>
 
 
@@ -18678,375 +18674,135 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-
-</body>
-
-<!-- ═══════════════════════════════════════════════════════
-     MODAL GESTIÓN DE IMÁGENES POR CATEGORÍA
-════════════════════════════════════════════════════════ -->
-<div id="modalCatImg" style="display:none;position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)cerrarModalCatImg()">
-  <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:24px;width:100%;max-width:460px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,0.7);">
-
-    <!-- Header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px 14px;border-bottom:1px solid #1e293b;flex-shrink:0;background:linear-gradient(135deg,#0a1628 0%,#0f1e3a 100%);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:15px;">✏️</div>
-        <div>
-          <div style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#f1f5f9;">Editar Categorías</div>
-          <div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;">Nombre · Imagen · Organización</div>
-        </div>
-      </div>
-      <button onclick="cerrarModalCatImg()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:10px;padding:6px 14px;font-weight:900;font-size:14px;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">✕</button>
+<!-- MODAL IMÁGENES CATEGORÍAS -->
+<div id="modalCatImg" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999999;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #334155;border-radius:20px;padding:24px;width:90%;max-width:440px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="color:#10b981;font-weight:900;font-size:13px;text-transform:uppercase;">🖼 Imágenes de Categorías</span>
+      <button onclick="document.getElementById('modalCatImg').style.display='none'" style="background:#334155;border:none;color:#fff;border-radius:8px;padding:5px 14px;font-weight:900;cursor:pointer;font-size:14px;">✕</button>
     </div>
-
-    <!-- Type tabs: Ingresos / Egresos -->
-    <div style="display:flex;gap:0;padding:14px 22px 0;flex-shrink:0;">
-      <button onclick="catImgSetFlow('ingreso')" id="catImgFlowIngreso" style="flex:1;padding:8px 6px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid #10b981;border-right:none;background:#10b98122;color:#10b981;border-radius:10px 0 0 10px;cursor:pointer;">📈 Ingresos</button>
-      <button onclick="catImgSetFlow('egreso')"  id="catImgFlowEgreso"  style="flex:1;padding:8px 6px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid #334155;border-left:none;background:#1e293b;color:#64748b;border-radius:0 10px 10px 0;cursor:pointer;">📉 Egresos</button>
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;">
+      <button onclick="catImgTab('supercat')" id="tabSC" style="flex:1;padding:8px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #10b981;background:#10b98122;color:#10b981;border-radius:10px;cursor:pointer;">Supercategoría</button>
+      <button onclick="catImgTab('genero')"   id="tabGN" style="flex:1;padding:8px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Género</button>
+      <button onclick="catImgTab('categoria')" id="tabCA" style="flex:1;padding:8px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Categoría</button>
     </div>
-
-    <!-- Category type tabs -->
-    <div style="display:flex;gap:6px;padding:10px 22px 0;flex-shrink:0;">
-      <button onclick="catImgSetTab('supercat')" id="catImgTabSupercat" style="flex:1;padding:7px 4px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid #10b981;background:#10b98120;color:#10b981;border-radius:10px;cursor:pointer;">Supercategoría</button>
-      <button onclick="catImgSetTab('genero')"   id="catImgTabGenero"   style="flex:1;padding:7px 4px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Género</button>
-      <button onclick="catImgSetTab('categoria')" id="catImgTabCategoria" style="flex:1;padding:7px 4px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Categoría</button>
-    </div>
-
-    <!-- Agregar nuevo -->
-    <div style="padding:10px 22px 0;flex-shrink:0;">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input type="text" id="catImgNuevoNombre" placeholder="Nuevo nombre..." style="flex:1;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:10px;padding:8px 12px;font-size:11px;font-weight:700;outline:none;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
-        <button onclick="catImgAgregarNuevo()" style="padding:8px 14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;white-space:nowrap;">＋ Agregar</button>
-      </div>
-    </div>
-
-    <!-- Lista de items -->
-    <div id="catImgLista" style="padding:14px 22px 18px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;"></div>
-
-  </div>
-</div>
-
-<!-- Sub-modal para editar nombre de categoria -->
-<div id="modalEditCatNombre" style="display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)cerrarEditCatNombre()">
-  <div style="background:#0f172a;border:1px solid #10b981;border-radius:18px;width:100%;max-width:320px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.7);">
-    <div style="font-size:11px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:4px;letter-spacing:.08em;">✏️ Renombrar</div>
-    <div id="editCatNombreTipoLabel" style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:14px;letter-spacing:.05em;"></div>
-    <input type="text" id="editCatNombreInput" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:900;outline:none;text-transform:uppercase;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <button onclick="cerrarEditCatNombre()" style="flex:1;padding:9px;background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;text-transform:uppercase;">Cancelar</button>
-      <button onclick="guardarEditCatNombre()" style="flex:1;padding:9px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;text-transform:uppercase;">💾 Guardar</button>
-    </div>
+    <div id="catImgLista" style="display:flex;flex-direction:column;gap:8px;"></div>
   </div>
 </div>
 
 <script>
-(function(){
+var _catImgTabActual = 'supercat';
 
-// ── Storage ──────────────────────────────────────────
-var STORAGE_KEY     = 'natanael_cat_imgs_v1';
-var NAMES_KEY       = 'natanael_cat_names_v1';
-
-function _loadCatImgs()  { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)  || '{}'); } catch(e){ return {}; } }
-function _saveCatImgs(o) { try { localStorage.setItem(STORAGE_KEY,  JSON.stringify(o)); } catch(e){} }
-function _loadCatNames() { try { return JSON.parse(localStorage.getItem(NAMES_KEY)    || '{}'); } catch(e){ return {}; } }
-function _saveCatNames(o){ try { localStorage.setItem(NAMES_KEY,    JSON.stringify(o)); } catch(e){} }
-
-window._getCatImg = function(tipo, nombre) {
-    if (!nombre) return null;
-    var imgs = _loadCatImgs();
-    return imgs[tipo + '::' + nombre.toUpperCase().trim()] || null;
-};
-
-function _setCatImg(tipo, nombre, dataUrl) {
-    var imgs = _loadCatImgs();
-    var key = tipo + '::' + nombre.toUpperCase().trim();
-    if (dataUrl) imgs[key] = dataUrl; else delete imgs[key];
-    _saveCatImgs(imgs);
-}
-
-// Custom names stored: key = tab::flow::OLDNAME, value = NEWNAME
-function _getCatNames() { return _loadCatNames(); }
-function _setCatName(tab, flow, oldName, newName) {
-    var names = _loadCatNames();
-    var key = tab + '::' + flow + '::' + oldName.toUpperCase().trim();
-    if (newName && newName.toUpperCase().trim() !== oldName.toUpperCase().trim()) {
-        names[key] = newName.toUpperCase().trim();
-    } else {
-        delete names[key];
-    }
-    _saveCatNames(names);
-}
-function _getDisplayName(tab, flow, rawName) {
-    var names = _loadCatNames();
-    return names[tab + '::' + flow + '::' + rawName.toUpperCase().trim()] || rawName;
-}
-
-// Custom added names (not from data): stored per tab+flow
-var ADDED_KEY = 'natanael_cat_added_v1';
-function _loadAdded() { try { return JSON.parse(localStorage.getItem(ADDED_KEY) || '{}'); } catch(e){ return {}; } }
-function _saveAdded(o){ try { localStorage.setItem(ADDED_KEY, JSON.stringify(o)); } catch(e){} }
-function _addCustomName(tab, flow, name) {
-    var a = _loadAdded();
-    var key = tab + '::' + flow;
-    a[key] = a[key] || [];
-    var n = name.toUpperCase().trim();
-    if (!a[key].includes(n)) a[key].push(n);
-    _saveAdded(a);
-}
-function _removeCustomName(tab, flow, name) {
-    var a = _loadAdded();
-    var key = tab + '::' + flow;
-    a[key] = (a[key] || []).filter(function(n){ return n !== name.toUpperCase().trim(); });
-    _saveAdded(a);
-}
-function _getCustomNames(tab, flow) {
-    var a = _loadAdded();
-    return a[tab + '::' + flow] || [];
-}
-
-// ── Estado ───────────────────────────────────────────
-var _catImgTab  = 'supercat';
-var _catImgFlow = 'ingreso';
-
-// Editar nombre - estado temporal
-var _editNombreCtx = null;
-
-window.catImgSetFlow = function(flow) {
-    _catImgFlow = flow;
-    var colors = { ingreso: '#10b981', egreso: '#f87171' };
-    var c = colors[flow];
-    var other = flow === 'ingreso' ? 'egreso' : 'ingreso';
-    var co = colors[other];
-    var btnThis  = document.getElementById('catImgFlow' + flow.charAt(0).toUpperCase() + flow.slice(1));
-    var btnOther = document.getElementById('catImgFlow' + other.charAt(0).toUpperCase() + other.slice(1));
-    if (btnThis) {
-        btnThis.style.borderColor  = c;
-        btnThis.style.background   = c + '22';
-        btnThis.style.color        = c;
-        var br = flow === 'ingreso' ? '10px 0 0 10px' : '0 10px 10px 0';
-        btnThis.style.borderRadius = br;
-    }
-    if (btnOther) {
-        btnOther.style.borderColor  = '#334155';
-        btnOther.style.background   = '#1e293b';
-        btnOther.style.color        = '#64748b';
-        var br2 = other === 'ingreso' ? '10px 0 0 10px' : '0 10px 10px 0';
-        btnOther.style.borderRadius = br2;
-    }
-    _catImgRenderLista();
-};
-
-window.catImgSetTab = function(tab) {
-    _catImgTab = tab;
-    var tabs = { supercat: '#10b981', genero: '#38bdf8', categoria: '#a78bfa' };
-    Object.keys(tabs).forEach(function(t) {
-        var btn = document.getElementById('catImgTab' + t.charAt(0).toUpperCase() + t.slice(1));
+function catImgTab(tab) {
+    _catImgTabActual = tab;
+    var tabs = {supercat:'#10b981', genero:'#38bdf8', categoria:'#a78bfa'};
+    var ids  = {supercat:'tabSC', genero:'tabGN', categoria:'tabCA'};
+    Object.keys(ids).forEach(function(t) {
+        var btn = document.getElementById(ids[t]);
         if (!btn) return;
         var active = t === tab;
         btn.style.borderColor = active ? tabs[t] : '#334155';
-        btn.style.background  = active ? tabs[t] + '20' : '#1e293b';
+        btn.style.background  = active ? tabs[t]+'22' : '#1e293b';
         btn.style.color       = active ? tabs[t] : '#64748b';
     });
-    _catImgRenderLista();
-};
-
-function _getNames(tab, flow) {
-    var fromData = [];
-    if (tab === 'supercat') {
-        if (flow === 'ingreso') {
-            fromData = [...new Set([
-                ...(window._supercatsIngSheet || []),
-                ...(window._sheetIngresos || []).map(function(r){ return (r.proveedor||'').toUpperCase().trim(); })
-            ])];
-        } else {
-            fromData = [...new Set([
-                ...(window._supercatsEgrSheet || []),
-                ...(window._sheetEgresos || []).map(function(r){ return (r.proveedor||'').toUpperCase().trim(); })
-            ])];
-        }
-    } else if (tab === 'genero') {
-        if (flow === 'ingreso') {
-            fromData = [...new Set([
-                ...(window._generosIngSheet || []),
-                ...(window._sheetIngresos || []).map(function(r){ return (r.genero||'').toUpperCase().trim(); })
-            ])];
-        } else {
-            fromData = [...new Set([
-                ...(window._generosEgrSheet || []),
-                ...(window._sheetEgresos || []).map(function(r){ return (r.genero||'').toUpperCase().trim(); })
-            ])];
-        }
-    } else if (tab === 'categoria') {
-        if (flow === 'ingreso') {
-            var fromSheet = [];
-            Object.values(window._catsIngSheet || {}).forEach(function(arr){ fromSheet = fromSheet.concat(arr||[]); });
-            fromData = [...new Set([
-                ...fromSheet.map(function(s){ return s.toUpperCase().trim(); }),
-                ...(window._sheetIngresos || []).map(function(r){ return (r.concepto||'').toUpperCase().trim(); })
-            ])];
-        } else {
-            var fromSheet2 = [];
-            Object.values(window._catsEgrSheet || {}).forEach(function(arr){ fromSheet2 = fromSheet2.concat(arr||[]); });
-            fromData = [...new Set([
-                ...fromSheet2.map(function(s){ return s.toUpperCase().trim(); }),
-                ...(window._sheetEgresos || []).map(function(r){ return (r.concepto||'').toUpperCase().trim(); })
-            ])];
-        }
-    }
-    var custom = _getCustomNames(tab, flow);
-    return [...new Set([...fromData, ...custom])].filter(Boolean).sort();
+    catImgRenderLista();
 }
 
-function _catImgRenderLista() {
+function catImgGetNames(tab) {
+    var names = [];
+    if (tab === 'supercat') {
+        names = names.concat(window._supercatsIngSheet||[], window._supercatsEgrSheet||[]);
+        (window._sheetIngresos||[]).forEach(function(r){ if(r.proveedor) names.push(r.proveedor.toUpperCase()); });
+        (window._sheetEgresos||[]).forEach(function(r){ if(r.proveedor) names.push(r.proveedor.toUpperCase()); });
+    } else if (tab === 'genero') {
+        names = names.concat(window._generosIngSheet||[], window._generosEgrSheet||[]);
+        (window._sheetIngresos||[]).forEach(function(r){ if(r.genero) names.push(r.genero.toUpperCase()); });
+        (window._sheetEgresos||[]).forEach(function(r){ if(r.genero) names.push(r.genero.toUpperCase()); });
+    } else {
+        (window._sheetIngresos||[]).forEach(function(r){ if(r.concepto) names.push(r.concepto.toUpperCase()); });
+        (window._sheetEgresos||[]).forEach(function(r){ if(r.concepto) names.push(r.concepto.toUpperCase()); });
+    }
+    return [...new Set(names.filter(Boolean))].sort();
+}
+
+function catImgRenderLista() {
     var lista = document.getElementById('catImgLista');
     if (!lista) return;
-    var names = _getNames(_catImgTab, _catImgFlow);
-    var imgs  = _loadCatImgs();
-    var colors = { supercat: '#10b981', genero: '#38bdf8', categoria: '#a78bfa' };
-    var color  = colors[_catImgTab];
-    var flowColor = _catImgFlow === 'ingreso' ? '#10b981' : '#f87171';
+    var names = catImgGetNames(_catImgTabActual);
+    var imgs  = JSON.parse(localStorage.getItem('natanael_cat_imgs_v1')||'{}');
+    var colors = {supercat:'#10b981', genero:'#38bdf8', categoria:'#a78bfa'};
+    var color  = colors[_catImgTabActual];
 
     if (!names.length) {
-        lista.innerHTML = '<p style="text-align:center;color:#475569;font-size:11px;font-weight:700;padding:30px 0;">No hay elementos todavía.<br>Agregá uno arriba ↑</p>';
+        lista.innerHTML = '<p style="text-align:center;color:#475569;font-size:11px;padding:20px;">No hay categorías todavía.</p>';
         return;
     }
-
-    lista.innerHTML = names.map(function(rawName) {
-        var displayName = _getDisplayName(_catImgTab, _catImgFlow, rawName);
-        var key = _catImgTab + '::' + rawName;
-        var img = imgs[key];
-        var safeId = 'catImgItem_' + (key + _catImgFlow).replace(/[^a-z0-9]/gi,'_');
-        var isCustom = _getCustomNames(_catImgTab, _catImgFlow).includes(rawName.toUpperCase().trim());
-        return '<div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:10px 12px;">' +
-            // Imagen preview
-            '<div style="width:46px;height:46px;border-radius:10px;overflow:hidden;background:#1e293b;border:1.5px solid ' + color + '33;flex-shrink:0;display:flex;align-items:center;justify-content:center;" id="' + safeId + '_preview">' +
-                (img ? '<img src="' + img + '" style="width:100%;height:100%;object-fit:cover;">' : '<span style="color:#334155;font-size:20px;">🏷️</span>') +
+    lista.innerHTML = names.map(function(name) {
+        var key = _catImgTabActual+'::'+name;
+        var img = imgs[key] || '';
+        var sid = 'cimg_'+key.replace(/[^a-z0-9]/gi,'_');
+        return '<div style="display:flex;align-items:center;gap:10px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px 12px;">' +
+            '<div id="'+sid+'_wrap" style="width:44px;height:44px;border-radius:10px;overflow:hidden;background:#0f172a;border:1.5px solid '+color+'44;flex-shrink:0;display:flex;align-items:center;justify-content:center;">' +
+                (img ? '<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;">' : '<span style="font-size:20px;">📁</span>') +
             '</div>' +
-            // Info + acciones
             '<div style="flex:1;min-width:0;">' +
-                '<p style="font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0 0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + displayName + '">' + displayName + '</p>' +
-                '<div style="display:flex;gap:5px;flex-wrap:wrap;">' +
-                    // Imagen
-                    '<label style="font-size:9px;font-weight:900;color:' + color + ';border:1px solid ' + color + '44;background:' + color + '15;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">' +
-                        (img ? '🔄' : '＋📷') +
-                        '<input type="file" accept="image/*" style="display:none;" onchange="catImgUpload(this,\'' + _catImgTab + '\',\'' + rawName.replace(/'/g,"\\'") + '\')">' +
+                '<p style="font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0 0 5px;">'+name+'</p>' +
+                '<div style="display:flex;gap:6px;">' +
+                    '<label style="font-size:9px;font-weight:900;color:'+color+';border:1px solid '+color+'44;background:'+color+'15;border-radius:6px;padding:3px 8px;cursor:pointer;text-transform:uppercase;">' +
+                        (img?'🔄 Cambiar':'＋ Imagen') +
+                        '<input type="file" accept="image/*" style="display:none;" onchange="catImgUpload(this,\''+_catImgTabActual+'\',\''+name.replace(/'/g,"\\'")+'\')">' +
                     '</label>' +
-                    (img ? '<button onclick="catImgRemove(\'' + _catImgTab + '\',\'' + rawName.replace(/'/g,"\\'") + '\')" style="font-size:9px;font-weight:900;color:#f87171;border:1px solid #f8717144;background:#f8717115;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">✕ Img</button>' : '') +
-                    // Renombrar
-                    '<button onclick="abrirEditCatNombre(\'' + _catImgTab + '\',\'' + _catImgFlow + '\',\'' + rawName.replace(/'/g,"\\'") + '\',\'' + displayName.replace(/'/g,"\\'") + '\')" style="font-size:9px;font-weight:900;color:#38bdf8;border:1px solid #38bdf844;background:#38bdf815;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">✏️ Nombre</button>' +
-                    // Eliminar (solo custom)
-                    (isCustom ? '<button onclick="catImgEliminar(\'' + _catImgTab + '\',\'' + _catImgFlow + '\',\'' + rawName.replace(/'/g,"\\'") + '\')" style="font-size:9px;font-weight:900;color:#94a3b8;border:1px solid #33415544;background:#1e293b;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">🗑</button>' : '') +
+                    (img ? '<button onclick="catImgRemove(\''+_catImgTabActual+'\',\''+name.replace(/'/g,"\\'")+'\')" style="font-size:9px;font-weight:900;color:#f87171;border:1px solid #f8717144;background:#f8717115;border-radius:6px;padding:3px 8px;cursor:pointer;text-transform:uppercase;">✕ Quitar</button>' : '') +
                 '</div>' +
             '</div>' +
         '</div>';
     }).join('');
 }
 
-window.catImgUpload = function(input, tipo, nombre) {
+function catImgUpload(input, tipo, nombre) {
     var file = input.files && input.files[0];
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-        var imgEl = new Image();
-        imgEl.onload = function() {
+        var img = new Image();
+        img.onload = function() {
             var canvas = document.createElement('canvas');
-            var MAX = 120;
-            var ratio = Math.min(MAX/imgEl.width, MAX/imgEl.height, 1);
-            canvas.width  = Math.round(imgEl.width  * ratio);
-            canvas.height = Math.round(imgEl.height * ratio);
-            canvas.getContext('2d').drawImage(imgEl, 0, 0, canvas.width, canvas.height);
-            var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-            _setCatImg(tipo, nombre, dataUrl);
-            _catImgRenderLista();
+            var MAX = 120, ratio = Math.min(MAX/img.width, MAX/img.height, 1);
+            canvas.width = Math.round(img.width*ratio);
+            canvas.height = Math.round(img.height*ratio);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            var data = JSON.parse(localStorage.getItem('natanael_cat_imgs_v1')||'{}');
+            data[tipo+'::'+nombre.toUpperCase()] = canvas.toDataURL('image/jpeg', 0.82);
+            localStorage.setItem('natanael_cat_imgs_v1', JSON.stringify(data));
+            catImgRenderLista();
             if (typeof renderIngEgr === 'function') { renderIngEgr('ingreso'); renderIngEgr('egreso'); }
-            if (typeof mostrarToast === 'function') mostrarToast('✓ Imagen guardada para "' + nombre + '"');
+            if (typeof mostrarToast === 'function') mostrarToast('✓ Imagen guardada para "'+nombre+'"');
         };
-        imgEl.src = e.target.result;
+        img.src = e.target.result;
     };
     reader.readAsDataURL(file);
-};
+}
 
-window.catImgRemove = function(tipo, nombre) {
-    _setCatImg(tipo, nombre, null);
-    _catImgRenderLista();
+function catImgRemove(tipo, nombre) {
+    var data = JSON.parse(localStorage.getItem('natanael_cat_imgs_v1')||'{}');
+    delete data[tipo+'::'+nombre.toUpperCase()];
+    localStorage.setItem('natanael_cat_imgs_v1', JSON.stringify(data));
+    catImgRenderLista();
     if (typeof renderIngEgr === 'function') { renderIngEgr('ingreso'); renderIngEgr('egreso'); }
-    if (typeof mostrarToast === 'function') mostrarToast('Imagen eliminada de "' + nombre + '"');
+}
+
+window._getCatImg = function(tipo, nombre) {
+    if (!nombre) return null;
+    var data = JSON.parse(localStorage.getItem('natanael_cat_imgs_v1')||'{}');
+    return data[tipo+'::'+nombre.toUpperCase().trim()] || null;
 };
 
-window.catImgEliminar = function(tab, flow, nombre) {
-    if (!confirm('¿Eliminar "' + nombre + '" de la lista?')) return;
-    _removeCustomName(tab, flow, nombre);
-    _setCatImg(tab, nombre, null);
-    _catImgRenderLista();
-    if (typeof mostrarToast === 'function') mostrarToast('🗑 "' + nombre + '" eliminado');
+window.abrirModalCatImg = function() {
+    var m = document.getElementById('modalCatImg');
+    m.style.display = 'flex';
+    catImgTab('supercat');
 };
-
-window.catImgAgregarNuevo = function() {
-    var input = document.getElementById('catImgNuevoNombre');
-    var nombre = (input.value || '').toUpperCase().trim();
-    if (!nombre) return;
-    _addCustomName(_catImgTab, _catImgFlow, nombre);
-    input.value = '';
-    _catImgRenderLista();
-    if (typeof mostrarToast === 'function') mostrarToast('✓ "' + nombre + '" agregado');
-};
-
-// Renombrar
-window.abrirEditCatNombre = function(tab, flow, rawName, displayName) {
-    _editNombreCtx = { tab: tab, flow: flow, rawName: rawName };
-    var labels = { supercat: 'Supercategoría', genero: 'Género', categoria: 'Categoría' };
-    var flowLabel = flow === 'ingreso' ? 'Ingresos' : 'Egresos';
-    var lbl = document.getElementById('editCatNombreTipoLabel');
-    if (lbl) lbl.textContent = labels[tab] + ' · ' + flowLabel;
-    var inp = document.getElementById('editCatNombreInput');
-    if (inp) { inp.value = displayName; setTimeout(function(){ inp.focus(); inp.select(); }, 100); }
-    document.getElementById('modalEditCatNombre').style.display = 'flex';
-};
-
-window.cerrarEditCatNombre = function() {
-    document.getElementById('modalEditCatNombre').style.display = 'none';
-    _editNombreCtx = null;
-};
-
-window.guardarEditCatNombre = function() {
-    if (!_editNombreCtx) return;
-    var inp = document.getElementById('editCatNombreInput');
-    var newName = (inp ? inp.value : '').toUpperCase().trim();
-    if (!newName) return;
-    _setCatName(_editNombreCtx.tab, _editNombreCtx.flow, _editNombreCtx.rawName, newName);
-    cerrarEditCatNombre();
-    _catImgRenderLista();
-    if (typeof renderIngEgr === 'function') { renderIngEgr('ingreso'); renderIngEgr('egreso'); }
-    if (typeof mostrarToast === 'function') mostrarToast('✓ Nombre actualizado');
-};
-
-// Keyboard enter en el sub-modal
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && document.getElementById('modalEditCatNombre').style.display === 'flex') {
-        guardarEditCatNombre();
-    }
-    if (e.key === 'Enter' && document.getElementById('catImgNuevoNombre') === document.activeElement) {
-        catImgAgregarNuevo();
-    }
-});
-
-window.abrirModalCatImg = function(tabInicial) {
-    _catImgTab  = tabInicial || 'supercat';
-    _catImgFlow = 'ingreso';
-    document.getElementById('modalCatImg').style.display = 'flex';
-    catImgSetTab(_catImgTab);
-    catImgSetFlow(_catImgFlow);
-};
-
-window.abrirModalEditar = function(tabInicial) {
-    abrirModalCatImg(tabInicial || 'supercat');
-};
-
-window.cerrarModalCatImg = function() {
-    document.getElementById('modalCatImg').style.display = 'none';
-};
-
-})();
 </script>
 
     <!-- MODAL EDITAR VENCIMIENTO WIDGET -->
