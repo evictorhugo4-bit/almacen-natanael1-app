@@ -602,7 +602,7 @@ z-index:999999999;
         </nav>
         <!-- Botón Editar Imágenes — fuera del nav para evitar conflictos -->
         <div style="flex-shrink:0;padding:4px 8px;">
-            <button onclick="abrirModalEditar()" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:12px;background:#1e293b;border:1px solid #334155;color:#94a3b8;cursor:pointer;width:100%;font-weight:900;" onmouseover="this.style.background='#243448';this.style.color='#10b981'" onmouseout="this.style.background='#1e293b';this.style.color='#94a3b8'">
+            <button onclick="document.getElementById('modalCatImg').style.display='block';catImgTab('supercat')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:12px;background:#1e293b;border:1px solid #334155;color:#94a3b8;cursor:pointer;width:100%;font-weight:900;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 <span style="font-size:7px;text-transform:uppercase;">Editar</span>
             </button>
@@ -18675,307 +18675,241 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <!-- MODAL IMÁGENES CATEGORÍAS -->
-<div id="modalCatImg" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999999;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:24px;width:100%;max-width:460px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,0.7);">
-
-    <!-- Header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px 12px;border-bottom:1px solid #1e293b;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">✏️</div>
-        <div>
-          <div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#f1f5f9;">Editar Categorías</div>
-          <div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;">Nombre · Imagen · Agregar</div>
-        </div>
-      </div>
-      <button onclick="document.getElementById('modalCatImg').style.display='none'" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:10px;padding:5px 14px;font-weight:900;font-size:14px;cursor:pointer;">✕</button>
+<div id="modalCatImg" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999999;background:rgba(0,0,0,0.88);" onclick="if(event.target===this)this.style.display='none'">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0f172a;border:1px solid #334155;border-radius:20px;padding:20px;width:92%;max-width:440px;max-height:88vh;overflow-y:auto;box-sizing:border-box;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="color:#10b981;font-weight:900;font-size:13px;text-transform:uppercase;">✏️ Editar Categorías</span>
+      <button onclick="document.getElementById('modalCatImg').style.display='none'" style="background:#334155;border:none;color:#fff;border-radius:8px;padding:5px 14px;font-weight:900;cursor:pointer;font-size:14px;">✕</button>
     </div>
-
-    <!-- Ingresos / Egresos toggle -->
-    <div style="display:flex;gap:0;padding:12px 22px 0;flex-shrink:0;">
-      <button onclick="catImgSetFlow('ingreso')" id="catFlowIng" style="flex:1;padding:8px 6px;font-size:10px;font-weight:900;text-transform:uppercase;border:1.5px solid #10b981;border-right:none;background:#10b98122;color:#10b981;border-radius:10px 0 0 10px;cursor:pointer;">📈 Ingresos</button>
-      <button onclick="catImgSetFlow('egreso')"  id="catFlowEgr" style="flex:1;padding:8px 6px;font-size:10px;font-weight:900;text-transform:uppercase;border:1.5px solid #334155;border-left:none;background:#1e293b;color:#64748b;border-radius:0 10px 10px 0;cursor:pointer;">📉 Egresos</button>
+    <!-- Ingresos / Egresos -->
+    <div style="display:flex;gap:0;margin-bottom:10px;">
+      <button onclick="catImgFlow('ingreso')" id="cifIng" style="flex:1;padding:7px;font-size:10px;font-weight:900;text-transform:uppercase;border:1.5px solid #10b981;border-right:none;background:#10b98122;color:#10b981;border-radius:10px 0 0 10px;cursor:pointer;">📈 Ingresos</button>
+      <button onclick="catImgFlow('egreso')"  id="cifEgr" style="flex:1;padding:7px;font-size:10px;font-weight:900;text-transform:uppercase;border:1.5px solid #334155;border-left:none;background:#1e293b;color:#64748b;border-radius:0 10px 10px 0;cursor:pointer;">📉 Egresos</button>
     </div>
-
-    <!-- Tipo de categoría -->
-    <div style="display:flex;gap:6px;padding:8px 22px 0;flex-shrink:0;">
-      <button onclick="catImgTab('supercat')" id="tabSC" style="flex:1;padding:7px 4px;font-size:9px;font-weight:900;text-transform:uppercase;border:1.5px solid #10b981;background:#10b98120;color:#10b981;border-radius:10px;cursor:pointer;">Supercategoría</button>
-      <button onclick="catImgTab('genero')"   id="tabGN" style="flex:1;padding:7px 4px;font-size:9px;font-weight:900;text-transform:uppercase;border:1.5px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Género</button>
-      <button onclick="catImgTab('categoria')" id="tabCA" style="flex:1;padding:7px 4px;font-size:9px;font-weight:900;text-transform:uppercase;border:1.5px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Categoría</button>
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <button onclick="catImgTab('supercat')" id="tabSC" style="flex:1;padding:8px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #10b981;background:#10b98122;color:#10b981;border-radius:10px;cursor:pointer;">Supercategoría</button>
+      <button onclick="catImgTab('genero')"   id="tabGN" style="flex:1;padding:8px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Género</button>
+      <button onclick="catImgTab('categoria')" id="tabCA" style="flex:1;padding:8px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">Categoría</button>
     </div>
-
     <!-- Agregar nuevo -->
-    <div style="padding:8px 22px 0;flex-shrink:0;display:flex;gap:6px;">
-      <input type="text" id="catNuevoInput" placeholder="Nuevo nombre..." style="flex:1;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:10px;padding:8px 12px;font-size:11px;font-weight:700;outline:none;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'" onkeydown="if(event.key==='Enter')catImgAgregar()">
-      <button onclick="catImgAgregar()" style="padding:8px 14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap;">＋ Agregar</button>
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <input type="text" id="cifNuevo" placeholder="Nuevo nombre..." style="flex:1;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:9px;padding:7px 11px;font-size:11px;font-weight:700;outline:none;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'" onkeydown="if(event.key==='Enter')catImgAgregar()">
+      <button onclick="catImgAgregar()" style="padding:7px 12px;background:#10b981;color:#000;border:none;border-radius:9px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap;">＋ Agregar</button>
     </div>
-
-    <!-- Lista -->
-    <div id="catImgLista" style="padding:12px 22px 18px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;"></div>
-  </div>
-</div>
-
-<!-- Sub-modal renombrar -->
-<div id="modalRenombrar" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999999999;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#0f172a;border:1.5px solid #10b981;border-radius:18px;width:100%;max-width:320px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.8);">
-    <div style="font-size:12px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:3px;">✏️ Renombrar</div>
-    <div id="renombrarLabel" style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:14px;"></div>
-    <input type="text" id="renombrarInput" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:900;outline:none;text-transform:uppercase;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'" onkeydown="if(event.key==='Enter')catImgGuardarNombre()">
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <button onclick="document.getElementById('modalRenombrar').style.display='none'" style="flex:1;padding:9px;background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;text-transform:uppercase;">Cancelar</button>
-      <button onclick="catImgGuardarNombre()" style="flex:1;padding:9px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;text-transform:uppercase;">💾 Guardar</button>
-    </div>
+    <div id="catImgLista" style="display:flex;flex-direction:column;gap:8px;"></div>
   </div>
 </div>
 
 <script>
 (function(){
+  var IMGS_K = 'natanael_cat_imgs_v1';
+  var REN_K  = 'natanael_cat_ren_v1';
+  var ADD_K  = 'natanael_cat_add_v1';
+  var _tab   = 'supercat';
+  var _flow  = 'ingreso';
+  var _renRaw = null;
 
-var _IMGS_KEY   = 'natanael_cat_imgs_v1';
-var _NAMES_KEY  = 'natanael_cat_renames_v1';
-var _ADDED_KEY  = 'natanael_cat_added_v1';
+  function gg(k){ try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}} }
+  function ss(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} }
 
-var _tab  = 'supercat';
-var _flow = 'ingreso';
-var _renCtx = null;
+  // ── nombres display (renombrados) ──
+  function getDisplay(raw){
+    return gg(REN_K)[_tab+'::'+_flow+'::'+raw.toUpperCase().trim()] || raw;
+  }
+  function setRename(raw,nv){
+    var r=gg(REN_K), key=_tab+'::'+_flow+'::'+raw.toUpperCase().trim();
+    nv=nv.toUpperCase().trim();
+    if(nv&&nv!==raw.toUpperCase().trim()) r[key]=nv; else delete r[key];
+    ss(REN_K,r);
+  }
 
-/* ── helpers storage ── */
-function _imgs()  { try{return JSON.parse(localStorage.getItem(_IMGS_KEY)||'{}')}catch(e){return{}} }
-function _sImgs(o){ try{localStorage.setItem(_IMGS_KEY,JSON.stringify(o))}catch(e){} }
-function _rnames(){ try{return JSON.parse(localStorage.getItem(_NAMES_KEY)||'{}')}catch(e){return{}} }
-function _sRnames(o){try{localStorage.setItem(_NAMES_KEY,JSON.stringify(o))}catch(e){} }
-function _added(){ try{return JSON.parse(localStorage.getItem(_ADDED_KEY)||'{}')}catch(e){return{}} }
-function _sAdded(o){try{localStorage.setItem(_ADDED_KEY,JSON.stringify(o))}catch(e){} }
+  // ── nombres agregados manualmente ──
+  function getAdded(){
+    return (gg(ADD_K)[_tab+'::'+_flow]||[]);
+  }
+  function addCustom(n){
+    var a=gg(ADD_K),k=_tab+'::'+_flow; a[k]=a[k]||[];
+    n=n.toUpperCase().trim();
+    if(!a[k].includes(n)) a[k].push(n); ss(ADD_K,a);
+  }
+  function removeCustom(n){
+    var a=gg(ADD_K),k=_tab+'::'+_flow;
+    a[k]=(a[k]||[]).filter(function(x){return x!==n;}); ss(ADD_K,a);
+  }
 
-/* ── rename helpers ── */
-function _getDisplay(rawName) {
-    var r = _rnames();
-    return r[_tab+'::'+_flow+'::'+rawName.toUpperCase().trim()] || rawName;
-}
-function _setRename(rawName, newName) {
-    var r = _rnames();
-    var key = _tab+'::'+_flow+'::'+rawName.toUpperCase().trim();
-    if(newName && newName !== rawName) r[key]=newName.toUpperCase().trim(); else delete r[key];
-    _sRnames(r);
-}
-
-/* ── added names ── */
-function _getAdded() {
-    var a = _added();
-    return a[_tab+'::'+_flow] || [];
-}
-function _addName(name) {
-    var a = _added(), key = _tab+'::'+_flow;
-    a[key] = a[key] || [];
-    var n = name.toUpperCase().trim();
-    if(!a[key].includes(n)) a[key].push(n);
-    _sAdded(a);
-}
-function _removeName(name) {
-    var a = _added(), key = _tab+'::'+_flow;
-    a[key] = (a[key]||[]).filter(function(n){return n!==name.toUpperCase().trim();});
-    _sAdded(a);
-}
-
-/* ── get raw names from data ── */
-function _getRawNames() {
-    var names = [];
-    if(_tab==='supercat') {
-        if(_flow==='ingreso') {
-            names = names.concat(window._supercatsIngSheet||[]);
-            (window._sheetIngresos||[]).forEach(function(r){if(r.proveedor)names.push(r.proveedor.toUpperCase());});
-        } else {
-            names = names.concat(window._supercatsEgrSheet||[]);
-            (window._sheetEgresos||[]).forEach(function(r){if(r.proveedor)names.push(r.proveedor.toUpperCase());});
-        }
-    } else if(_tab==='genero') {
-        if(_flow==='ingreso') {
-            names = names.concat(window._generosIngSheet||[]);
-            (window._sheetIngresos||[]).forEach(function(r){if(r.genero)names.push(r.genero.toUpperCase());});
-        } else {
-            names = names.concat(window._generosEgrSheet||[]);
-            (window._sheetEgresos||[]).forEach(function(r){if(r.genero)names.push(r.genero.toUpperCase());});
-        }
+  // ── nombres desde datos ──
+  function getDataNames(){
+    var n=[];
+    if(_tab==='supercat'){
+      if(_flow==='ingreso'){
+        n=n.concat(window._supercatsIngSheet||[]);
+        (window._sheetIngresos||[]).forEach(function(r){if(r.proveedor)n.push(r.proveedor.toUpperCase());});
+      } else {
+        n=n.concat(window._supercatsEgrSheet||[]);
+        (window._sheetEgresos||[]).forEach(function(r){if(r.proveedor)n.push(r.proveedor.toUpperCase());});
+      }
+    } else if(_tab==='genero'){
+      if(_flow==='ingreso'){
+        n=n.concat(window._generosIngSheet||[]);
+        (window._sheetIngresos||[]).forEach(function(r){if(r.genero)n.push(r.genero.toUpperCase());});
+      } else {
+        n=n.concat(window._generosEgrSheet||[]);
+        (window._sheetEgresos||[]).forEach(function(r){if(r.genero)n.push(r.genero.toUpperCase());});
+      }
     } else {
-        if(_flow==='ingreso') {
-            (window._sheetIngresos||[]).forEach(function(r){if(r.concepto)names.push(r.concepto.toUpperCase());});
-            var s=[]; Object.values(window._catsIngSheet||{}).forEach(function(a){s=s.concat(a||[]);});
-            names=names.concat(s.map(function(x){return x.toUpperCase();}));
-        } else {
-            (window._sheetEgresos||[]).forEach(function(r){if(r.concepto)names.push(r.concepto.toUpperCase());});
-            var s2=[]; Object.values(window._catsEgrSheet||{}).forEach(function(a){s2=s2.concat(a||[]);});
-            names=names.concat(s2.map(function(x){return x.toUpperCase();}));
-        }
+      if(_flow==='ingreso'){
+        (window._sheetIngresos||[]).forEach(function(r){if(r.concepto)n.push(r.concepto.toUpperCase());});
+        var s=[]; Object.values(window._catsIngSheet||{}).forEach(function(a){s=s.concat(a||[]);}); n=n.concat(s.map(function(x){return x.toUpperCase();}));
+      } else {
+        (window._sheetEgresos||[]).forEach(function(r){if(r.concepto)n.push(r.concepto.toUpperCase());});
+        var s2=[]; Object.values(window._catsEgrSheet||{}).forEach(function(a){s2=s2.concat(a||[]);}); n=n.concat(s2.map(function(x){return x.toUpperCase();}));
+      }
     }
-    return [...new Set(names.filter(Boolean))].sort();
-}
+    return [...new Set(n.filter(Boolean))].sort();
+  }
 
-/* ── render ── */
-function _render() {
-    var lista = document.getElementById('catImgLista');
-    if(!lista) return;
-    var dataNames = _getRawNames();
-    var addedNames = _getAdded();
-    var allRaw = [...new Set([...dataNames,...addedNames])].sort();
-    var imgs = _imgs();
-    var colors = {supercat:'#10b981',genero:'#38bdf8',categoria:'#a78bfa'};
-    var color = colors[_tab];
-    var flowColor = _flow==='ingreso'?'#10b981':'#f87171';
-
-    if(!allRaw.length) {
-        lista.innerHTML='<p style="text-align:center;color:#475569;font-size:11px;font-weight:700;padding:30px 0;">No hay elementos todavía.<br>Agregá uno arriba ↑</p>';
-        return;
+  // ── render lista ──
+  function render(){
+    var lista=document.getElementById('catImgLista'); if(!lista)return;
+    var data=getDataNames(), added=getAdded();
+    var all=[...new Set([...data,...added])].sort();
+    var imgs=gg(IMGS_K);
+    var tc={supercat:'#10b981',genero:'#38bdf8',categoria:'#a78bfa'}, c=tc[_tab];
+    if(!all.length){
+      lista.innerHTML='<p style="text-align:center;color:#475569;font-size:11px;font-weight:700;padding:28px 0;">Sin elementos. Agregá uno arriba ↑</p>';
+      return;
     }
-    lista.innerHTML = allRaw.map(function(raw) {
-        var display = _getDisplay(raw);
-        var imgKey  = _tab+'::'+raw;
-        var img     = imgs[imgKey]||'';
-        var isAdded = addedNames.includes(raw);
-        var safeRaw = raw.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        var safeDisplay = display.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        return '<div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:10px 12px;">'+
-            '<div style="width:46px;height:46px;border-radius:10px;overflow:hidden;background:#1e293b;border:1.5px solid '+color+'33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'+
-                (img?'<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;">'  :'<span style="font-size:22px;">🏷️</span>')+
-            '</div>'+
-            '<div style="flex:1;min-width:0;">'+
-                '<p style="font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0 0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+display+'</p>'+
-                '<div style="display:flex;gap:5px;flex-wrap:wrap;">'+
-                    '<label style="font-size:9px;font-weight:900;color:'+color+';border:1px solid '+color+'44;background:'+color+'15;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">'+
-                        (img?'🔄':'📷＋')+
-                        '<input type="file" accept="image/*" style="display:none;" onchange="catImgUploadFn(this,\''+safeRaw+'\')">'+
-                    '</label>'+
-                    (img?'<button onclick="catImgQuitarImg(\''+safeRaw+'\')" style="font-size:9px;font-weight:900;color:#f87171;border:1px solid #f8717144;background:#f8717115;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">✕Img</button>':'')+
-                    '<button onclick="catImgAbrirRenombrar(\''+safeRaw+'\',\''+safeDisplay+'\')" style="font-size:9px;font-weight:900;color:#38bdf8;border:1px solid #38bdf844;background:#38bdf815;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">✏️Nombre</button>'+
-                    (isAdded?'<button onclick="catImgBorrar(\''+safeRaw+'\')" style="font-size:9px;font-weight:900;color:#94a3b8;border:1px solid #33415544;background:#1e293b;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">🗑</button>':'')+
-                '</div>'+
-            '</div>'+
-        '</div>';
+    lista.innerHTML=all.map(function(raw){
+      var disp=getDisplay(raw), img=imgs[_tab+'::'+raw]||'';
+      var isAdded=added.includes(raw);
+      var er=raw.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var ed=disp.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return '<div style="display:flex;align-items:center;gap:9px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:9px 11px;">'+
+        '<div style="width:44px;height:44px;border-radius:9px;overflow:hidden;background:#0f172a;border:1.5px solid '+c+'44;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'+
+          (img?'<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;">':'<span style="font-size:20px;">🏷️</span>')+
+        '</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<p style="font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0 0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+disp+'">'+disp+'</p>'+
+          '<div style="display:flex;gap:4px;flex-wrap:wrap;">'+
+            '<label style="font-size:9px;font-weight:900;color:'+c+';border:1px solid '+c+'44;background:'+c+'15;border-radius:6px;padding:3px 7px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">'+
+              (img?'🔄 img':'📷 img')+
+              '<input type="file" accept="image/*" style="display:none;" onchange="catImgSubir(this,\''+er+'\')">'+
+            '</label>'+
+            (img?'<button onclick="catImgQuitarImg(\''+er+'\')" style="font-size:9px;font-weight:900;color:#f87171;border:1px solid #f8717144;background:#f8717115;border-radius:6px;padding:3px 7px;cursor:pointer;white-space:nowrap;">✕ img</button>':'')+
+            '<button onclick="catImgRen(\''+er+'\',\''+ed+'\')" style="font-size:9px;font-weight:900;color:#38bdf8;border:1px solid #38bdf844;background:#38bdf815;border-radius:6px;padding:3px 7px;cursor:pointer;white-space:nowrap;">✏️ nombre</button>'+
+            (isAdded?'<button onclick="catImgBorrar(\''+raw+'\')" style="font-size:9px;font-weight:900;color:#94a3b8;border:1px solid #33415544;background:#0f172a;border-radius:6px;padding:3px 7px;cursor:pointer;white-space:nowrap;">🗑</button>':'')+
+          '</div>'+
+        '</div>'+
+      '</div>';
     }).join('');
-}
+  }
 
-/* ── flow / tab switches ── */
-window.catImgSetFlow = function(flow) {
-    _flow = flow;
-    var ing = document.getElementById('catFlowIng');
-    var egr = document.getElementById('catFlowEgr');
-    if(ing){ ing.style.borderColor=flow==='ingreso'?'#10b981':'#334155'; ing.style.background=flow==='ingreso'?'#10b98122':'#1e293b'; ing.style.color=flow==='ingreso'?'#10b981':'#64748b'; }
-    if(egr){ egr.style.borderColor=flow==='egreso'?'#f87171':'#334155';  egr.style.background=flow==='egreso'?'#f8717122':'#1e293b';  egr.style.color=flow==='egreso'?'#f87171':'#64748b'; }
-    _render();
-};
+  // ── flow toggle ──
+  window.catImgFlow=function(f){
+    _flow=f;
+    var ing=document.getElementById('cifIng'),egr=document.getElementById('cifEgr');
+    if(ing){ing.style.borderColor=f==='ingreso'?'#10b981':'#334155';ing.style.background=f==='ingreso'?'#10b98122':'#1e293b';ing.style.color=f==='ingreso'?'#10b981':'#64748b';}
+    if(egr){egr.style.borderColor=f==='egreso'?'#f87171':'#334155';egr.style.background=f==='egreso'?'#f8717122':'#1e293b';egr.style.color=f==='egreso'?'#f87171':'#64748b';}
+    render();
+  };
 
-window.catImgTab = function(tab) {
-    _tab = tab;
-    var tbs = {supercat:'#10b981',genero:'#38bdf8',categoria:'#a78bfa'};
-    var ids = {supercat:'tabSC',genero:'tabGN',categoria:'tabCA'};
-    Object.keys(ids).forEach(function(t){
-        var btn=document.getElementById(ids[t]); if(!btn)return;
-        var on=t===tab;
-        btn.style.borderColor=on?tbs[t]:'#334155';
-        btn.style.background=on?tbs[t]+'20':'#1e293b';
-        btn.style.color=on?tbs[t]:'#64748b';
+  // ── tab switch ──
+  window.catImgTab=function(t){
+    _tab=t;
+    var tc={supercat:'#10b981',genero:'#38bdf8',categoria:'#a78bfa'};
+    var ids={supercat:'tabSC',genero:'tabGN',categoria:'tabCA'};
+    Object.keys(ids).forEach(function(k){
+      var b=document.getElementById(ids[k]); if(!b)return;
+      var on=k===t;
+      b.style.borderColor=on?tc[k]:'#334155';
+      b.style.background=on?tc[k]+'22':'#1e293b';
+      b.style.color=on?tc[k]:'#64748b';
     });
-    _render();
-};
+    render();
+  };
 
-/* ── agregar ── */
-window.catImgAgregar = function() {
-    var inp=document.getElementById('catNuevoInput');
-    var name=(inp?inp.value:'').toUpperCase().trim();
-    if(!name){if(inp)inp.focus();return;}
-    _addName(name);
-    if(inp)inp.value='';
-    _render();
-    if(typeof mostrarToast==='function') mostrarToast('✓ "'+name+'" agregado');
-};
+  // ── agregar ──
+  window.catImgAgregar=function(){
+    var inp=document.getElementById('cifNuevo'),n=(inp?inp.value:'').toUpperCase().trim();
+    if(!n){if(inp)inp.focus();return;}
+    addCustom(n); if(inp)inp.value=''; render();
+    if(typeof mostrarToast==='function') mostrarToast('✓ "'+n+'" agregado');
+  };
 
-/* ── subir imagen ── */
-window.catImgUploadFn = function(input, rawName) {
+  // ── subir imagen ──
+  window.catImgSubir=function(input,raw){
     var file=input.files&&input.files[0]; if(!file)return;
     var reader=new FileReader();
     reader.onload=function(e){
-        var img=new Image();
-        img.onload=function(){
-            var canvas=document.createElement('canvas');
-            var MAX=120, ratio=Math.min(MAX/img.width,MAX/img.height,1);
-            canvas.width=Math.round(img.width*ratio); canvas.height=Math.round(img.height*ratio);
-            canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-            var d=_imgs(); d[_tab+'::'+rawName.toUpperCase()]=canvas.toDataURL('image/jpeg',0.82); _sImgs(d);
-            _render();
-            if(typeof renderIngEgr==='function'){renderIngEgr('ingreso');renderIngEgr('egreso');}
-            if(typeof mostrarToast==='function') mostrarToast('✓ Imagen guardada');
-        }; img.src=e.target.result;
+      var img=new Image();
+      img.onload=function(){
+        var cv=document.createElement('canvas'),MAX=120,ratio=Math.min(MAX/img.width,MAX/img.height,1);
+        cv.width=Math.round(img.width*ratio); cv.height=Math.round(img.height*ratio);
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        var d=gg(IMGS_K); d[_tab+'::'+raw.toUpperCase()]=cv.toDataURL('image/jpeg',0.82); ss(IMGS_K,d);
+        render();
+        if(typeof renderIngEgr==='function'){renderIngEgr('ingreso');renderIngEgr('egreso');}
+        if(typeof mostrarToast==='function') mostrarToast('✓ Imagen guardada para "'+raw+'"');
+      }; img.src=e.target.result;
     }; reader.readAsDataURL(file);
-};
+  };
 
-/* ── quitar imagen ── */
-window.catImgQuitarImg = function(rawName) {
-    var d=_imgs(); delete d[_tab+'::'+rawName.toUpperCase()]; _sImgs(d);
-    _render();
+  // ── quitar imagen ──
+  window.catImgQuitarImg=function(raw){
+    var d=gg(IMGS_K); delete d[_tab+'::'+raw.toUpperCase()]; ss(IMGS_K,d); render();
     if(typeof renderIngEgr==='function'){renderIngEgr('ingreso');renderIngEgr('egreso');}
-};
+  };
 
-/* ── borrar item (solo agregados) ── */
-window.catImgBorrar = function(rawName) {
-    if(!confirm('¿Eliminar "'+rawName+'"?')) return;
-    _removeName(rawName);
-    var d=_imgs(); delete d[_tab+'::'+rawName.toUpperCase()]; _sImgs(d);
-    _render();
-};
+  // ── borrar item (solo custom) ──
+  window.catImgBorrar=function(raw){
+    if(!confirm('¿Eliminar "'+raw+'"?'))return;
+    removeCustom(raw); var d=gg(IMGS_K); delete d[_tab+'::'+raw.toUpperCase()]; ss(IMGS_K,d); render();
+  };
 
-/* ── renombrar ── */
-window.catImgAbrirRenombrar = function(rawName, displayName) {
-    _renCtx = rawName;
-    var labels={supercat:'Supercategoría',genero:'Género',categoria:'Categoría'};
-    var fl=_flow==='ingreso'?'Ingresos':'Egresos';
-    var lbl=document.getElementById('renombrarLabel');
-    if(lbl) lbl.textContent=labels[_tab]+' · '+fl;
-    var inp=document.getElementById('renombrarInput');
-    if(inp){inp.value=displayName; setTimeout(function(){inp.focus();inp.select();},80);}
-    document.getElementById('modalRenombrar').style.display='flex';
-};
-
-window.catImgGuardarNombre = function() {
-    if(!_renCtx) return;
-    var inp=document.getElementById('renombrarInput');
-    var nv=(inp?inp.value:'').toUpperCase().trim();
-    if(!nv) return;
-    _setRename(_renCtx, nv);
-    document.getElementById('modalRenombrar').style.display='none';
-    _renCtx=null;
-    _render();
+  // ── renombrar ──
+  window.catImgRen=function(raw,disp){
+    _renRaw=raw;
+    var tl={supercat:'Supercategoría',genero:'Género',categoria:'Categoría'};
+    document.getElementById('cifRenLabel').textContent=tl[_tab]+' · '+(_flow==='ingreso'?'Ingresos':'Egresos');
+    var inp=document.getElementById('cifRenInput'); if(inp){inp.value=disp; setTimeout(function(){inp.focus();inp.select();},60);}
+    document.getElementById('modalCifRen').style.display='block';
+  };
+  window.catImgRenGuardar=function(){
+    if(!_renRaw)return;
+    var inp=document.getElementById('cifRenInput'),nv=(inp?inp.value:'').toUpperCase().trim();
+    if(!nv)return;
+    setRename(_renRaw,nv);
+    document.getElementById('modalCifRen').style.display='none'; _renRaw=null; render();
     if(typeof renderIngEgr==='function'){renderIngEgr('ingreso');renderIngEgr('egreso');}
     if(typeof mostrarToast==='function') mostrarToast('✓ Nombre actualizado');
-};
+  };
 
-/* ── abrir modal ── */
-window.abrirModalEditar = function() {
+  // ── compatibilidad ──
+  window.abrirModalCatImg=function(){
     _tab='supercat'; _flow='ingreso';
-    var m=document.getElementById('modalCatImg');
-    m.style.display='flex';
-    // reset tabs visually
-    catImgTab('supercat');
-    catImgSetFlow('ingreso');
-};
-
-/* ── compatibilidad con botones existentes ── */
-window.abrirModalCatImg = window.abrirModalEditar;
-
-/* ── public getter para imágenes ── */
-window._getCatImg = function(tipo, nombre) {
-    if(!nombre) return null;
-    var d=_imgs();
-    return d[tipo+'::'+nombre.toUpperCase().trim()]||null;
-};
-
-/* ── cerrar al click fuera ── */
-document.getElementById('modalCatImg').addEventListener('click', function(e){
-    if(e.target===this) this.style.display='none';
-});
-document.getElementById('modalRenombrar').addEventListener('click', function(e){
-    if(e.target===this) this.style.display='none';
-});
-
+    document.getElementById('modalCatImg').style.display='block';
+    catImgTab('supercat'); catImgFlow('ingreso');
+  };
+  window._getCatImg=function(tipo,nombre){
+    if(!nombre)return null;
+    return gg(IMGS_K)[tipo+'::'+nombre.toUpperCase().trim()]||null;
+  };
 })();
 </script>
+
+<!-- Sub-modal renombrar -->
+<div id="modalCifRen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999999999;background:rgba(0,0,0,0.6);" onclick="if(event.target===this)this.style.display='none'">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0f172a;border:1.5px solid #10b981;border-radius:16px;width:90%;max-width:300px;padding:20px;box-sizing:border-box;">
+    <div style="font-size:12px;font-weight:900;color:#10b981;text-transform:uppercase;margin-bottom:3px;">✏️ Renombrar</div>
+    <div id="cifRenLabel" style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:12px;"></div>
+    <input type="text" id="cifRenInput" style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:900;outline:none;text-transform:uppercase;box-sizing:border-box;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'" onkeydown="if(event.key==='Enter')catImgRenGuardar()">
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button onclick="document.getElementById('modalCifRen').style.display='none'" style="flex:1;padding:8px;background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">Cancelar</button>
+      <button onclick="catImgRenGuardar()" style="flex:1;padding:8px;background:#10b981;color:#000;border:none;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">💾 Guardar</button>
+    </div>
+  </div>
+</div>
 
     <!-- MODAL EDITAR VENCIMIENTO WIDGET -->
     <div id="modalEditVenc" class="modal-overlay" style="z-index:500;">
