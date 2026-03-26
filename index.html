@@ -8367,6 +8367,10 @@ function crearGeneroIngEgr(nombre) {
             } else {
                 opciones = [...new Set((dbRef||[]).map(r => (r.concepto||'').toUpperCase().trim()).filter(Boolean))].sort();
             }
+            // Agregar nombres de la Lista de Gastos o Lista de Ingresos según tipo
+            const listaRef = esEgr ? (window._listaEgresos||[]) : (window._listaIngresos||[]);
+            const fromLista = listaRef.map(r => (r.nombre||'').toUpperCase().trim()).filter(Boolean);
+            opciones = [...new Set([...fromLista, ...opciones])].sort();
             const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
             const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
             const accentColor = esEgr ? '#f87171' : '#10b981';
