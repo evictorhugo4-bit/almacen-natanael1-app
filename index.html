@@ -11078,13 +11078,16 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
             const dbOrdenado = [...db].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
             const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
             const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-            container.innerHTML = dbOrdenado.map(c => `
+            container.innerHTML = dbOrdenado.map(c => {
+                const _imgSC = (typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null;
+                const _imgGN = (typeof window._getCatImg==='function') ? window._getCatImg('genero', c.genero) : null;
+                return `
                 <div class="glass-card p-4 rounded-2xl border border-slate-800">
                     <div class="flex justify-between items-start gap-3">
                         <div class="flex-1 min-w-0">
                             <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
-                            <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
-                            ${c.genero?`<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span>`:''}
+                            <div style="display:flex;align-items:center;gap:6px;">${_imgSC ? `<img src="${_imgSC}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : ''}<p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p></div>
+                            ${c.genero?`<div style="display:flex;align-items:center;gap:4px;">${_imgGN ? `<img src="${_imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>`:''}
                             ${c.concepto?`<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>`:''}
                             ${c.formaPago?`<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>`:''}
                             ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">🏦 ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
@@ -11102,7 +11105,7 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                             <button onclick="eliminarIngEgr('${tipo}','${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">${SVG_DEL}</button>
                         </div>
                     </div>
-                </div>`).join('');
+                </div>`; }).join('');
         }
 
         // ── PAGO INGRESOS ──────────────────────────────────────────────────
@@ -12263,19 +12266,104 @@ function calcularCajaEsperada() {
         }
 
         // ============================================================
+        // CACHÉ OFFLINE — carga instantánea desde localStorage
+        // ============================================================
+        const _CACHE_KEY = 'natanael_sheet_cache_v1';
+
+        function _guardarCache() {
+            try {
+                const snapshot = {
+                    ts:                  Date.now(),
+                    inventario:          _sheetProductos          || [],
+                    ventas:              _sheetVentas              || [],
+                    compras:             _sheetCompras             || [],
+                    clientes:            typeof clientesDB !== 'undefined' ? clientesDB : [],
+                    ingresos:            _sheetIngresos            || [],
+                    egresos:             _sheetEgresos             || [],
+                    ingresosNegocio:     _sheetIngresosNegocio     || [],
+                    egresosNegocio:      _sheetEgresosNegocio      || [],
+                    pagoVentas:          typeof _pagoVentasSheet    !== 'undefined' ? _pagoVentasSheet    : [],
+                    pagoIngresos:        typeof _sheetPagoIngresos  !== 'undefined' ? _sheetPagoIngresos  : [],
+                    pagoEgresos:         typeof _sheetPagoEgresos   !== 'undefined' ? _sheetPagoEgresos   : [],
+                    pagoCompras:         typeof _sheetPagoCompras   !== 'undefined' ? _sheetPagoCompras   : [],
+                    supercatsIng:        typeof _supercatsIngSheet  !== 'undefined' ? _supercatsIngSheet  : [],
+                    supercatsEgr:        typeof _supercatsEgrSheet  !== 'undefined' ? _supercatsEgrSheet  : [],
+                    generosIng:          typeof _generosIngSheet    !== 'undefined' ? _generosIngSheet    : [],
+                    generosEgr:          typeof _generosEgrSheet    !== 'undefined' ? _generosEgrSheet    : [],
+                };
+                localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
+            } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
+        }
+
+        function _cargarCache() {
+            try {
+                const raw = localStorage.getItem(_CACHE_KEY);
+                if (!raw) return false;
+                const c = JSON.parse(raw);
+                if (!c || !c.ts) return false;
+                // Mostrar aviso de antigüedad
+                const mins = Math.round((Date.now() - c.ts) / 60000);
+                console.log('[Cache] Cargando datos de hace ' + mins + ' min');
+
+                if (Array.isArray(c.inventario)      && c.inventario.length)      { _sheetProductos = c.inventario; }
+                if (Array.isArray(c.ventas)           && c.ventas.length)           { _sheetVentas    = c.ventas;    historial = [...c.ventas]; }
+                if (Array.isArray(c.compras)          && c.compras.length)          { _sheetCompras   = c.compras;   }
+                if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
+                if (Array.isArray(c.ingresos)         && c.ingresos.length)         { _sheetIngresos  = c.ingresos;  }
+                if (Array.isArray(c.egresos)          && c.egresos.length)          { _sheetEgresos   = c.egresos;   }
+                if (Array.isArray(c.ingresosNegocio)  && c.ingresosNegocio.length)  { _sheetIngresosNegocio = c.ingresosNegocio; }
+                if (Array.isArray(c.egresosNegocio)   && c.egresosNegocio.length)   { _sheetEgresosNegocio  = c.egresosNegocio;  }
+                if (Array.isArray(c.pagoVentas))        _pagoVentasSheet   = c.pagoVentas;
+                if (Array.isArray(c.pagoIngresos))      _sheetPagoIngresos = c.pagoIngresos;
+                if (Array.isArray(c.pagoEgresos))       _sheetPagoEgresos  = c.pagoEgresos;
+                if (Array.isArray(c.pagoCompras))       _sheetPagoCompras  = c.pagoCompras;
+                if (Array.isArray(c.supercatsIng))   { _supercatsIngSheet = c.supercatsIng; window._supercatsIngSheet = _supercatsIngSheet; }
+                if (Array.isArray(c.supercatsEgr))   { _supercatsEgrSheet = c.supercatsEgr; window._supercatsEgrSheet = _supercatsEgrSheet; }
+                if (Array.isArray(c.generosIng))     { _generosIngSheet   = c.generosIng;  window._generosIngSheet   = _generosIngSheet;   }
+                if (Array.isArray(c.generosEgr))     { _generosEgrSheet   = c.generosEgr;  window._generosEgrSheet   = _generosEgrSheet;   }
+                return true;
+            } catch(e) { console.warn('[Cache] Error al cargar:', e.message); return false; }
+        }
+
+        // Guardar caché al salir / cambiar de app
+        window.addEventListener('pagehide',       _guardarCache);
+        window.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') _guardarCache();
+        });
+
+        // ============================================================
         // INICIALIZACIÓN
         // ============================================================
         window.onload = () => {
-            renderHistorial();
+            // 1) Cargar caché instantáneo ANTES de ir al sheet
+            const tuvimosCachee = _cargarCache();
+            if (tuvimosCachee) {
+                // Renderizar con datos del caché al toque
+                renderHistorial();
+                renderInventario();
+                renderClientes();
+                renderCompras();
+                const _vistaAct = document.querySelector('[data-navbtn="true"].active') ;
+                const _vistaIng = document.getElementById('vistaIngresos');
+                const _vistaEgr = document.getElementById('vistaEgresos');
+                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
+                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+            } else {
+                renderHistorial();
+            }
+
             lucide.createIcons();
-            // Sin delay — sync inmediato al cargar
             window.dispatchEvent(new Event('natanael-ready'));
+
+            // 2) Sincronizar con sheet en segundo plano
             const syncPromise = iniciarSyncSheets();
             Promise.resolve(syncPromise).then(() => {
                 setTimeout(() => {
                     if (_sheetVentas && _sheetVentas.length > 0) {
                         renderHistorialConSheet();
                     }
+                    // Guardar caché fresco después del primer sync
+                    _guardarCache();
                 }, 300);
             }).catch(() => {});
         };
@@ -14388,6 +14476,8 @@ if (indicator) indicator.classList.remove('hidden');
                 }
                 // Recalcular caja ahora que tenemos todos los datos (egresos, pagos, etc.)
                 actualizarResumenCaja();
+                // Guardar caché fresco con todos los datos secundarios
+                if (typeof _guardarCache === 'function') _guardarCache();
             } catch(e) {
                 console.error('Error procesando datos secundarios:', e);
             }
@@ -18739,8 +18829,64 @@ document.addEventListener('DOMContentLoaded', function () {
   var _flow  = 'ingreso';
   var _renRaw = null;
 
-  function gg(k){ try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}} }
-  function ss(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} }
+  // ── Cache en memoria (se sincroniza con Firebase) ──
+  var _imgsCache = null;
+  var IMGBB_KEY_CI = '0ee065ced332ac96486ee8e8daee84ae';
+
+  function _fbUrl(){ return localStorage.getItem('natanael_firebase_url')||''; }
+
+  function gg(k){
+    if(k===IMGS_K){
+      if(_imgsCache) return _imgsCache;
+      try{var v=JSON.parse(localStorage.getItem(k)||'{}'); _imgsCache=v; return v;}catch(e){_imgsCache={};return{};}
+    }
+    try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}}
+  }
+  function ss(k,v){
+    try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
+    if(k===IMGS_K){
+      _imgsCache=v;
+      var url=_fbUrl();
+      if(url){
+        fetch(url+'/natanael/catImgs.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).catch(function(){});
+      }
+    }
+  }
+
+  // Cargar desde Firebase al iniciar
+  (function _loadFromFb(){
+    var url=_fbUrl();
+    if(!url) return;
+    fetch(url+'/natanael/catImgs.json')
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(data && typeof data==='object' && Object.keys(data).length){
+          _imgsCache=data;
+          try{localStorage.setItem(IMGS_K,JSON.stringify(data));}catch(e){}
+        }
+      }).catch(function(){});
+  })();
+
+  function _subirImgBB(dataUrl, callback){
+    var img=new Image();
+    img.onload=function(){
+      var cv=document.createElement('canvas'),MAX=300;
+      var w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      var comp=cv.toDataURL('image/jpeg',0.82);
+      var base64=comp.split(',')[1];
+      var fd=new FormData(); fd.append('image',base64);
+      fetch('https://api.imgbb.com/1/upload?key='+IMGBB_KEY_CI,{method:'POST',body:fd})
+        .then(function(r){return r.json();})
+        .then(function(res){
+          if(res.success) callback(res.data.url);
+          else callback(comp);
+        }).catch(function(){ callback(comp); });
+    };
+    img.src=dataUrl;
+  }
 
   // ── nombres display (renombrados) ──
   function getDisplay(raw){
@@ -18869,18 +19015,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // ── subir imagen ──
   window.catImgSubir=function(input,raw){
     var file=input.files&&input.files[0]; if(!file)return;
+    if(typeof mostrarToast==='function') mostrarToast('⏳ Subiendo imagen...');
     var reader=new FileReader();
     reader.onload=function(e){
-      var img=new Image();
-      img.onload=function(){
-        var cv=document.createElement('canvas'),MAX=120,ratio=Math.min(MAX/img.width,MAX/img.height,1);
-        cv.width=Math.round(img.width*ratio); cv.height=Math.round(img.height*ratio);
-        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-        var d=gg(IMGS_K); d[_tab+'::'+raw.toUpperCase()]=cv.toDataURL('image/jpeg',0.82); ss(IMGS_K,d);
+      _subirImgBB(e.target.result, function(urlFinal){
+        var d=gg(IMGS_K); d[_tab+'::'+raw.toUpperCase()]=urlFinal; ss(IMGS_K,d);
         render();
         if(typeof renderIngEgr==='function'){renderIngEgr('ingreso');renderIngEgr('egreso');}
         if(typeof mostrarToast==='function') mostrarToast('✓ Imagen guardada para "'+raw+'"');
-      }; img.src=e.target.result;
+      });
     }; reader.readAsDataURL(file);
   };
 
