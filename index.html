@@ -8277,7 +8277,7 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
     const genInput = document.getElementById('inputIngEgrGenero');
     if (genInput) {
         genInput.value = '';
-        filtrarGeneroEgr('');
+        filtrarGeneroIngEgr('');
     }
 
     // limpiar categoria
@@ -8395,8 +8395,17 @@ function crearGeneroIngEgr(nombre) {
 function selGeneroIngEgr(val){
   document.getElementById('inputIngEgrGenero').value = val;
   document.getElementById('ddGeneroIngEgr').classList.add('hidden');
+}
+
+function selCatIngEgr(val){
+  document.getElementById('inputIngEgrConcepto').value = val;
+  document.getElementById('ddCatIngEgr').classList.add('hidden');
 }       
 
+// Exponer explícitamente como globales para compatibilidad con navegadores móviles
+window.filtrarSupercatIngEgr = filtrarSupercatIngEgr;
+window.filtrarGeneroIngEgr   = filtrarGeneroIngEgr;
+window.filtrarCatIngEgr      = filtrarCatIngEgr;
 
  function filtrarProveedoresCompra(query) {
             const dd = document.getElementById('dropdownProveedores');
@@ -14416,6 +14425,12 @@ if (indicator) indicator.classList.remove('hidden');
                     });
                     // Extraer géneros únicos de ingresos
                     _generosIngSheet = [...new Set(_sheetIngresos.map(r=>r.genero).filter(Boolean))].sort();
+                    window._generosIngSheet = _generosIngSheet;
+                    // Reconstruir supercats y cats de ingresos
+                    { const scSet=new Set(); const cMap={};
+                      _sheetIngresos.forEach(r=>{ const sc=(r.proveedor||'').toUpperCase().trim(); const ca=(r.concepto||'').toUpperCase().trim(); if(sc) scSet.add(sc); if(sc&&ca){if(!cMap[sc])cMap[sc]=new Set();cMap[sc].add(ca);} });
+                      _supercatsIngSheet=[...scSet].sort(); window._supercatsIngSheet=_supercatsIngSheet;
+                      _catsIngSheet={}; Object.keys(cMap).forEach(k=>{_catsIngSheet[k]=[...cMap[k]].sort();}); window._catsIngSheet=_catsIngSheet; }
                     if(ag>0||ac>0){const v=document.getElementById('vistaIngresos');if(v&&!v.classList.contains('hidden'))renderIngEgr('ingreso');}
                 }
                 // Egresos
@@ -14447,6 +14462,12 @@ if (indicator) indicator.classList.remove('hidden');
                     });
                     // Extraer géneros únicos de egresos
                     _generosEgrSheet = [...new Set(_sheetEgresos.map(r=>r.genero).filter(Boolean))].sort();
+                    window._generosEgrSheet = _generosEgrSheet;
+                    // Reconstruir supercats y cats de egresos
+                    { const scSet=new Set(); const cMap={};
+                      _sheetEgresos.forEach(r=>{ const sc=(r.proveedor||'').toUpperCase().trim(); const ca=(r.concepto||'').toUpperCase().trim(); if(sc) scSet.add(sc); if(sc&&ca){if(!cMap[sc])cMap[sc]=new Set();cMap[sc].add(ca);} });
+                      _supercatsEgrSheet=[...scSet].sort(); window._supercatsEgrSheet=_supercatsEgrSheet;
+                      _catsEgrSheet={}; Object.keys(cMap).forEach(k=>{_catsEgrSheet[k]=[...cMap[k]].sort();}); window._catsEgrSheet=_catsEgrSheet; }
                     if(ag>0||ac>0){const v=document.getElementById('vistaEgresos');if(v&&!v.classList.contains('hidden'))renderIngEgr('egreso');}
                 }
                 // Pagos
@@ -19440,7 +19461,7 @@ function renderListaCat(tab) {
     lista.innerHTML = items.map(function(item, idx) {
         var imgUrl  = item.imagen || '';
         var imgHtml = imgUrl
-            ? '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<span style=font-size:20px>📋</span>'">'
+            ? '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML=\'<span style=font-size:20px>📋</span>\'">'
             : '<span style="font-size:20px; line-height:1;">📋</span>';
         var montoStr = item.monto ? '$' + Number(item.monto).toLocaleString('es-AR') : '<span style="color:#475569">Sin monto</span>';
 
@@ -19461,12 +19482,12 @@ function renderListaCat(tab) {
 
                 // Acciones
                 '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">' +
-                    '<label style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='' + color + ''" onmouseout="this.style.color='#64748b'" title="' + (imgUrl ? 'Cambiar imagen' : 'Agregar imagen') + '">' +
+                    '<label style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'' + color + '\'" onmouseout="this.style.color=\'#64748b\'" title="' + (imgUrl ? 'Cambiar imagen' : 'Agregar imagen') + '">' +
                         SVG_IMG +
                         '<input type="file" accept="image/*" style="display:none;" onchange="lcImgUpload(this,' + idx + ')">' +
                     '</label>' +
-                    '<button onclick="lcAbrirEdit(' + idx + ')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#64748b'">' + SVG_EDIT + '</button>' +
-                    '<button onclick="lcEliminar(' + idx + ')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">' + SVG_DEL + '</button>' +
+                    '<button onclick="lcAbrirEdit(' + idx + ')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'#34d399\'" onmouseout="this.style.color=\'#64748b\'">' + SVG_EDIT + '</button>' +
+                    '<button onclick="lcEliminar(' + idx + ')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'#64748b\'">' + SVG_DEL + '</button>' +
                 '</div>' +
             '</div>' +
         '</div>';
