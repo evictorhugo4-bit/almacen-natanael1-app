@@ -2042,27 +2042,8 @@ GUARDAR PRODUCTO
             </div>
             <!-- KPIs grilla -->
             <div id="resumenKpis" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-            <!-- Gráficos -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                    <p class="text-[10px] font-black text-white uppercase mb-3">Ingresos vs Egresos</p>
-                    <canvas id="chartResumenIngEgr" height="220"></canvas>
-                </div>
-                <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                    <p class="text-[10px] font-black text-white uppercase mb-3">Efectivo vs Crédito</p>
-                    <canvas id="chartResumenEfCr" height="220"></canvas>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                    <p class="text-[10px] font-black text-white uppercase mb-3">Evolución diaria</p>
-                    <canvas id="chartResumenEvolucion" height="220"></canvas>
-                </div>
-                <div class="glass-card rounded-2xl p-4 border border-slate-700">
-                    <p class="text-[10px] font-black text-white uppercase mb-3">Balance</p>
-                    <canvas id="chartResumenBalance" height="220"></canvas>
-                </div>
-            </div>
+            <!-- Tabla egresos por categoría (personal) -->
+            <div id="resumenEgresosCat" class="hidden"></div>
             <!-- Tabla detalle -->
             <div id="resumenTabla" class="glass-card rounded-2xl p-4 border border-slate-700 overflow-x-auto"></div>
         </div>
@@ -15968,87 +15949,64 @@ console.log("FILTRADAS:", filtradas.length);
                     </div>
                 </div>`;
 
-            // ── Gráfico Ingresos vs Egresos ──
-            if (_chartResIngEgr) _chartResIngEgr.destroy();
-            const ctxIE = document.getElementById('chartResumenIngEgr')?.getContext('2d');
-            if (ctxIE) {
-                _chartResIngEgr = new Chart(ctxIE, {
-                    type:'bar',
-                    data:{
-                        labels:['Ventas','Ingresos','Ing.Neg.','Compras','Egresos','Egr.Neg.'],
-                        datasets:[
-                            { label:'Total',    data:[vTotal,ing.total,ingNeg.total,comp.total,egr.total,egrNeg.total],
-                              backgroundColor:['#10b981','#3b82f6','#06b6d4','#f97316','#ef4444','#ec4899'] },
-                            { label:'Efectivo', data:[vEf,ing.ef,ingNeg.ef,comp.ef,egr.ef,egrNeg.ef],
-                              backgroundColor:['#10b98155','#3b82f655','#06b6d455','#f9731655','#ef444455','#ec489955'] }
-                        ]
-                    },
-                    options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}},
-                        scales:{x:{ticks:{color:'#64748b',font:{size:8}}},y:{ticks:{color:'#64748b',font:{size:8}}}}}
-                });
-            }
+            // ── Tabla egresos por categoría (personal total/efectivo/credito) ──
+            const _catBox = document.getElementById('resumenEgresosCat');
+            if (_catBox) {
+                if (_cat === 'personal') {
+                    // Agrupar egresos por concepto/categoría
+                    const _eMap = {};
+                    (_sheetEgresos||[]).forEach(r => {
+                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                        if (!enRango(fnum)) return;
+                        const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
+                        const supercat = (r.proveedor||r.supercategoria||'').trim();
+                        if (!_eMap[cat]) _eMap[cat] = { cant: 0, total: 0, supercat };
+                        _eMap[cat].cant++;
+                        _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
+                                          : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
+                                          : Number(r.total||0);
+                    });
+                    const _eCats = Object.entries(_eMap)
+                        .filter(([,v]) => v.total > 0)
+                        .sort((a,b) => b[1].total - a[1].total);
+                    const _eTotal = _eCats.reduce((s,[,v])=>s+v.total, 0);
 
-            // ── Gráfico Efectivo vs Crédito (doughnut) ──
-            if (_chartResEfCr) _chartResEfCr.destroy();
-            const ctxEfCr = document.getElementById('chartResumenEfCr')?.getContext('2d');
-            const totalEfEntradas = vEf + ing.ef + ingNeg.ef;
-            const totalCrEntradas = vCr + ing.cr + ingNeg.cr;
-            const crPendiente = totalCrEntradas - pvTotal - piTotal - pinTotal;
-            if (ctxEfCr) {
-                _chartResEfCr = new Chart(ctxEfCr, {
-                    type:'doughnut',
-                    data:{
-                        labels:['Efectivo','Crédito cobrado','Crédito pendiente'],
-                        datasets:[{ data:[totalEfEntradas, Math.max(0,pvTotal+piTotal+pinTotal), Math.max(0,crPendiente)],
-                            backgroundColor:['#10b981','#3b82f6','#ef4444'], borderWidth:0 }]
-                    },
-                    options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}}}
-                });
-            }
-
-            // ── Gráfico evolución diaria ventas ──
-            if (_chartResEvol) _chartResEvol.destroy();
-            const ctxEvol = document.getElementById('chartResumenEvolucion')?.getContext('2d');
-            if (ctxEvol) {
-                const diasV={}, diasEf={};
-                todasV.forEach(v => {
-                    const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                    if (!enRango(fnum)) return;
-                    const dia = String(fnum).substring(0,8);
-                    diasV[dia]  = (diasV[dia]||0)  + Number(v.total||0);
-                    diasEf[dia] = (diasEf[dia]||0) + Number(v.efectivo||0);
-                });
-                const dias = Object.keys(diasV).sort();
-                const lbs  = dias.map(d => d.substring(6,8)+'/'+d.substring(4,6));
-                _chartResEvol = new Chart(ctxEvol, {
-                    type:'line',
-                    data:{labels:lbs, datasets:[
-                        { label:'Total',    data:dias.map(d=>diasV[d]),  borderColor:'#10b981', backgroundColor:'#10b98122', fill:true, tension:0.4, pointRadius:2 },
-                        { label:'Efectivo', data:dias.map(d=>diasEf[d]), borderColor:'#3b82f6', backgroundColor:'#3b82f622', fill:true, tension:0.4, pointRadius:2 }
-                    ]},
-                    options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}},
-                        scales:{x:{ticks:{color:'#64748b',font:{size:8},maxRotation:45}},y:{ticks:{color:'#64748b',font:{size:8}}}}}
-                });
-            }
-
-            // ── Gráfico Balance ──
-            if (_chartResBal) _chartResBal.destroy();
-            const ctxBal = document.getElementById('chartResumenBalance')?.getContext('2d');
-            if (ctxBal) {
-                _chartResBal = new Chart(ctxBal, {
-                    type:'bar',
-                    data:{
-                        labels:['Entradas','Salidas','Balance','Efectivo Caja'],
-                        datasets:[{ data:[totalEntradas, totalSalidas, Math.abs(balance), Math.abs(efectivoEnCaja)],
-                            backgroundColor:[
-                                '#10b981','#ef4444',
-                                balance>=0?'#f59e0b':'#ef4444',
-                                efectivoEnCaja>=0?'#06b6d4':'#ef4444'
-                            ], borderRadius:6 }]
-                    },
-                    options:{responsive:true,plugins:{legend:{display:false}},
-                        scales:{x:{ticks:{color:'#94a3b8',font:{size:9}}},y:{ticks:{color:'#64748b',font:{size:8}}}}}
-                });
+                    _catBox.className = '';
+                    _catBox.innerHTML = `
+                        <div class="glass-card rounded-2xl border border-red-500/30" style="background:linear-gradient(135deg,#1a0505 0%,#0f172a 100%);overflow:hidden;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #334155;">
+                                <span style="font-size:10px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.1em;">💸 EGRESOS POR CATEGORÍA</span>
+                                <span style="font-size:1.1rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_eTotal)}</span>
+                            </div>
+                            <table style="width:100%;border-collapse:collapse;">
+                                <thead>
+                                    <tr style="border-bottom:1px solid #1e293b;">
+                                        <th style="padding:8px 18px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Categoría</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Cant</th>
+                                        <th style="padding:8px 18px;text-align:right;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${_eCats.map(([cat, v], i) => {
+                                        const _img = (typeof window._getCatImg==='function') ? window._getCatImg('supercat', v.supercat) : null;
+                                        return `<tr style="border-bottom:1px solid #0f172a;background:${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
+                                            <td style="padding:10px 18px;">
+                                                <div style="display:flex;align-items:center;gap:8px;">
+                                                    ${_img ? `<img src="${_img}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : '<div style="width:28px;height:28px;border-radius:6px;background:#1e293b;flex-shrink:0;"></div>'}
+                                                    <span style="font-size:11px;font-weight:700;color:#e2e8f0;">${cat}</span>
+                                                </div>
+                                            </td>
+                                            <td style="padding:10px 12px;text-align:center;font-size:11px;font-weight:900;color:#94a3b8;">${v.cant}</td>
+                                            <td style="padding:10px 18px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(v.total)}</td>
+                                        </tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
+                } else {
+                    _catBox.className = 'hidden';
+                    _catBox.innerHTML = '';
+                }
             }
 
             // ── Tabla detalle ──
