@@ -16547,110 +16547,118 @@ console.log("FILTRADAS:", filtradas.length);
                 cont.innerHTML = html;
 
             } else {
-                // ── PERÍODO: totales por proveedor (sumado todo el rango) ────
+                // ── PERÍODO ──────────────────────────────────────────────────
                 const _todasV3 = [...(typeof historial!=='undefined'?historial:[]), ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
 
-                // Pre-calcular pagos posteriores recibidos por venta (del período)
-                const pagosPorVenta = {};
-                const pagosPorVentaItem = {}; // idVenta|nombreProducto → monto
-                (_pagoVentasSheet||[]).forEach(p => {
-                    if (!enRango(p.fecha||p.fechaISO)) return;
-                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                    if (!idV) return;
-                    pagosPorVenta[idV] = (pagosPorVenta[idV]||0) + parseFloat(p.monto||p.MONTO||0);
-                    // También agrupar por producto si está disponible
-                    const prod = String(p.producto||p.PRODUCTO||'').trim();
-                    if (prod) {
-                        const k = idV+'|'+prod;
-                        pagosPorVentaItem[k] = (pagosPorVentaItem[k]||0) + parseFloat(p.monto||p.MONTO||0);
-                    }
+                // 1) DEBO al proveedor = compras a crédito del período
+                const deboProv = {};
+                (_sheetCompras||[]).forEach(c => {
+                    if (!enRango(c.fechaISO||c.fecha)) return;
+                    const prov = (c.proveedor||'').trim().toUpperCase();
+                    if (!prov) return;
+                    deboProv[prov] = (deboProv[prov]||0) + parseFloat(c.credito||0);
                 });
 
-                // { PROVEEDOR: { aPagar, ganancia, fiado } }
-                const resProv = {};
+                // 2) STOCK EN MANO = stock inicial mensual × costo por proveedor
+                const stockProv = {};
+                (_sheetProductos||[]).forEach(prod => {
+                    const prov = (prod.proveedor||'').trim().toUpperCase();
+                    if (!prov) return;
+                    const si    = parseFloat(prod.stockInicio||0) || 0;
+                    const costo = parseFloat(prod.costo||0) || 0;
+                    if (si <= 0 || costo <= 0) return;
+                    stockProv[prov] = (stockProv[prov]||0) + si * costo;
+                });
 
+                // 3) ME DEBEN CLIENTES = fiado pendiente desde fecha DESDE + dinero recuperado CASA ERAZO por proveedor
+                const meadenProv = {};
+
+                // 3a) Fiado pendiente (ventas a crédito desde DESDE, saldo no cobrado)
+                const _vistasP = new Set();
                 _todasV3.forEach(v => {
-                    if (!enRango(v.fechaISO||v.fecha)) return;
-                    const total     = Number(v.total||0);
-                    const ef        = Number(v.efectivo||0);
-                    const idV       = String(v.id||'').trim();
-                    const pagosPost = pagosPorVenta[idV] || 0;
-                    const efTotal   = ef + pagosPost;
-                    const esEsp     = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(String(v.cliente||'').toUpperCase().trim());
-                    const items     = v.items||[];
-                    if (!items.length) return;
-                    const propEf    = total > 0 ? Math.min(1, efTotal / total) : 0;
-
-                    // LOG diagnóstico para GUAPITO
-                    const itemsGuapito = items.filter(i=>(i.proveedor||'').toUpperCase()==='GUAPITO');
-                    if (itemsGuapito.length) {
-                        console.log('[CAJA GUAPITO] venta:', idV, '| ef:', ef, '| total:', total, '| propEf:', propEf.toFixed(3));
-                        itemsGuapito.forEach(i => console.log('  item:', i.nombre, '| precio:', i.precio, '| cant:', i.cantidad, '| costo:', i.costo, '| dineroRec:', i.dineroRecuperado, '| pagoEf:', i.pagoEfectivo));
-                    }
-
-                    items.forEach(item => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha);
+                    if (!fn || (desdeNum && fn < desdeNum)) return;
+                    if (_vistasP.has(v.id)) return; _vistasP.add(v.id);
+                    const deuda = parseFloat(v.deuda||0); if (deuda <= 0) return;
+                    const idV   = String(v.id||'').trim();
+                    const pagado = (_pagoVentasSheet||[])
+                        .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === idV)
+                        .reduce((s,p) => s + parseFloat(p.monto||p.MONTO||0), 0);
+                    const saldo = Math.max(0, deuda - pagado); if (saldo <= 0) return;
+                    const total = parseFloat(v.total||0) || 1;
+                    (v.items||[]).forEach(item => {
                         const prov = (item.proveedor||'').trim().toUpperCase();
                         if (!prov) return;
-                        if (!resProv[prov]) resProv[prov] = { aPagar:0, ganancia:0, fiado:0 };
-
-                        const cant     = parseFloat(item.cantidad)||1;
-                        const precio   = (parseFloat(item.precio)||0) * cant;      // precio de venta total del ítem
-                        const costo    = (parseFloat(item.dineroRecuperado||item.costo||0)) * cant; // costo total del ítem
-
-                        // pagoEfectivo del sheet = efectivo ya asignado a este ítem (total, no por unidad)
-                        // Si es 0 pero existe en sheet → es crédito puro, efItem = 0
-                        // Si no existe en sheet (undefined) → estimar por proporción
-                        const tieneEfSheet = item.pagoEfectivo !== undefined && item.pagoEfectivo !== null;
-                        const efItemBase   = tieneEfSheet ? Number(item.pagoEfectivo) : precio * propEf;
-
-                        // Sumar cobros posteriores proporcionales a este ítem
-                        const efItemPost = pagosPost > 0 && total > 0 ? (precio / total) * pagosPost : 0;
-                        const efItem     = efItemBase + efItemPost;
-
-                        // A pagar al proveedor = min(ef cobrado del ítem, costo del ítem)
-                        const pagoItem = Math.min(efItem, costo);
-
-                        if (!esEsp) {
-                            resProv[prov].aPagar   += pagoItem;
-                            resProv[prov].ganancia += Math.max(0, efItem - costo);
-                        } else {
-                            // CASA ERAZO / ERROR VENTA: igual hay que pagarle al proveedor el costo cobrado
-                            resProv[prov].aPagar += pagoItem;
-                        }
-                        if ((parseFloat(v.deuda)||0) > 0) resProv[prov].fiado += Math.max(0, precio - efItem);
+                        const cant   = parseFloat(item.cantidad)||1;
+                        const precio = (parseFloat(item.precio)||0) * cant;
+                        meadenProv[prov] = (meadenProv[prov]||0) + (precio / total) * saldo;
                     });
                 });
 
-                const provsList = Object.keys(resProv).sort().filter(p => !_provFiltro || p === _provFiltro);
-                if (!provsList.length) { cont.innerHTML='<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:20px;text-transform:uppercase;">Sin ventas en el período</p>'; return; }
+                // 3b) Dinero recuperado de ventas CASA ERAZO por proveedor (desde DESDE)
+                const _vistasCE2 = new Set();
+                _todasV3.forEach(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha);
+                    if (!fn || (desdeNum && fn < desdeNum)) return;
+                    if (_vistasCE2.has(v.id)) return; _vistasCE2.add(v.id);
+                    if (!['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(String(v.cliente||'').toUpperCase().trim())) return;
+                    (v.items||[]).forEach(item => {
+                        const prov = (item.proveedor||'').trim().toUpperCase();
+                        if (!prov) return;
+                        const dr = parseFloat(item.dineroRecuperado||0);
+                        if (dr > 0) meadenProv[prov] = (meadenProv[prov]||0) + dr;
+                    });
+                });
 
-                const totalAPagar  = provsList.reduce((s,p)=>s+resProv[p].aPagar,0);
-                const totalGan     = provsList.reduce((s,p)=>s+resProv[p].ganancia,0);
+                const todosProvs = [...new Set([...Object.keys(deboProv), ...Object.keys(stockProv), ...Object.keys(meadenProv)])]
+                    .sort().filter(p => !_provFiltro || p === _provFiltro);
 
-                let html = `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border-radius:8px;margin-bottom:6px;">
+                if (!todosProvs.length) { cont.innerHTML='<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:20px;text-transform:uppercase;">Sin datos en el período</p>'; return; }
+
+                let tDebo=0, tStock=0, tMeDeben=0;
+                todosProvs.forEach(p => { tDebo+=deboProv[p]||0; tStock+=stockProv[p]||0; tMeDeben+=meadenProv[p]||0; });
+                const tNeto = tDebo - tStock - tMeDeben;
+
+                let html = `<p style="font-size:8px;color:#475569;font-weight:700;margin-bottom:6px;">Debo al proveedor – Valor del stock en mano – Lo que me deben clientes (fiado de ese proveedor)</p>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border-radius:8px;margin-bottom:6px;">
                     <span style="font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Total del período</span>
                     <div style="display:flex;gap:12px;">
-                        <span style="font-size:10px;font-weight:900;color:#f87171;">Pagar: $${Utils.fmt(totalAPagar)}</span>
-                        <span style="font-size:10px;font-weight:900;color:#34d399;">Ganancia: $${Utils.fmt(totalGan)}</span>
+                        <span style="font-size:10px;font-weight:900;color:#f87171;">Pagar: $${Utils.fmt(tDebo)}</span>
+                        <span style="font-size:10px;font-weight:900;color:${tNeto>0?'#f87171':'#34d399'};">Neto: ${tNeto>0?'':'✓ '}$${Utils.fmt(Math.abs(tNeto))}</span>
                     </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 130px 100px 90px;gap:4px;padding:4px 10px;background:#080e1a;border-radius:8px;margin-bottom:3px;">
+                <div style="display:grid;grid-template-columns:1fr 100px 110px 110px 120px;gap:4px;padding:5px 12px;background:#080e1a;border-radius:8px;margin-bottom:4px;">
                     <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;">Proveedor</span>
-                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">A pagar</span>
-                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">Ganancia</span>
-                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">Fiado pend.</span>
+                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">Debo</span>
+                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">− Stock</span>
+                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">− Me deben</span>
+                    <span style="font-size:8px;font-weight:900;color:#334155;text-transform:uppercase;text-align:right;">A separar</span>
                 </div>`;
 
-                provsList.forEach((prov,i) => {
-                    const r  = resProv[prov];
-                    const bg = i%2===0 ? '#0f172a' : '#0a1120';
-                    html += `<div style="display:grid;grid-template-columns:1fr 130px 100px 90px;gap:4px;padding:9px 10px;background:${bg};border-radius:8px;margin-bottom:2px;align-items:center;">
+                todosProvs.forEach((prov,i) => {
+                    const debo    = deboProv[prov]||0;
+                    const stock   = stockProv[prov]||0;
+                    const meDeben = meadenProv[prov]||0;
+                    const neto    = debo - stock - meDeben;
+                    const bg = i%2===0?'#0f172a':'#0a1120';
+                    const nc = neto>0?'#f87171':'#34d399';
+                    html += `<div style="display:grid;grid-template-columns:1fr 100px 110px 110px 120px;gap:4px;padding:9px 12px;background:${bg};border-radius:8px;align-items:center;">
                         <span style="font-size:11px;font-weight:900;color:#e2e8f0;text-transform:uppercase;">${Utils.escHtml(prov)}</span>
-                        <span style="font-size:12px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;">$${Utils.fmt(r.aPagar)}</span>
-                        <span style="font-size:11px;font-weight:900;color:#34d399;font-family:monospace;text-align:right;">$${Utils.fmt(r.ganancia)}</span>
-                        <span style="font-size:10px;font-weight:700;color:#64748b;font-family:monospace;text-align:right;">${r.fiado>0?'$'+Utils.fmt(r.fiado):'—'}</span>
+                        <span style="font-size:11px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;">$${Utils.fmt(debo)}</span>
+                        <span style="font-size:10px;font-weight:700;color:#64748b;font-family:monospace;text-align:right;">${stock>0?'$'+Utils.fmt(stock):'—'}</span>
+                        <span style="font-size:10px;font-weight:700;color:#64748b;font-family:monospace;text-align:right;">${meDeben>0?'$'+Utils.fmt(meDeben):'—'}</span>
+                        <span style="font-size:12px;font-weight:900;font-family:monospace;text-align:right;color:${nc};">${neto>0?'$'+Utils.fmt(neto):'✓ $'+Utils.fmt(Math.abs(neto))}</span>
                     </div>`;
                 });
+
+                const netoT = tDebo - tStock - tMeDeben;
+                html += `<div style="display:grid;grid-template-columns:1fr 100px 110px 110px 120px;gap:4px;padding:10px 12px;background:#1e293b;border-radius:8px;margin-top:4px;border:1px solid #334155;">
+                    <span style="font-size:10px;font-weight:900;color:#94a3b8;text-transform:uppercase;">TOTAL</span>
+                    <span style="font-size:12px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;">$${Utils.fmt(tDebo)}</span>
+                    <span style="font-size:11px;font-weight:700;color:#64748b;font-family:monospace;text-align:right;">${tStock>0?'$'+Utils.fmt(tStock):'—'}</span>
+                    <span style="font-size:11px;font-weight:700;color:#64748b;font-family:monospace;text-align:right;">${tMeDeben>0?'$'+Utils.fmt(tMeDeben):'—'}</span>
+                    <span style="font-size:13px;font-weight:900;font-family:monospace;text-align:right;color:${netoT>0?'#f87171':'#34d399'};">${netoT>0?'$'+Utils.fmt(netoT):'✓ $'+Utils.fmt(Math.abs(netoT))}</span>
+                </div>`;
 
                 cont.innerHTML = html;
             }
