@@ -8367,10 +8367,6 @@ function crearGeneroIngEgr(nombre) {
             } else {
                 opciones = [...new Set((dbRef||[]).map(r => (r.concepto||'').toUpperCase().trim()).filter(Boolean))].sort();
             }
-            // Agregar nombres de la Lista de Gastos o Lista de Ingresos según tipo
-            const listaRef = esEgr ? (window._listaEgresos||[]) : (window._listaIngresos||[]);
-            const fromLista = listaRef.map(r => (r.nombre||'').toUpperCase().trim()).filter(Boolean);
-            opciones = [...new Set([...fromLista, ...opciones])].sort();
             const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
             const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
             const accentColor = esEgr ? '#f87171' : '#10b981';
@@ -15833,25 +15829,119 @@ console.log("FILTRADAS:", filtradas.length);
                         ${kpiEgresos.map(cardEgr).join('')}
                     </div>
                 </div>`
-                // Barra resumen principal
-                + `<div class="glass-card rounded-2xl p-4 border border-amber-500/40 col-span-2 md:col-span-4">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div class="text-center"><p class="text-[8px] font-black text-emerald-400 uppercase">Total Entradas</p><p class="text-xl font-black text-emerald-400 font-mono">$${Utils.fmt(totalEntradas)}</p></div>
-                        <div class="text-center"><p class="text-[8px] font-black text-red-400 uppercase">Total Salidas</p><p class="text-xl font-black text-red-400 font-mono">$${Utils.fmt(totalSalidas)}</p></div>
-                        <div class="text-center">
-                            ${(_cat==='negocio' && _resumenFiltro==='credito' && balance<0) ? `
-                                <p class="text-[8px] font-black text-purple-400 uppercase">👤 Préstamo de Personal</p>
-                                <p class="text-xl font-black font-mono text-purple-400">$${Utils.fmt(Math.abs(balance))}</p>
-                                <p class="text-[7px] text-slate-500 mt-1">Negocio tomó del personal</p>
-                            ` : `
-                                <p class="text-[8px] font-black text-amber-400 uppercase">Balance</p>
-                                <p class="text-xl font-black font-mono" style="color:${balance>=0?'#10b981':'#ef4444'}">$${Utils.fmt(balance)}</p>
-                                ${_cat==='personal' && _resumenFiltro==='efectivo' ? `<p class="text-[8px] font-black text-slate-400 mt-1">(Cr: $${Utils.fmt(vGanCrTodas)})</p>` : ''}
-                            `}
+                // ── Card INGRESOS PROPIOS ──
+                + (()=>{
+                    // Entradas = ingresos donde supercategoría (proveedor) = "INGRESOS PROPIOS"
+                    let _entPropios = 0;
+                    (_sheetIngresos||[]).forEach(r => {
+                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                        if (!enRango(fnum)) return;
+                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
+                        _entPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    });
+                    // Salidas = egresos donde supercategoría (proveedor) = "EGRESOS PROPIOS"
+                    let _salPropios = 0;
+                    (_sheetEgresos||[]).forEach(r => {
+                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                        if (!enRango(fnum)) return;
+                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS PROPIOS') return;
+                        _salPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    });
+                    // + dinero recuperado de ventas a CASA ERAZO (solo en filtro total/efectivo, no crédito)
+                    if (_resumenFiltro !== 'credito') {
+                        const _vistasCE = new Set();
+                        todasV.forEach(v => {
+                            if (_vistasCE.has(v.id)) return; _vistasCE.add(v.id);
+                            const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
+                            if (!enRango(fnum)) return;
+                            if (!['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(String(v.cliente||'').toUpperCase().trim())) return;
+                            _salPropios += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                        });
+                    }
+                    const _balPropios = _entPropios - _salPropios;
+                    window.__entPropios = _entPropios; window.__salPropios = _salPropios;
+                    return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#f59e0b55;background:linear-gradient(135deg,#1a1200 0%,#0f172a 100%);">
+                        <p style="font-size:9px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🏠 INGRESOS PROPIOS</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="text-center">
+                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">Total Entradas de Ingresos Propios</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entPropios)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">Total Salidas de Egresos Propios</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salPropios)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balPropios>=0?'#f59e0b':'#ef4444'}">Balance Propios</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balPropios>=0?'#f59e0b':'#ef4444'};">$${Utils.fmt(_balPropios)}</p>
+                            </div>
                         </div>
-                        <div class="text-center"><p class="text-[8px] font-black text-slate-400 uppercase">Ventas (cant)</p><p class="text-xl font-black text-white font-mono">${vCnt}</p></div>
-                    </div>
-                </div>`
+                    </div>`;
+                })()
+                // ── Card INGRESOS AJENOS ──
+                + (()=>{
+                    // Entradas = ingresos donde supercategoría (proveedor) = "INGRESOS AJENOS"
+                    let _entAjenos = 0;
+                    (_sheetIngresos||[]).forEach(r => {
+                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                        if (!enRango(fnum)) return;
+                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
+                        _entAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    });
+                    // Salidas = egresos donde supercategoría (proveedor) = "EGRESOS AJENOS"
+                    let _salAjenos = 0;
+                    (_sheetEgresos||[]).forEach(r => {
+                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                        if (!enRango(fnum)) return;
+                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
+                        _salAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    });
+                    const _balAjenos = _entAjenos - _salAjenos;
+                    window.__entAjenos = _entAjenos; window.__salAjenos = _salAjenos;
+                    return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#8b5cf655;background:linear-gradient(135deg,#0d0620 0%,#0f172a 100%);">
+                        <p style="font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🤝 INGRESOS AJENOS</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="text-center">
+                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">Total Entradas de Ingresos Ajenos</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entAjenos)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">Total Salidas de Egresos Ajenos</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salAjenos)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balAjenos>=0?'#a78bfa':'#ef4444'}">Balance Ajenos</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balAjenos>=0?'#a78bfa':'#ef4444'};">$${Utils.fmt(_balAjenos)}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                })()
+                // ── TOTAL GENERAL ──
+                + (()=>{
+                    const _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
+                    const _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
+                    const _totBal = _totEnt - _totSal;
+                    return `<div class="glass-card rounded-2xl p-4 border border-amber-500/40 col-span-2 md:col-span-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="text-center">
+                                <p class="text-[8px] font-black text-emerald-400 uppercase">Total Entradas</p>
+                                <p class="text-xl font-black text-emerald-400 font-mono">$${Utils.fmt(_totEnt)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[8px] font-black text-red-400 uppercase">Total Salidas</p>
+                                <p class="text-xl font-black text-red-400 font-mono">$${Utils.fmt(_totSal)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[8px] font-black text-amber-400 uppercase">Balance</p>
+                                <p class="text-xl font-black font-mono" style="color:${_totBal>=0?'#10b981':'#ef4444'}">$${Utils.fmt(_totBal)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[8px] font-black text-slate-400 uppercase">Ventas (cant)</p>
+                                <p class="text-xl font-black text-white font-mono">${vCnt}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                })()
                 // Ganancias
                 + `<div class="glass-card rounded-2xl p-4 border border-emerald-500/40 col-span-2 md:col-span-4">
                     <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2">💰 Ganancias</p>
