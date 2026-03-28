@@ -15690,58 +15690,93 @@ console.log("FILTRADAS:", filtradas.length);
             if (wrap) wrap.classList.remove('hidden');
             if (placeholder) placeholder.style.display = 'none';
 
-            tbody.innerHTML = productos.map(p => {
-                const r = calcKardexProd(p);
-                totSI += r.stockInicial; totC += r.compras; totV += r.ventas; totSA += r.stockActual;
-                const saColor = r.stockEsperado <= 0 ? 'text-red-400' : r.stockEsperado < 5 ? 'text-yellow-400' : 'text-emerald-400';
-                const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '')
-                    ? parseFloat(p.stockFisico) : null;
-                const fechaVerif = p.fechaStockFisico ? String(p.fechaStockFisico).substring(0,10) : '';
+            // ── Agrupar por categoría ──
+            const catMap = new Map();
+            productos.forEach(p => {
+                const cat = (p.categoria || p.depto || 'SIN CATEGORÍA').trim().toUpperCase();
+                if (!catMap.has(cat)) catMap.set(cat, []);
+                catMap.get(cat).push(p);
+            });
+            const catKeys = [...catMap.keys()].sort();
 
-                let verifHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">—</td>';
-                if (stockVerif !== null && !isNaN(stockVerif)) {
-                    verifHtml = `<td class="py-2 pr-3 text-right font-black">
-                        <span class="text-white">${Utils.fmt(stockVerif)}</span>
-                        ${fechaVerif ? `<br><span class="text-slate-500 text-[8px]">${fechaVerif}</span>` : ''}
-                    </td>`;
-                }
+            // Estado de acordeones persistido en objeto
+            if (!window._stockProvCatOpen) window._stockProvCatOpen = {};
 
-                let difHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">—</td>';
-                if (stockVerif !== null && !isNaN(stockVerif)) {
-                    const diff = stockVerif - r.stockEsperado;
-                    const diffColor = diff === 0 ? 'text-emerald-400' : diff > 0 ? 'text-blue-400' : 'text-red-400';
-                    const diffTxt   = diff === 0 ? '✅' : diff > 0 ? `+${Utils.fmt(diff)}` : Utils.fmt(diff);
-                    difHtml = `<td class="py-2 pr-3 text-right font-black ${diffColor}">${diffTxt}</td>`;
-                }
+            let rowsHtml = '';
+            catKeys.forEach(cat => {
+                const prods = catMap.get(cat);
+                let catSI=0, catC=0, catV=0, catSA=0, catSE=0;
+                const prodRows = prods.map(p => {
+                    const r = calcKardexProd(p);
+                    totSI += r.stockInicial; totC += r.compras; totV += r.ventas; totSA += r.stockActual;
+                    catSI += r.stockInicial; catC += r.compras; catV += r.ventas; catSA += r.stockActual; catSE += r.stockEsperado;
+                    const saColor = r.stockEsperado <= 0 ? '#f87171' : r.stockEsperado < 5 ? '#fbbf24' : '#34d399';
+                    const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
+                    const fechaVerif = p.fechaStockFisico ? String(p.fechaStockFisico).substring(0,10) : '';
+                    let verifHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">—</td>';
+                    if (stockVerif !== null && !isNaN(stockVerif)) {
+                        verifHtml = `<td class="py-2 pr-3 text-right font-black"><span class="text-white">${Utils.fmt(stockVerif)}</span>${fechaVerif?`<br><span class="text-slate-500 text-[8px]">${fechaVerif}</span>`:''}</td>`;
+                    }
+                    let difHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">—</td>';
+                    if (stockVerif !== null && !isNaN(stockVerif)) {
+                        const diff = stockVerif - r.stockEsperado;
+                        const diffColor = diff === 0 ? '#34d399' : diff > 0 ? '#60a5fa' : '#f87171';
+                        const diffTxt = diff === 0 ? '✅' : diff > 0 ? `+${Utils.fmt(diff)}` : Utils.fmt(diff);
+                        difHtml = `<td class="py-2 pr-3 text-right font-black" style="color:${diffColor}">${diffTxt}</td>`;
+                    }
+                    const _idxProd = _sheetProductos.findIndex(x => x.nombre === p.nombre);
+                    return `<tr class="hover:bg-slate-800/50 border-b border-slate-800/50" style="background:rgba(15,23,42,0.5);">
+                        <td class="py-2 pr-3 text-center pl-6">
+                            <button onclick="ejecutarInicioProd(${_idxProd})" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:900;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">🚀 INICIO</button>
+                        </td>
+                        <td class="py-2 pr-3 font-bold text-slate-200" style="padding-left:20px;">${Utils.escHtml(p.nombre)}</td>
+                        <td class="py-2 pr-3 text-center">
+                            <button onclick="abrirVerificarStock(${_idxProd})" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg">✅ STOCK</button>
+                        </td>
+                        ${verifHtml}
+                        ${difHtml}
+                        <td class="py-2 pr-3 text-right text-slate-300">${Utils.fmt(r.stockInicial)}</td>
+                        <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras>0?'cursor:pointer;':''}" onclick="${r.compras>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdTs||'null'},${fhTs||'null'})`:''}">
+                            ${r.compras>0?`<span style="text-decoration:underline dotted;">${Utils.fmt(r.compras)}</span>`:Utils.fmt(r.compras)}
+                        </td>
+                        <td class="py-2 pr-3 text-right text-orange-400 font-black" style="${r.ventas>0?'cursor:pointer;':''}" onclick="${r.ventas>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','VENTA',${fdTs||'null'},${fhTs||'null'})`:''}">
+                            ${r.ventas>0?`<span style="text-decoration:underline dotted;">${Utils.fmt(r.ventas)}</span>`:Utils.fmt(r.ventas)}
+                        </td>
+                        <td class="py-2 pr-3 text-right font-black" style="color:${saColor}">${Utils.fmt(r.stockEsperado)}</td>
+                    </tr>`;
+                }).join('');
 
-                const _idxProd = _sheetProductos.findIndex(x => x.nombre === p.nombre);
+                const catId = 'catrow_' + cat.replace(/[^a-z0-9]/gi,'_');
+                const isOpen = window._stockProvCatOpen[cat] === true; // cerrado por defecto
+                const seColor = catSE <= 0 ? '#f87171' : catSE < 10 ? '#fbbf24' : '#34d399';
 
-                return `<tr class="hover:bg-slate-800/50 border-b border-slate-800">
-                    <td class="py-2 pr-3 text-center">
-                        <button onclick="ejecutarInicioProd(${_idxProd})"
-                            style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:900;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">
-                            🚀 INICIO
-                        </button>
+                rowsHtml += `
+                <!-- FILA CATEGORÍA -->
+                <tr id="catheader_${catId}" onclick="(function(){var b=window._stockProvCatOpen||{};b['${cat}']=!(b['${cat}']===true);window._stockProvCatOpen=b;var rows=document.querySelectorAll('.catrows_${catId}');var isNowOpen=b['${cat}']===true;rows.forEach(function(r){r.style.display=isNowOpen?'':'none';});var arrow=document.getElementById('arrow_${catId}');if(arrow)arrow.style.transform=isNowOpen?'rotate(0deg)':'rotate(-90deg)';}).call(this)"
+                    style="background:linear-gradient(90deg,#0f2231,#0f172a);border-bottom:2px solid #1e3a5f;cursor:pointer;user-select:none;">
+                    <td colspan="2" style="padding:10px 12px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <svg id="arrow_${catId}" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .2s;transform:${isOpen?'rotate(0deg)':'rotate(-90deg)'}"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span style="font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;letter-spacing:.06em;">${Utils.escHtml(cat)}</span>
+                            <span style="font-size:9px;font-weight:700;color:#475569;background:#1e293b;border-radius:999px;padding:1px 7px;">${prods.length} prod.</span>
+                        </div>
                     </td>
-                    <td class="py-2 pr-3 font-bold text-white">${p.nombre}</td>
-                    <td class="py-2 pr-3 text-center">
-                        <button onclick="abrirVerificarStock(${_idxProd})"
-                            class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg">
-                            ✅ STOCK
-                        </button>
-                    </td>
-                    ${verifHtml}
-                    ${difHtml}
-                    <td class="py-2 pr-3 text-right text-slate-300">${Utils.fmt(r.stockInicial)}</td>
-                    <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras > 0 ? 'cursor:pointer;' : ''}" onclick="${r.compras > 0 ? `verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdTs||'null'},${fhTs||'null'})` : ''}">
-                        ${r.compras > 0 ? `<span style="text-decoration:underline dotted;">${Utils.fmt(r.compras)}</span>` : Utils.fmt(r.compras)}
-                    </td>
-                    <td class="py-2 pr-3 text-right text-orange-400 font-black" style="${r.ventas > 0 ? 'cursor:pointer;' : ''}" onclick="${r.ventas > 0 ? `verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','VENTA',${fdTs||'null'},${fhTs||'null'})` : ''}">
-                        ${r.ventas > 0 ? `<span style="text-decoration:underline dotted;">${Utils.fmt(r.ventas)}</span>` : Utils.fmt(r.ventas)}
-                    </td>
-                    <td class="py-2 pr-3 text-right font-black ${saColor}">${Utils.fmt(r.stockEsperado)}</td>
-                </tr>`;
-            }).join('');
+                    <td style="padding:10px 12px;text-align:center;"><span style="font-size:9px;color:#64748b;font-weight:700;">—</span></td>
+                    <td style="padding:10px 12px;text-align:right;"><span style="font-size:9px;color:#64748b;">—</span></td>
+                    <td style="padding:10px 12px;text-align:right;"><span style="font-size:9px;color:#64748b;">—</span></td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#94a3b8;">${Utils.fmt(catSI)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#60a5fa;">+${Utils.fmt(catC)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#fb923c;">-${Utils.fmt(catV)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;color:${seColor};">${Utils.fmt(catSE)}</td>
+                </tr>
+                <!-- FILAS PRODUCTOS DE LA CATEGORÍA -->
+                ${prods.map((p,i) => {
+                    const row = prodRows.split('</tr>')[i];
+                    return (row ? row + '</tr>' : '').replace('<tr ', `<tr class="catrows_${catId}" style="display:${isOpen?'':'none'};" `);
+                }).join('')}`;
+            });
+
+            tbody.innerHTML = rowsHtml;
 
             totalesEl.innerHTML = `
                 <div class="bg-slate-800 rounded-xl p-3 text-center">
