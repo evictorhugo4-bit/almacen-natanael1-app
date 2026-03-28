@@ -10330,7 +10330,9 @@ const idCompraLocal = 'C-' + Date.now();
 
 const productosPayload = _carritoSnapshot.map(c => {
     const prod = _sheetProductos.find(p => p.id === c.id) || {};
-    const costoFinal    = c.costoModificado ? c.costo : (prod.costo || c.costo || 0);
+    const costoBase     = c.costoModificado ? c.costo : (prod.costo || c.costo || 0);
+    // Usar costo con flete distribuido si existe, si no el costo base
+    const costoFinal    = (c._costoConFlete != null && c._costoConFlete > 0) ? c._costoConFlete : costoBase;
     const pagoTotal     = Math.round((c.cantidad || 0) * costoFinal * 100) / 100;
     const proporcion    = _totalSnapshot > 0 ? pagoTotal / _totalSnapshot : 0;
     const pagoEfectivo  = Math.round(_efectivoSnapshot * proporcion * 100) / 100;
