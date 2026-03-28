@@ -10503,13 +10503,27 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         </div>`;
     }).join('');
 
+    // Buscar imagen del proveedor en _sheetProveedoresNegocio
+    const _provObj = (_sheetProveedoresNegocio||[]).find(p => (p.nombre||'').toUpperCase().trim() === (c.proveedor||'').toUpperCase().trim());
+    const _provImg = _provObj && _provObj.imagen && !_provObj.imagen.startsWith('[') ? _provObj.imagen : null;
+    const _provAvatar = _provImg
+        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid #10b98133;flex-shrink:0;">
+               <img src="${_provImg}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=font-size:22px>🏢</span>'">
+           </div>`
+        : `<div style="width:48px;height:48px;border-radius:12px;background:#0f172a;border:1.5px solid #10b98133;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+               <span style="font-size:18px;font-weight:900;color:#10b981;">${(c.proveedor||'?').charAt(0).toUpperCase()}</span>
+           </div>`;
+
     return `
         <div class="glass-card w-full max-w-none p-4 rounded-2xl border border-slate-800 space-y-2">
             <div class="flex justify-between items-start gap-2">
-                <div class="flex-1 min-w-0">
-                    <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(c.fecha)}</p>
-                    <p class="font-black text-white uppercase text-sm">${Utils.escHtml(c.proveedor)}</p>
-                    ${ticketBtn}
+                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                    ${_provAvatar}
+                    <div style="flex:1;min-width:0;">
+                        <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(c.fecha)}</p>
+                        <p class="font-black text-white uppercase text-sm">${Utils.escHtml(c.proveedor)}</p>
+                        ${ticketBtn}
+                    </div>
                 </div>
                 <div class="text-right flex flex-col items-end gap-1 flex-shrink-0">
                     <span class="block text-sm font-black text-white font-mono">$${Utils.fmt(c.total)}</span>
@@ -11467,15 +11481,31 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
             const dbOrdenado = [...db].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
             const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
             const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+            // Mapa nombre→imagen desde la lista de categorías
+            const _listaActual = tipo === 'ingreso' ? (window._listaIngresos||[]) : (window._listaEgresos||[]);
+            const _imgMapLista = {};
+            _listaActual.forEach(function(it){ if(it.nombre && it.imagen) _imgMapLista[it.nombre.toUpperCase().trim()] = it.imagen; });
+
             container.innerHTML = dbOrdenado.map(c => {
-                const _imgSC = (typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null;
+                // Buscar imagen: primero en lista de categorías por nombre de proveedor/concepto, luego en _getCatImg
+                const _provKey = (c.proveedor||'').toUpperCase().trim();
+                const _concKey = (c.concepto||'').toUpperCase().trim();
+                const _imgSC = _imgMapLista[_provKey] || _imgMapLista[_concKey]
+                    || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null);
                 const _imgGN = (typeof window._getCatImg==='function') ? window._getCatImg('genero', c.genero) : null;
+                const _accentColor = tipo === 'ingreso' ? '#10b981' : '#f87171';
                 return `
                 <div class="glass-card p-4 rounded-2xl border border-slate-800">
                     <div class="flex justify-between items-start gap-3">
+                        <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${_accentColor}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                            ${_imgSC
+                                ? `<img src="${_imgSC}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">${tipo==='ingreso'?'📈':'📉'}</span>`
+                                : `<span style="font-size:22px;line-height:1;">${tipo==='ingreso'?'📈':'📉'}</span>`
+                            }
+                        </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
-                            <div style="display:flex;align-items:center;gap:6px;">${_imgSC ? `<img src="${_imgSC}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : ''}<p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p></div>
+                            <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
                             ${c.genero?`<div style="display:flex;align-items:center;gap:4px;">${_imgGN ? `<img src="${_imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>`:''}
                             ${c.concepto?`<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>`:''}
                             ${c.formaPago?`<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>`:''}
