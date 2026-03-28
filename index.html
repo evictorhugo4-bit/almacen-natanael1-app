@@ -11091,6 +11091,10 @@ function filtrarGeneroEgr(query) {
                     onmousedown="selGeneroIngEgr('${g.replace(/'/g,"\\'")}')">${g}</div>`
                 ).join('');
             }
+            // Ocultar campo Género en egresos, mostrar en ingresos
+            const generoWrap = document.getElementById('inputIngEgrGenero')?.closest('.relative');
+            if (generoWrap) generoWrap.style.display = tipo === 'egreso' ? 'none' : '';
+
             toggleModal('modalIngEgr', true);
             lucide.createIcons();
         }
