@@ -10014,7 +10014,7 @@ function revisarVencimientos(){
 
         if (diff < 0) {
             vencidos.push(p);
-        } else if (diff <= 7) {
+        } else if (diff <= 60) {
             porVencer.push({ ...p, dias: diff });
         }
     });
@@ -13660,8 +13660,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbwur76p9lVBwrwJQ__JMuEwWXnP6LKXsQbXbZgbQNlIBvMYoZaE4tvRB9a0kwH7px2p/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbwur76p9lVBwrwJQ__JMuEwWXnP6LKXsQbXbZgbQNlIBvMYoZaE4tvRB9a0kwH7px2p/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbx5CaVhn8QhVfJl26XPQ4wje7QFiUf11AEOO9HhF1-NhqQAMLc4y2GREEIdQ-AUcl7t/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbx5CaVhn8QhVfJl26XPQ4wje7QFiUf11AEOO9HhF1-NhqQAMLc4y2GREEIdQ-AUcl7t/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
