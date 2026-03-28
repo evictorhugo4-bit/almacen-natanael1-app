@@ -15725,11 +15725,17 @@ console.log("FILTRADAS:", filtradas.length);
                         difHtml = `<td class="py-2 pr-3 text-right font-black" style="color:${diffColor}">${diffTxt}</td>`;
                     }
                     const _idxProd = _sheetProductos.findIndex(x => x.nombre === p.nombre);
+                    const _fotoUrl = p.foto || p.imagen || '';
+                    const _fotoHtml = _fotoUrl
+                        ? `<img src="${driveUrl(_fotoUrl)}" style="width:36px;height:36px;object-fit:contain;border-radius:8px;background:#0f172a;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:36px;height:36px;border-radius:8px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📦</div>`
+                        : `<div style="width:36px;height:36px;border-radius:8px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📦</div>`;
                     return `<tr class="hover:bg-slate-800/50 border-b border-slate-800/50" style="background:rgba(15,23,42,0.5);">
                         <td class="py-2 pr-3 text-center pl-6">
                             <button onclick="ejecutarInicioProd(${_idxProd})" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:900;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">🚀 INICIO</button>
                         </td>
-                        <td class="py-2 pr-3 font-bold text-slate-200" style="padding-left:20px;">${Utils.escHtml(p.nombre)}</td>
+                        <td class="py-2 pr-3 font-bold text-slate-200" style="padding-left:20px;">
+                            <div style="display:flex;align-items:center;gap:8px;">${_fotoHtml}<span>${Utils.escHtml(p.nombre)}</span></div>
+                        </td>
                         <td class="py-2 pr-3 text-center">
                             <button onclick="abrirVerificarStock(${_idxProd})" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg">✅ STOCK</button>
                         </td>
