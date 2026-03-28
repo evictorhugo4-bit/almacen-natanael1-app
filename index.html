@@ -10014,7 +10014,7 @@ function revisarVencimientos(){
 
         if (diff < 0) {
             vencidos.push(p);
-        } else if (diff <= 60) {
+        } else if (diff <= 7) {
             porVencer.push({ ...p, dias: diff });
         }
     });
