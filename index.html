@@ -10511,9 +10511,12 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         </div>`;
     }).join('');
 
-    // Buscar imagen del proveedor en _sheetProveedoresNegocio
-    const _provObj = (_sheetProveedoresNegocio||[]).find(p => (p.nombre||'').toUpperCase().trim() === (c.proveedor||'').toUpperCase().trim());
-    const _provImg = _provObj && _provObj.imagen && !_provObj.imagen.startsWith('[') ? _provObj.imagen : null;
+    // Buscar imagen del proveedor en ambas listas de proveedores
+    const _provNombre = (c.proveedor||'').toUpperCase().trim();
+    const _provObj = (_sheetProveedoresNegocio||[]).find(p => (p.nombre||'').toUpperCase().trim() === _provNombre)
+                  || (_sheetProveedoresGastos||[]).find(p => (p.nombre||'').toUpperCase().trim() === _provNombre);
+    const _provImgRaw = _provObj && _provObj.imagen && !_provObj.imagen.startsWith('[') ? _provObj.imagen : null;
+    const _provImg = _provImgRaw ? driveUrl(_provImgRaw) : null;
     const _provAvatar = _provImg
         ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid #10b98133;flex-shrink:0;">
                <img src="${_provImg}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=font-size:22px>🏢</span>'">
@@ -13044,8 +13047,9 @@ function calcularCajaEsperada() {
                     p.direccion ? `<span style="font-size:9px;color:#94a3b8;">📍 ${Utils.escHtml(p.direccion)}</span>` : '',
                     p.porcentaje ? `<span style="font-size:9px;background:#10b98122;color:#10b981;padding:1px 6px;border-radius:999px;font-weight:900;">% ${p.porcentaje} ganancia</span>` : ''
                 ].filter(Boolean).join(' ');
-                const avatarHtml = p.imagen && !p.imagen.startsWith('[')
-                    ? `<img src="${p.imagen}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span style="font-size:18px;font-weight:900;color:#10b981;display:none;">${inicial}</span>`
+                const _avatarImgUrl = (p.imagen && !p.imagen.startsWith('[')) ? driveUrl(p.imagen) : null;
+                const avatarHtml = _avatarImgUrl
+                    ? `<img src="${_avatarImgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span style="font-size:18px;font-weight:900;color:#10b981;display:none;">${inicial}</span>`
                     : `<span style="font-size:18px;font-weight:900;color:#10b981;">${inicial}</span>`;
                 return `<div class="glass-card rounded-2xl border border-slate-800 hover:border-slate-600 transition-colors" style="padding:14px 16px;">
                     <div style="display:flex;align-items:center;gap:14px;">
