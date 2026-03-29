@@ -8507,31 +8507,16 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         }
 
        function confirmarEliminarIngEgr() {
-
     if (ingEgrTipo === 'ingreso') {
-
         _sheetIngresos = _sheetIngresos.filter(c => c.id !== ingEgrAccionId);
-
         eliminarEnSheet('ingreso', ingEgrAccionId);
-
         renderIngEgr('ingreso');
-
     } else {
-
         _sheetEgresos = _sheetEgresos.filter(c => c.id !== ingEgrAccionId);
-
         eliminarEnSheet('egreso', ingEgrAccionId);
-
         renderIngEgr('egreso');
-
     }
-
     toggleModal('modalEliminarIngEgr', false);
-
-    mostrarToast('✓ Registro eliminado');
-
-    toggleModal('modalEliminarIngEgr', false);
-
     mostrarToast('✓ Registro eliminado');
 }
 
@@ -12438,12 +12423,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             toggleModal('modalEliminarIngEgr', true);
         }
 
-        function confirmarEliminarIngEgr() {
-            if (ingEgrTipo === 'ingreso') { _sheetIngresos = _sheetIngresos.filter(c=>c.id!==ingEgrAccionId); saveIngresos(); renderIngEgr('ingreso'); }
-            else                          { _sheetEgresos  = _sheetEgresos.filter(c=>c.id!==ingEgrAccionId);  saveEgresos();  renderIngEgr('egreso'); }
-            toggleModal('modalEliminarIngEgr', false);
-            mostrarToast('✓ Registro eliminado');
-        }
+        // confirmarEliminarIngEgr — ver definición principal más arriba
 
         function editarIngEgr(tipo, id) {
             ingEgrAccionId = id; ingEgrTipo = tipo;
@@ -13712,8 +13692,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbx5CaVhn8QhVfJl26XPQ4wje7QFiUf11AEOO9HhF1-NhqQAMLc4y2GREEIdQ-AUcl7t/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbx5CaVhn8QhVfJl26XPQ4wje7QFiUf11AEOO9HhF1-NhqQAMLc4y2GREEIdQ-AUcl7t/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxcGETSN6msNDqry4niA_Jjf22z8lkUw4Ysh0jlSeaH-eFs5neZ6aAtpStFde8cZewM/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxcGETSN6msNDqry4niA_Jjf22z8lkUw4Ysh0jlSeaH-eFs5neZ6aAtpStFde8cZewM/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -15626,7 +15606,7 @@ console.log("FILTRADAS:", filtradas.length);
             const fhTs = filtroHasta ? new Date(filtroHasta).getTime() : null;
 
             // ── PRE-INDEXAR ventas y compras por nombre (una sola vez) ──
-            const todasV = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
+            const todasV = (_sheetVentas||[]);
             const todasC = _sheetCompras || [];
             // DEBUG nombres en compras que contengan SEDAL
             const _sedal = [];
@@ -15902,7 +15882,7 @@ console.log("FILTRADAS:", filtradas.length);
             console.log('Filtro hasta:', hastaVal, '→ fnum:', fhNum);
 
             // Ventas
-            const todasV = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
+            const todasV = (_sheetVentas||[]);
             let vCnt=0, vTotal=0;
             todasV.forEach(v => {
                 const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
@@ -16015,7 +15995,7 @@ console.log("FILTRADAS:", filtradas.length);
             });
 
             // Usar _sheetVentas (ya agrupadas por IDVENTAS con efectivo de primera fila)
-            const todasV = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
+            const todasV = (_sheetVentas||[]);
             todasV.forEach(v => {
                 const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
                 if (!enRango(fnum) || _ventasIdVistas.has(v.id)) return;
@@ -16318,27 +16298,26 @@ console.log("FILTRADAS:", filtradas.length);
                 </div>`
                 // ── Card INGRESOS PROPIOS ──
                 + (()=>{
-                    // Entradas = ingresos donde supercategoría (proveedor) = "INGRESOS PROPIOS"
                     let _entPropios = 0;
-                    (_sheetIngresos||[]).forEach(r => {
-                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                        if (!enRango(fnum)) return;
-                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim()
-                            .normalize('NFD').replace(/[\u0300-\u036f]/g,'') !== 'INGRESOS PROPIOS') return;
-                        _entPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
-                    });
-                    // + ventas totales - ganancias = dinero recuperado (costo) de ventas
-                    const _vEntPropios = _resumenFiltro==='efectivo' ? (vEf - vGanEf)
-                                       : _resumenFiltro==='credito'  ? (vCr - vGanCr)
-                                       : (vTotal - vGanTotal);
-                    _entPropios += Math.max(0, _vEntPropios);
-                    // Salidas según categoría:
-                    // NEGOCIO → solo compras
-                    // PERSONAL/TOTAL → egresos propios + CASA ERAZO
                     let _salPropios = 0;
                     if (_resumenCategoria === 'negocio') {
+                        // NEGOCIO: entradas = ventas-ganancias, salidas = compras
+                        const _vEntPropios = _resumenFiltro==='efectivo' ? (vEf - vGanEf)
+                                           : _resumenFiltro==='credito'  ? (vCr - vGanCr)
+                                           : (vTotal - vGanTotal);
+                        _entPropios = Math.max(0, _vEntPropios);
                         _salPropios = _cmpT;
                     } else {
+                        // PERSONAL: entradas = ingresos con supercategoría "INGRESOS PROPIOS" + ganancias totales
+                        (_sheetIngresos||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                            if (!enRango(fnum)) return;
+                            if ((r.proveedor||r.supercategoria||'').toUpperCase().trim()
+                                .normalize('NFD').replace(/[̀-ͯ]/g,'') !== 'INGRESOS PROPIOS') return;
+                            _entPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                        });
+                        _entPropios += (_resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal);
+                        // PERSONAL: solo egresos con supercategoría EGRESOS PROPIOS + CASA ERAZO
                         (_sheetEgresos||[]).forEach(r => {
                             const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                             if (!enRango(fnum)) return;
@@ -16348,13 +16327,12 @@ console.log("FILTRADAS:", filtradas.length);
                         });
                         if (_resumenFiltro !== 'credito') {
                             const _vistasCE = new Set();
-                            const _fuenteCE = (_sheetVentas && _sheetVentas.length > 0) ? _sheetVentas : todasV;
-                            _fuenteCE.forEach(v => {
-                                const _uid = String(v.id||v.idVenta||v.IDVENTAS||'').trim();
+                            (_sheetVentas||[]).forEach(v => {
+                                const _uid = String(v.id||'').trim();
                                 if (!_uid || _vistasCE.has(_uid)) return;
                                 _vistasCE.add(_uid);
                                 const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                                if (!enRango(fnum)) return;
+                                if (!fnum || !enRango(fnum)) return;
                                 if (!['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(String(v.cliente||'').toUpperCase().trim())) return;
                                 _salPropios += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
                             });
