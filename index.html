@@ -10276,7 +10276,9 @@ function eliminarItemCompra(itemId){
 
     const proveedor = document.getElementById('inputCompraProveedor').value.trim() || 'Sin proveedor';
     const efectivo  = parseFloat(document.getElementById('inputCompraEfectivo').value) || 0;
-    const total     = carritoCompra.reduce((s,i) => s + i.costo * i.cantidad, 0);
+    const flete     = parseFloat(document.getElementById('inputCompraFlete')?.value) || 0;
+    const subtotalBase = carritoCompra.reduce((s,i) => s + i.costo * i.cantidad, 0);
+    const total     = subtotalBase + flete;
     const credito   = Math.max(0, total - efectivo);
 
     let formaPagoFinal = 'EFECTIVO';
@@ -10314,6 +10316,8 @@ const fecha =
     const _carritoSnapshot  = carritoCompra.map(c => Object.assign({}, c));
     const _totalSnapshot    = total;
     const _efectivoSnapshot = efectivo;
+    const _fleteSnapshot    = flete;
+    const _subtotalSnapshot = subtotalBase;
     const _ticketsSnapshot  = _ticketsNuevaCompra.slice(); // capturar array ANTES de resetear
 
     cerrarNuevaCompra();
@@ -10330,10 +10334,10 @@ const idCompraLocal = 'C-' + Date.now();
 
 const productosPayload = _carritoSnapshot.map(c => {
     const prod = _sheetProductos.find(p => p.id === c.id) || {};
-    const costoBase     = c.costoModificado ? c.costo : (prod.costo || c.costo || 0);
-    // Usar costo con flete distribuido si existe, si no el costo base
-    const costoFinal    = (c._costoConFlete != null && c._costoConFlete > 0) ? c._costoConFlete : costoBase;
-    const pagoTotal     = Math.round((c.cantidad || 0) * costoFinal * 100) / 100;
+    const costoFinal    = c.costoModificado ? c.costo : (prod.costo || c.costo || 0);
+    const subItem       = Math.round((c.cantidad || 0) * costoFinal * 100) / 100;
+    const fleteProd     = c._fletePorItem || 0;
+    const pagoTotal     = Math.round((subItem + fleteProd) * 100) / 100;
     const proporcion    = _totalSnapshot > 0 ? pagoTotal / _totalSnapshot : 0;
     const pagoEfectivo  = Math.round(_efectivoSnapshot * proporcion * 100) / 100;
     const pagoCredito   = Math.round(Math.max(0, pagoTotal - pagoEfectivo) * 100) / 100;
@@ -10345,6 +10349,7 @@ const productosPayload = _carritoSnapshot.map(c => {
         categoria:    prod.categoria || '',
         precioCosto:  costoFinal,
         precioVenta:  c.ventaModificada ? c.venta : (prod.precio || c.venta || 0),
+        flete:        fleteProd,
         pagoTotal:    pagoTotal,
         pagoEfectivo: pagoEfectivo,
         pagoCredito:  pagoCredito,
@@ -10358,6 +10363,7 @@ const payload = {
     fecha,
     fechaISO:      fecha,
     proveedor,
+    flete:         _fleteSnapshot,
     ticket:        ticketsUrls[0] || null,
     tickets:       ticketsUrls,
     productos:     productosPayload
@@ -10516,6 +10522,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                <span style="font-size:18px;font-weight:900;color:#10b981;">${(c.proveedor||'?').charAt(0).toUpperCase()}</span>
            </div>`;
 
+    const compraUid = 'cpra_' + (c.id || idx);
+    const itemCount = todosItems.length;
     return `
         <div class="glass-card w-full max-w-none p-4 rounded-2xl border border-slate-800 space-y-2">
             <div class="flex justify-between items-start gap-2">
@@ -10543,7 +10551,15 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     </div>
                 </div>
             </div>
-            ${itemsHtml ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #1e293b;">${itemsHtml}</div>` : ''}
+            ${itemsHtml ? `
+            <div style="margin-top:4px;border-top:1px solid #1e293b;padding-top:4px;">
+                <button onclick="(function(btn){var d=document.getElementById('${compraUid}');var open=d.style.display!=='none';d.style.display=open?'none':'block';btn.querySelector('.cpra-arrow').style.transform=open?'rotate(0deg)':'rotate(180deg)';})(this)"
+                    style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 0;background:none;border:none;cursor:pointer;color:#64748b;">
+                    <span style="font-size:9px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.06em;">${itemCount} producto${itemCount!==1?'s':''}</span>
+                    <span class="cpra-arrow" style="display:inline-block;transition:transform .2s;transform:rotate(0deg);font-size:11px;color:#475569;">&#9660;</span>
+                </button>
+                <div id="${compraUid}" style="display:none;">${itemsHtml}</div>
+            </div>` : ''}
         </div>
     `;
 
@@ -16277,49 +16293,54 @@ console.log("FILTRADAS:", filtradas.length);
                             .normalize('NFD').replace(/[\u0300-\u036f]/g,'') !== 'INGRESOS PROPIOS') return;
                         _entPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
                     });
-                    // + ganancias de ventas según filtro
-                    _entPropios += _resumenFiltro==='efectivo' ? vGanEf : _resumenFiltro==='credito' ? vGanCr : vGanTotal;
-                    // Salidas = egresos donde supercategoría (proveedor) = "EGRESOS PROPIOS"
+                    // + ventas totales - ganancias = dinero recuperado (costo) de ventas
+                    const _vEntPropios = _resumenFiltro==='efectivo' ? (vEf - vGanEf)
+                                       : _resumenFiltro==='credito'  ? (vCr - vGanCr)
+                                       : (vTotal - vGanTotal);
+                    _entPropios += Math.max(0, _vEntPropios);
+                    // Salidas según categoría:
+                    // NEGOCIO → solo compras
+                    // PERSONAL/TOTAL → egresos propios + CASA ERAZO
                     let _salPropios = 0;
-                    // DEBUG: mostrar todas las supercategorías y sus totales
-                    const _debugSC = {};
-                    (_sheetEgresos||[]).forEach(r => {
-                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                        if (!enRango(fnum)) return;
-                        const _scRaw = r.proveedor||r.supercategoria||'(vacío)';
-                        _debugSC[_scRaw] = (_debugSC[_scRaw]||0) + Number(r.total||0);
-                        const _sc = _scRaw.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-                        if (_sc !== 'EGRESOS PROPIOS') return;
-                        _salPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
-                    });
-                    console.table(_debugSC);
-                    console.log('_salPropios egresos:', _salPropios);
-                    // + total dinero recuperado de ventas CASA ERAZO (solo filtro total/efectivo)
-                    if (_resumenFiltro !== 'credito') {
-                        const _vistasCE = new Set();
-                        todasV.forEach(v => {
-                            if (_vistasCE.has(v.id)) return; _vistasCE.add(v.id);
-                            const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (_resumenCategoria === 'negocio') {
+                        _salPropios = _cmpT;
+                    } else {
+                        (_sheetEgresos||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                             if (!enRango(fnum)) return;
-                            if (!['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(String(v.cliente||'').toUpperCase().trim())) return;
-                            _salPropios += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                            const _sc = (r.proveedor||r.supercategoria||'').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'');
+                            if (_sc !== 'EGRESOS PROPIOS') return;
+                            _salPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
                         });
+                        if (_resumenFiltro !== 'credito') {
+                            const _vistasCE = new Set();
+                            const _fuenteCE = (_sheetVentas && _sheetVentas.length > 0) ? _sheetVentas : todasV;
+                            _fuenteCE.forEach(v => {
+                                const _uid = String(v.id||v.idVenta||v.IDVENTAS||'').trim();
+                                if (!_uid || _vistasCE.has(_uid)) return;
+                                _vistasCE.add(_uid);
+                                const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
+                                if (!enRango(fnum)) return;
+                                if (!['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(String(v.cliente||'').toUpperCase().trim())) return;
+                                _salPropios += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                            });
+                        }
                     }
                     const _balPropios = _entPropios - _salPropios;
                     window.__entPropios = _entPropios; window.__salPropios = _salPropios;
                     return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#f59e0b55;background:linear-gradient(135deg,#1a1200 0%,#0f172a 100%);">
-                        <p style="font-size:9px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🏠 INGRESOS PROPIOS</p>
+                        <p style="font-size:9px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'💼 INGRESOS DEL NEGOCIO':'🏠 INGRESOS PROPIOS'}</p>
                         <div class="grid grid-cols-3 gap-3">
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">Total Entradas de Ingresos Propios</p>
+                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Entradas del Negocio':'Total Entradas de Ingresos Propios'}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entPropios)}</p>
                             </div>
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">Total Salidas de Egresos Propios</p>
+                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Salidas del Negocio':'Total Salidas de Egresos Propios'}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salPropios)}</p>
                             </div>
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balPropios>=0?'#f59e0b':'#ef4444'}">Balance Propios</p>
+                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balPropios>=0?'#f59e0b':'#ef4444'}">${_resumenCategoria==='negocio'?'Balance del Negocio':'Balance Propios'}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balPropios>=0?'#f59e0b':'#ef4444'};">$${Utils.fmt(_balPropios)}</p>
                             </div>
                         </div>
@@ -16343,21 +16364,29 @@ console.log("FILTRADAS:", filtradas.length);
                         if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
                         _salAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
                     });
-                    const _balAjenos = _entAjenos - _salAjenos;
-                    window.__entAjenos = _entAjenos; window.__salAjenos = _salAjenos;
+                    // Cuando la categoría es 'negocio', las entradas son el total de INGRESOS NEGOCIO
+                    const _entAjenosDisplay = _resumenCategoria === 'negocio'
+                        ? (_resumenFiltro==='efectivo' ? ingNeg.ef : _resumenFiltro==='credito' ? ingNeg.cr : ingNeg.total)
+                        : _entAjenos;
+                    // Cuando la categoría es 'negocio', las salidas son el total de EGRESOS NEGOCIO
+                    const _salAjenosDisplay = _resumenCategoria === 'negocio'
+                        ? (_resumenFiltro==='efectivo' ? egrNeg.ef : _resumenFiltro==='credito' ? egrNeg.cr : egrNeg.total)
+                        : _salAjenos;
+                    const _balAjenos = _entAjenosDisplay - _salAjenosDisplay;
+                    window.__entAjenos = _entAjenosDisplay; window.__salAjenos = _salAjenosDisplay;
                     return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#8b5cf655;background:linear-gradient(135deg,#0d0620 0%,#0f172a 100%);">
-                        <p style="font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🤝 INGRESOS AJENOS</p>
+                        <p style="font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'📦 INGRESOS ADICIONALES DEL NEGOCIO':'🤝 INGRESOS AJENOS'}</p>
                         <div class="grid grid-cols-3 gap-3">
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">Total Entradas de Ingresos Ajenos</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entAjenos)}</p>
+                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Entradas de Adicionales del Negocio':'Total Entradas de Ingresos Ajenos'}</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entAjenosDisplay)}</p>
                             </div>
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">Total Salidas de Egresos Ajenos</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salAjenos)}</p>
+                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Salidas de Adicionales del Negocio':'Total Salidas de Egresos Ajenos'}</p>
+                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salAjenosDisplay)}</p>
                             </div>
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balAjenos>=0?'#a78bfa':'#ef4444'}">Balance Ajenos</p>
+                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balAjenos>=0?'#a78bfa':'#ef4444'}">${_resumenCategoria==='negocio'?'Balance Adicionales':'Balance Ajenos'}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balAjenos>=0?'#a78bfa':'#ef4444'};">$${Utils.fmt(_balAjenos)}</p>
                             </div>
                         </div>
