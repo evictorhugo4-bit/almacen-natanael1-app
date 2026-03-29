@@ -16362,21 +16362,22 @@ console.log("FILTRADAS:", filtradas.length);
                     }
                     const _balPropios = _entPropios - _salPropios;
                     window.__entPropios = _entPropios; window.__salPropios = _salPropios;
+                    if (_resumenCategoria === 'total') return '';
                     return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#f59e0b55;background:linear-gradient(135deg,#1a1200 0%,#0f172a 100%);">
-                        <p style="font-size:9px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'💼 INGRESOS DEL NEGOCIO':'🏠 INGRESOS PROPIOS'}</p>
+                        <p style="font-size:9px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'💼 INGRESOS DEL NEGOCIO':(_resumenCategoria==='total'?'📊 BALANCE TOTAL':'🏠 INGRESOS PROPIOS')}</p>
                         <div class="grid grid-cols-3 gap-3">
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Entradas del Negocio':'Total Entradas de Ingresos Propios'}</p>
+                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Entradas del Negocio':(_resumenCategoria==='total'?'TOTAL ENTRADAS GENERAL':'Total Entradas de Ingresos Propios')}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entPropios)}</p>
                             </div>
                             <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Salidas del Negocio':'Total Salidas de Egresos Propios'}</p>
+                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Salidas del Negocio':(_resumenCategoria==='total'?'TOTAL SALIDAS GENERAL':'Total Salidas de Egresos Propios')}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salPropios)}</p>
                             </div>
-                            <div class="text-center">
+                            ${_resumenCategoria!=='total'?`<div class="text-center">
                                 <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balPropios>=0?'#f59e0b':'#ef4444'}">${_resumenCategoria==='negocio'?'Balance del Negocio':'Balance Propios'}</p>
                                 <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balPropios>=0?'#f59e0b':'#ef4444'};">$${Utils.fmt(_balPropios)}</p>
-                            </div>
+                            </div>`:''}
                         </div>
                     </div>`;
                 })()
@@ -16408,6 +16409,8 @@ console.log("FILTRADAS:", filtradas.length);
                         : _salAjenos;
                     const _balAjenos = _entAjenosDisplay - _salAjenosDisplay;
                     window.__entAjenos = _entAjenosDisplay; window.__salAjenos = _salAjenosDisplay;
+                    // En categoría TOTAL no mostrar esta card
+                    if (_resumenCategoria === 'total') { window.__entAjenos = 0; window.__salAjenos = 0; return ''; }
                     return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#8b5cf655;background:linear-gradient(135deg,#0d0620 0%,#0f172a 100%);">
                         <p style="font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'📦 INGRESOS ADICIONALES DEL NEGOCIO':'🤝 INGRESOS AJENOS'}</p>
                         <div class="grid grid-cols-3 gap-3">
@@ -16428,8 +16431,16 @@ console.log("FILTRADAS:", filtradas.length);
                 })()
                 // ── TOTAL GENERAL ──
                 + (()=>{
-                    const _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
-                    const _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
+                    let _totEnt, _totSal;
+                    if (_resumenCategoria === 'total') {
+                        // TOTAL ENTRADAS = ventas + ingresos manuales + ingresos negocio
+                        _totEnt = _vT + _ingT + _ingNT;
+                        // TOTAL SALIDAS = compras + egresos + egresos negocio
+                        _totSal = _cmpT + _egrT + _egrNT;
+                    } else {
+                        _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
+                        _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
+                    }
                     const _totBal = _totEnt - _totSal;
                     return `<div class="glass-card rounded-2xl p-4 border border-amber-500/40 col-span-2 md:col-span-4">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
