@@ -13532,9 +13532,23 @@ function verDetalleProveedor(tipo, id){
             const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = e => {
+                const dataUrl = e.target.result;
                 const preview = document.getElementById('proveedorImgPreview');
-                preview.src = e.target.result; preview.classList.remove('hidden');
+                // Mostrar preview inmediato con base64
+                preview.src = dataUrl; preview.classList.remove('hidden');
                 document.getElementById('proveedorImgPlaceholder').classList.add('hidden');
+                // Subir a ImgBB para obtener URL permanente
+                mostrarToast('⏳ Subiendo imagen...', 'info');
+                if (typeof subirFotoImgBB === 'function') {
+                    subirFotoImgBB(dataUrl, function(urlFinal) {
+                        if (urlFinal) {
+                            preview.src = urlFinal;
+                            mostrarToast('✓ Imagen subida correctamente');
+                        } else {
+                            mostrarToast('⚠ No se pudo subir, se usará imagen local', 'error');
+                        }
+                    });
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -13651,6 +13665,22 @@ function verDetalleProveedor(tipo, id){
         const idRow = String(row[idCol] || '').trim();
         if (!idRow) return;
 
+        const imagenSheet = String(row['IMAGEN'] || '').trim();
+        // Si la imagen del sheet es base64 (puede venir truncada por límite de Sheets),
+        // preferir la imagen ya guardada en memoria/localStorage si es más completa
+        const existente = db.find(x => x.id === idRow);
+        const imagenFinal = (() => {
+            if (!imagenSheet) return (existente && existente.imagen) || '';
+            // Si es una URL (ImgBB, Drive, https) → usar la del sheet
+            if (imagenSheet.startsWith('http')) return imagenSheet;
+            // Si es base64: usar la más larga (la truncada es más corta)
+            if (imagenSheet.startsWith('data:')) {
+                const imgLocal = (existente && existente.imagen) || '';
+                return imgLocal.length >= imagenSheet.length ? imgLocal : imagenSheet;
+            }
+            return imagenSheet;
+        })();
+
         const reg = {
             id: idRow,
             nombre: String(row['NOMBRE'] || '').trim(),
@@ -13660,7 +13690,7 @@ function verDetalleProveedor(tipo, id){
             email: String(row['EMAIL'] || '').trim(),
             web: String(row['WEB'] || '').trim(),
             redes: String(row['REDES SOCIALES'] || row['RED SOCIAL'] || '').trim(),
-            imagen: String(row['IMAGEN'] || '').trim()
+            imagen: imagenFinal
         };
 
         const idx = db.findIndex(x => x.id === idRow);
