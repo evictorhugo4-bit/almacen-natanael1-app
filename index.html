@@ -2076,8 +2076,13 @@ GUARDAR PRODUCTO
             </div>
             <!-- KPIs grilla -->
             <div id="resumenKpis" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-            <!-- Tabla egresos por categoría (personal) -->
-            <div id="resumenEgresosCat" class="hidden"></div>
+            <!-- Ingresos y Egresos por categoría (personal) - dos columnas -->
+            <div id="resumenCatWrapper" class="hidden" style="display:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div id="resumenIngresosCat"></div>
+                    <div id="resumenEgresosCat"></div>
+                </div>
+            </div>
             <!-- Tabla detalle -->
             <div id="resumenTabla" class="glass-card rounded-2xl p-4 border border-slate-700 overflow-x-auto"></div>
         </div>
@@ -16313,6 +16318,9 @@ console.log("FILTRADAS:", filtradas.length);
             };
 
             // ── MODO PERSONAL / TOTAL: 3 cards simples ──────────────────────────────
+            // helper global: FECHA ORIGINAL tiene prioridad sobre FECHA en tablas de pago
+            const _fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+
             if (_resumenCategoria === 'personal' || _resumenCategoria === 'total') {
                 // INGRESOS TOTALES = columna PAGO TOTAL de tabla INGRESOS (_sheetIngresos)
                 const _ingTotalPagoTotal = ing.total;
@@ -16321,84 +16329,89 @@ console.log("FILTRADAS:", filtradas.length);
                 // GANANCIAS TOTALES = ganTotal calculado de ventas
                 const _ganV = _resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal;
 
-                // helper: FECHA ORIGINAL tiene prioridad sobre FECHA en tablas de pago
-                const _fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
-
-                // ── EFECTIVO INGRESOS: PAGO EFECTIVO (tabla INGRESOS) + MONTO (PAGO INGRESOS, mismo IDINGRESOS, FECHA ORIGINAL) ──
+                // ── EFECTIVO INGRESOS: PAGO EFECTIVO (tabla INGRESOS, filtrado por fecha del ingreso)
+                //    + MONTO (PAGO INGRESOS, mismo IDINGRESOS, filtrado por FECHA ORIGINAL del pago) ──
                 let _ingEfectivo = 0;
-                const _idsIngEf = new Set();
-                const _idIngLocalToSheet = {}; // localId → sheetId
+                // Paso 1: todos los sheetIds de ingresos (sin filtro de fecha) para poder matchear pagos
+                const _idsIngEfSheet = new Set();
+                const _idIngLocalToSheet = {};
+                (_sheetIngresos||[]).forEach(r => {
+                    const sheetId = String(r.idSheet||'').trim();
+                    const localId = String(r.id||'').trim();
+                    if (sheetId) _idsIngEfSheet.add(sheetId);
+                    if (localId && sheetId) _idIngLocalToSheet[localId] = sheetId;
+                });
+                // Paso 2: sumar PAGO EFECTIVO de ingresos que caen en el rango (por fecha del ingreso)
                 (_sheetIngresos||[]).forEach(r => {
                     const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                     if (!enRango(fnum)) return;
                     _ingEfectivo += Number(r.efectivo||0);
-                    const sheetId = String(r.idSheet||'').trim();
-                    const localId = String(r.id||'').trim();
-                    if (sheetId) _idsIngEf.add(sheetId);
-                    if (localId) _idsIngEf.add(localId);
-                    if (localId && sheetId) _idIngLocalToSheet[localId] = sheetId;
                 });
+                // Paso 3: sumar pagos de _sheetPagoIngresos cuyo IDINGRESOS matchea Y cuya FECHA ORIGINAL cae en rango
                 (_sheetPagoIngresos||[]).forEach(p => {
-                    const pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                    if (!pid || !_idsIngEf.has(pid)) return;
+                    let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                    if (pid && !_idsIngEfSheet.has(pid)) pid = _idIngLocalToSheet[pid] || pid;
+                    if (!pid || !_idsIngEfSheet.has(pid)) return;
                     if (!enRango(_fnumPago(p))) return;
                     _ingEfectivo += Number(p.MONTO||p.monto||0);
                 });
 
-                // ── EFECTIVO EGRESOS: PAGO EFECTIVO (tabla EGRESOS) + MONTO (PAGO EGRESOS, mismo IDEGRESOS, FECHA ORIGINAL) ──
+                // ── EFECTIVO EGRESOS: PAGO EFECTIVO (tabla EGRESOS, filtrado por fecha del egreso)
+                //    + MONTO (PAGO EGRESOS, mismo IDEGRESOS, filtrado por FECHA ORIGINAL del pago) ──
                 let _egrEfectivo = 0;
-                const _idsEgrEf = new Set();
+                // Paso 1: todos los sheetIds de egresos (sin filtro de fecha)
+                const _idsEgrEfSheet = new Set();
+                const _idEgrLocalToSheet = {};
+                (_sheetEgresos||[]).forEach(r => {
+                    const sheetId = String(r.idSheet||'').trim();
+                    const localId = String(r.id||'').trim();
+                    if (sheetId) _idsEgrEfSheet.add(sheetId);
+                    if (localId && sheetId) _idEgrLocalToSheet[localId] = sheetId;
+                });
+                // Paso 2: sumar PAGO EFECTIVO de egresos que caen en el rango
                 (_sheetEgresos||[]).forEach(r => {
                     const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                     if (!enRango(fnum)) return;
                     _egrEfectivo += Number(r.efectivo||0);
-                    const sheetId = String(r.idSheet||'').trim();
-                    const localId = String(r.id||'').trim();
-                    if (sheetId) _idsEgrEf.add(sheetId);
-                    if (localId) _idsEgrEf.add(localId);
                 });
+                // Paso 3: sumar pagos de _sheetPagoEgresos cuyo IDEGRESOS matchea Y cuya FECHA ORIGINAL cae en rango
                 (_sheetPagoEgresos||[]).forEach(p => {
-                    const pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                    if (!pid || !_idsEgrEf.has(pid)) return;
+                    let pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                    if (pid && !_idsEgrEfSheet.has(pid)) pid = _idEgrLocalToSheet[pid] || pid;
+                    if (!pid || !_idsEgrEfSheet.has(pid)) return;
                     if (!enRango(_fnumPago(p))) return;
                     _egrEfectivo += Number(p.MONTO||p.monto||0);
                 });
 
                 // ── CRÉDITO EGRESOS: PAGO CREDITO (tabla EGRESOS) - MONTO (PAGO EGRESOS, mismo IDEGRESOS, FECHA ORIGINAL) ──
+                // Reutiliza _idsEgrEfSheet y _idEgrLocalToSheet ya construidos arriba
                 let _egrCredito = 0;
-                const _idsEgrCr = new Set();
                 (_sheetEgresos||[]).forEach(r => {
                     const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                     if (!enRango(fnum)) return;
                     _egrCredito += Number(r.credito||0);
-                    const sheetId = String(r.idSheet||'').trim();
-                    const localId = String(r.id||'').trim();
-                    if (sheetId) _idsEgrCr.add(sheetId);
-                    if (localId) _idsEgrCr.add(localId);
                 });
                 (_sheetPagoEgresos||[]).forEach(p => {
-                    const pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                    if (!pid || !_idsEgrCr.has(pid)) return;
+                    let pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                    if (pid && !_idsEgrEfSheet.has(pid)) pid = _idEgrLocalToSheet[pid] || pid;
+                    if (!pid || !_idsEgrEfSheet.has(pid)) return;
                     if (!enRango(_fnumPago(p))) return;
                     _egrCredito -= Number(p.monto||p.MONTO||0);
                 });
                 _egrCredito = Math.max(0, _egrCredito);
 
                 // ── CRÉDITO INGRESOS: PAGO CREDITO (tabla INGRESOS) - MONTO (PAGO INGRESOS, mismo IDINGRESOS, FECHA ORIGINAL) ──
+                // Reutiliza _idsIngEfSheet y _idIngLocalToSheet ya construidos arriba
                 let _ingCredito = 0;
-                const _idsIngCr = new Set();
                 (_sheetIngresos||[]).forEach(r => {
                     const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                     if (!enRango(fnum)) return;
                     _ingCredito += Number(r.credito||0);
-                    const sheetId = String(r.idSheet||'').trim();
-                    const localId = String(r.id||'').trim();
-                    if (sheetId) _idsIngCr.add(sheetId);
-                    if (localId) _idsIngCr.add(localId);
                 });
                 (_sheetPagoIngresos||[]).forEach(p => {
-                    const pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                    if (!pid || !_idsIngCr.has(pid)) return;
+                    let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                    if (pid && !_idsIngEfSheet.has(pid)) pid = _idIngLocalToSheet[pid] || pid;
+                    if (!pid || !_idsIngEfSheet.has(pid)) return;
                     if (!enRango(_fnumPago(p))) return;
                     _ingCredito -= Number(p.monto||p.MONTO||0);
                 });
@@ -16464,16 +16477,94 @@ console.log("FILTRADAS:", filtradas.length);
                     + '</div>'
                     + '</div>';
             } else {
-                // ── MODO NEGOCIO: grilla completa de cards ──
+                // ── MODO NEGOCIO / TOTAL: 3 cards INGRESOS + 2 cards EGRESOS ──
+
+                // ── 1. VENTAS TOTALES S/ GANANCIAS: (ventas tabla + pago ventas) - ganancias ──
+                const _vGanFiltro = _resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal;
+                const _ventasPagos = _resumenFiltro==='efectivo' ? (vEf + pvTotal)
+                                   : _resumenFiltro==='credito'  ? vCr
+                                   : (vTotal + pvTotal);
+                const _ventasSinGan = Math.max(0, _ventasPagos - _vGanFiltro);
+
+                // ── 2. VENTAS CASA ERAZO: sumar dineroRecuperado de ventas cuyo cliente === 'CASA ERAZO' ──
+                let _casaErazoNeg = 0, _casaErazoCantNeg = 0;
+                const _vistasNegCE = new Set();
+                (_sheetVentas||[]).forEach(v => {
+                    const uid = String(v.id||'').trim();
+                    if (!uid || _vistasNegCE.has(uid)) return;
+                    _vistasNegCE.add(uid);
+                    const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fnum)) return;
+                    if (String(v.cliente||'').toUpperCase().trim() !== 'CASA ERAZO') return;
+                    _casaErazoNeg += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0), 0);
+                    _casaErazoCantNeg++;
+                });
+
+                // ── 3. INGRESOS NEGOCIO TOTAL: tabla _sheetIngresosNegocio, columna pagoTotal ──
+                let _ingNegTotal = 0;
+                (_sheetIngresosNegocio||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _ingNegTotal += Number(r.pagoTotal||r.total||0);
+                });
+
+                // ── 4. COMPRAS TOTAL: tabla _sheetCompras, columna pagoTotal ──
+                let _comprasTotal = 0;
+                (_sheetCompras||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _comprasTotal += Number(r.pagoTotal||r.total||0);
+                });
+
+                // ── 5. EGRESOS NEGOCIO TOTAL: tabla _sheetEgresosNegocio, columna pagoTotal ──
+                let _egrNegTotal = 0;
+                (_sheetEgresosNegocio||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _egrNegTotal += Number(r.pagoTotal||r.total||0);
+                });
+
                 document.getElementById('resumenKpis').innerHTML =
                     '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+
+                    // ── Columna INGRESOS (3 cards) ──
                     + '<div style="display:flex;flex-direction:column;gap:8px;">'
                     +   '<div style="padding:4px 6px;border-bottom:2px solid #10b98155;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.1em;">💚 INGRESOS</span></div>'
-                    +   kpiIngresos.map(k=>_mkCard(k,true)).join('')
+
+                    // Card 1: VENTAS TOTALES S/ GANANCIAS
+                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#10b98155;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">▲ VENTAS TOTALES S/ GANANCIAS</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_ventasSinGan) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Ventas + Pago Ventas − Ganancias</p>'
+                    +   '</div>'
+
+                    // Card 2: INGRESOS NEGOCIO TOTAL
+                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#06b6d455;background:linear-gradient(135deg,#041520 0%,#0f172a 100%);">'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#06b6d4;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS NEGOCIO TOTAL</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$' + Utils.fmt(_ingNegTotal) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Ingresos Negocio — Pago Total</p>'
+                    +   '</div>'
+
                     + '</div>'
+
+                    // ── Columna EGRESOS (2 cards) ──
                     + '<div style="display:flex;flex-direction:column;gap:8px;">'
                     +   '<div style="padding:4px 6px;border-bottom:2px solid #ef444455;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;">🔴 EGRESOS</span></div>'
-                    +   kpiEgresos.map(k=>_mkCard(k,false)).join('')
+
+                    // Card 4: COMPRAS TOTAL
+                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f9731655;background:linear-gradient(135deg,#1a0800 0%,#0f172a 100%);">'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f97316;margin-bottom:6px;letter-spacing:.08em;">▼ COMPRAS TOTAL</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$' + Utils.fmt(_comprasTotal) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Compras — Pago Total</p>'
+                    +   '</div>'
+
+                    // Card 5: EGRESOS NEGOCIO TOTAL
+                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#ec489955;background:linear-gradient(135deg,#200515 0%,#0f172a 100%);">'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ec4899;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS NEGOCIO TOTAL</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f9a8d4;">$' + Utils.fmt(_egrNegTotal) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Egresos Negocio — Pago Total</p>'
+                    +   '</div>'
+
                     + '</div>'
                     + '</div>';
             }
@@ -16493,8 +16584,18 @@ console.log("FILTRADAS:", filtradas.length);
                         _salPropios = _cmpT;
                     } else {
                         // PERSONAL: entradas = ingresos INGRESOS PROPIOS + pagos cobrados de esos ingresos + ganancias
-                        // Primero recolectar IDs de ingresos propios en rango
+                        // Paso 1: recolectar todos los sheetIds de ingresos propios (sin filtro de fecha)
                         const _idsIngPropios = new Set();
+                        const _idIngPropiosLocalToSheet = {};
+                        (_sheetIngresos||[]).forEach(r => {
+                            if ((r.proveedor||r.supercategoria||'').toUpperCase().trim()
+                                .normalize('NFD').replace(/[̀-ͯ]/g,'') !== 'INGRESOS PROPIOS') return;
+                            const sid = String(r.idSheet||'').trim();
+                            const lid = String(r.id||'').trim();
+                            if (sid) _idsIngPropios.add(sid);
+                            if (lid && sid) _idIngPropiosLocalToSheet[lid] = sid;
+                        });
+                        // Paso 2: sumar efectivo/credito/total de ingresos propios en rango
                         (_sheetIngresos||[]).forEach(r => {
                             const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                             if (!enRango(fnum)) return;
@@ -16504,15 +16605,14 @@ console.log("FILTRADAS:", filtradas.length);
                                        : _resumenFiltro==='credito'  ? Number(r.credito||0)
                                        : Number(r.total||0);
                             _entPropios += _val;
-                            if (r.id||r.IDINGRESOS) _idsIngPropios.add(String(r.id||r.IDINGRESOS||'').trim());
                         });
-                        // + PAGO INGRESOS donde IDINGRESOS coincida con ingresos propios en rango
+                        // Paso 3: + PAGO INGRESOS donde IDINGRESOS coincida, filtrado por FECHA ORIGINAL
                         if (_resumenFiltro !== 'credito') {
                             (_sheetPagoIngresos||[]).forEach(p => {
-                                const _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                                let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                                if (_pid && !_idsIngPropios.has(_pid)) _pid = _idIngPropiosLocalToSheet[_pid] || _pid;
                                 if (!_pid || !_idsIngPropios.has(_pid)) return;
-                                const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaISO||'');
-                                if (!enRango(fnum)) return;
+                                if (!enRango(_fnumPago(p))) return;
                                 _entPropios += Number(p.monto||p.MONTO||0);
                             });
                         }
@@ -16522,7 +16622,18 @@ console.log("FILTRADAS:", filtradas.length);
                         // TOTAL:    r.total egresos propios + dineroRecuperado CASA ERAZO
                         // EFECTIVO: r.efectivo egresos propios + monto pago egresos (IDEGRESOS coincidente) + dineroRecuperado CASA ERAZO
                         // CREDITO:  r.credito egresos propios
+                        // Paso 1: todos los sheetIds de egresos propios (sin filtro de fecha)
                         const _idsEgrPropios = new Set();
+                        const _idEgrPropiosLocalToSheet = {};
+                        (_sheetEgresos||[]).forEach(r => {
+                            const _sc = (r.proveedor||r.supercategoria||'').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'');
+                            if (_sc !== 'EGRESOS PROPIOS') return;
+                            const sid = String(r.idSheet||'').trim();
+                            const lid = String(r.id||'').trim();
+                            if (sid) _idsEgrPropios.add(sid);
+                            if (lid && sid) _idEgrPropiosLocalToSheet[lid] = sid;
+                        });
+                        // Paso 2: sumar efectivo/credito de egresos propios en rango
                         (_sheetEgresos||[]).forEach(r => {
                             const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                             if (!enRango(fnum)) return;
@@ -16531,17 +16642,21 @@ console.log("FILTRADAS:", filtradas.length);
                             _salPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
                                          : _resumenFiltro==='credito'  ? Number(r.credito||0)
                                          : Number(r.total||0);
-                            if (r.id||r.IDEGRESOS) _idsEgrPropios.add(String(r.id||r.IDEGRESOS||'').trim());
                         });
-                        if (_resumenFiltro === 'efectivo') {
-                            (_sheetPagoEgresos||[]).forEach(p => {
-                                const _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                                if (!_pid || !_idsEgrPropios.has(_pid)) return;
-                                const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaISO||'');
-                                if (!enRango(fnum)) return;
+                        // Paso 3: ajustar con PAGO EGRESOS filtrado por FECHA ORIGINAL
+                        // EFECTIVO: sumar pagos cobrados; CRÉDITO: restar pagos cobrados (reducen la deuda)
+                        (_sheetPagoEgresos||[]).forEach(p => {
+                            let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                            if (_pid && !_idsEgrPropios.has(_pid)) _pid = _idEgrPropiosLocalToSheet[_pid] || _pid;
+                            if (!_pid || !_idsEgrPropios.has(_pid)) return;
+                            if (!enRango(_fnumPago(p))) return;
+                            if (_resumenFiltro === 'efectivo') {
                                 _salPropios += Number(p.monto||p.MONTO||0);
-                            });
-                        }
+                            } else if (_resumenFiltro === 'credito') {
+                                _salPropios -= Number(p.monto||p.MONTO||0);
+                            }
+                        });
+                        _salPropios = Math.max(0, _salPropios);
                         if (_resumenFiltro !== 'credito') {
                             const _vistasCE = new Set();
                             (_sheetVentas||[]).forEach(v => {
@@ -16580,7 +16695,14 @@ console.log("FILTRADAS:", filtradas.length);
                 + (()=>{
                     // Entradas = ingresos donde supercategoría (proveedor) = "INGRESOS AJENOS"
                     let _entAjenos = 0;
+                    // Paso 1: todos los sheetIds de ingresos ajenos (sin filtro de fecha)
                     const _idsIngAjenos = new Set();
+                    (_sheetIngresos||[]).forEach(r => {
+                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
+                        const sid = String(r.idSheet||'').trim();
+                        if (sid) _idsIngAjenos.add(sid);
+                    });
+                    // Paso 2: sumar valor de ingresos ajenos en rango
                     (_sheetIngresos||[]).forEach(r => {
                         const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                         if (!enRango(fnum)) return;
@@ -16589,15 +16711,13 @@ console.log("FILTRADAS:", filtradas.length);
                                    : _resumenFiltro==='credito'  ? Number(r.credito||0)
                                    : Number(r.total||0);
                         _entAjenos += _val;
-                        if (r.id||r.IDINGRESOS) _idsIngAjenos.add(String(r.id||r.IDINGRESOS||'').trim());
                     });
-                    // + PAGO INGRESOS donde IDINGRESOS coincida con ingresos ajenos en rango
+                    // + PAGO INGRESOS donde IDINGRESOS coincida con ingresos ajenos, filtrado por FECHA ORIGINAL
                     if (_resumenFiltro !== 'credito') {
                         (_sheetPagoIngresos||[]).forEach(p => {
-                            const _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                            let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
                             if (!_pid || !_idsIngAjenos.has(_pid)) return;
-                            const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaISO||'');
-                            if (!enRango(fnum)) return;
+                            if (!enRango(_fnumPago(p))) return;
                             _entAjenos += Number(p.monto||p.MONTO||0);
                         });
                     }
@@ -16700,95 +16820,249 @@ console.log("FILTRADAS:", filtradas.length);
                 </div>`;
             } // fin if !== personal
 
-            // ── Tabla egresos por categoría (personal total/efectivo/credito) ──
-            const _catBox = document.getElementById('resumenEgresosCat');
-            if (_catBox) {
-                if (_cat === 'personal') {
-                    // Agrupar egresos por concepto/categoría
+            // ── Tablas ingresos y egresos por categoría (personal) lado a lado ──
+            const _catWrapper = document.getElementById('resumenCatWrapper');
+            const _catBoxEgr = document.getElementById('resumenEgresosCat');
+            const _catBoxIng = document.getElementById('resumenIngresosCat');
+
+            if (true) {
+                if (_catWrapper) { _catWrapper.style.display = 'block'; _catWrapper.classList.remove('hidden'); }
+
+                // ── EGRESOS por categoría ──
+                if (_catBoxEgr) {
                     const _eMap = {};
-                    (_sheetEgresos||[]).forEach(r => {
-                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                        if (!enRango(fnum)) return;
-                        const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
-                        const supercat = (r.proveedor||r.supercategoria||'').trim();
+                    const _addEgr = (r, cat, supercat) => {
                         if (!_eMap[cat]) _eMap[cat] = { cant: 0, total: 0, supercat };
                         _eMap[cat].cant++;
                         _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
                                           : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
                                           : Number(r.total||0);
-                    });
-                    const _eCats = Object.entries(_eMap)
-                        .filter(([,v]) => v.total > 0)
-                        .sort((a,b) => b[1].total - a[1].total);
+                    };
+                    // PERSONAL/TOTAL: tabla EGRESOS
+                    if (_cat !== 'negocio') {
+                        (_sheetEgresos||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                            if (!enRango(fnum)) return;
+                            _addEgr(r, (r.concepto||r.categoria||r.cat||'Sin categoría').trim(), (r.proveedor||r.supercategoria||'').trim());
+                        });
+                    }
+                    // NEGOCIO/TOTAL: tabla COMPRAS
+                    if (_cat === 'negocio' || _cat === 'total') {
+                        (_sheetCompras||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                            if (!enRango(fnum)) return;
+                            const cat = (r.proveedor||r.concepto||r.categoria||'Sin categoría').trim();
+                            if (!_eMap[cat]) {
+                                // buscar foto del proveedor en _sheetProductos
+                                const _pObj = (_sheetProductos||[]).find(p => (p.proveedor||'').trim().toUpperCase() === cat.toUpperCase() && p.foto);
+                                _eMap[cat] = { cant:0, total:0, supercat:'COMPRAS', img: _pObj ? driveUrl(_pObj.foto) : null };
+                            }
+                            _eMap[cat].cant++;
+                            _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||r.pagoCredito||0)
+                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||r.pagoEfectivo||0)
+                                              : Number(r.total||0);
+                        });
+                        // tabla EGRESOS NEGOCIO
+                        (_sheetEgresosNegocio||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                            if (!enRango(fnum)) return;
+                            const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
+                            if (!_eMap[cat]) _eMap[cat] = { cant:0, total:0, supercat:'EGR. NEGOCIO', img: null };
+                            _eMap[cat].cant++;
+                            _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
+                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
+                                              : Number(r.total||r.pagoTotal||0);
+                        });
+                    }
+                    const _eCats = Object.entries(_eMap).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
                     const _eTotal = _eCats.reduce((s,[,v])=>s+v.total, 0);
-
-                    _catBox.className = '';
-                    _catBox.innerHTML = `
-                        <div class="glass-card rounded-2xl border border-red-500/30" style="background:linear-gradient(135deg,#1a0505 0%,#0f172a 100%);overflow:hidden;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #334155;">
-                                <span style="font-size:10px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.1em;">💸 EGRESOS POR CATEGORÍA</span>
-                                <span style="font-size:1.1rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_eTotal)}</span>
-                            </div>
-                            <table style="width:100%;border-collapse:collapse;">
-                                <thead>
-                                    <tr style="border-bottom:1px solid #1e293b;">
-                                        <th style="padding:8px 18px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Categoría</th>
-                                        <th style="padding:8px 12px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Cant</th>
-                                        <th style="padding:8px 18px;text-align:right;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${_eCats.map(([cat, v], i) => {
-                                        const _img = (typeof window._getCatImg==='function') ? window._getCatImg('supercat', v.supercat) : null;
-                                        return `<tr style="border-bottom:1px solid #0f172a;background:${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
-                                            <td style="padding:10px 18px;">
-                                                <div style="display:flex;align-items:center;gap:8px;">
-                                                    ${_img ? `<img src="${_img}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : '<div style="width:28px;height:28px;border-radius:6px;background:#1e293b;flex-shrink:0;"></div>'}
-                                                    <span style="font-size:11px;font-weight:700;color:#e2e8f0;">${cat}</span>
-                                                </div>
-                                            </td>
-                                            <td style="padding:10px 12px;text-align:center;font-size:11px;font-weight:900;color:#94a3b8;">${v.cant}</td>
-                                            <td style="padding:10px 18px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(v.total)}</td>
-                                        </tr>`;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>`;
-                } else {
-                    _catBox.className = 'hidden';
-                    _catBox.innerHTML = '';
+                    const _mkRow = ([cat,v],i) => {
+                        // Buscar imagen: 1) en _listaEgresos por nombre de categoría, 2) por supercategoría vía _getCatImg
+                        const _catUpper = cat.trim().toUpperCase();
+                        const _listaEgr = window._listaEgresos || [];
+                        const _listaEgrItem = _listaEgr.find(function(x){ return (x.nombre||'').trim().toUpperCase() === _catUpper; });
+                        const _imgLista = _listaEgrItem && _listaEgrItem.imagen ? _listaEgrItem.imagen : null;
+                        const _img = v.img || _imgLista || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat',v.supercat) : null);
+                        return `<tr style="border-bottom:1px solid #0f172a;background:${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
+                            <td style="padding:8px 14px;"><div style="display:flex;align-items:center;gap:8px;">
+                                ${_img?`<img src="${_img}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1.5px solid #f8717133;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;align-items:center;justify-content:center;font-size:14px;">💸</div>`:'<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">💸</div>'}
+                                <span style="font-size:11px;font-weight:700;color:#e2e8f0;">${cat}</span>
+                            </div></td>
+                            <td style="padding:8px 10px;text-align:center;font-size:11px;font-weight:900;color:#94a3b8;">${v.cant}</td>
+                            <td style="padding:8px 14px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(v.total)}</td>
+                        </tr>`;
+                    };
+                    _catBoxEgr.innerHTML = `<div class="glass-card rounded-2xl border border-red-500/30" style="background:linear-gradient(135deg,#1a0505 0%,#0f172a 100%);overflow:hidden;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #334155;">
+                            <span style="font-size:10px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.08em;">💸 EGRESOS POR CATEGORÍA</span>
+                            <span style="font-size:1rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_eTotal)}</span>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;">
+                            <thead><tr style="border-bottom:1px solid #1e293b;">
+                                <th style="padding:7px 14px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Categoría</th>
+                                <th style="padding:7px 10px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Cant</th>
+                                <th style="padding:7px 14px;text-align:right;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Monto</th>
+                            </tr></thead>
+                            <tbody>${_eCats.map(_mkRow).join('')}</tbody>
+                        </table>
+                    </div>`;
                 }
+
+                // ── INGRESOS por categoría ──
+                if (_catBoxIng) {
+                    const _iMap = {};
+                    // PERSONAL/TOTAL: tabla INGRESOS
+                    if (_cat !== 'negocio') {
+                        (_sheetIngresos||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                            if (!enRango(fnum)) return;
+                            const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
+                            const supercat = (r.proveedor||r.supercategoria||'').trim();
+                            if (!_iMap[cat]) _iMap[cat] = { cant: 0, total: 0, supercat };
+                            _iMap[cat].cant++;
+                            _iMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
+                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
+                                              : Number(r.total||0);
+                        });
+                        // También sumar pagos de _sheetPagoIngresos agrupados por concepto del ingreso padre
+                        if (_resumenFiltro !== 'credito') {
+                            (_sheetPagoIngresos||[]).forEach(p => {
+                                if (!enRango(_fnumPago(p))) return;
+                                let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                                const r = (_sheetIngresos||[]).find(r => String(r.idSheet||'').trim()===pid || String(r.id||'').trim()===pid);
+                                if (!r) return;
+                                const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
+                                const supercat = (r.proveedor||r.supercategoria||'').trim();
+                                if (!_iMap[cat]) _iMap[cat] = { cant: 0, total: 0, supercat };
+                                _iMap[cat].total += Number(p.monto||p.MONTO||0);
+                            });
+                        }
+                    }
+                    // NEGOCIO/TOTAL: tabla VENTAS por cliente
+                    if (_cat === 'negocio' || _cat === 'total') {
+                        const _vVistas = new Set();
+                        (_sheetVentas||[]).forEach(v => {
+                            const uid = String(v.id||'').trim();
+                            if (!uid || _vVistas.has(uid)) return;
+                            _vVistas.add(uid);
+                            const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
+                            if (!enRango(fnum)) return;
+                            const cat = (v.cliente||'Sin categoría').trim();
+                            if (!_iMap[cat]) {
+                                // buscar foto del cliente
+                                const _cObj = (clientesDB||[]).find(c => (c.nombre||'').trim().toUpperCase() === cat.toUpperCase());
+                                _iMap[cat] = { cant:0, total:0, supercat:'VENTAS', img: _cObj && _cObj.foto ? driveUrl(_cObj.foto) : null };
+                            }
+                            _iMap[cat].cant++;
+                            _iMap[cat].total += _resumenFiltro==='credito' ? Number(v.deuda||0)
+                                              : _resumenFiltro==='efectivo' ? Number(v.efectivo||0)
+                                              : Number(v.total||0);
+                        });
+                        // tabla INGRESOS NEGOCIO
+                        (_sheetIngresosNegocio||[]).forEach(r => {
+                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                            if (!enRango(fnum)) return;
+                            const cat = (r.concepto||r.categoria||r.cliente||'Sin categoría').trim();
+                            if (!_iMap[cat]) _iMap[cat] = { cant:0, total:0, supercat:'ING. NEGOCIO', img: null };
+                            _iMap[cat].cant++;
+                            _iMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
+                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
+                                              : Number(r.total||0);
+                        });
+                    }
+                    const _iCats = Object.entries(_iMap).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
+                    const _iTotal = _iCats.reduce((s,[,v])=>s+v.total, 0);
+                    const _mkRowI = ([cat,v],i) => {
+                        // Buscar imagen: 1) foto del cliente (negocio), 2) _listaIngresos, 3) _getCatImg
+                        const _catUpper = cat.trim().toUpperCase();
+                        const _listaIng = window._listaIngresos || [];
+                        const _listaIngItem = _listaIng.find(function(x){ return (x.nombre||'').trim().toUpperCase() === _catUpper; });
+                        const _imgLista = _listaIngItem && _listaIngItem.imagen ? _listaIngItem.imagen : null;
+                        const _img = v.img || _imgLista || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat',v.supercat) : null);
+                        return `<tr style="border-bottom:1px solid #0f172a;background:${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
+                            <td style="padding:8px 14px;"><div style="display:flex;align-items:center;gap:8px;">
+                                ${_img?`<img src="${_img}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1.5px solid #34d39933;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;align-items:center;justify-content:center;font-size:14px;">💚</div>`:'<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">💚</div>'}
+                                <span style="font-size:11px;font-weight:700;color:#e2e8f0;">${cat}</span>
+                            </div></td>
+                            <td style="padding:8px 10px;text-align:center;font-size:11px;font-weight:900;color:#94a3b8;">${v.cant}</td>
+                            <td style="padding:8px 14px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(v.total)}</td>
+                        </tr>`;
+                    };
+                    _catBoxIng.innerHTML = `<div class="glass-card rounded-2xl border border-emerald-500/30" style="background:linear-gradient(135deg,#051a0e 0%,#0f172a 100%);overflow:hidden;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #334155;">
+                            <span style="font-size:10px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;">💚 INGRESOS POR CATEGORÍA</span>
+                            <span style="font-size:1rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_iTotal)}</span>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;">
+                            <thead><tr style="border-bottom:1px solid #1e293b;">
+                                <th style="padding:7px 14px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Categoría</th>
+                                <th style="padding:7px 10px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Cant</th>
+                                <th style="padding:7px 14px;text-align:right;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Monto</th>
+                            </tr></thead>
+                            <tbody>${_iCats.map(_mkRowI).join('')}</tbody>
+                        </table>
+                    </div>`;
+                }
+            } else {
+                if (_catWrapper) { _catWrapper.style.display = 'none'; _catWrapper.classList.add('hidden'); }
+                if (_catBoxEgr) _catBoxEgr.innerHTML = '';
+                if (_catBoxIng) _catBoxIng.innerHTML = '';
             }
 
             // ── Tabla detalle ──
             document.getElementById('resumenTabla').innerHTML = `
-                <p class="text-[10px] font-black text-white uppercase mb-3">Detalle por categoría</p>
-                <table class="w-full text-[9px]">
-                    <thead><tr class="border-b border-slate-700">
-                        <th class="py-2 text-left text-slate-400 font-black uppercase">Categoría</th>
-                        <th class="py-2 text-right text-slate-400 font-black uppercase">Total</th>
-                        <th class="py-2 text-right text-slate-400 font-black uppercase">Efectivo</th>
-                        <th class="py-2 text-right text-slate-400 font-black uppercase">Crédito</th>
-                    </tr></thead>
-                    <tbody>
-                        ${kpiData.map(k=>`<tr class="border-b border-slate-800 hover:bg-slate-800/50">
-                            <td class="py-2 font-bold text-white">${k.label}</td>
-                            <td class="py-2 text-right font-black text-white font-mono">$${Utils.fmt(k.total)}</td>
-                            <td class="py-2 text-right text-emerald-400 font-mono">$${Utils.fmt(k.ef)}</td>
-                            <td class="py-2 text-right text-red-400 font-mono">${k.cr>0?'$'+Utils.fmt(k.cr):'—'}</td>
-                        </tr>`).join('')}
-                        <tr class="border-t-2 border-amber-500/50 font-black">
-                            <td class="py-2 text-amber-400">GANANCIAS</td>
-                            <td class="py-2 text-right text-amber-400 font-mono">$${Utils.fmt(ganTotal)}</td>
-                            <td class="py-2 text-right text-emerald-400 font-mono">$${Utils.fmt(ganEf)}</td>
-                            <td class="py-2 text-right text-amber-400 font-mono">$${Utils.fmt(ganCr)}</td>
-                        </tr>
-                        <tr class="font-black">
-                            <td class="py-2" style="color:${efectivoEnCaja>=0?'#06b6d4':'#ef4444'}">💵 EFECTIVO EN CAJA</td>
-                            <td class="py-2 text-right font-mono col-span-3" colspan="3" style="color:${efectivoEnCaja>=0?'#06b6d4':'#ef4444'}">$${Utils.fmt(efectivoEnCaja)}</td>
-                        </tr>
-                    </tbody>
-                </table>`;
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <!-- INGRESOS -->
+                    <div>
+                        <p style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">💚 INGRESOS</p>
+                        <table class="w-full text-[9px]">
+                            <thead><tr class="border-b border-slate-700">
+                                <th class="py-2 text-left text-slate-400 font-black uppercase">Categoría</th>
+                                <th class="py-2 text-right text-slate-400 font-black uppercase">Total</th>
+                                <th class="py-2 text-right text-slate-400 font-black uppercase">Efectivo</th>
+                                <th class="py-2 text-right text-slate-400 font-black uppercase">Crédito</th>
+                            </tr></thead>
+                            <tbody>
+                                ${kpiData.slice(0,12).filter(catFilter).map(k=>`<tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                                    <td class="py-2 font-bold text-white">${k.label}</td>
+                                    <td class="py-2 text-right font-black text-white font-mono">$${Utils.fmt(k.total)}</td>
+                                    <td class="py-2 text-right text-emerald-400 font-mono">${k.ef>0?'$'+Utils.fmt(k.ef):'—'}</td>
+                                    <td class="py-2 text-right text-red-400 font-mono">${k.cr>0?'$'+Utils.fmt(k.cr):'—'}</td>
+                                </tr>`).join('')}
+                                <tr class="border-t-2 border-amber-500/50">
+                                    <td class="py-2 font-black text-amber-400">⭐ GANANCIAS</td>
+                                    <td class="py-2 text-right font-black text-amber-400 font-mono">$${Utils.fmt(ganTotal)}</td>
+                                    <td class="py-2 text-right text-emerald-400 font-mono">$${Utils.fmt(ganEf)}</td>
+                                    <td class="py-2 text-right text-amber-400 font-mono">$${Utils.fmt(ganCr)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- EGRESOS -->
+                    <div>
+                        <p style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">🔴 EGRESOS</p>
+                        <table class="w-full text-[9px]">
+                            <thead><tr class="border-b border-slate-700">
+                                <th class="py-2 text-left text-slate-400 font-black uppercase">Categoría</th>
+                                <th class="py-2 text-right text-slate-400 font-black uppercase">Total</th>
+                                <th class="py-2 text-right text-slate-400 font-black uppercase">Efectivo</th>
+                                <th class="py-2 text-right text-slate-400 font-black uppercase">Crédito</th>
+                            </tr></thead>
+                            <tbody>
+                                ${kpiData.slice(12,24).filter(catFilter).map(k=>`<tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                                    <td class="py-2 font-bold text-white">${k.label}</td>
+                                    <td class="py-2 text-right font-black text-white font-mono">$${Utils.fmt(k.total)}</td>
+                                    <td class="py-2 text-right text-emerald-400 font-mono">${k.ef>0?'$'+Utils.fmt(k.ef):'—'}</td>
+                                    <td class="py-2 text-right text-red-400 font-mono">${k.cr>0?'$'+Utils.fmt(k.cr):'—'}</td>
+                                </tr>`).join('')}
+                                <tr class="border-t-2 border-cyan-500/50">
+                                    <td class="py-2 font-black" style="color:${efectivoEnCaja>=0?'#06b6d4':'#ef4444'}">💵 EF. EN CAJA</td>
+                                    <td class="py-2 text-right font-black font-mono" colspan="3" style="color:${efectivoEnCaja>=0?'#06b6d4':'#ef4444'}">$${Utils.fmt(efectivoEnCaja)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
         }
 
 
