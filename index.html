@@ -14920,8 +14920,8 @@ if (indicator) indicator.classList.remove('hidden');
                     }
                 }
                 if (Array.isArray(data.pagoCompras))          _sheetPagoCompras         = data.pagoCompras.map(r=>({IDCOMPRAS:String(r['IDCOMPRAS']||'').trim(), MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase()}));
-                if (Array.isArray(data.pagoIngresos))         _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim()}));
-                if (Array.isArray(data.pagoEgresos))          _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim()}));
+                if (Array.isArray(data.pagoIngresos))         _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['NUMERO DE PAGO INGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim()}));
+                if (Array.isArray(data.pagoEgresos))          _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoIngresosNegocio))  _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim()})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; }
                 // Negocio
@@ -16320,16 +16320,109 @@ console.log("FILTRADAS:", filtradas.length);
                 const _egrTotalPagoTotal = egr.total;
                 // GANANCIAS TOTALES = ganTotal calculado de ventas
                 const _ganV = _resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal;
+
+                // helper: FECHA ORIGINAL tiene prioridad sobre FECHA en tablas de pago
+                const _fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+
+                // ── EFECTIVO INGRESOS: PAGO EFECTIVO (tabla INGRESOS) + MONTO (PAGO INGRESOS, mismo IDINGRESOS, FECHA ORIGINAL) ──
+                let _ingEfectivo = 0;
+                const _idsIngEf = new Set();
+                const _idIngLocalToSheet = {}; // localId → sheetId
+                (_sheetIngresos||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _ingEfectivo += Number(r.efectivo||0);
+                    const sheetId = String(r.idSheet||'').trim();
+                    const localId = String(r.id||'').trim();
+                    if (sheetId) _idsIngEf.add(sheetId);
+                    if (localId) _idsIngEf.add(localId);
+                    if (localId && sheetId) _idIngLocalToSheet[localId] = sheetId;
+                });
+                (_sheetPagoIngresos||[]).forEach(p => {
+                    const pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                    if (!pid || !_idsIngEf.has(pid)) return;
+                    if (!enRango(_fnumPago(p))) return;
+                    _ingEfectivo += Number(p.MONTO||p.monto||0);
+                });
+
+                // ── EFECTIVO EGRESOS: PAGO EFECTIVO (tabla EGRESOS) + MONTO (PAGO EGRESOS, mismo IDEGRESOS, FECHA ORIGINAL) ──
+                let _egrEfectivo = 0;
+                const _idsEgrEf = new Set();
+                (_sheetEgresos||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _egrEfectivo += Number(r.efectivo||0);
+                    const sheetId = String(r.idSheet||'').trim();
+                    const localId = String(r.id||'').trim();
+                    if (sheetId) _idsEgrEf.add(sheetId);
+                    if (localId) _idsEgrEf.add(localId);
+                });
+                (_sheetPagoEgresos||[]).forEach(p => {
+                    const pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                    if (!pid || !_idsEgrEf.has(pid)) return;
+                    if (!enRango(_fnumPago(p))) return;
+                    _egrEfectivo += Number(p.MONTO||p.monto||0);
+                });
+
+                // ── CRÉDITO EGRESOS: PAGO CREDITO (tabla EGRESOS) - MONTO (PAGO EGRESOS, mismo IDEGRESOS, FECHA ORIGINAL) ──
+                let _egrCredito = 0;
+                const _idsEgrCr = new Set();
+                (_sheetEgresos||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _egrCredito += Number(r.credito||0);
+                    const sheetId = String(r.idSheet||'').trim();
+                    const localId = String(r.id||'').trim();
+                    if (sheetId) _idsEgrCr.add(sheetId);
+                    if (localId) _idsEgrCr.add(localId);
+                });
+                (_sheetPagoEgresos||[]).forEach(p => {
+                    const pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                    if (!pid || !_idsEgrCr.has(pid)) return;
+                    if (!enRango(_fnumPago(p))) return;
+                    _egrCredito -= Number(p.monto||p.MONTO||0);
+                });
+                _egrCredito = Math.max(0, _egrCredito);
+
+                // ── CRÉDITO INGRESOS: PAGO CREDITO (tabla INGRESOS) - MONTO (PAGO INGRESOS, mismo IDINGRESOS, FECHA ORIGINAL) ──
+                let _ingCredito = 0;
+                const _idsIngCr = new Set();
+                (_sheetIngresos||[]).forEach(r => {
+                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _ingCredito += Number(r.credito||0);
+                    const sheetId = String(r.idSheet||'').trim();
+                    const localId = String(r.id||'').trim();
+                    if (sheetId) _idsIngCr.add(sheetId);
+                    if (localId) _idsIngCr.add(localId);
+                });
+                (_sheetPagoIngresos||[]).forEach(p => {
+                    const pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                    if (!pid || !_idsIngCr.has(pid)) return;
+                    if (!enRango(_fnumPago(p))) return;
+                    _ingCredito -= Number(p.monto||p.MONTO||0);
+                });
+                _ingCredito = Math.max(0, _ingCredito);
+
+                const _esEf = _resumenFiltro === 'efectivo';
+                const _esCr = _resumenFiltro === 'credito';
+                const _labelIng = _esEf ? '▲ INGRESOS EFECTIVO TOTAL' : _esCr ? '▲ INGRESOS CRÉDITO TOTAL' : '▲ INGRESOS TOTALES';
+                const _labelEgr = _esEf ? '▼ EGRESOS EFECTIVO TOTAL'  : _esCr ? '▼ EGRESOS CRÉDITO TOTAL' : '▼ EGRESOS TOTALES';
+                const _subIng   = _esEf ? 'Pago Efectivo + Pago Ingresos (mismo ID)' : _esCr ? 'Pago Crédito − Pago Ingresos cobrados (mismo ID)' : 'Tabla Ingresos — columna Pago Total';
+                const _subEgr   = _esEf ? 'Pago Efectivo + Pago Egresos (mismo ID)'  : _esCr ? 'Pago Crédito − Pago Egresos cobrados (mismo ID)' : 'Tabla Egresos — columna Pago Total';
+                const _valIng   = _esEf ? _ingEfectivo : _esCr ? _ingCredito : _ingTotalPagoTotal;
+                const _valEgr   = _esEf ? _egrEfectivo : _esCr ? _egrCredito : _egrTotalPagoTotal;
+
                 document.getElementById('resumenKpis').innerHTML =
                     '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
                     // ── Columna INGRESOS (2 cards) ──
                     + '<div style="display:flex;flex-direction:column;gap:8px;">'
                     +   '<div style="padding:4px 6px;border-bottom:2px solid #10b98155;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.1em;">💚 INGRESOS</span></div>'
-                    // Card 1: INGRESOS TOTALES
+                    // Card 1: INGRESOS TOTALES / EFECTIVO TOTAL
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#10b98155;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS TOTALES</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_ingTotalPagoTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Ingresos — columna Pago Total</p>'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">' + _labelIng + '</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_valIng) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + _subIng + '</p>'
                     +   '</div>'
                     // Card 2: GANANCIAS TOTALES
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f59e0b66;background:linear-gradient(135deg,#1a1100 0%,#0f172a 100%);">'
@@ -16338,14 +16431,14 @@ console.log("FILTRADAS:", filtradas.length);
                     +     '<div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:8px;font-weight:700;color:#fde68a;">EF $' + Utils.fmt(ganEf) + '</span>' + (ganCr>0?'<span style="font-size:8px;font-weight:700;color:#fca5a5;">CR $' + Utils.fmt(ganCr) + '</span>':'') + '</div>'
                     +   '</div>'
                     + '</div>'
-                    // ── Columna EGRESOS (1 card) ──
+                    // ── Columna EGRESOS (2 cards) ──
                     + '<div style="display:flex;flex-direction:column;gap:8px;">'
                     +   '<div style="padding:4px 6px;border-bottom:2px solid #ef444455;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;">🔴 EGRESOS</span></div>'
-                    // Card 3: EGRESOS TOTALES
+                    // Card 3: EGRESOS TOTALES / EFECTIVO TOTAL
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#ef444455;background:linear-gradient(135deg,#2d0a0a 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ef4444;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS TOTALES</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(_egrTotalPagoTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Egresos — columna Pago Total</p>'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ef4444;margin-bottom:6px;letter-spacing:.08em;">' + _labelEgr + '</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(_valEgr) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + _subEgr + '</p>'
                     +   '</div>'
                     // Card 4: CONSUMO DEL NEGOCIO
                     + (()=>{
