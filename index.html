@@ -1322,6 +1322,18 @@ GUARDAR PRODUCTO
                     FINALIZADO
                 </button>
             </div>
+            <!-- Buscador Ingresos -->
+            <div class="flex gap-2 items-center">
+                <div class="relative flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="ingresosSearchInput" placeholder="Buscar por concepto, proveedor, género..." oninput="renderIngEgr('ingreso')"
+                        style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:8px 10px 8px 30px;color:#f1f5f9;font-size:11px;font-weight:700;outline:none;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                </div>
+                <button onclick="document.getElementById('ingresosSearchInput').value='';renderIngEgr('ingreso');"
+                    style="padding:8px 12px;background:#1e293b;border:1.5px solid #334155;border-radius:10px;color:#64748b;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap;"
+                    onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#64748b'">✕ Limpiar</button>
+            </div>
             <div id="listaIngresos" class="space-y-3"></div>
         </div>
 
@@ -1422,6 +1434,18 @@ GUARDAR PRODUCTO
                     class="px-4 py-1.5 rounded-xl text-xs font-black uppercase border-2 border-slate-700 bg-slate-900 text-slate-400 transition-all">
                     FINALIZADO
                 </button>
+            </div>
+            <!-- Buscador Egresos -->
+            <div class="flex gap-2 items-center">
+                <div class="relative flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="egresosSearchInput" placeholder="Buscar por concepto, proveedor, género..." oninput="renderIngEgr('egreso')"
+                        style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:8px 10px 8px 30px;color:#f1f5f9;font-size:11px;font-weight:700;outline:none;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#f87171'" onblur="this.style.borderColor='#334155'">
+                </div>
+                <button onclick="document.getElementById('egresosSearchInput').value='';renderIngEgr('egreso');"
+                    style="padding:8px 12px;background:#1e293b;border:1.5px solid #334155;border-radius:10px;color:#64748b;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap;"
+                    onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#64748b'">✕ Limpiar</button>
             </div>
             <div id="listaEgresos" class="space-y-3"></div>
         </div>
@@ -1719,6 +1743,19 @@ GUARDAR PRODUCTO
                         AGREGAR
                     </button>
                 </div>
+            </div>
+
+            <!-- Buscador -->
+            <div class="flex gap-2 items-center">
+                <div class="relative flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="lcBuscarInput" placeholder="Buscar..." oninput="renderListaCat()"
+                        style="width:100%;padding:9px 10px 9px 30px;color:#f1f5f9;background:#0f172a;border:1.5px solid #334155;border-radius:10px;font-size:11px;font-weight:700;outline:none;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+                </div>
+                <button onclick="document.getElementById('lcBuscarInput').value='';renderListaCat();"
+                    style="padding:9px 14px;background:#1e293b;border:1.5px solid #334155;border-radius:10px;color:#64748b;font-size:11px;font-weight:900;cursor:pointer;"
+                    onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#64748b'">✕</button>
             </div>
 
             <!-- Lista de ítems -->
@@ -11492,8 +11529,15 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
             document.getElementById(prefix+'TotalEfectivo').textContent = '$' + Utils.fmt(dbFull.reduce((s,c)=>s+c.efectivo,0));
             document.getElementById(prefix+'TotalCredito').textContent  = '$' + Utils.fmt(dbFull.reduce((s,c)=>s+c.credito,0));
             const container = document.getElementById(lista);
-            if (db.length === 0) { container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin ${tipo==='ingreso'?'ingresos':'egresos'} registrados</div>`; return; }
-            const dbOrdenado = [...db].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
+            // Filtrar por texto del buscador
+            const _searchInput = document.getElementById(tipo === 'ingreso' ? 'ingresosSearchInput' : 'egresosSearchInput');
+            const _searchTxt = (_searchInput ? _searchInput.value : '').toLowerCase().trim();
+            const dbFiltrado = _searchTxt ? db.filter(c => {
+                const haystack = [c.proveedor||'', c.concepto||'', c.genero||'', c.formaPago||'', c.fecha||''].join(' ').toLowerCase();
+                return haystack.includes(_searchTxt);
+            }) : db;
+            if (dbFiltrado.length === 0) { container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">${_searchTxt ? 'Sin resultados para "'+_searchTxt+'"' : ('Sin '+(tipo==='ingreso'?'ingresos':'egresos')+' registrados')}</div>`; return; }
+            const dbOrdenado = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
             const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
             const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
             // Mapa nombre→imagen desde la lista de categorías
@@ -20266,6 +20310,16 @@ document.addEventListener('DOMContentLoaded', function () {
       <button onclick="gestorCatImgTab('egresos')"  id="gcTabEgr" style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border:2px solid #334155;background:#1e293b;color:#64748b;border-radius:10px;cursor:pointer;">📉 Gastos</button>
     </div>
 
+    <!-- Buscador -->
+    <div style="padding:10px 20px 0;flex-shrink:0;">
+      <div style="position:relative;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="gcBuscarInput" placeholder="Buscar..." oninput="gestorCatImgRender()"
+          style="width:100%;background:#1e293b;border:1.5px solid #334155;color:#f1f5f9;border-radius:9px;padding:8px 10px 8px 28px;font-size:11px;font-weight:700;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
+      </div>
+    </div>
+
     <!-- Agregar nuevo -->
     <div style="padding:10px 20px 0;flex-shrink:0;">
       <div style="display:flex;gap:6px;">
@@ -20316,6 +20370,7 @@ function gestorCatImgTab(tab) {
     var hTitle = document.getElementById('gcHeaderTitle');
     if (hIcon)  { hIcon.style.background = tab==='ingresos' ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#f87171,#dc2626)'; hIcon.textContent = tab==='ingresos' ? '\u{1F4C8}' : '\u{1F4C9}'; }
     if (hTitle) hTitle.textContent = tab==='ingresos' ? 'Lista de Ingresos' : 'Lista de Gastos';
+    var _gcB = document.getElementById('gcBuscarInput'); if(_gcB) _gcB.value='';
     gestorCatImgRender();
 }
 
@@ -20324,11 +20379,17 @@ function gestorCatImgRender() {
     if (!lista) return;
     var items = _gcTab === 'ingresos' ? (window._listaIngresos||[]) : (window._listaEgresos||[]);
     var color = _gcTab === 'ingresos' ? '#10b981' : '#f87171';
-    if (!items.length) {
-        lista.innerHTML = '<div style="text-align:center;padding:30px;color:#475569;font-size:11px;font-weight:700;">Sin \u00edtems en Lista de ' + (_gcTab==='ingresos'?'Ingresos':'Gastos') + '.<br>Us\u00e1 el campo de arriba para agregar.</div>';
+    var _buscarEl = document.getElementById('gcBuscarInput');
+    var _buscarTxt = (_buscarEl ? _buscarEl.value : '').trim().toLowerCase();
+    var itemsConIdx = items.map(function(it, idx) { return {item: it, idx: idx}; }).filter(function(o) {
+        return !_buscarTxt || (o.item.nombre||'').toLowerCase().includes(_buscarTxt);
+    });
+    if (!itemsConIdx.length) {
+        lista.innerHTML = '<div style="text-align:center;padding:30px;color:#475569;font-size:11px;font-weight:700;">' + (_buscarTxt ? 'Sin resultados para &ldquo;'+_buscarTxt+'&rdquo;' : ('Sin \u00edtems en Lista de ' + (_gcTab==='ingresos'?'Ingresos':'Gastos') + '.<br>Us\u00e1 el campo de arriba para agregar.')) + '</div>';
         return;
     }
-    lista.innerHTML = items.map(function(item, idx) {
+    lista.innerHTML = itemsConIdx.map(function(o) {
+        var item = o.item; var idx = o.idx;
         var imgUrl = item.imagen || '';
         var imgHtml = imgUrl
             ? '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML=\'&#128193;\'">'
@@ -20478,7 +20539,10 @@ function _lcCargarDesdeStorage() {
 }
 
 function renderListaCat(tab) {
-    if (tab) window._listaCatTab = tab;
+    if (tab) {
+        window._listaCatTab = tab;
+        var _b = document.getElementById('lcBuscarInput'); if (_b) _b.value = '';
+    }
     _lcCargarDesdeStorage();
     var esIng  = window._listaCatTab === 'ingresos';
     var color  = esIng ? '#10b981' : '#f87171';
@@ -20527,16 +20591,26 @@ function renderListaCat(tab) {
 
     // Datos
     var items = esIng ? (window._listaIngresos || []) : (window._listaEgresos || []);
+
+    // Filtro buscador
+    var _buscarEl = document.getElementById('lcBuscarInput');
+    var _buscarTxt = (_buscarEl ? _buscarEl.value : '').trim().toLowerCase();
+    var itemsFiltrados = _buscarTxt
+        ? items.filter(function(it) { return (it.nombre || '').toLowerCase().includes(_buscarTxt); })
+        : items;
+
     var count = document.getElementById('lcCount');
-    if (count) count.textContent = items.length + ' ítem' + (items.length !== 1 ? 's' : '');
+    if (count) count.textContent = itemsFiltrados.length + (items.length !== itemsFiltrados.length ? '/' + items.length : '') + ' ítem' + (items.length !== 1 ? 's' : '');
 
     var lista = document.getElementById('lcLista');
     if (!lista) return;
 
-    if (!items.length) {
-        lista.innerHTML = '<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin ítems registrados.<br><span style="font-weight:400;font-size:10px;text-transform:none;color:#475569;margin-top:4px;display:block;">Usá el botón AGREGAR para crear el primero.</span></div>';
+    if (!itemsFiltrados.length) {
+        lista.innerHTML = '<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">' + (_buscarTxt ? 'Sin resultados para "' + _buscarTxt + '"' : 'Sin ítems registrados.<br><span style="font-weight:400;font-size:10px;text-transform:none;color:#475569;margin-top:4px;display:block;">Usá el botón AGREGAR para crear el primero.</span>') + '</div>';
         return;
     }
+
+    items = itemsFiltrados;
 
     var SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     var SVG_DEL  = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
