@@ -3329,6 +3329,19 @@ CONFIRMAR PAGO
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Proveedor / Origen</label>
                 <input type="text" id="editIngEgrProveedor" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase">
             </div>
+            <!-- Imagen categoría -->
+            <div id="editIngEgrImgWrap">
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Imagen de categoría</label>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div id="editIngEgrImgPreview" style="width:52px;height:52px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid #334155;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">📋</div>
+                    <label style="flex:1;padding:8px 12px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;text-align:center;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;" onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor='#334155'">
+                        🖼 Cambiar imagen
+                        <input type="file" id="editIngEgrImgFile" accept="image/*" style="display:none;" onchange="previewEditIngEgrImg(this)">
+                    </label>
+                    <button id="btnQuitarEditIngEgrImg" onclick="quitarEditIngEgrImg()" style="display:none;padding:7px 10px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:900;" title="Quitar imagen">✕</button>
+                </div>
+                <p id="labelEditIngEgrImg" style="font-size:9px;color:#475569;margin-top:3px;"></p>
+            </div>
             <div>
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Concepto</label>
                 <input type="text" id="editIngEgrConcepto" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm">
@@ -11549,7 +11562,7 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                 // Buscar imagen: primero en lista de categorías por nombre de proveedor/concepto, luego en _getCatImg
                 const _provKey = (c.proveedor||'').toUpperCase().trim();
                 const _concKey = (c.concepto||'').toUpperCase().trim();
-                const _imgSC = _imgMapLista[_provKey] || _imgMapLista[_concKey]
+                const _imgSC = c.imagen || _imgMapLista[_provKey] || _imgMapLista[_concKey]
                     || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null);
                 const _imgGN = (typeof window._getCatImg==='function') ? window._getCatImg('genero', c.genero) : null;
                 const _accentColor = tipo === 'ingreso' ? '#10b981' : '#f87171';
@@ -12501,7 +12514,44 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
                 label.textContent = 'Sin ticket';
                 label.style.color = '#475569';
             }
+            // Imagen: del registro individual
+            window._editIngEgrImgData = null;
+            const _imgActual = r.imagen || '';
+            const prevEl = document.getElementById('editIngEgrImgPreview');
+            const labelImg = document.getElementById('labelEditIngEgrImg');
+            const btnQImg = document.getElementById('btnQuitarEditIngEgrImg');
+            if (prevEl) prevEl.innerHTML = _imgActual ? `<img src="${_imgActual}" style="width:100%;height:100%;object-fit:cover;">` : (tipo==='ingreso'?'📈':'📉');
+            if (labelImg) { labelImg.textContent = _imgActual ? '✅ Imagen de categoría actual' : 'Sin imagen'; labelImg.style.color = _imgActual ? '#34d399' : '#475569'; }
+            if (btnQImg) btnQImg.style.display = _imgActual ? 'inline-block' : 'none';
+            document.getElementById('editIngEgrImgFile').value = '';
             toggleModal('modalEditarIngEgr', true);
+        }
+
+        function previewEditIngEgrImg(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                window._editIngEgrImgData = e.target.result;
+                const prev = document.getElementById('editIngEgrImgPreview');
+                if (prev) prev.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+                const lbl = document.getElementById('labelEditIngEgrImg');
+                if (lbl) { lbl.textContent = '✅ Nueva imagen lista para guardar'; lbl.style.color = '#34d399'; }
+                const btn = document.getElementById('btnQuitarEditIngEgrImg');
+                if (btn) btn.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function quitarEditIngEgrImg() {
+            window._editIngEgrImgData = '';
+            const prev = document.getElementById('editIngEgrImgPreview');
+            if (prev) prev.innerHTML = ingEgrTipo === 'ingreso' ? '📈' : '📉';
+            const lbl = document.getElementById('labelEditIngEgrImg');
+            if (lbl) { lbl.textContent = 'Sin imagen'; lbl.style.color = '#475569'; }
+            const btn = document.getElementById('btnQuitarEditIngEgrImg');
+            if (btn) btn.style.display = 'none';
+            document.getElementById('editIngEgrImgFile').value = '';
         }
 
         function confirmarEditarIngEgr() {
@@ -12525,12 +12575,35 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
         r.ticket = window._editIngEgrTicketData;
     }
 
+    // Imagen individual del registro
+    if (window._editIngEgrImgData !== null && window._editIngEgrImgData !== undefined) {
+        if (window._editIngEgrImgData === '') {
+            r.imagen = '';
+        }
+        // Si hay nueva imagen (base64), subir y luego guardar
+        if (window._editIngEgrImgData && window._editIngEgrImgData.startsWith('data:')) {
+            subirFotoImgBB(window._editIngEgrImgData, function(url) {
+                if (!url) return;
+                r.imagen = url;
+                fetchSheets({ method:'POST', body: JSON.stringify({
+                    tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
+                    id: r.idSheet || r.id,
+                    proveedor: r.proveedor,
+                    concepto: r.concepto,
+                    imagen: url
+                })});
+                renderIngEgr(ingEgrTipo);
+            });
+        }
+    }
+
     // Solo actualizar proveedor y concepto — NO sobreescribir montos
     const payload = {
         tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
-        id: r.id,
+        id: r.idSheet || r.id,
         proveedor: r.proveedor,
-        concepto: r.concepto
+        concepto: r.concepto,
+        imagen: r.imagen || ''
     };
     editarEnSheet(payload);
 
@@ -17574,11 +17647,17 @@ console.log("FILTRADAS:", filtradas.length);
                 const _todasV2 = [...(typeof historial!=='undefined'?historial:[]),  ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
                 const cobrarDeProv = {};
                 _todasV2.forEach(v => {
-                    const deudaBruta = parseFloat(v.deuda||0); if (deudaBruta<=0) return;
+                    // PAGO_CREDITO (v.credito) como crédito otorgado
+                    const creditoBruto = parseFloat(v.credito||v.deuda||0); if (creditoBruto<=0) return;
                     const itemsProv = (v.items||[]).filter(i=>(i.proveedor||'').trim()!==''); if (!itemsProv.length) return;
-                    const idV = String(v.id||v.IDVENTAS||'').trim();
-                    const pagadoV = idV?(_pagoVentasSheet||[]).filter(p=>String(p.idVenta||p.IDVENTAS||'').trim()===idV).reduce((s,p)=>s+parseFloat(p.monto||p.MONTO||0),0):0;
-                    const saldoV = Math.max(0,deudaBruta-pagadoV); if (saldoV<=0) return;
+                    // Match por idSheet con fallback al id local
+                    const idVSheet = v.idSheet ? String(v.idSheet).trim()
+                        : (String(v.id||'').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_','') : String(v.id||'').trim());
+                    const idVLocal = String(v.id||'').trim();
+                    const pagadoV = (_pagoVentasSheet||[])
+                        .filter(p => { const pId=String(p.idVenta||p.IDVENTAS||'').trim(); return pId===idVSheet||pId===idVLocal; })
+                        .reduce((s,p)=>s+parseFloat(p.monto||p.MONTO||0),0);
+                    const saldoV = Math.max(0,creditoBruto-pagadoV); if (saldoV<=0) return;
                     [...new Set(itemsProv.map(i=>(i.proveedor||'').trim().toUpperCase()).filter(Boolean))].forEach(prov=>{ cobrarDeProv[prov]=(cobrarDeProv[prov]||0)+saldoV; });
                 });
 
@@ -17642,18 +17721,25 @@ console.log("FILTRADAS:", filtradas.length);
                 // 3) ME DEBEN CLIENTES = fiado pendiente desde fecha DESDE + dinero recuperado CASA ERAZO por proveedor
                 const meadenProv = {};
 
-                // 3a) Fiado pendiente (ventas a crédito desde DESDE, saldo no cobrado)
+                // 3a) Fiado pendiente: PAGO_CREDITO de VENTAS − MONTO de PAGO_VENTAS (por IDVENTAS)
                 const _vistasP = new Set();
                 _todasV3.forEach(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha);
                     if (!fn || (desdeNum && fn < desdeNum)) return;
                     if (_vistasP.has(v.id)) return; _vistasP.add(v.id);
-                    const deuda = parseFloat(v.deuda||0); if (deuda <= 0) return;
-                    const idV   = String(v.id||'').trim();
+                    // Usar PAGO_CREDITO (v.credito) como crédito otorgado
+                    const credito = parseFloat(v.credito||v.deuda||0); if (credito <= 0) return;
+                    // Match por idSheet (ID real del sheet) con fallback al id local
+                    const idVSheet = v.idSheet ? String(v.idSheet).trim()
+                        : (String(v.id||'').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_','') : String(v.id||'').trim());
+                    const idVLocal = String(v.id||'').trim();
                     const pagado = (_pagoVentasSheet||[])
-                        .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === idV)
+                        .filter(p => {
+                            const pId = String(p.idVenta||p.IDVENTAS||'').trim();
+                            return pId === idVSheet || pId === idVLocal;
+                        })
                         .reduce((s,p) => s + parseFloat(p.monto||p.MONTO||0), 0);
-                    const saldo = Math.max(0, deuda - pagado); if (saldo <= 0) return;
+                    const saldo = Math.max(0, credito - pagado); if (saldo <= 0) return;
                     const total = parseFloat(v.total||0) || 1;
                     (v.items||[]).forEach(item => {
                         const prov = (item.proveedor||'').trim().toUpperCase();
