@@ -1963,6 +1963,7 @@ GUARDAR PRODUCTO
                     <button id="tabBtnVentas" onclick="switchStatsTab('ventas')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-emerald-500 text-black btn-action">Ventas</button>
                     <button id="tabBtnProductos" onclick="switchStatsTab('productos')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Productos</button>
                     <button id="tabBtnRegistros" onclick="switchStatsTab('registros')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Registros</button>
+                    <button id="tabBtnTarjeta" onclick="switchStatsTab('tarjeta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💳 Tarjeta</button>
                 </div>
             </div>
             <!-- Filtros fecha (solo ventas) -->
@@ -17354,13 +17355,16 @@ console.log("FILTRADAS:", filtradas.length);
                     const sc = esCred ? '#f87171' : '#34d399';
                     const sl = esCred ? '⚠' : '✓';
 
-                    // Fila cabecera del proveedor
+                    // Fila cabecera del proveedor — colapsable
+                    const gpId = 'tcgp_' + Math.random().toString(36).slice(2,9);
                     h += `<div style="background:#0a1120;border-bottom:1px solid #1e293b33;">
-                        <div style="display:grid;grid-template-columns:1fr 36px 90px;padding:9px 12px;align-items:center;">
+                        <div onclick="(function(){var b=document.getElementById('${gpId}');var a=document.getElementById('${gpId}_a');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})()"
+                            style="display:grid;grid-template-columns:1fr 36px 90px;padding:9px 12px;align-items:center;cursor:pointer;user-select:none;">
                             <div style="display:flex;align-items:center;gap:5px;min-width:0;">
+                                <span id="${gpId}_a" style="color:${color};font-size:10px;font-weight:900;flex-shrink:0;transition:transform 0.2s;display:inline-block;transform:rotate(-90deg);">▼</span>
                                 <span style="font-size:10px;color:${sc};font-weight:900;flex-shrink:0;">${sl}</span>
                                 <span style="font-size:12px;font-weight:900;color:#e2e8f0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escHtml(grupo.nombre)}</span>
-                                <span style="font-size:8px;color:#475569;background:#1e293b;padding:1px 5px;border-radius:6px;font-weight:700;flex-shrink:0;">${grupo.registros.length} compra${grupo.registros.length>1?'s':''}</span>
+                                <span style="font-size:8px;color:#475569;background:#1e293b;padding:1px 5px;border-radius:6px;font-weight:700;flex-shrink:0;">${grupo.registros.length}</span>
                             </div>
                             <span></span>
                             <div style="text-align:right;">
@@ -17368,7 +17372,8 @@ console.log("FILTRADAS:", filtradas.length);
                                 ${credProv>0?`<span style="display:block;font-size:8px;color:#f87171;font-family:monospace;">Cr $${Utils.fmt(credProv)}</span>`:''}
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                    <div id="${gpId}" style="display:none;">`;
 
                     // Sub-grupos por fecha con toggle
                     grupo.registros.forEach(r => {
@@ -17381,7 +17386,7 @@ console.log("FILTRADAS:", filtradas.length);
                             <div onclick="(function(){var b=document.getElementById('${uid}');var a=document.getElementById('${uid}_a');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})()"
                                 style="display:grid;grid-template-columns:1fr 36px 90px;padding:6px 12px 6px 22px;align-items:center;cursor:pointer;user-select:none;">
                                 <div style="display:flex;align-items:center;gap:6px;">
-                                    <span id="${uid}_a" style="color:${color};font-size:9px;font-weight:900;transition:transform 0.2s;display:inline-block;">▼</span>
+                                    <span id="${uid}_a" style="color:${color};font-size:9px;font-weight:900;transition:transform 0.2s;display:inline-block;transform:rotate(-90deg);">▼</span>
                                     <span style="font-size:9px;color:#64748b;font-weight:700;">${Utils.escHtml(r.fecha)}</span>
                                     <span style="font-size:8px;color:#334155;background:#1e293b;padding:1px 5px;border-radius:6px;">${nProd} prod</span>
                                 </div>
@@ -17391,7 +17396,7 @@ console.log("FILTRADAS:", filtradas.length);
                                     ${esCr2?`<span style="display:block;font-size:8px;color:${sc2};font-family:monospace;">Cr $${Utils.fmt(r.credito)}</span>`:''}
                                 </div>
                             </div>
-                            <div id="${uid}" style="display:block;">`;
+                            <div id="${uid}" style="display:none;">`;
 
                         if (r.items && r.items.length > 0) {
                             r.items.forEach(item => {
@@ -17416,6 +17421,7 @@ console.log("FILTRADAS:", filtradas.length);
 
                         h += `</div></div>`; // cierre colapsable + fila fecha
                     });
+                    h += `</div>`; // cierre div grupo proveedor
                 });
 
                 h += `</div>`;
