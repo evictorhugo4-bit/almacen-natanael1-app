@@ -8562,6 +8562,23 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             toggleModal('modalEliminarIngNeg', true);
         }
 
+        function confirmarEliminarIngNeg() {
+            if (!ingNegAccionId || !ingNegAccionTipo) return;
+            const esIng = ingNegAccionTipo === 'ingresosNegocio';
+            if (esIng) {
+                _sheetIngresosNegocio = _sheetIngresosNegocio.filter(x => x.id !== ingNegAccionId);
+                eliminarEnSheet('ingneg', ingNegAccionId);
+                renderIngNeg('ingresosNegocio');
+            } else {
+                _sheetEgresosNegocio = _sheetEgresosNegocio.filter(x => x.id !== ingNegAccionId);
+                eliminarEnSheet('egrneg', ingNegAccionId);
+                renderIngNeg('egresosNegocio');
+            }
+            toggleModal('modalEliminarIngNeg', false);
+            mostrarToast('✓ Registro eliminado');
+            ingNegAccionId = null; ingNegAccionTipo = null;
+        }
+
        function confirmarEliminarIngEgr() {
     if (ingEgrTipo === 'ingreso') {
         _sheetIngresos = _sheetIngresos.filter(c => c.id !== ingEgrAccionId);
