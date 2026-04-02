@@ -6745,6 +6745,18 @@ console.log("CLIENTE COMPLETO:", c);
                 });
                 const deudaReal     = getDeudaCliente(c);
 
+                // Sumar mora al monto mostrado en la lista
+                let _moraCliente = 0;
+                todasLasVentas().forEach(v => {
+                    const vIdCl = String(v.idCliente||'').trim();
+                    if (!(vIdCl ? vIdCl === idCl_r : String(v.cliente||'').trim().toUpperCase() === nom_r)) return;
+                    const idV = String(v.id||'').trim();
+                    const pagado = (_pagoVentasSheet||[]).filter(p=>idV&&String(p.idVenta||p.IDVENTAS||'').trim()===idV).reduce((a,p)=>a+parseFloat(p.monto||0),0);
+                    const saldo = Math.max(0, (parseFloat(v.deuda)||0) - pagado);
+                    if (saldo > 0) _moraCliente += calcularInteresMora(saldo, v.fechaISO || v.fecha);
+                });
+                const deudaConMora = deudaReal + Math.round(_moraCliente * 100) / 100;
+
                 const fotoHtml = c.foto
                     ? `<img src="${driveUrl(c.foto)}" class="w-12 h-12 rounded-xl object-cover" alt="">`
                     : `<div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-black text-lg">${c.nombre[0].toUpperCase()}</div>`;
@@ -6761,8 +6773,8 @@ console.log("CLIENTE COMPLETO:", c);
                         </p>
                     </div>
                     <div class="text-right shrink-0">
-                        ${deudaReal > 0
-                            ? `<span class="block text-xs font-black text-red-400 font-mono">Debe: $${Utils.fmt(deudaReal)}</span>`
+                        ${deudaConMora > 0
+                            ? `<span class="block text-xs font-black text-red-400 font-mono">Debe: $${Utils.fmt(deudaConMora)}</span>`
                             : `<span class="block text-xs font-black text-emerald-400">Al día ✓</span>`}
                         <span class="text-[9px] text-slate-600">${ventasCliente.length} compra${ventasCliente.length !== 1 ? 's' : ''}</span>
                     </div>
@@ -7045,21 +7057,10 @@ return;
             const el3 = document.getElementById('detalleTotalPrestamo');
             const el4 = document.getElementById('detalleTotalGeneral');
             if (el1) el1.textContent = '$' + Utils.fmt(totalComp);
-            if (el2) {
-                el2.textContent = '$' + Utils.fmt(deudaReal);
-                el2.className   = 'text-2xl font-black font-mono ' + (deudaReal > 0 ? 'text-red-400' : 'text-emerald-400');
-            }
-            if (el3) el3.textContent = '$' + Utils.fmt(totalPrestamo);
-            if (el4) {
-                const total = deudaReal + totalPrestamo;
-                el4.textContent = '$' + Utils.fmt(total);
-                el4.className   = 'text-2xl font-black font-mono ' + (total > 0 ? 'text-red-400' : 'text-emerald-400');
-            }
 
-            // ── Interés por mora ──────────────────────────────────────
+            // ── Interés por mora — calcular ANTES de los KPIs para incluirlo ──
             const tasaActual = parseFloat(localStorage.getItem('natanael_tasa_mora') || '5');
             let totalInteres = 0;
-            // Calcular interés sobre ventas pendientes
             todasLasVentas().forEach(v => {
                 const vId  = String(v.idCliente || '').trim();
                 const vNom = String(v.cliente   || '').trim().toUpperCase();
@@ -7070,7 +7071,6 @@ return;
                 if (saldo <= 0) return;
                 totalInteres += calcularInteresMora(saldo, v.fechaISO || v.fecha);
             });
-            // Calcular interés sobre préstamos pendientes
             ingresosNegCliente.forEach(e => {
                 const idIng = String(e.idSheet||'').trim();
                 const credito = parseFloat(e.credito)||0;
@@ -7080,6 +7080,21 @@ return;
                 totalInteres += calcularInteresMora(saldo, e.fechaISO || e.fecha);
             });
             totalInteres = Math.round(totalInteres * 100) / 100;
+
+            // ── KPIs — DEUDA PENDIENTE y DEUDA TOTAL incluyen mora ────
+            if (el2) {
+                const deudaConMora = deudaReal + totalInteres;
+                el2.textContent = '$' + Utils.fmt(deudaConMora);
+                el2.className   = 'text-2xl font-black font-mono ' + (deudaConMora > 0 ? 'text-red-400' : 'text-emerald-400');
+            }
+            if (el3) el3.textContent = '$' + Utils.fmt(totalPrestamo);
+            if (el4) {
+                const total = deudaReal + totalPrestamo + totalInteres;
+                el4.textContent = '$' + Utils.fmt(total);
+                el4.className   = 'text-2xl font-black font-mono ' + (total > 0 ? 'text-red-400' : 'text-emerald-400');
+            }
+
+            // ── Box de interés ────────────────────────────────────────
             const interesBox = document.getElementById('detalleInteresBox');
             const inputTasa  = document.getElementById('inputTasaMora');
             if (inputTasa) inputTasa.value = tasaActual;
@@ -7975,7 +7990,7 @@ clienteDetalleId = null;
     let totalIntereses = 0;
     ventasPendientes.forEach(v => {
         v.items.forEach(item => {
-            totalIntereses += calcularInteresMora(item.saldoItem, v.fechaLocal || v.fechaISO);
+            totalIntereses += calcularInteresMora(item.saldoItem, v.fechaISO || v.fechaLocal);
         });
     });
     totalIntereses = Math.round(totalIntereses * 100) / 100;
@@ -8029,7 +8044,8 @@ clienteDetalleId = null;
         v.items.forEach((item, iIdx) => {
             if (y > 265) { doc.addPage(); y = 15; }
 
-            const interesItem = calcularInteresMora(item.saldoItem, v.fechaLocal || v.fechaISO);
+            const interesItem = calcularInteresMora(item.saldoItem, v.fechaISO || v.fechaLocal);
+            console.log('[PDF-MORA-ROW] producto=', item.nombre, '| saldoItem=', item.saldoItem, '| fechaISO=', v.fechaISO, '| fechaLocal=', v.fechaLocal, '| interesItem=', interesItem);
             const _fStr = String(v.fechaLocal || v.fechaISO || '').trim();
             const _mDMY2 = _fStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
             const _mISO2 = _fStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -8192,12 +8208,44 @@ clienteDetalleId = null;
             const deudaPrestamos = prestamosConSaldo.reduce((s,p)=>s+p.saldoPend, 0);
 
             // --- 4 CAJAS RESUMEN ---
+            // Construir ventasPendientes con saldo por ítem y mora (igual que descargarPDFPago)
+            const ventasPendientesPDF = todasLasVentas()
+                .filter(v => { const vId=String(v.idCliente||'').trim(); return vId ? vId===idCl_pdf : String(v.cliente||'').trim().toUpperCase()===nomCl_pdf; })
+                .map(v => {
+                    const credito = parseFloat(v.deuda||0); if (credito <= 0) return null;
+                    const idV = String(v.id||'').trim();
+                    const idVSheet = v.idSheet ? String(v.idSheet).trim() : (idV.startsWith('sheet_V_') ? idV.replace('sheet_V_','') : idV);
+                    const pagado = (_pagoVentasSheet||[]).filter(p => String(p.idCliente||'').trim()===idCl_pdf && (String(p.idVenta||p.IDVENTAS||'')===idV||String(p.idVenta||p.IDVENTAS||'')===idVSheet)).reduce((s,p)=>s+parseFloat(p.monto||p.MONTO||0),0);
+                    const restante = credito - pagado; if (restante <= 0) return null;
+                    const items = (v.items||[]).filter(i=>i.nombre).length > 0 ? v.items.filter(i=>i.nombre) : [{nombre:v.producto||'Sin detalle',cantidad:1,precio:v.total}];
+                    const itemsConSaldo = items.map(item => {
+                        const subTotal = (parseFloat(item.precio)||0)*(parseFloat(item.cantidad)||1);
+                        const nomUp = ((item.cantidad>1?item.cantidad+'x ':'')+item.nombre).trim().toUpperCase();
+                        const yaPag = (_pagoVentasSheet||[]).filter(p=>(String(p.idVenta||p.IDVENTAS||'').trim()===idV||String(p.idVenta||p.IDVENTAS||'').trim()===idVSheet)&&String(p.producto||p.PRODUCTO||'').trim().toUpperCase()===nomUp).reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
+                        return {...item, subTotal, saldoItem: Math.max(0, subTotal - yaPag)};
+                    }).filter(i=>i.saldoItem>0);
+                    return {
+                        fecha: fmtFecha24(v.fechaISO||v.fecha||''),
+                        fechaISO: v.fechaISO||v.fecha||'',
+                        fechaLocal: v.fecha||v.fechaISO||'',
+                        items: itemsConSaldo.length>0 ? itemsConSaldo : items.map(i=>({...i,subTotal:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1),saldoItem:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1)})),
+                        deuda: restante
+                    };
+                }).filter(Boolean);
+
+            // Calcular mora total
+            const _moraTotal_pdf = ventasPendientesPDF.reduce((s,v) =>
+                s + v.items.reduce((s2,item) =>
+                    s2 + calcularInteresMora(item.saldoItem, v.fechaISO||v.fechaLocal), 0), 0);
+            const _moraRedondeada = Math.round(_moraTotal_pdf * 100) / 100;
+            const deudaTotalConMora = deudaVentas + deudaPrestamos + _moraRedondeada;
+
             const boxW = (W - 35) / 4;
             const boxes = [
-                { label: 'TOTAL COMPRAS',   value: '$'+Utils.fmt(totalCompras),              color: [255,255,255] },
-                { label: 'DEUDA PENDIENTE', value: '$'+Utils.fmt(deudaVentas),               color: deudaVentas>0?[248,113,113]:[52,211,153] },
-                { label: 'PRÉSTAMO DEUDA',  value: '$'+Utils.fmt(deudaPrestamos),            color: deudaPrestamos>0?[251,146,60]:[52,211,153] },
-                { label: 'DEUDA TOTAL',     value: '$'+Utils.fmt(deudaVentas+deudaPrestamos),color: (deudaVentas+deudaPrestamos)>0?[248,113,113]:[52,211,153] },
+                { label: 'TOTAL COMPRAS',   value: '$'+Utils.fmt(totalCompras),     color: [255,255,255] },
+                { label: 'DEUDA PENDIENTE', value: '$'+Utils.fmt(deudaVentas),       color: deudaVentas>0?[248,113,113]:[52,211,153] },
+                { label: 'PRÉSTAMO DEUDA',  value: '$'+Utils.fmt(deudaPrestamos),    color: deudaPrestamos>0?[251,146,60]:[52,211,153] },
+                { label: 'DEUDA TOTAL',     value: '$'+Utils.fmt(deudaTotalConMora), color: deudaTotalConMora>0?[248,113,113]:[52,211,153] },
             ];
             boxes.forEach((b, i) => {
                 const bx = 10 + i*(boxW+5);
@@ -8226,56 +8274,75 @@ clienteDetalleId = null;
 
             // --- COMPRAS CON SALDO PENDIENTE ---
             seccion('COMPRAS CON SALDO PENDIENTE', [16,185,129]);
-            if (ventasDeuda.length === 0) {
+
+            if (ventasPendientesPDF.length === 0) {
                 doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont('helvetica','italic');
                 doc.text('Sin compras pendientes', 10, y+5); y += 12;
             } else {
-                tablaHdr([{txt:'FECHA',x:13},{txt:'PRODUCTO',x:50},{txt:'PRECIO',x:W-42,opts:{align:'right'}},{txt:'DEBE',x:W-14,opts:{align:'right'}}]);
+                tablaHdr([
+                    {txt:'FECHA',      x:13},
+                    {txt:'PRODUCTO',   x:50},
+                    {txt:'PRECIO',     x:W-62, opts:{align:'right'}},
+                    {txt:'%+15 DÍAS',  x:W-35, opts:{align:'right'}},
+                    {txt:'DEBE',       x:W-12, opts:{align:'right'}}
+                ]);
                 let rowIdx = 0;
-                ventasDeuda.forEach((v) => {
-                    const listaItems = (v.items && v.items.length > 0)
-                        ? v.items
-                        : [{ nombre: v.producto||'-', cantidad: 1, precio: v.total }];
-                    const filH = 9;
-
-                    // Calcular saldo pendiente real de esta venta
-                    const idV = String(v.idVenta||v.IDVENTAS||v.id||'').trim();
-                    const pagV = (_pagoVentasSheet||[]).filter(p => idV && String(p.idVenta||'').trim()===idV).reduce((a,p)=>a+parseFloat(p.monto||0),0);
-                    const saldoVenta = Math.max(0, (parseFloat(v.deuda)||0) - pagV);
-                    // Distribuir saldo entre items proporcionalmente
-                    const totalItemsVenta = listaItems.reduce((s,i)=>(s+(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1)),0);
-
-                    listaItems.forEach((item, iIdx) => {
+                ventasPendientesPDF.forEach((v) => {
+                    v.items.forEach((item) => {
                         if (y > 265) { doc.addPage(); y = 15; }
+
+                        const interesItem = calcularInteresMora(item.saldoItem, v.fechaISO || v.fechaLocal);
+                        const tieneMora   = interesItem > 0;
+                        const debeTotal   = item.saldoItem + interesItem;
+                        const filH        = tieneMora ? 12 : 9;
 
                         doc.setFillColor(rowIdx%2===0?10:15, rowIdx%2===0?16:23, rowIdx%2===0?30:42);
                         doc.rect(10, y-1, W-20, filH, 'F');
 
-                        // FECHA en cada fila
+                        // FECHA
                         doc.setTextColor(148,163,184); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
                         doc.text(v.fecha||'-', 13, y+5.5);
 
-                        // NOMBRE del producto
+                        // NOMBRE
                         doc.setTextColor(226,232,240); doc.setFontSize(7); doc.setFont('helvetica','normal');
-                        const nomProd = String(item.nombre||'-');
-                        doc.text(nomProd.length > 36 ? nomProd.substring(0,35)+'…' : nomProd, 50, y+5.5);
+                        const nomProd = (item.cantidad>1 ? item.cantidad+'x ' : '') + String(item.nombre||'-');
+                        doc.text(nomProd.length>30 ? nomProd.substring(0,29)+'…' : nomProd, 50, y+5.5);
 
-                        // PRECIO del item (precio unitario × cantidad)
-                        const precioItem = (parseFloat(item.precio)||0) * (parseFloat(item.cantidad)||1);
-                        doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','normal');
-                        doc.text('$'+Utils.fmt(precioItem), W-42, y+5.5, {align:'right'});
+                        // PRECIO
+                        doc.setTextColor(180,180,180); doc.setFontSize(7); doc.setFont('helvetica','normal');
+                        doc.text('$'+Utils.fmt(item.saldoItem), W-62, y+5.5, {align:'right'});
 
-                        // DEBE = saldo pendiente proporcional al peso del item en la venta
-                        const proporcion = totalItemsVenta > 0 ? precioItem / totalItemsVenta : 1 / listaItems.length;
-                        const debeItem = saldoVenta * proporcion;
+                        // %+15 DÍAS
+                        if (tieneMora) {
+                            doc.setTextColor(251,191,36); doc.setFontSize(7); doc.setFont('helvetica','bold');
+                            doc.text('+$'+Utils.fmt(interesItem), W-35, y+5.5, {align:'right'});
+                            if (filH > 9) {
+                                doc.setTextColor(120,83,0); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
+                                const _fStr = String(v.fechaLocal||v.fechaISO||'').trim();
+                                const _mD = _fStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                                const _mI = _fStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                const _fV = _mD ? new Date(+_mD[3],+_mD[2]-1,+_mD[1]) : (_mI ? new Date(+_mI[1],+_mI[2]-1,+_mI[3]) : new Date(_fStr));
+                                _fV.setHours(0,0,0,0);
+                                const _hoy = new Date(); _hoy.setHours(0,0,0,0);
+                                const diasAtr = Math.floor((_hoy-_fV)/(1000*60*60*24));
+                                doc.text(diasAtr+'d sin pago · +10%', W-35, y+9.5, {align:'right'});
+                            }
+                        } else {
+                            doc.setTextColor(100,116,139); doc.setFontSize(7); doc.setFont('helvetica','normal');
+                            doc.text('—', W-35, y+5.5, {align:'right'});
+                        }
+
+                        // DEBE
                         doc.setTextColor(248,113,113); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-                        doc.text('$'+Utils.fmt(debeItem), W-14, y+5.5, {align:'right'});
+                        doc.text('$'+Utils.fmt(debeTotal), W-12, y+5.5, {align:'right'});
+                        if (tieneMora && filH > 9) {
+                            doc.setTextColor(200,50,50); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
+                            doc.text('c/mora', W-12, y+9.5, {align:'right'});
+                        }
 
                         y += filH;
                         rowIdx++;
                     });
-
-                    // Línea separadora entre ventas
                     doc.setDrawColor(30,41,59); doc.setLineWidth(0.2);
                     doc.line(10, y, W-10, y);
                     y += 2;
@@ -17023,22 +17090,87 @@ console.log("FILTRADAS:", filtradas.length);
             if (true) {
                 if (_catWrapper) { _catWrapper.style.display = 'block'; _catWrapper.classList.remove('hidden'); }
 
+                // ── Precalcular mapas de pagos cobrados por ID ──
+                // PAGO EFECTIVO = efectivo tabla + monto pagos (mismo ID)
+                // PAGO CREDITO  = credito tabla - monto pagos (mismo ID)
+
+                // Pagos de EGRESOS (por IDEGRESOS)
+                const _pagoEgrMap = {};
+                (_sheetPagoEgresos||[]).forEach(p => {
+                    const pid = String(p.IDEGRESOS||p.idEgreso||'').trim();
+                    if (!pid) return;
+                    _pagoEgrMap[pid] = (_pagoEgrMap[pid]||0) + Number(p.MONTO||p.monto||0);
+                });
+                // Pagos de COMPRAS (por IDCOMPRAS)
+                const _pagoCompMap = {};
+                (_sheetPagoCompras||[]).forEach(p => {
+                    const pid = String(p.IDCOMPRAS||p.idCompra||'').trim();
+                    if (!pid) return;
+                    _pagoCompMap[pid] = (_pagoCompMap[pid]||0) + Number(p.MONTO||p.monto||0);
+                });
+                // Pagos de EGRESOS NEGOCIO (por IDEGRESOSNEGOCIO) — dos arrays posibles
+                const _pagoEgrNegMap = {};
+                [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])].forEach(p => {
+                    const pid = String(p.IDEGRESOSNEGOCIO||p.idEgrNeg||'').trim();
+                    if (!pid) return;
+                    _pagoEgrNegMap[pid] = (_pagoEgrNegMap[pid]||0) + Number(p.MONTO||p.monto||0);
+                });
+                // Pagos de INGRESOS (por IDINGRESOS)
+                const _pagoIngMap = {};
+                (_sheetPagoIngresos||[]).forEach(p => {
+                    const pid = String(p.IDINGRESOS||'').trim();
+                    if (!pid) return;
+                    _pagoIngMap[pid] = (_pagoIngMap[pid]||0) + Number(p.MONTO||p.monto||0);
+                });
+                // Pagos de INGRESOS NEGOCIO (por IDINGRESOSNEGOCIO)
+                const _pagoIngNegMap = {};
+                (_sheetPagoIngNeg||[]).forEach(p => {
+                    const pid = String(p.IDINGRESOSNEGOCIO||p.idIngNeg||'').trim();
+                    if (!pid) return;
+                    _pagoIngNegMap[pid] = (_pagoIngNegMap[pid]||0) + Number(p.MONTO||p.monto||0);
+                });
+                // Pagos de VENTAS (por IDVENTAS / idVenta)
+                const _pagoVentMap = {};
+                (_pagoVentasSheet||[]).forEach(p => {
+                    const pid = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!pid) return;
+                    _pagoVentMap[pid] = (_pagoVentMap[pid]||0) + Number(p.monto||p.MONTO||0);
+                });
+
+                // Helper: obtener sheetId de un registro
+                const _sid = r => String(r.idSheet||r.id||'').trim();
+
+                // Helper: calcular valor segun filtro, tabla y mapa de pagos
+                // EFECTIVO = r.efectivo + MONTO pagos (mismo ID)
+                // CREDITO  = r.credito  - MONTO pagos (mismo ID), minimo 0
+                // TOTAL    = r.total (columna PAGO TOTAL del sheet)
+                const _val = (r, efField, crField, pagoMap) => {
+                    if (_resumenFiltro === 'efectivo') {
+                        const sid = _sid(r);
+                        const pagado = sid ? (pagoMap[sid]||0) : 0;
+                        return Number(r[efField]||0) + pagado;
+                    }
+                    if (_resumenFiltro === 'credito') {
+                        const sid = _sid(r);
+                        const pagado = sid ? (pagoMap[sid]||0) : 0;
+                        return Math.max(0, Number(r[crField]||0) - pagado);
+                    }
+                    return Number(r.total||r.pagoTotal||0);
+                };
+
                 // ── EGRESOS por categoría ──
                 if (_catBoxEgr) {
                     const _eMap = {};
-                    const _addEgr = (r, cat, supercat) => {
-                        if (!_eMap[cat]) _eMap[cat] = { cant: 0, total: 0, supercat };
-                        _eMap[cat].cant++;
-                        _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
-                                          : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                          : Number(r.total||0);
-                    };
                     // PERSONAL/TOTAL: tabla EGRESOS
                     if (_cat !== 'negocio') {
                         (_sheetEgresos||[]).forEach(r => {
                             const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
                             if (!enRango(fnum)) return;
-                            _addEgr(r, (r.concepto||r.categoria||r.cat||'Sin categoría').trim(), (r.proveedor||r.supercategoria||'').trim());
+                            const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
+                            const supercat = (r.proveedor||r.supercategoria||'').trim();
+                            if (!_eMap[cat]) _eMap[cat] = { cant: 0, total: 0, supercat };
+                            _eMap[cat].cant++;
+                            _eMap[cat].total += _val(r, 'efectivo', 'credito', _pagoEgrMap);
                         });
                     }
                     // NEGOCIO/TOTAL: tabla COMPRAS
@@ -17048,14 +17180,11 @@ console.log("FILTRADAS:", filtradas.length);
                             if (!enRango(fnum)) return;
                             const cat = (r.proveedor||r.concepto||r.categoria||'Sin categoría').trim();
                             if (!_eMap[cat]) {
-                                // buscar foto del proveedor en _sheetProductos
                                 const _pObj = (_sheetProductos||[]).find(p => (p.proveedor||'').trim().toUpperCase() === cat.toUpperCase() && p.foto);
                                 _eMap[cat] = { cant:0, total:0, supercat:'COMPRAS', img: _pObj ? driveUrl(_pObj.foto) : null };
                             }
                             _eMap[cat].cant++;
-                            _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||r.pagoCredito||0)
-                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||r.pagoEfectivo||0)
-                                              : Number(r.total||0);
+                            _eMap[cat].total += _val(r, 'efectivo', 'credito', _pagoCompMap);
                         });
                         // tabla EGRESOS NEGOCIO
                         (_sheetEgresosNegocio||[]).forEach(r => {
@@ -17064,9 +17193,7 @@ console.log("FILTRADAS:", filtradas.length);
                             const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
                             if (!_eMap[cat]) _eMap[cat] = { cant:0, total:0, supercat:'EGR. NEGOCIO', img: null };
                             _eMap[cat].cant++;
-                            _eMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
-                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                              : Number(r.total||r.pagoTotal||0);
+                            _eMap[cat].total += _val(r, 'efectivo', 'credito', _pagoEgrNegMap);
                         });
                     }
                     const _eCats = Object.entries(_eMap).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
@@ -17115,23 +17242,8 @@ console.log("FILTRADAS:", filtradas.length);
                             const supercat = (r.proveedor||r.supercategoria||'').trim();
                             if (!_iMap[cat]) _iMap[cat] = { cant: 0, total: 0, supercat };
                             _iMap[cat].cant++;
-                            _iMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
-                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                              : Number(r.total||0);
+                            _iMap[cat].total += _val(r, 'efectivo', 'credito', _pagoIngMap);
                         });
-                        // También sumar pagos de _sheetPagoIngresos agrupados por concepto del ingreso padre
-                        if (_resumenFiltro !== 'credito') {
-                            (_sheetPagoIngresos||[]).forEach(p => {
-                                if (!enRango(_fnumPago(p))) return;
-                                let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                                const r = (_sheetIngresos||[]).find(r => String(r.idSheet||'').trim()===pid || String(r.id||'').trim()===pid);
-                                if (!r) return;
-                                const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
-                                const supercat = (r.proveedor||r.supercategoria||'').trim();
-                                if (!_iMap[cat]) _iMap[cat] = { cant: 0, total: 0, supercat };
-                                _iMap[cat].total += Number(p.monto||p.MONTO||0);
-                            });
-                        }
                     }
                     // NEGOCIO/TOTAL: tabla VENTAS por cliente
                     if (_cat === 'negocio' || _cat === 'total') {
@@ -17144,14 +17256,20 @@ console.log("FILTRADAS:", filtradas.length);
                             if (!enRango(fnum)) return;
                             const cat = (v.cliente||'Sin categoría').trim();
                             if (!_iMap[cat]) {
-                                // buscar foto del cliente
                                 const _cObj = (clientesDB||[]).find(c => (c.nombre||'').trim().toUpperCase() === cat.toUpperCase());
                                 _iMap[cat] = { cant:0, total:0, supercat:'VENTAS', img: _cObj && _cObj.foto ? driveUrl(_cObj.foto) : null };
                             }
                             _iMap[cat].cant++;
-                            _iMap[cat].total += _resumenFiltro==='credito' ? Number(v.deuda||0)
-                                              : _resumenFiltro==='efectivo' ? Number(v.efectivo||0)
-                                              : Number(v.total||0);
+                            // VENTAS: efectivo = v.efectivo + pagos cobrados; credito = v.deuda - pagos cobrados
+                            const _sid_v = String(v.id||'').trim();
+                            const _pagadoV = _sid_v ? (_pagoVentMap[_sid_v]||0) : 0;
+                            if (_resumenFiltro === 'efectivo') {
+                                _iMap[cat].total += Number(v.efectivo||0) + _pagadoV;
+                            } else if (_resumenFiltro === 'credito') {
+                                _iMap[cat].total += Math.max(0, Number(v.deuda||0) - _pagadoV);
+                            } else {
+                                _iMap[cat].total += Number(v.efectivo||0) + _pagadoV;
+                            }
                         });
                         // tabla INGRESOS NEGOCIO
                         (_sheetIngresosNegocio||[]).forEach(r => {
@@ -17160,9 +17278,7 @@ console.log("FILTRADAS:", filtradas.length);
                             const cat = (r.concepto||r.categoria||r.cliente||'Sin categoría').trim();
                             if (!_iMap[cat]) _iMap[cat] = { cant:0, total:0, supercat:'ING. NEGOCIO', img: null };
                             _iMap[cat].cant++;
-                            _iMap[cat].total += _resumenFiltro==='credito' ? Number(r.credito||0)
-                                              : _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                              : Number(r.total||0);
+                            _iMap[cat].total += _val(r, 'efectivo', 'credito', _pagoIngNegMap);
                         });
                     }
                     const _iCats = Object.entries(_iMap).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
