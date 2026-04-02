@@ -16584,6 +16584,7 @@ console.log("FILTRADAS:", filtradas.length);
 
             // Variables de scope externo para acceso desde IIFEs de cards
             let _ingAjenos = 0, _egrAjenos = 0;
+            let _ingPropios = 0, _egrPropios = 0;
 
             if (_resumenCategoria === 'personal' || _resumenCategoria === 'total') {
                 // INGRESOS TOTALES = columna PAGO TOTAL de tabla INGRESOS (_sheetIngresos)
@@ -16698,7 +16699,7 @@ console.log("FILTRADAS:", filtradas.length);
                 console.log('[RESUMEN SC EGRESOS]', _scDebugE);
 
                 // _ingPropios = PAGO EFECTIVO/CREDITO/TOTAL de INGRESOS PROPIOS + MONTO de PAGO INGRESOS (mismo IDINGRESOS, FECHA ORIGINAL en rango)
-                let _ingPropios = 0;
+                _ingPropios = 0;
                 const _idsIngPropiosCard = new Set();
                 const _idIngPropiosLTSCard = {};
                 (_sheetIngresos||[]).forEach(r => {
@@ -16711,9 +16712,16 @@ console.log("FILTRADAS:", filtradas.length);
                 (_sheetIngresos||[]).forEach(r => {
                     if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
                     if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
-                    _ingPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    if (_resumenFiltro === 'total') {
+                        // TOTAL = PAGO TOTAL del sheet directamente
+                        _ingPropios += Number(r.total||0);
+                    } else if (_resumenFiltro === 'efectivo') {
+                        _ingPropios += Number(r.efectivo||0);
+                    } else {
+                        _ingPropios += Number(r.credito||0);
+                    }
                 });
-                if (_resumenFiltro !== 'credito') {
+                if (_resumenFiltro === 'efectivo') {
                     (_sheetPagoIngresos||[]).forEach(p => {
                         let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
                         if (_pid && !_idsIngPropiosCard.has(_pid)) _pid = _idIngPropiosLTSCard[_pid] || _pid;
@@ -16721,7 +16729,7 @@ console.log("FILTRADAS:", filtradas.length);
                         if (!enRango(_fnumPago(p))) return;
                         _ingPropios += Number(p.MONTO||p.monto||0);
                     });
-                } else {
+                } else if (_resumenFiltro === 'credito') {
                     (_sheetPagoIngresos||[]).forEach(p => {
                         let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
                         if (_pid && !_idsIngPropiosCard.has(_pid)) _pid = _idIngPropiosLTSCard[_pid] || _pid;
@@ -16746,9 +16754,9 @@ console.log("FILTRADAS:", filtradas.length);
                 (_sheetIngresos||[]).forEach(r => {
                     if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
                     if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
-                    _ingAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    if (_resumenFiltro==='total') { _ingAjenos += Number(r.total||0); } else if (_resumenFiltro==='efectivo') { _ingAjenos += Number(r.efectivo||0); } else { _ingAjenos += Number(r.credito||0); }
                 });
-                if (_resumenFiltro !== 'credito') {
+                if (_resumenFiltro === 'efectivo') {
                     (_sheetPagoIngresos||[]).forEach(p => {
                         let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
                         if (_pid && !_idsIngAjenosCard.has(_pid)) _pid = _idIngAjenosLTSCard[_pid] || _pid;
@@ -16756,7 +16764,7 @@ console.log("FILTRADAS:", filtradas.length);
                         if (!enRango(_fnumPago(p))) return;
                         _ingAjenos += Number(p.MONTO||p.monto||0);
                     });
-                } else {
+                } else if (_resumenFiltro === 'credito') {
                     (_sheetPagoIngresos||[]).forEach(p => {
                         let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
                         if (_pid && !_idsIngAjenosCard.has(_pid)) _pid = _idIngAjenosLTSCard[_pid] || _pid;
@@ -16782,9 +16790,9 @@ console.log("FILTRADAS:", filtradas.length);
                 (_sheetEgresos||[]).forEach(r => {
                     if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
                     if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS PROPIOS') return;
-                    _egrPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    if (_resumenFiltro==='total') { _egrPropios += Number(r.total||0); } else if (_resumenFiltro==='efectivo') { _egrPropios += Number(r.efectivo||0); } else { _egrPropios += Number(r.credito||0); }
                 });
-                if (_resumenFiltro !== 'credito') {
+                if (_resumenFiltro === 'efectivo') {
                     (_sheetPagoEgresos||[]).forEach(p => {
                         let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
                         if (_pid && !_idsEgrPropiosCard.has(_pid)) _pid = _idEgrPropiosLTSCard[_pid] || _pid;
@@ -16792,7 +16800,7 @@ console.log("FILTRADAS:", filtradas.length);
                         if (!enRango(_fnumPago(p))) return;
                         _egrPropios += Number(p.monto||p.MONTO||0);
                     });
-                } else {
+                } else if (_resumenFiltro === 'credito') {
                     (_sheetPagoEgresos||[]).forEach(p => {
                         let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
                         if (_pid && !_idsEgrPropiosCard.has(_pid)) _pid = _idEgrPropiosLTSCard[_pid] || _pid;
@@ -16817,9 +16825,9 @@ console.log("FILTRADAS:", filtradas.length);
                 (_sheetEgresos||[]).forEach(r => {
                     if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
                     if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
-                    _egrAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                    if (_resumenFiltro==='total') { _egrAjenos += Number(r.total||0); } else if (_resumenFiltro==='efectivo') { _egrAjenos += Number(r.efectivo||0); } else { _egrAjenos += Number(r.credito||0); }
                 });
-                if (_resumenFiltro !== 'credito') {
+                if (_resumenFiltro === 'efectivo') {
                     (_sheetPagoEgresos||[]).forEach(p => {
                         let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
                         if (_pid && !_idsEgrAjenosCard.has(_pid)) _pid = _idEgrAjenosLTSCard[_pid] || _pid;
@@ -16827,7 +16835,7 @@ console.log("FILTRADAS:", filtradas.length);
                         if (!enRango(_fnumPago(p))) return;
                         _egrAjenos += Number(p.monto||p.MONTO||0);
                     });
-                } else {
+                } else if (_resumenFiltro === 'credito') {
                     (_sheetPagoEgresos||[]).forEach(p => {
                         let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
                         if (_pid && !_idsEgrAjenosCard.has(_pid)) _pid = _idEgrAjenosLTSCard[_pid] || _pid;
@@ -17186,6 +17194,7 @@ console.log("FILTRADAS:", filtradas.length);
             const _catBoxEgr = document.getElementById('resumenEgresosCat');
             const _catBoxIng = document.getElementById('resumenIngresosCat');
 
+            try {
             if (true) {
                 if (_catWrapper) { _catWrapper.style.display = 'block'; _catWrapper.classList.remove('hidden'); }
 
@@ -17418,6 +17427,7 @@ console.log("FILTRADAS:", filtradas.length);
                 if (_catBoxEgr) _catBoxEgr.innerHTML = '';
                 if (_catBoxIng) _catBoxIng.innerHTML = '';
             }
+            } catch(e) { console.error('[CAT ERROR]', e); }
 
             // ── Tabla detalle ──
             document.getElementById('resumenTabla').innerHTML = `
