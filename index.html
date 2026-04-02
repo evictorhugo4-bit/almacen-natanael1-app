@@ -7134,7 +7134,6 @@ return;
                                     ${ticketBtn}
                                     <div class="text-right">
                                         <span class="text-sm font-black text-red-400 font-mono">$${Utils.fmt(saldo)}</span>
-                                        ${(function(){ const int = calcularInteresMora(saldo, v.fechaISO||v.fecha); return int > 0 ? `<span class="block text-[9px] font-black text-yellow-400 font-mono">+$${Utils.fmt(int)} mora</span>` : ''; })()}
                                     </div>
                                 </div>
                             </div>
@@ -7173,7 +7172,6 @@ return;
                             <div class="flex items-center gap-2 shrink-0">
                                 <div class="text-right">
                                     <span class="text-sm font-black text-orange-400 font-mono">$${Utils.fmt(p.saldoPend)}</span>
-                                    ${int > 0 ? `<span class="block text-[9px] font-black text-yellow-400 font-mono">+$${Utils.fmt(int)} mora</span>` : ''}
                                 </div>
                                 <button onclick="abrirPagoIngNeg('${p.id || p.idSheet || ''}')"
                                     style="padding:6px 10px;background:#431407;color:#fb923c;border:1px solid #7c2d12;border-radius:8px;cursor:pointer;font-size:13px;font-weight:900;line-height:1;"
