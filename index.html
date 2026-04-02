@@ -16582,6 +16582,9 @@ console.log("FILTRADAS:", filtradas.length);
             // helper global: FECHA ORIGINAL tiene prioridad sobre FECHA en tablas de pago
             const _fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
 
+            // Variables de scope externo para acceso desde IIFEs de cards
+            let _ingAjenos = 0, _egrAjenos = 0;
+
             if (_resumenCategoria === 'personal' || _resumenCategoria === 'total') {
                 // INGRESOS TOTALES = columna PAGO TOTAL de tabla INGRESOS (_sheetIngresos)
                 const _ingTotalPagoTotal = ing.total;
@@ -16694,26 +16697,146 @@ console.log("FILTRADAS:", filtradas.length);
                 const _scDebugE = [...new Set((_sheetEgresos||[]).map(r=>(r.proveedor||r.supercategoria||'').trim()))].slice(0,10);
                 console.log('[RESUMEN SC EGRESOS]', _scDebugE);
 
-                const _ingPropios = (_sheetIngresos||[]).filter(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return false;
-                    return (r.proveedor||r.supercategoria||'').toUpperCase().trim() === 'INGRESOS PROPIOS';
-                }).reduce((s,r) => s + (_resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0)), 0);
+                // _ingPropios = PAGO EFECTIVO/CREDITO/TOTAL de INGRESOS PROPIOS + MONTO de PAGO INGRESOS (mismo IDINGRESOS, FECHA ORIGINAL en rango)
+                let _ingPropios = 0;
+                const _idsIngPropiosCard = new Set();
+                const _idIngPropiosLTSCard = {};
+                (_sheetIngresos||[]).forEach(r => {
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
+                    const sid = String(r.idSheet||'').trim();
+                    const lid = String(r.id||'').trim();
+                    if (sid) _idsIngPropiosCard.add(sid);
+                    if (lid && sid) _idIngPropiosLTSCard[lid] = sid;
+                });
+                (_sheetIngresos||[]).forEach(r => {
+                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
+                    _ingPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                });
+                if (_resumenFiltro !== 'credito') {
+                    (_sheetPagoIngresos||[]).forEach(p => {
+                        let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                        if (_pid && !_idsIngPropiosCard.has(_pid)) _pid = _idIngPropiosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsIngPropiosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _ingPropios += Number(p.MONTO||p.monto||0);
+                    });
+                } else {
+                    (_sheetPagoIngresos||[]).forEach(p => {
+                        let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                        if (_pid && !_idsIngPropiosCard.has(_pid)) _pid = _idIngPropiosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsIngPropiosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _ingPropios -= Number(p.MONTO||p.monto||0);
+                    });
+                    _ingPropios = Math.max(0, _ingPropios);
+                }
 
-                const _ingAjenos = (_sheetIngresos||[]).filter(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return false;
-                    return (r.proveedor||r.supercategoria||'').toUpperCase().trim() === 'INGRESOS AJENOS';
-                }).reduce((s,r) => s + (_resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0)), 0);
+                // _ingAjenos = PAGO EFECTIVO/CREDITO/TOTAL de INGRESOS AJENOS + MONTO de PAGO INGRESOS (mismo IDINGRESOS, FECHA ORIGINAL en rango)
+                _ingAjenos = 0;
+                const _idsIngAjenosCard = new Set();
+                const _idIngAjenosLTSCard = {};
+                (_sheetIngresos||[]).forEach(r => {
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
+                    const sid = String(r.idSheet||'').trim();
+                    const lid = String(r.id||'').trim();
+                    if (sid) _idsIngAjenosCard.add(sid);
+                    if (lid && sid) _idIngAjenosLTSCard[lid] = sid;
+                });
+                (_sheetIngresos||[]).forEach(r => {
+                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
+                    _ingAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                });
+                if (_resumenFiltro !== 'credito') {
+                    (_sheetPagoIngresos||[]).forEach(p => {
+                        let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                        if (_pid && !_idsIngAjenosCard.has(_pid)) _pid = _idIngAjenosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsIngAjenosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _ingAjenos += Number(p.MONTO||p.monto||0);
+                    });
+                } else {
+                    (_sheetPagoIngresos||[]).forEach(p => {
+                        let _pid = String(p.IDINGRESOS||p.idingresos||'').trim();
+                        if (_pid && !_idsIngAjenosCard.has(_pid)) _pid = _idIngAjenosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsIngAjenosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _ingAjenos -= Number(p.MONTO||p.monto||0);
+                    });
+                    _ingAjenos = Math.max(0, _ingAjenos);
+                }
 
                 // ── Calcular EGRESOS PROPIOS / AJENOS ──────────────────────────────
-                const _egrPropios = (_sheetEgresos||[]).filter(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return false;
-                    return (r.proveedor||r.supercategoria||'').toUpperCase().trim() === 'EGRESOS PROPIOS';
-                }).reduce((s,r) => s + (_resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0)), 0);
+                // _egrPropios card = egresos supercategoría EGRESOS PROPIOS + PAGO EGRESOS coincidente por IDEGRESOS
+                let _egrPropios = 0;
+                const _idsEgrPropiosCard = new Set();
+                const _idEgrPropiosLTSCard = {};
+                (_sheetEgresos||[]).forEach(r => {
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS PROPIOS') return;
+                    const sid = String(r.idSheet||'').trim();
+                    const lid = String(r.id||'').trim();
+                    if (sid) _idsEgrPropiosCard.add(sid);
+                    if (lid && sid) _idEgrPropiosLTSCard[lid] = sid;
+                });
+                (_sheetEgresos||[]).forEach(r => {
+                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS PROPIOS') return;
+                    _egrPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                });
+                if (_resumenFiltro !== 'credito') {
+                    (_sheetPagoEgresos||[]).forEach(p => {
+                        let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                        if (_pid && !_idsEgrPropiosCard.has(_pid)) _pid = _idEgrPropiosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsEgrPropiosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _egrPropios += Number(p.monto||p.MONTO||0);
+                    });
+                } else {
+                    (_sheetPagoEgresos||[]).forEach(p => {
+                        let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                        if (_pid && !_idsEgrPropiosCard.has(_pid)) _pid = _idEgrPropiosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsEgrPropiosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _egrPropios -= Number(p.monto||p.MONTO||0);
+                    });
+                    _egrPropios = Math.max(0, _egrPropios);
+                }
 
-                const _egrAjenos = (_sheetEgresos||[]).filter(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return false;
-                    return (r.proveedor||r.supercategoria||'').toUpperCase().trim() === 'EGRESOS AJENOS';
-                }).reduce((s,r) => s + (_resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0)), 0);
+                // _egrAjenos = PAGO EFECTIVO/CREDITO/TOTAL de EGRESOS AJENOS + MONTO de PAGO EGRESOS (mismo IDEGRESOS, FECHA ORIGINAL en rango)
+                _egrAjenos = 0;
+                const _idsEgrAjenosCard = new Set();
+                const _idEgrAjenosLTSCard = {};
+                (_sheetEgresos||[]).forEach(r => {
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
+                    const sid = String(r.idSheet||'').trim();
+                    const lid = String(r.id||'').trim();
+                    if (sid) _idsEgrAjenosCard.add(sid);
+                    if (lid && sid) _idEgrAjenosLTSCard[lid] = sid;
+                });
+                (_sheetEgresos||[]).forEach(r => {
+                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
+                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
+                    _egrAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
+                });
+                if (_resumenFiltro !== 'credito') {
+                    (_sheetPagoEgresos||[]).forEach(p => {
+                        let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                        if (_pid && !_idsEgrAjenosCard.has(_pid)) _pid = _idEgrAjenosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsEgrAjenosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _egrAjenos += Number(p.monto||p.MONTO||0);
+                    });
+                } else {
+                    (_sheetPagoEgresos||[]).forEach(p => {
+                        let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                        if (_pid && !_idsEgrAjenosCard.has(_pid)) _pid = _idEgrAjenosLTSCard[_pid] || _pid;
+                        if (!_pid || !_idsEgrAjenosCard.has(_pid)) return;
+                        if (!enRango(_fnumPago(p))) return;
+                        _egrAjenos -= Number(p.monto||p.MONTO||0);
+                    });
+                    _egrAjenos = Math.max(0, _egrAjenos);
+                }
 
                 const _sfx = _resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '';
 
@@ -16750,8 +16873,9 @@ console.log("FILTRADAS:", filtradas.length);
                     +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(_egrPropios) + '</p>'
                     +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Supercategoría: EGRESOS PROPIOS</p>'
                     +   '</div>'
-                    // Card 5: CONSUMO DEL NEGOCIO
+                    // Card 5: CONSUMO DEL NEGOCIO (solo si NO es PERSONAL+CRÉDITO)
                     + (()=>{
+                        if (_resumenCategoria === 'personal' && _resumenFiltro === 'credito') return '';
                         let _casaErazoTotal = 0, _casaErazoCant = 0;
                         const _vistasCE2 = new Set();
                         (_sheetVentas||[]).forEach(v => {
@@ -16886,17 +17010,8 @@ console.log("FILTRADAS:", filtradas.length);
                         _entPropios = Math.max(0, _vEntPropios);
                         _salPropios = _cmpT;
                     } else {
-                        // PERSONAL: entradas = INGRESOS TOTALES PROPIOS (supercategoría) + GANANCIAS TOTALES
-                        (_sheetIngresos||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
-                            _entPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                         : _resumenFiltro==='credito'  ? Number(r.credito||0)
-                                         : Number(r.total||0);
-                        });
-                        // + ganancias
-                        _entPropios += (_resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal);
+                        // PERSONAL: entradas = _ingPropios (ya incluye PAGO INGRESOS por IDINGRESOS) + GANANCIAS
+                        _entPropios = _ingPropios + (_resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal);
                         // PERSONAL salidas:
                         // TOTAL:    r.total egresos propios + dineroRecuperado CASA ERAZO
                         // EFECTIVO: r.efectivo egresos propios + monto pago egresos (IDEGRESOS coincidente) + dineroRecuperado CASA ERAZO
@@ -16972,24 +17087,9 @@ console.log("FILTRADAS:", filtradas.length);
                 })()
                 // ── Card INGRESOS AJENOS ──
                 + (()=>{
-                    // Entradas = ingresos donde supercategoría = "INGRESOS AJENOS"
-                    let _entAjenos = 0;
-                    (_sheetIngresos||[]).forEach(r => {
-                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                        if (!enRango(fnum)) return;
-                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
-                        _entAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                    : _resumenFiltro==='credito'  ? Number(r.credito||0)
-                                    : Number(r.total||0);
-                    });
-                    // Salidas = egresos donde supercategoría (proveedor) = "EGRESOS AJENOS"
-                    let _salAjenos = 0;
-                    (_sheetEgresos||[]).forEach(r => {
-                        const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                        if (!enRango(fnum)) return;
-                        if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
-                        _salAjenos += _resumenFiltro==='efectivo' ? Number(r.efectivo||0) : _resumenFiltro==='credito' ? Number(r.credito||0) : Number(r.total||0);
-                    });
+                    // Usar _ingAjenos y _egrAjenos ya calculados con PAGO INGRESOS/EGRESOS incluidos
+                    const _entAjenos = _ingAjenos;
+                    const _salAjenos = _egrAjenos;
                     // Cuando la categoría es 'negocio', las entradas son el total de INGRESOS NEGOCIO
                     const _entAjenosDisplay = _resumenCategoria === 'negocio'
                         ? (_resumenFiltro==='efectivo' ? ingNeg.ef : _resumenFiltro==='credito' ? ingNeg.cr : ingNeg.total)
