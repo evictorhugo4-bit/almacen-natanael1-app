@@ -4670,34 +4670,32 @@ _sheetProductos.forEach(p => {
             return 'https://lh3.googleusercontent.com/d/' + m[1] + '=s0';
         }
 
-        // Sube imagen a ImgBB (hosting gratuito, URL permanente, funciona en móvil)
+        // Sube imagen a Google Drive vía Apps Script
         function subirFotoImgBB(dataUrl, callback) {
             comprimirFotoParaSheet(dataUrl, function(comprimida) {
-                // Extraer solo el base64 sin el prefijo data:...;base64,
-                const base64 = comprimida.split(',')[1];
-                const IMGBB_KEY = '0ee065ced332ac96486ee8e8daee84ae';
-                const formData = new FormData();
-                formData.append('image', base64);
-                fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, {
+                const base64  = comprimida.split(',')[1];
+                const mime    = (comprimida.match(/data:(image\/\w+);/) || [])[1] || 'image/jpeg';
+                const nombre  = 'natanael_' + Date.now() + '.jpg';
+                fetch(SHEETS_URL, {
                     method: 'POST',
-                    body: formData
+                    body: JSON.stringify({ tipo: 'subir_imagen', base64: base64, mimeType: mime, nombre: nombre })
                 })
                 .then(r => r.json())
                 .then(res => {
-                    if (res.success) {
-                        console.log('[ImgBB] URL:', res.data.url);
-                        mostrarToast('✓ Imagen subida', 'success');
-                        callback(res.data.url);
+                    if (res.ok && res.url) {
+                        console.log('[Drive] URL:', res.url);
+                        mostrarToast('✓ Imagen subida a Drive', 'success');
+                        callback(res.url);
                     } else {
-                        console.error('[ImgBB] Error:', res);
+                        console.error('[Drive] Error:', res);
                         mostrarToast('⚠ Error al subir imagen', 'error');
-                        callback(comprimida); // fallback: guardar base64 comprimido
+                        callback(comprimida);
                     }
                 })
                 .catch(e => {
-                    console.error('[ImgBB] Error red:', e);
+                    console.error('[Drive] Error red:', e);
                     mostrarToast('⚠ Sin conexión para subir imagen', 'error');
-                    callback(comprimida); // fallback
+                    callback(comprimida);
                 });
             });
         }
@@ -4705,19 +4703,18 @@ _sheetProductos.forEach(p => {
         function subirTicketImgBB(dataUrl, callback) {
             const base64 = dataUrl.split(',')[1];
             const mime   = (dataUrl.match(/data:(image\/\w+);/) || [])[1] || 'image/jpeg';
-            const IMGBB_KEY = '0ee065ced332ac96486ee8e8daee84ae';
-            const formData = new FormData();
-            formData.append('image', base64);
-            fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, {
-                method: 'POST', body: formData
+            const nombre = 'ticket_' + Date.now() + '.jpg';
+            fetch(SHEETS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ tipo: 'subir_imagen', base64: base64, mimeType: mime, nombre: nombre })
             })
             .then(r => r.json())
             .then(res => {
-                if (res.success) {
-                    callback(res.data.url);
+                if (res.ok && res.url) {
+                    callback(res.url);
                 } else {
                     mostrarToast('⚠ Error al subir ticket', 'error');
-                    callback(dataUrl); // fallback base64 original
+                    callback(dataUrl);
                 }
             })
             .catch(() => {
@@ -6921,16 +6918,32 @@ function bloqueAcordeon(titulo, id, contenido) {
 
 
         // ── INTERÉS POR MORA ─────────────────────────────────────────────────
+        // 10% fijo sobre el saldo si pasaron >= 15 días sin pago
         function calcularInteresMora(saldo, fechaStr) {
-            const tasa = parseFloat(localStorage.getItem('natanael_tasa_mora') || '5') / 100; // mensual
-            if (!tasa || !saldo || saldo <= 0) return 0;
-            const fechaVenta = new Date(fechaStr || 0);
-            if (isNaN(fechaVenta.getTime())) return 0;
-            const diasAtraso = Math.floor((new Date() - fechaVenta) / (1000 * 60 * 60 * 24));
-            if (diasAtraso <= 15) return 0;
-            // Interés proporcional: tasa_mensual × (dias / 30) × saldo
-            const interes = saldo * tasa * (diasAtraso / 30);
-            return Math.round(interes * 100) / 100;
+            if (!saldo || saldo <= 0) return 0;
+            if (!fechaStr) return 0;
+            const s = String(fechaStr).trim();
+            let fechaVenta = null;
+            // Prioridad 1: dd/MM/yyyy o dd-MM-yyyy (fecha local, sin conversión UTC)
+            const mDMY = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            if (mDMY) {
+                fechaVenta = new Date(parseInt(mDMY[3]), parseInt(mDMY[2])-1, parseInt(mDMY[1]));
+            } else {
+                // ISO / yyyy-MM-dd: extraer solo la parte de fecha para evitar desfase UTC
+                const mISO = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (mISO) {
+                    fechaVenta = new Date(parseInt(mISO[1]), parseInt(mISO[2])-1, parseInt(mISO[3]));
+                } else {
+                    fechaVenta = new Date(s);
+                }
+            }
+            if (!fechaVenta || isNaN(fechaVenta.getTime())) return 0;
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+            fechaVenta.setHours(0,0,0,0);
+            const diasAtraso = Math.floor((hoy - fechaVenta) / (1000 * 60 * 60 * 24));
+            if (diasAtraso < 15) return 0;
+            return Math.round(saldo * 0.10 * 100) / 100; // 10% fijo
         }
         // ── FIN INTERÉS POR MORA ─────────────────────────────────────────────
 
@@ -7091,7 +7104,7 @@ return;
                 const ventasPend = [];
                 // DEBUG
                 const _dbgV = todasLasVentas().find(v => { const i=String(v.idCliente||'').trim(),n=String(v.cliente||'').trim().toUpperCase(); return i?i===idCl:n===nomCl; });
-                if (_dbgV) console.warn('[DBG] id:'+_dbgV.id+' deuda:'+_dbgV.deuda+' total:'+_dbgV.total+' ticket:'+_dbgV.ticket+' keys:'+Object.keys(_dbgV).join(','));
+                if (_dbgV) console.warn('[DBG] id:'+_dbgV.id+' deuda:'+_dbgV.deuda+' total:'+_dbgV.total+' fechaISO=['+_dbgV.fechaISO+'] fecha=['+_dbgV.fecha+'] mora='+calcularInteresMora(_dbgV.deuda,_dbgV.fechaISO)+' keys:'+Object.keys(_dbgV).join(','));
                 todasLasVentas().forEach(v => {
                     const vId  = String(v.idCliente || '').trim();
                     const vNom = String(v.cliente   || '').trim().toUpperCase();
@@ -7114,8 +7127,13 @@ return;
                             : '';
                         const idVstr = String(v.id||'').trim();
                         const idSstr = v.idSheet ? String(v.idSheet).trim() : (idVstr.startsWith('sheet_V_') ? idVstr.replace('sheet_V_','') : idVstr);
-                        const fechaVenta = v.fechaISO || v.fecha || '';
-                        const diasDeuda  = Math.floor((new Date() - new Date(fechaVenta)) / (1000*60*60*24));
+                        const fechaVenta = v.fecha || v.fechaISO || ''; // v.fecha es local, v.fechaISO puede ser UTC
+                        const _fvStr = String(fechaVenta).trim();
+                        const _fvDMY = _fvStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+                        const _fvISO = _fvStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                        const _fvD = _fvDMY ? new Date(+_fvDMY[3],+_fvDMY[2]-1,+_fvDMY[1]) : (_fvISO ? new Date(+_fvISO[1],+_fvISO[2]-1,+_fvISO[3]) : new Date(_fvStr));
+                        const _hoyDM = new Date(); _hoyDM.setHours(0,0,0,0); _fvD.setHours(0,0,0,0);
+                        const diasDeuda = Math.max(0, Math.floor((_hoyDM - _fvD) / (1000*60*60*24)));
                         const itemsHtml = items.map(item => {
                             const nomProd  = (item.cantidad > 1 ? item.cantidad + 'x ' : '') + (item.nombre || '—');
                             const subTotal = (parseFloat(item.precio)||0) * (parseFloat(item.cantidad)||1);
@@ -7129,25 +7147,36 @@ return;
                             // Interés por este ítem
                             const interesItem = !pagado && saldoItem > 0 ? calcularInteresMora(saldoItem, fechaVenta) : 0;
                             const totalConInt  = saldoItem + interesItem;
+                            const debe = totalConInt; // saldo + 10% si aplica
                             return `<div class="py-1.5 border-t border-slate-800">
-                                <div class="flex justify-between items-center gap-2">
+                                <div class="flex justify-between items-start gap-2">
                                     <span class="text-[10px] font-bold ${pagado ? 'text-emerald-400 line-through' : 'text-slate-300'} flex-1 truncate">📦 ${Utils.escHtml(nomProd)}</span>
                                     <div class="flex items-center gap-1.5 shrink-0">
-                                        <div class="text-right">
-                                            <span class="text-[11px] font-mono ${pagado ? 'text-emerald-400' : 'text-slate-400'}">$${Utils.fmt(saldoItem > 0 ? saldoItem : subTotal)}</span>
-                                            ${interesItem > 0 ? `<span class="block text-[9px] font-black text-yellow-400 font-mono">+$${Utils.fmt(interesItem)} mora</span>` : ''}
-                                        </div>
+                                        ${!pagado && saldoItem > 0 ? `
+                                        <div class="flex gap-1.5 items-center">
+                                            <div class="text-right">
+                                                <span class="text-[8px] text-slate-500 font-bold uppercase block">Precio</span>
+                                                <span class="text-[10px] font-mono text-slate-400">$${Utils.fmt(saldoItem)}</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-[8px] font-bold uppercase block" style="color:${interesItem>0?'#eab308':'#475569'}">+10%</span>
+                                                <span class="text-[10px] font-mono" style="color:${interesItem>0?'#facc15':'#475569'}">${interesItem>0?'+$'+Utils.fmt(interesItem):'—'}</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-[8px] text-red-400 font-bold uppercase block">Debe</span>
+                                                <span class="text-[11px] font-black font-mono text-red-400">$${Utils.fmt(debe)}</span>
+                                            </div>
+                                        </div>` : `<span style="padding:3px 8px;background:#052e16;color:#4ade80;border-radius:6px;font-size:11px;font-weight:900;">✅</span>`}
                                         ${saldoItem > 0
                                             ? `<button onclick="abrirPagoDesdeVenta('${v.id || ''}', '${c.id}', '${nomProd.replace(/'/g,"\\'")}',${subTotal})"
                                                 style="padding:3px 8px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:12px;font-weight:900;line-height:1;"
                                                 title="Registrar pago">💳</button>`
-                                            : `<span style="padding:3px 8px;background:#052e16;color:#4ade80;border-radius:6px;font-size:11px;font-weight:900;">✅</span>`
-                                        }
+                                            : ''}
                                     </div>
                                 </div>
                                 ${interesItem > 0 ? `<div style="background:#78350f22;border:1px solid #f59e0b33;border-radius:6px;padding:2px 7px;margin-top:3px;display:flex;justify-content:space-between;align-items:center;">
-                                    <span style="font-size:8px;color:#92400e;font-weight:700;">⏱ ${diasDeuda}d · ${localStorage.getItem('natanael_tasa_mora')||5}%/mes</span>
-                                    <span style="font-size:9px;font-weight:900;color:#fbbf24;font-family:monospace;">Total c/mora: $${Utils.fmt(totalConInt)}</span>
+                                    <span style="font-size:8px;color:#d97706;font-weight:700;">⏱ ${diasDeuda} días sin pago · +10% mora</span>
+                                    <span style="font-size:9px;font-weight:900;color:#fbbf24;font-family:monospace;">TOTAL: $${Utils.fmt(debe)}</span>
                                 </div>` : ''}
                             </div>`;
                         }).join('');
@@ -7893,7 +7922,15 @@ clienteDetalleId = null;
     y += 10;
 
     // ───────── CALCULAR DEUDA REAL ─────────
-    const idCl = String(c.id || c.idSheet || '').trim();
+    const idCl = String(c.idSheet || c.id || '').trim();
+
+    // DEBUG MORA
+    console.log('[PDF MORA] idCl=', idCl);
+    todasLasVentas().filter(v => String(v.idCliente||'').trim()===idCl && (parseFloat(v.deuda)||0)>0).slice(0,5).forEach(v => {
+        const _fl = v.fecha || v.fechaISO || '';
+        const _mora = calcularInteresMora(v.deuda, _fl);
+        console.log('[PDF MORA] id=', v.id, '| fecha=', v.fecha, '| fechaISO=', v.fechaISO, '| deuda=', v.deuda, '| fechaLocal=', _fl, '| mora=', _mora);
+    });
 
     const ventasPendientes = todasLasVentas()
         .filter(v => String(v.idCliente || '').trim() === idCl)
@@ -7926,6 +7963,7 @@ clienteDetalleId = null;
             return {
                 fecha: fmtFecha24(v.fechaISO || v.fecha || ''),
                 fechaISO: v.fechaISO || v.fecha || '',
+                fechaLocal: v.fecha || v.fechaISO || '',
                 items: itemsConSaldo.length > 0 ? itemsConSaldo : items.map(i=>({...i, subTotal:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1), saldoItem:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1)})),
                 deuda: restante
             };
@@ -7937,7 +7975,7 @@ clienteDetalleId = null;
     let totalIntereses = 0;
     ventasPendientes.forEach(v => {
         v.items.forEach(item => {
-            totalIntereses += calcularInteresMora(item.saldoItem, v.fechaISO);
+            totalIntereses += calcularInteresMora(item.saldoItem, v.fechaLocal || v.fechaISO);
         });
     });
     totalIntereses = Math.round(totalIntereses * 100) / 100;
@@ -7962,7 +8000,7 @@ clienteDetalleId = null;
         doc.setTextColor(251,191,36);
         doc.setFontSize(7.5);
         doc.setFont('helvetica','bold');
-        doc.text('+ $'+Utils.fmt(totalIntereses)+' interés por mora ('+tasaMoraPDF+'%/mes)  →  TOTAL CON MORA: $'+Utils.fmt(totalDeuda+totalIntereses), 15, y+31);
+        doc.text('+ $'+Utils.fmt(totalIntereses)+' mora +10% (+15 días)  →  TOTAL CON MORA: $'+Utils.fmt(totalDeuda+totalIntereses), 15, y+31);
     }
 
     y += totalIntereses > 0 ? 48 : 40;
@@ -7979,11 +8017,11 @@ clienteDetalleId = null;
     doc.setFillColor(8, 15, 35);
     doc.rect(10, y-2, W-20, 8, 'F');
     doc.setTextColor(100,116,139); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
-    doc.text('FECHA',     15,   y+3.5);
-    doc.text('PRODUCTO',  48,   y+3.5);
-    doc.text('PRECIO',    W-62, y+3.5, {align:'right'});
-    doc.text('DEBE',      W-35, y+3.5, {align:'right'});
-    doc.text('MORA',      W-14, y+3.5, {align:'right'});
+    doc.text('FECHA',      15,   y+3.5);
+    doc.text('PRODUCTO',   48,   y+3.5);
+    doc.text('PRECIO',     W-62, y+3.5, {align:'right'});
+    doc.text('%+15 DÍAS',  W-35, y+3.5, {align:'right'});
+    doc.text('DEBE',       W-14, y+3.5, {align:'right'});
     y += 9;
 
     let rowIdx = 0;
@@ -7991,8 +8029,13 @@ clienteDetalleId = null;
         v.items.forEach((item, iIdx) => {
             if (y > 265) { doc.addPage(); y = 15; }
 
-            const interesItem = calcularInteresMora(item.saldoItem, v.fechaISO);
-            const diasAtr = Math.floor((new Date() - new Date(v.fechaISO)) / (1000*60*60*24));
+            const interesItem = calcularInteresMora(item.saldoItem, v.fechaLocal || v.fechaISO);
+            const _fStr = String(v.fechaLocal || v.fechaISO || '').trim();
+            const _mDMY2 = _fStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+            const _mISO2 = _fStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            const _fV = _mDMY2 ? new Date(+_mDMY2[3],+_mDMY2[2]-1,+_mDMY2[1]) : (_mISO2 ? new Date(+_mISO2[1],+_mISO2[2]-1,+_mISO2[3]) : new Date(_fStr));
+            const _hoyD = new Date(); _hoyD.setHours(0,0,0,0); _fV.setHours(0,0,0,0);
+            const diasAtr = Math.floor((_hoyD - _fV) / (1000*60*60*24));
             const tieneMora = interesItem > 0;
             const filH = tieneMora ? 12 : 9;
 
@@ -8008,24 +8051,30 @@ clienteDetalleId = null;
             const nomProd = (item.cantidad > 1 ? item.cantidad+'x ' : '') + String(item.nombre||'-');
             doc.text(nomProd.length > 35 ? nomProd.substring(0,34)+'…' : nomProd, 48, y+5.5);
 
-            // Precio original
-            doc.setTextColor(180,180,180); doc.setFontSize(7);
-            doc.text('$'+Utils.fmt(item.subTotal), W-62, y+5.5, {align:'right'});
+            // PRECIO original
+            doc.setTextColor(180,180,180); doc.setFontSize(7); doc.setFont('helvetica','normal');
+            doc.text('$'+Utils.fmt(item.saldoItem), W-62, y+5.5, {align:'right'});
 
-            // DEBE (saldo real)
-            doc.setTextColor(248,113,113); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-            doc.text('$'+Utils.fmt(item.saldoItem), W-35, y+5.5, {align:'right'});
-
-            // MORA
+            // %+15 DÍAS (mora 10%)
             if (tieneMora) {
-                doc.setTextColor(251,191,36); doc.setFontSize(7.5);
-                doc.text('$'+Utils.fmt(interesItem), W-14, y+5.5, {align:'right'});
-                // Subtexto mora
-                doc.setTextColor(120,83,0); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
-                doc.text(diasAtr+'d · '+tasaMoraPDF+'%/mes  c/mora: $'+Utils.fmt(item.saldoItem+interesItem), W-14, y+9.5, {align:'right'});
+                doc.setTextColor(251,191,36); doc.setFontSize(7); doc.setFont('helvetica','bold');
+                doc.text('+$'+Utils.fmt(interesItem), W-35, y+5.5, {align:'right'});
+                if (filH > 9) {
+                    doc.setTextColor(120,83,0); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
+                    doc.text(diasAtr+'d sin pago · +10%', W-35, y+9.5, {align:'right'});
+                }
             } else {
-                doc.setTextColor(71,85,105); doc.setFontSize(7);
-                doc.text('—', W-14, y+5.5, {align:'right'});
+                doc.setTextColor(100,116,139); doc.setFontSize(7); doc.setFont('helvetica','normal');
+                doc.text('—', W-35, y+5.5, {align:'right'});
+            }
+
+            // DEBE (saldo + mora si aplica)
+            const debeTotal = item.saldoItem + interesItem;
+            doc.setTextColor(248,113,113); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+            doc.text('$'+Utils.fmt(debeTotal), W-14, y+5.5, {align:'right'});
+            if (tieneMora && filH > 9) {
+                doc.setTextColor(200,50,50); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
+                doc.text('c/mora', W-14, y+9.5, {align:'right'});
             }
 
             y += filH;
@@ -8565,13 +8614,17 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         function confirmarEliminarIngNeg() {
             if (!ingNegAccionId || !ingNegAccionTipo) return;
             const esIng = ingNegAccionTipo === 'ingresosNegocio';
+            const db = esIng ? _sheetIngresosNegocio : _sheetEgresosNegocio;
+            // Obtener el idSheet real para mandar al backend
+            const reg = db.find(x => x.id === ingNegAccionId);
+            const idParaSheet = (reg && reg.idSheet) ? reg.idSheet : ingNegAccionId;
             if (esIng) {
                 _sheetIngresosNegocio = _sheetIngresosNegocio.filter(x => x.id !== ingNegAccionId);
-                eliminarEnSheet('ingneg', ingNegAccionId);
+                eliminarEnSheet('ingreso_negocio', idParaSheet);
                 renderIngNeg('ingresosNegocio');
             } else {
                 _sheetEgresosNegocio = _sheetEgresosNegocio.filter(x => x.id !== ingNegAccionId);
-                eliminarEnSheet('egrneg', ingNegAccionId);
+                eliminarEnSheet('egreso_negocio', idParaSheet);
                 renderIngNeg('egresosNegocio');
             }
             toggleModal('modalEliminarIngNeg', false);
@@ -10332,6 +10385,9 @@ function eliminarItemCompra(itemId){
         return;
     }
 
+    // Forzar recálculo del flete distribuido antes de armar el payload
+    calcularCompra();
+
     const proveedor = document.getElementById('inputCompraProveedor').value.trim() || 'Sin proveedor';
     const efectivo  = parseFloat(document.getElementById('inputCompraEfectivo').value) || 0;
     const flete     = parseFloat(document.getElementById('inputCompraFlete')?.value) || 0;
@@ -10390,15 +10446,19 @@ const fecha =
 
 const idCompraLocal = 'C-' + Date.now();
 
+// Crédito global = total - efectivo (con flete incluido)
+const _creditoSnapshot = Math.max(0, _totalSnapshot - _efectivoSnapshot);
+
 const productosPayload = _carritoSnapshot.map(c => {
     const prod = _sheetProductos.find(p => p.id === c.id) || {};
     const costoFinal    = c.costoModificado ? c.costo : (prod.costo || c.costo || 0);
     const subItem       = Math.round((c.cantidad || 0) * costoFinal * 100) / 100;
     const fleteProd     = c._fletePorItem || 0;
     const pagoTotal     = Math.round((subItem + fleteProd) * 100) / 100;
+    // Distribuir efectivo Y crédito por proporción del pagoTotal de cada ítem
     const proporcion    = _totalSnapshot > 0 ? pagoTotal / _totalSnapshot : 0;
     const pagoEfectivo  = Math.round(_efectivoSnapshot * proporcion * 100) / 100;
-    const pagoCredito   = Math.round(Math.max(0, pagoTotal - pagoEfectivo) * 100) / 100;
+    const pagoCredito   = Math.round(_creditoSnapshot  * proporcion * 100) / 100;
     return {
         nombre:       c.nombre,
         cantidad:     c.cantidad,
@@ -13832,8 +13892,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxcGETSN6msNDqry4niA_Jjf22z8lkUw4Ysh0jlSeaH-eFs5neZ6aAtpStFde8cZewM/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxcGETSN6msNDqry4niA_Jjf22z8lkUw4Ysh0jlSeaH-eFs5neZ6aAtpStFde8cZewM/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxtJ5jkm_AaSrfkbJmqBH9gc5GtJVxXzEENm1zWW6LbiDhq8NXhG20ZhL_g9hnDcVDl/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxtJ5jkm_AaSrfkbJmqBH9gc5GtJVxXzEENm1zWW6LbiDhq8NXhG20ZhL_g9hnDcVDl/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -20143,7 +20203,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ── Cache en memoria (se sincroniza con Firebase) ──
   var _imgsCache = null;
-  var IMGBB_KEY_CI = '0ee065ced332ac96486ee8e8daee84ae';
+  // ImgBB reemplazado por Google Drive
 
   function _fbUrl(){ return localStorage.getItem('natanael_firebase_url')||''; }
 
@@ -20189,11 +20249,11 @@ document.addEventListener('DOMContentLoaded', function () {
       cv.getContext('2d').drawImage(img,0,0,w,h);
       var comp=cv.toDataURL('image/jpeg',0.82);
       var base64=comp.split(',')[1];
-      var fd=new FormData(); fd.append('image',base64);
-      fetch('https://api.imgbb.com/1/upload?key='+IMGBB_KEY_CI,{method:'POST',body:fd})
+      var gasUrl=typeof SHEETS_URL!=='undefined'?SHEETS_URL:SHEETS_URL2;
+      fetch(gasUrl,{method:'POST',body:JSON.stringify({tipo:'subir_imagen',base64:base64,mimeType:'image/jpeg',nombre:'cat_'+Date.now()+'.jpg'})})
         .then(function(r){return r.json();})
         .then(function(res){
-          if(res.success) callback(res.data.url);
+          if(res.ok&&res.url) callback(res.url);
           else callback(comp);
         }).catch(function(){ callback(comp); });
     };
