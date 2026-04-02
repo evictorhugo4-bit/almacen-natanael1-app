@@ -7162,37 +7162,18 @@ return;
                             // Interés por este ítem
                             const interesItem = !pagado && saldoItem > 0 ? calcularInteresMora(saldoItem, fechaVenta) : 0;
                             const totalConInt  = saldoItem + interesItem;
-                            const debe = totalConInt; // saldo + 10% si aplica
                             return `<div class="py-1.5 border-t border-slate-800">
-                                <div class="flex justify-between items-start gap-2">
+                                <div class="flex justify-between items-center gap-2">
                                     <span class="text-[10px] font-bold ${pagado ? 'text-emerald-400 line-through' : 'text-slate-300'} flex-1 truncate">📦 ${Utils.escHtml(nomProd)}</span>
                                     <div class="flex items-center gap-1.5 shrink-0">
-                                        ${!pagado && saldoItem > 0 ? `
-                                        <div class="flex gap-1.5 items-center">
-                                            <div class="text-right">
-                                                <span class="text-[8px] text-slate-500 font-bold uppercase block">Precio</span>
-                                                <span class="text-[10px] font-mono text-slate-400">$${Utils.fmt(saldoItem)}</span>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="text-[8px] font-bold uppercase block" style="color:${interesItem>0?'#eab308':'#475569'}">+10%</span>
-                                                <span class="text-[10px] font-mono" style="color:${interesItem>0?'#facc15':'#475569'}">${interesItem>0?'+$'+Utils.fmt(interesItem):'—'}</span>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="text-[8px] text-red-400 font-bold uppercase block">Debe</span>
-                                                <span class="text-[11px] font-black font-mono text-red-400">$${Utils.fmt(debe)}</span>
-                                            </div>
-                                        </div>` : `<span style="padding:3px 8px;background:#052e16;color:#4ade80;border-radius:6px;font-size:11px;font-weight:900;">✅</span>`}
+                                        <span class="text-[11px] font-mono ${pagado ? 'text-emerald-400' : 'text-slate-400'}">$${Utils.fmt(saldoItem > 0 ? saldoItem : subTotal)}</span>
                                         ${saldoItem > 0
                                             ? `<button onclick="abrirPagoDesdeVenta('${v.id || ''}', '${c.id}', '${nomProd.replace(/'/g,"\\'")}',${subTotal})"
                                                 style="padding:3px 8px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:12px;font-weight:900;line-height:1;"
                                                 title="Registrar pago">💳</button>`
-                                            : ''}
+                                            : `<span style="padding:3px 8px;background:#052e16;color:#4ade80;border-radius:6px;font-size:11px;font-weight:900;">✅</span>`}
                                     </div>
                                 </div>
-                                ${interesItem > 0 ? `<div style="background:#78350f22;border:1px solid #f59e0b33;border-radius:6px;padding:2px 7px;margin-top:3px;display:flex;justify-content:space-between;align-items:center;">
-                                    <span style="font-size:8px;color:#d97706;font-weight:700;">⏱ ${diasDeuda} días sin pago · +10% mora</span>
-                                    <span style="font-size:9px;font-weight:900;color:#fbbf24;font-family:monospace;">TOTAL: $${Utils.fmt(debe)}</span>
-                                </div>` : ''}
                             </div>`;
                         }).join('');
                         return `<div class="bg-slate-900/50 rounded-xl border border-red-800 overflow-hidden mb-2">
@@ -7987,19 +7968,12 @@ clienteDetalleId = null;
 
     // Calcular total intereses para el resumen
     const tasaMoraPDF = parseFloat(localStorage.getItem('natanael_tasa_mora') || '5');
-    let totalIntereses = 0;
-    ventasPendientes.forEach(v => {
-        v.items.forEach(item => {
-            totalIntereses += calcularInteresMora(item.saldoItem, v.fechaISO || v.fechaLocal);
-        });
-    });
-    totalIntereses = Math.round(totalIntereses * 100) / 100;
 
     const totalDeuda = ventasPendientes.reduce((s,v)=> s+v.deuda, 0);
 
     // ───────── CAJA AZUL TOTAL ─────────
     doc.setFillColor(15,23,42);
-    doc.roundedRect(10, y, W-20, totalIntereses > 0 ? 36 : 28, 4, 4, 'F');
+    doc.roundedRect(10, y, W-20, 28, 4, 4, 'F');
 
     doc.setTextColor(147,197,253);
     doc.setFontSize(8);
@@ -8011,14 +7985,9 @@ clienteDetalleId = null;
     doc.setFont('helvetica','bold');
     doc.text('$'+Utils.fmt(totalDeuda), 15, y+22);
 
-    if (totalIntereses > 0) {
-        doc.setTextColor(251,191,36);
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica','bold');
-        doc.text('+ $'+Utils.fmt(totalIntereses)+' mora +10% (+15 días)  →  TOTAL CON MORA: $'+Utils.fmt(totalDeuda+totalIntereses), 15, y+31);
-    }
 
-    y += totalIntereses > 0 ? 48 : 40;
+
+    y += 40;
 
     // ───────── TITULO LISTADO ─────────
     doc.setTextColor(96,165,250);
@@ -8032,11 +8001,10 @@ clienteDetalleId = null;
     doc.setFillColor(8, 15, 35);
     doc.rect(10, y-2, W-20, 8, 'F');
     doc.setTextColor(100,116,139); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
-    doc.text('FECHA',      15,   y+3.5);
-    doc.text('PRODUCTO',   48,   y+3.5);
-    doc.text('PRECIO',     W-62, y+3.5, {align:'right'});
-    doc.text('%+15 DÍAS',  W-35, y+3.5, {align:'right'});
-    doc.text('DEBE',       W-14, y+3.5, {align:'right'});
+    doc.text('FECHA',    15,   y+3.5);
+    doc.text('PRODUCTO', 48,   y+3.5);
+    doc.text('PRECIO',   W-35, y+3.5, {align:'right'});
+    doc.text('DEBE',     W-14, y+3.5, {align:'right'});
     y += 9;
 
     let rowIdx = 0;
@@ -8044,16 +8012,7 @@ clienteDetalleId = null;
         v.items.forEach((item, iIdx) => {
             if (y > 265) { doc.addPage(); y = 15; }
 
-            const interesItem = calcularInteresMora(item.saldoItem, v.fechaISO || v.fechaLocal);
-            console.log('[PDF-MORA-ROW] producto=', item.nombre, '| saldoItem=', item.saldoItem, '| fechaISO=', v.fechaISO, '| fechaLocal=', v.fechaLocal, '| interesItem=', interesItem);
-            const _fStr = String(v.fechaLocal || v.fechaISO || '').trim();
-            const _mDMY2 = _fStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
-            const _mISO2 = _fStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            const _fV = _mDMY2 ? new Date(+_mDMY2[3],+_mDMY2[2]-1,+_mDMY2[1]) : (_mISO2 ? new Date(+_mISO2[1],+_mISO2[2]-1,+_mISO2[3]) : new Date(_fStr));
-            const _hoyD = new Date(); _hoyD.setHours(0,0,0,0); _fV.setHours(0,0,0,0);
-            const diasAtr = Math.floor((_hoyD - _fV) / (1000*60*60*24));
-            const tieneMora = interesItem > 0;
-            const filH = tieneMora ? 12 : 9;
+            const filH = 9;
 
             doc.setFillColor(rowIdx%2===0 ? 10 : 18, rowIdx%2===0 ? 25 : 35, rowIdx%2===0 ? 55 : 70);
             doc.rect(10, y-1, W-20, filH, 'F');
@@ -8067,31 +8026,13 @@ clienteDetalleId = null;
             const nomProd = (item.cantidad > 1 ? item.cantidad+'x ' : '') + String(item.nombre||'-');
             doc.text(nomProd.length > 35 ? nomProd.substring(0,34)+'…' : nomProd, 48, y+5.5);
 
-            // PRECIO original
+            // PRECIO
             doc.setTextColor(180,180,180); doc.setFontSize(7); doc.setFont('helvetica','normal');
-            doc.text('$'+Utils.fmt(item.saldoItem), W-62, y+5.5, {align:'right'});
+            doc.text('$'+Utils.fmt(item.saldoItem), W-35, y+5.5, {align:'right'});
 
-            // %+15 DÍAS (mora 10%)
-            if (tieneMora) {
-                doc.setTextColor(251,191,36); doc.setFontSize(7); doc.setFont('helvetica','bold');
-                doc.text('+$'+Utils.fmt(interesItem), W-35, y+5.5, {align:'right'});
-                if (filH > 9) {
-                    doc.setTextColor(120,83,0); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
-                    doc.text(diasAtr+'d sin pago · +10%', W-35, y+9.5, {align:'right'});
-                }
-            } else {
-                doc.setTextColor(100,116,139); doc.setFontSize(7); doc.setFont('helvetica','normal');
-                doc.text('—', W-35, y+5.5, {align:'right'});
-            }
-
-            // DEBE (saldo + mora si aplica)
-            const debeTotal = item.saldoItem + interesItem;
+            // DEBE
             doc.setTextColor(248,113,113); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-            doc.text('$'+Utils.fmt(debeTotal), W-14, y+5.5, {align:'right'});
-            if (tieneMora && filH > 9) {
-                doc.setTextColor(200,50,50); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
-                doc.text('c/mora', W-14, y+9.5, {align:'right'});
-            }
+            doc.text('$'+Utils.fmt(item.saldoItem), W-14, y+5.5, {align:'right'});
 
             y += filH;
             rowIdx++;
