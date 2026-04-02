@@ -8541,7 +8541,9 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         function eliminarIngNeg(tipo, id) {
             ingNegAccionId = id; ingNegAccionTipo = tipo;
             const db = tipo === 'ingresosNegocio' ? _sheetIngresosNegocio : _sheetEgresosNegocio;
-            const r = db.find(x => x.id === id); if (!r) return;
+            const r = db.find(x => x.id === id || x.idSheet === id || String(x.id).trim() === String(id).trim());
+            if (!r) { mostrarToast('Registro no encontrado', 'error'); return; }
+            ingNegAccionId = r.id; // usar el id real del objeto
             document.getElementById('descEliminarIngNeg').textContent =
                 `¿Eliminar "${r.cliente||r.proveedor||''}" · $${Utils.fmt(r.total||0)}?`;
             toggleModal('modalEliminarIngNeg', true);
@@ -8551,15 +8553,16 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             if (!ingNegAccionId || !ingNegAccionTipo) return;
             const esIng = ingNegAccionTipo === 'ingresosNegocio';
             const db = esIng ? _sheetIngresosNegocio : _sheetEgresosNegocio;
-            // Obtener el idSheet real para mandar al backend
-            const reg = db.find(x => x.id === ingNegAccionId);
-            const idParaSheet = (reg && reg.idSheet) ? reg.idSheet : ingNegAccionId;
+            const reg = db.find(x => x.id === ingNegAccionId || x.idSheet === ingNegAccionId || String(x.id).trim() === String(ingNegAccionId).trim());
+            if (!reg) { mostrarToast('Registro no encontrado', 'error'); toggleModal('modalEliminarIngNeg', false); return; }
+            const idReal = reg.id;
+            const idParaSheet = reg.idSheet ? reg.idSheet : ingNegAccionId;
             if (esIng) {
-                _sheetIngresosNegocio = _sheetIngresosNegocio.filter(x => x.id !== ingNegAccionId);
+                _sheetIngresosNegocio = _sheetIngresosNegocio.filter(x => x.id !== idReal);
                 eliminarEnSheet('ingreso_negocio', idParaSheet);
                 renderIngNeg('ingresosNegocio');
             } else {
-                _sheetEgresosNegocio = _sheetEgresosNegocio.filter(x => x.id !== ingNegAccionId);
+                _sheetEgresosNegocio = _sheetEgresosNegocio.filter(x => x.id !== idReal);
                 eliminarEnSheet('egreso_negocio', idParaSheet);
                 renderIngNeg('egresosNegocio');
             }
