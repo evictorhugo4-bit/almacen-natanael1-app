@@ -432,14 +432,11 @@ top:0;
 left:0;
 width:100vw;
 height:100vh;
-display:flex !important;
+display:none;
 align-items:center;
 justify-content:center;
 background:rgba(0,0,0,0.8);
 z-index:999999999;
-visibility:hidden;
-opacity:0;
-pointer-events:none;
 }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
@@ -449,25 +446,20 @@ pointer-events:none;
 
         .modal-overlay {
     background: rgba(2, 6, 23, 0.95);
-    display: flex !important;
+    display: none;
     position: fixed;
     inset: 0;
     z-index: 99999999;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
 }
 
 .modal-overlay.modal-active {
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
+    display: flex;
 }
 
-        .modal-active { visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; animation: fadeIn 0.2s ease; }
+        .modal-active { display: flex !important; animation: fadeIn 0.2s ease; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -6802,7 +6794,24 @@ console.log("CLIENTE COMPLETO:", c);
             // ── KPIs globales ──────────────────────────────────────
             let _kpiDebe = 0, _kpiCapital = 0, _kpiGanancia = 0;
             datosOrdenados.forEach(c => {
-                _kpiDebe += getDeudaCliente(c);
+                // Solo deuda de compras (sin préstamos) para el KPI "Total Debe"
+                const idCl  = String(c.idSheet || c.id || '').trim();
+                const nomCl = String(c.nombre  || '').trim().toUpperCase();
+                const ventasCl = todasLasVentas().filter(v => {
+                    const vId  = String(v.idCliente || '').trim();
+                    const vNom = String(v.cliente   || '').trim().toUpperCase();
+                    return vId ? (vId === idCl) : (nomCl && vNom === nomCl);
+                });
+                const soloCredito = ventasCl.reduce((s, v) => {
+                    const credito = parseFloat(v.deuda || 0);
+                    if (credito <= 0) return s;
+                    const idVenta = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
+                    const pagadoV = _pagoVentasSheet
+                        .filter(p => idVenta && (String(p.idVenta||'').trim()===idVenta || String(p.IDVENTAS||'').trim()===idVenta))
+                        .reduce((a, p) => a + parseFloat(p.monto||p.MONTO||0), 0);
+                    return s + Math.max(0, credito - pagadoV);
+                }, 0);
+                _kpiDebe += soloCredito;
                 // Capital y Ganancia usando exactamente los mismos saldos que getDeudaCliente
                 getSaldosVentasCliente(c).forEach(({ v, saldo }) => {
                     const items = (v.items && v.items.length > 0) ? v.items : [{nombre:'—',cantidad:1,precio:v.total,costo:0}];
