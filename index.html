@@ -16716,18 +16716,7 @@ console.log("FILTRADAS:", filtradas.length);
                     else if (_resumenFiltro === 'credito') _ingPropios += Number(r.credito||0);
                     else                                   _ingPropios += Number(r.total||0);
                 });
-                // Efectivo: sumar pagos cobrados por IDINGRESOS con SC=INGRESOS PROPIOS
-                if (_resumenFiltro === 'efectivo') {
-                    (_sheetPagoIngresos||[]).forEach(p => {
-                        let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                        if (pid && !_idsIngEfSheet.has(pid)) pid = _idIngLocalToSheet[pid] || pid;
-                        if (!pid || !_idsIngEfSheet.has(pid)) return;
-                        const rOrig = (_sheetIngresos||[]).find(r => String(r.idSheet||'').trim() === pid || String(r.id||'').trim() === pid);
-                        if (!rOrig || (rOrig.proveedor||rOrig.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
-                        if (!enRango(_fnumPago(p))) return;
-                        _ingPropios += Number(p.MONTO||p.monto||0);
-                    });
-                }
+
 
                 // ── _ingAjenos: SC = INGRESOS AJENOS ──
                 _ingAjenos = 0;
@@ -16738,17 +16727,7 @@ console.log("FILTRADAS:", filtradas.length);
                     else if (_resumenFiltro === 'credito') _ingAjenos += Number(r.credito||0);
                     else                                   _ingAjenos += Number(r.total||0);
                 });
-                if (_resumenFiltro === 'efectivo') {
-                    (_sheetPagoIngresos||[]).forEach(p => {
-                        let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                        if (pid && !_idsIngEfSheet.has(pid)) pid = _idIngLocalToSheet[pid] || pid;
-                        if (!pid || !_idsIngEfSheet.has(pid)) return;
-                        const rOrig = (_sheetIngresos||[]).find(r => String(r.idSheet||'').trim() === pid || String(r.id||'').trim() === pid);
-                        if (!rOrig || (rOrig.proveedor||rOrig.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
-                        if (!enRango(_fnumPago(p))) return;
-                        _ingAjenos += Number(p.MONTO||p.monto||0);
-                    });
-                }
+
 
                 // ── _egrPropios: SC = EGRESOS PROPIOS ──
                 let _egrPropios = 0;
@@ -16759,18 +16738,6 @@ console.log("FILTRADAS:", filtradas.length);
                     else if (_resumenFiltro === 'credito') _egrPropios += Number(r.credito||0);
                     else                                   _egrPropios += Number(r.total||0);
                 });
-                if (_resumenFiltro === 'efectivo') {
-                    (_sheetPagoEgresos||[]).forEach(p => {
-                        let pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                        if (pid && !_idsEgrEfSheet.has(pid)) pid = _idEgrLocalToSheet[pid] || pid;
-                        if (!pid || !_idsEgrEfSheet.has(pid)) return;
-                        const rOrig = (_sheetEgresos||[]).find(r => String(r.idSheet||'').trim() === pid || String(r.id||'').trim() === pid);
-                        if (!rOrig || (rOrig.proveedor||rOrig.supercategoria||'').toUpperCase().trim() !== 'EGRESOS PROPIOS') return;
-                        if (!enRango(_fnumPago(p))) return;
-                        _egrPropios += Number(p.monto||p.MONTO||0);
-                    });
-                }
-
                 // ── _egrAjenos: SC = EGRESOS AJENOS ──
                 _egrAjenos = 0;
                 (_sheetEgresos||[]).forEach(r => {
@@ -16780,17 +16747,7 @@ console.log("FILTRADAS:", filtradas.length);
                     else if (_resumenFiltro === 'credito') _egrAjenos += Number(r.credito||0);
                     else                                   _egrAjenos += Number(r.total||0);
                 });
-                if (_resumenFiltro === 'efectivo') {
-                    (_sheetPagoEgresos||[]).forEach(p => {
-                        let pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                        if (pid && !_idsEgrEfSheet.has(pid)) pid = _idEgrLocalToSheet[pid] || pid;
-                        if (!pid || !_idsEgrEfSheet.has(pid)) return;
-                        const rOrig = (_sheetEgresos||[]).find(r => String(r.idSheet||'').trim() === pid || String(r.id||'').trim() === pid);
-                        if (!rOrig || (rOrig.proveedor||rOrig.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
-                        if (!enRango(_fnumPago(p))) return;
-                        _egrAjenos += Number(p.monto||p.MONTO||0);
-                    });
-                }
+
 
                                 const _sfx = _resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '';
 
