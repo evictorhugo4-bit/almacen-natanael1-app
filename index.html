@@ -16733,11 +16733,14 @@ console.log("FILTRADAS:", filtradas.length);
                 let _egrPropios = 0;
                 (_sheetEgresos||[]).forEach(r => {
                     if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
-                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS PROPIOS') return;
+                    const _sc = (r.proveedor||r.supercategoria||r['SUPER CATEGORIA']||'').toUpperCase().trim();
+                    if (_sc !== 'EGRESOS PROPIOS') return;
                     if (_resumenFiltro === 'efectivo')     _egrPropios += Number(r.efectivo||0);
                     else if (_resumenFiltro === 'credito') _egrPropios += Number(r.credito||0);
-                    else                                   _egrPropios += Number(r.total||0);
+                    else                                   _egrPropios += Number(r.total||r.pagoTotal||0);
                 });
+                console.log('[_egrPropios] total:', _egrPropios, '| registros EGRESOS PROPIOS:', (_sheetEgresos||[]).filter(r=>{ const s=(r.proveedor||r.supercategoria||'').toUpperCase().trim(); return s==='EGRESOS PROPIOS'; }).length, '| total _sheetEgresos:', (_sheetEgresos||[]).length);
+                if ((_sheetEgresos||[])[0]) console.log('[_egrPropios] muestra r[0].proveedor:', (_sheetEgresos||[])[0].proveedor, '| r[0].total:', (_sheetEgresos||[])[0].total);
                 // ── _egrAjenos: SC = EGRESOS AJENOS ──
                 _egrAjenos = 0;
                 (_sheetEgresos||[]).forEach(r => {
