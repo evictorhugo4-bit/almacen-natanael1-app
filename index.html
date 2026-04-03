@@ -16748,6 +16748,13 @@ console.log("FILTRADAS:", filtradas.length);
                     else                                   _egrAjenos += Number(r.total||0);
                 });
 
+                // Guardar en window para el TOTAL GENERAL
+                window.__persIngPropios = _ingPropios;
+                window.__persIngAjenos  = _ingAjenos;
+                window.__persGanV       = _ganV;
+                window.__persEgrPropios = _egrPropios;
+                window.__persEgrAjenos  = _egrAjenos;
+
 
                                 const _sfx = _resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '';
 
@@ -17106,10 +17113,16 @@ console.log("FILTRADAS:", filtradas.length);
                         _totEnt = _vT + _ingT + _ingNT;
                         // TOTAL SALIDAS = compras + egresos + egresos negocio
                         _totSal = _cmpT + _egrT + _egrNT;
-                    } else if (_resumenCategoria === 'personal' && _resumenFiltro === 'credito') {
-                        // PERSONAL CREDITO: restar pagos cobrados/pagados del total
-                        _totEnt = Math.max(0, (window.__entPropios||0) + (window.__entAjenos||0) - (window.__totPI||0));
-                        _totSal = Math.max(0, (window.__salPropios||0) + (window.__salAjenos||0) - (window.__totPE||0));
+                    } else if (_resumenCategoria === 'personal') {
+                        // PERSONAL: Total Entradas = Ing.Propios + Ganancias + Ing.Ajenos − Pago Ingresos (cobrado)
+                        //           Total Salidas  = Egr.Propios + Egr.Ajenos − Pago Egresos (pagado)
+                        const _pI = window.__persIngPropios||0;
+                        const _pG = window.__persGanV||0;
+                        const _pA = window.__persIngAjenos||0;
+                        const _pEP = window.__persEgrPropios||0;
+                        const _pEA = window.__persEgrAjenos||0;
+                        _totEnt = Math.max(0, _pI + _pG + _pA - (window.__totPI||0));
+                        _totSal = Math.max(0, _pEP + _pEA - (window.__totPE||0));
                     } else {
                         _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
                         _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
