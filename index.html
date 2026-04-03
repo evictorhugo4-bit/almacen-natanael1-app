@@ -1757,11 +1757,11 @@ GUARDAR PRODUCTO
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
                     <!-- Tabs -->
-                    <button onclick="renderListaCat('ingresos')" id="lcTabIng"
+                    <button onclick="renderListaCat('ingresos', true)" id="lcTabIng"
                         class="px-4 py-2 rounded-xl font-black text-xs uppercase border-2 border-emerald-500 bg-emerald-500/20 text-emerald-400 transition-all">
                         📈 Ingresos
                     </button>
-                    <button onclick="renderListaCat('egresos')" id="lcTabEgr"
+                    <button onclick="renderListaCat('egresos', true)" id="lcTabEgr"
                         class="px-4 py-2 rounded-xl font-black text-xs uppercase border-2 border-slate-700 bg-slate-900 text-slate-400 transition-all">
                         📉 Gastos
                     </button>
@@ -12720,36 +12720,35 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
     }
 
     // Imagen individual del registro
-    if (window._editIngEgrImgData !== null && window._editIngEgrImgData !== undefined) {
-        if (window._editIngEgrImgData === '') {
-            r.imagen = '';
-        }
-        // Si hay nueva imagen (base64), subir y luego guardar
-        if (window._editIngEgrImgData && window._editIngEgrImgData.startsWith('data:')) {
-            subirFotoImgBB(window._editIngEgrImgData, function(url) {
-                if (!url) return;
-                r.imagen = url;
-                fetchSheets({ method:'POST', body: JSON.stringify({
-                    tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
-                    id: r.idSheet || r.id,
-                    proveedor: r.proveedor,
-                    concepto: r.concepto,
-                    imagen: url
-                })});
-                renderIngEgr(ingEgrTipo);
-            });
-        }
+    const _tieneNuevaImg = window._editIngEgrImgData && window._editIngEgrImgData.startsWith && window._editIngEgrImgData.startsWith('data:');
+    if (window._editIngEgrImgData === '') {
+        r.imagen = '';
     }
-
-    // Solo actualizar proveedor y concepto — NO sobreescribir montos
-    const payload = {
-        tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
-        id: r.idSheet || r.id,
-        proveedor: r.proveedor,
-        concepto: r.concepto,
-        imagen: r.imagen || ''
-    };
-    editarEnSheet(payload);
+    if (_tieneNuevaImg) {
+        // Subir imagen primero, luego guardar TODO junto
+        subirFotoImgBB(window._editIngEgrImgData, function(url) {
+            if (!url) return;
+            r.imagen = url;
+            editarEnSheet({
+                tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
+                id: r.idSheet || r.id,
+                proveedor: r.proveedor,
+                concepto: r.concepto,
+                imagen: url
+            });
+            renderIngEgr(ingEgrTipo);
+        });
+    } else {
+        // Sin imagen nueva: guardar inmediatamente
+        const payload = {
+            tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
+            id: r.idSheet || r.id,
+            proveedor: r.proveedor,
+            concepto: r.concepto,
+            imagen: r.imagen || ''
+        };
+        editarEnSheet(payload);
+    }
 
     // Ticket: enviar por separado usando el handler específico (solo egresos)
     if (ingEgrTipo === 'egreso' && window._editIngEgrTicketData !== undefined && window._editIngEgrTicketData !== null) {
@@ -15239,7 +15238,7 @@ if (indicator) indicator.classList.remove('hidden');
                 // Refrescar vista si está visible
                 var _vistaLc = document.getElementById('vistaListaCat');
                 if (_vistaLc && !_vistaLc.classList.contains('hidden')) {
-                    if (typeof renderListaCat === 'function') renderListaCat(window._listaCatTab || 'ingresos');
+                    if (typeof renderListaCat === 'function') renderListaCat(window._listaCatTab || 'ingresos', false);
                 }
                 // Recalcular caja ahora que tenemos todos los datos (egresos, pagos, etc.)
                 actualizarResumenCaja();
@@ -20932,10 +20931,13 @@ function _lcCargarDesdeStorage() {
     } catch(e) {}
 }
 
-function renderListaCat(tab) {
+function renderListaCat(tab, clearSearch) {
     if (tab) {
         window._listaCatTab = tab;
-        var _b = document.getElementById('lcBuscarInput'); if (_b) _b.value = '';
+        // Solo limpiar búsqueda si se pide explícitamente (cambio de tab manual)
+        if (clearSearch) {
+            var _b = document.getElementById('lcBuscarInput'); if (_b) _b.value = '';
+        }
     }
     _lcCargarDesdeStorage();
     var esIng  = window._listaCatTab === 'ingresos';
@@ -21147,8 +21149,15 @@ function lcImgUpload(input, idx) {
 
 function lcImgGuardar(item, url) {
     item.imagen = url;
+    // Guardar en localStorage inmediatamente
+    var hoja = window._listaCatTab || 'egresos';
+    if (hoja === 'ingresos') {
+        try { localStorage.setItem('natanael_lista_ingresos', JSON.stringify(window._listaIngresos||[])); } catch(e) {}
+    } else {
+        try { localStorage.setItem('natanael_lista_egresos', JSON.stringify(window._listaEgresos||[])); } catch(e) {}
+    }
     if (typeof fetchSheets === 'function')
-        fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'actualizar_lista_cat', hoja: window._listaCatTab, id: item.id, nombre: item.nombre, monto: item.monto || 0, imagen: url }) });
+        fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'actualizar_lista_cat', hoja: hoja, id: item.id, nombre: item.nombre, monto: item.monto || 0, imagen: url }) });
     if (typeof mostrarToast === 'function') mostrarToast('✓ Imagen guardada');
     renderListaCat();
 }
