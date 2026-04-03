@@ -13957,8 +13957,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbx8jpb6reScqjTkcmN9sIcriqgssN5LZiA-uU89g4AVPGLzRz3Ed3H6OtO2GCMaUopA/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbx8jpb6reScqjTkcmN9sIcriqgssN5LZiA-uU89g4AVPGLzRz3Ed3H6OtO2GCMaUopA/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbw1cfPmEpYZzIDzwvsvNpHc7vt7yA8tfq1gkdUpsx9tYMTkWA5-MMmKVqtVttTLysqT/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbw1cfPmEpYZzIDzwvsvNpHc7vt7yA8tfq1gkdUpsx9tYMTkWA5-MMmKVqtVttTLysqT/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -17116,17 +17116,8 @@ console.log("FILTRADAS:", filtradas.length);
                         _totEnt = _vT + _ingT + _ingNT;
                         // TOTAL SALIDAS = compras + egresos + egresos negocio
                         _totSal = _cmpT + _egrT + _egrNT;
-                    } else if (_resumenCategoria === 'personal') {
-                        // PERSONAL: Total Entradas = Ing.Propios + Ganancias + Ing.Ajenos − Pago Ingresos (cobrado)
-                        //           Total Salidas  = Egr.Propios + Egr.Ajenos − Pago Egresos (pagado)
-                        const _pI = window.__persIngPropios||0;
-                        const _pG = window.__persGanV||0;
-                        const _pA = window.__persIngAjenos||0;
-                        const _pEP = window.__persEgrPropios||0;
-                        const _pEA = window.__persEgrAjenos||0;
-                        _totEnt = Math.max(0, _pI + _pG + _pA - (window.__totPI||0));
-                        _totSal = Math.max(0, _pEP + _pEA - (window.__totPE||0));
                     } else {
+                        // PERSONAL y NEGOCIO: usar __entPropios/__salPropios + __entAjenos/__salAjenos
                         _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
                         _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
                     }
