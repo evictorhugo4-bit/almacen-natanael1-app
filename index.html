@@ -1986,7 +1986,7 @@ GUARDAR PRODUCTO
                 <!-- Tabs -->
                 <div class="flex gap-2 flex-wrap">
                     <button id="tabBtnHojaRuta" onclick="switchStatsTab('hojaRuta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🗺️ Hoja de Ruta</button>
-                    <button id="tabBtnResumen" onclick="switchStatsTab('resumen')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Resumen</button>
+                    <button id="tabBtnResumen" onclick="switchStatsTab('resumen')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">👤 Estado Personal</button>
                     <button id="tabBtnProveedor" onclick="switchStatsTab('proveedor')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Proveedor</button>
                     <button id="tabBtnCaja" onclick="switchStatsTab('caja')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💰 Caja</button>
                     <button id="tabBtnVentas" onclick="switchStatsTab('ventas')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-emerald-500 text-black btn-action">Ventas</button>
@@ -2114,9 +2114,19 @@ GUARDAR PRODUCTO
             </div>
         </div>
 
-        <div id="tabResumen" class="hidden space-y-5">
-            <!-- Filtros -->
-            <div class="flex flex-wrap gap-2 items-end">
+        <div id="tabResumen" class="hidden space-y-4">
+
+            <!-- HEADER -->
+            <div style="display:flex;align-items:center;gap:10px;padding:2px 0 6px;">
+                <span style="font-size:20px;">👤</span>
+                <div>
+                    <h3 style="font-size:14px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0;letter-spacing:.05em;">Estado Personal</h3>
+                    <p style="font-size:9px;color:#64748b;font-weight:700;margin:0;text-transform:uppercase;">Ingresos · Egresos · Balances</p>
+                </div>
+            </div>
+
+            <!-- FILTROS -->
+            <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
                     <label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label>
                     <input type="datetime-local" id="resumenDesde" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
@@ -2131,29 +2141,15 @@ GUARDAR PRODUCTO
                 <button onclick="resumenSetPeriodo(30)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">30D</button>
                 <button onclick="resumenSetPeriodo(90)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">90D</button>
                 <div class="flex gap-1 ml-2 border-l border-slate-700 pl-2">
-                    <button id="resumenFiltroBtn_total"    onclick="_resumenFiltro='total';   renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-amber-500 text-black">Total</button>
-                    <button id="resumenFiltroBtn_efectivo" onclick="_resumenFiltro='efectivo';renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Efectivo</button>
-                    <button id="resumenFiltroBtn_credito"  onclick="_resumenFiltro='credito'; renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Crédito</button>
-                </div>
-                <div class="flex gap-1 ml-2 border-l border-slate-700 pl-2">
-                    <button id="resumenCatBtn_total"    onclick="_resumenCategoria='total';   renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-white text-black">Total</button>
-                    <button id="resumenCatBtn_negocio"  onclick="_resumenCategoria='negocio'; renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Negocio</button>
-                    <button id="resumenCatBtn_personal" onclick="_resumenCategoria='personal';renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Personal</button>
+                    <button id="epBtn_total"    onclick="_epFiltro='total';   renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-amber-500 text-black">Total</button>
+                    <button id="epBtn_efectivo" onclick="_epFiltro='efectivo';renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Efectivo</button>
+                    <button id="epBtn_credito"  onclick="_epFiltro='credito'; renderResumen()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300 hover:bg-slate-600">Crédito</button>
                 </div>
             </div>
-            <!-- KPIs grilla -->
-            <div id="resumenKpis" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-            <!-- Ingresos y Egresos por categoría (personal) - dos columnas -->
-            <div id="resumenCatWrapper" class="hidden" style="display:none;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div id="resumenIngresosCat"></div>
-                    <div id="resumenEgresosCat"></div>
-                </div>
-            </div>
-            <!-- Tabla detalle -->
-            <div id="resumenTabla" class="glass-card rounded-2xl p-4 border border-slate-700 overflow-x-auto"></div>
-        </div>
 
+            <!-- CONTENIDO DINÁMICO -->
+            <div id="epContenido"></div>
+        </div>
 
         <!-- TAB TARJETA DE CRÉDITO -->
         <div id="tabTarjeta" class="hidden space-y-4">
@@ -16289,1340 +16285,321 @@ console.log("FILTRADAS:", filtradas.length);
             console.log('=== FIN RESUMEN DEBUG ===');
         }
 
+        // ── ESTADO PERSONAL ─────────────────────────────────────────────────────
+        let _epFiltro = 'total';
+
         function renderResumen() {
+            // ── Leer rango de fechas ──
             const desdeVal = document.getElementById('resumenDesde').value;
             const hastaVal = document.getElementById('resumenHasta').value;
             const fdNum = desdeVal ? parseFechaNum(desdeVal) : null;
             const fhNum = hastaVal ? parseFechaNum(hastaVal) : null;
+            const enRango = fn => { if(!fn) return false; if(fdNum&&fn<fdNum) return false; if(fhNum&&fn>fhNum) return false; return true; };
+            const fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
 
-            const enRango = fnum => {
-                if (!fnum) return false;
-                if (fdNum && fnum < fdNum) return false;
-                if (fhNum && fnum > fhNum) return false;
-                return true;
-            };
-
-            // ── Ventas ──────────────────────────────────────────────
-            // Sumamos PAGO EFECTIVO / PAGO CREDITO / PAGO TOTAL directo desde
-            // las filas crudas del sheet, una sola vez por IDVENTAS (primera fila).
-            // Esto evita el problema de multiplicación por cantidad de ítems.
-            const ventasCreditoPagadas = new Set();
-            (_pagoVentasSheet||[]).forEach(p => {
-                const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                if (idV) ventasCreditoPagadas.add(idV);
-            });
-
-            let vTotal=0, vEf=0, vCr=0, vGanTotal=0, vGanEf=0, vGanCr=0, vCnt=0;
-            let vGanCrTodas=0;
-            let _ganTotalSF=0, _ganEfSF=0, _ganCrSF=0;
-            const _ventasIdVistas = new Set();
-            const _debugVentas = []; // para consola
-
-            // Construir mapa de pagos cobrados por venta (monto de _pagoVentasSheet por IDVENTAS)
-            const _pagosPorVenta = {};
-            (_pagoVentasSheet||[]).forEach(p => {
-                const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                if (!idV) return;
-                const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaOrig||'');
-                if (!enRango(fnum)) return;
-                _pagosPorVenta[idV] = (_pagosPorVenta[idV]||0) + Number(p.monto||p.MONTO||0);
-            });
-
-            // Usar _sheetVentas (ya agrupadas por IDVENTAS con efectivo de primera fila)
-            const todasV = (_sheetVentas||[]);
-            todasV.forEach(v => {
-                const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                if (!enRango(fnum) || _ventasIdVistas.has(v.id)) return;
-                _ventasIdVistas.add(v.id);
-                const total = Number(v.total||0);
-                const ef    = Number(v.efectivo||0);
-                const cr    = Number(v.deuda||0);
-                const costoVenta  = (v.items||[]).reduce((s,i)=>(s + (Number(i.costo||0) * (Number(i.cantidad)||1))), 0);
-                const dineroRecup = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0), 0) || costoVenta;
-                // Clientes especiales (ERROR VENTA, CASA ERAZO) → ganancia siempre 0
-                const esClienteEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(String(v.cliente||'').toUpperCase().trim());
-                const ganBruta    = esClienteEsp ? 0 : Math.max(0, total - dineroRecup);
-                const esPagadoCr  = cr > 0 && ventasCreditoPagadas.has(String(v.id));
-                const pagosVenta  = _pagosPorVenta[String(v.id)] || 0;
-                const cobradoEf   = ef + pagosVenta;
-                const ganEfVenta  = cobradoEf > dineroRecup ? Math.min(cobradoEf - dineroRecup, ganBruta) : 0;
-                const ganCrVenta  = Math.max(0, ganBruta - ganEfVenta);
-                if (!esClienteEsp) vGanCrTodas += ganCrVenta;
-                _ganTotalSF += ganEfVenta + ganCrVenta;
-                _ganEfSF    += ganEfVenta;
-                _ganCrSF    += ganCrVenta;
-
-                if (_resumenFiltro === 'credito'  && (cr <= 0 || esPagadoCr)) return;
-                if (_resumenFiltro === 'efectivo' && ef <= 0) return;
-
-                if (_resumenFiltro === 'efectivo') {
-                    vTotal += ef; vEf += ef; vCr += cr;
-                    vGanEf += ganEfVenta; vGanTotal += ganEfVenta;
-                } else if (_resumenFiltro === 'credito') {
-                    vTotal += cr; vEf += ef; vCr += cr;
-                    vGanCr += ganCrVenta; vGanTotal += ganCrVenta;
-                } else {
-                    vTotal += total; vEf += ef; vCr += cr;
-                    vGanEf += ganEfVenta; vGanCr += ganCrVenta;
-                    vGanTotal += ganEfVenta + ganCrVenta;
-                }
-                vCnt++;
-
-                // ── DEBUG: registrar productos de esta venta ──
-                const productos = (v.items||[]).map(i => i.nombre||i.name||'(sin nombre)').join(', ') || v.cliente || '(sin detalle)';
-                _debugVentas.push({
-                    id:      v.id,
-                    fecha:   v.fechaISO||v.fecha,
-                    cliente: v.cliente||'—',
-                    productos,
-                    total:   total,
-                    ef:      ef,
-                    cr:      cr,
-                    sumado:  _resumenFiltro === 'efectivo' ? ef : _resumenFiltro === 'credito' ? cr : total,
-                    formaPago: cr > 0 ? (ef > 0 ? 'MIXTO' : 'CRÉDITO') : 'EFECTIVO'
-                });
-            });
-
-            // ── DEBUG CONSOLA ──
-            console.group('%c📊 RESUMEN VENTAS — filtro: ' + _resumenFiltro.toUpperCase(), 'color:#10b981;font-weight:900;font-size:13px;');
-            console.log('%cTotal ventas sumadas: ' + vCnt + '   |   TOTAL $' + vTotal.toFixed(2) + '   |   EF $' + vEf.toFixed(2) + '   |   CR $' + vCr.toFixed(2), 'color:#f59e0b;font-weight:700;');
-
-            // Una fila por ítem
-            const _debugRows = [];
-            _debugVentas.forEach(d => {
-                const prods = d.productos.split(', ');
-                prods.forEach((p, i) => {
-                    _debugRows.push({
-                        'ID Venta':   i === 0 ? d.id : '↑',
-                        'Fecha':      i === 0 ? d.fecha : '',
-                        'Cliente':    i === 0 ? d.cliente : '',
-                        'Producto':   p,
-                        'FormaPago':  i === 0 ? d.formaPago : '',
-                        'Total $':    i === 0 ? d.total : '',
-                        'Efectivo $': i === 0 ? d.ef : '',
-                        'Crédito $':  i === 0 ? d.cr : '',
-                        'Sumado $':   i === 0 ? d.sumado : ''
-                    });
-                });
-            });
-            console.table(_debugRows);
-
-            // Ventas EXCLUIDAS (ef=0 en el rango)
-            const _excluidasLog = [];
-            todasV.forEach(v => {
-                const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                if (!enRango(fnum) || !_ventasIdVistas.has(v.id)) {
-                    if (enRango(fnum)) {
-                        const ef2 = Number(v.efectivo||0);
-                        const cr2 = Number(v.deuda||0);
-                        _excluidasLog.push({
-                            'ID': v.id,
-                            'Fecha': v.fechaISO||v.fecha,
-                            'Cliente': v.cliente,
-                            'Productos': (v.items||[]).map(i=>i.nombre).join(', '),
-                            'Motivo excluida': _resumenFiltro==='efectivo' && ef2<=0 ? '❌ ef=0' : _resumenFiltro==='credito' && cr2<=0 ? '❌ cr=0' : '❌ otro',
-                            'Total $': Number(v.total||0),
-                            'Efectivo $': ef2,
-                            'Crédito $': cr2
-                        });
-                    }
-                }
-            });
-            if (_excluidasLog.length > 0) {
-                console.group('%c⚠️ VENTAS EXCLUIDAS del filtro (' + _excluidasLog.length + ')', 'color:#ef4444;font-weight:900;');
-                console.table(_excluidasLog);
-                console.groupEnd();
-            }
-            console.groupEnd();
-            // ── FIN DEBUG ──
-
-            // ── Función genérica para ingresos/egresos con filtro ──
-            const sumFiltrado = (arr, campoFecha, campoTotal, campoEf, campoCr, campoGan) => {
-                let total=0, ef=0, cr=0, gan=0;
-                (arr||[]).forEach(r => {
-                    const fnum = parseFechaNum(r[campoFecha]||r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    const rEf = Number(r[campoEf]||0);
-                    const rCr = Number(r[campoCr]||0);
-                    const rTotal = Number(r[campoTotal]||0);
-                    const rGan = campoGan ? Number(r[campoGan]||0) : 0;
-                    if (_resumenFiltro === 'efectivo') {
-                        if (rEf <= 0) return;
-                        total += rEf; ef += rEf; cr += rCr;
-                        if (campoGan) gan += rGan;
-                    } else if (_resumenFiltro === 'credito') {
-                        if (rCr <= 0) return;
-                        total += rCr; ef += rEf; cr += rCr;
-                        if (campoGan) gan += rGan;
-                    } else {
-                        total += rTotal; ef += rEf; cr += rCr;
-                        if (campoGan) gan += rGan;
-                    }
-                });
-                return {total, ef, cr, gan};
-            };
-
-            // ── Pago ventas: MONTO = siempre efectivo ──
-            let pvTotal=0;
-            (_pagoVentasSheet||[]).forEach(p => {
-                const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaOrig||'');
-                if (!enRango(fnum)) return;
-                if (_resumenFiltro === 'credito') return;
-                pvTotal += Number(p.monto||p.MONTO||0);
-            });
-
-            const ing    = sumFiltrado(_sheetIngresos||[],       'fechaISO','total','efectivo','credito','ganancia');
-            const ingNeg = sumFiltrado(_sheetIngresosNegocio||[], 'fechaISO','total','efectivo','credito','ganancia');
-            // Compras: el campo total en _sheetCompras puede ser 'total' o suma de items
-            const comp   = (() => {
-                let total=0,ef=0,cr=0;
-                (_sheetCompras||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    const rEf = Number(r.efectivo||r.pagoEfectivo||0);
-                    const rCr = Number(r.credito||r.pagoCredito||0);
-                    const rT  = Number(r.total||0) || rEf + rCr;
-                    if (_resumenFiltro==='efectivo') {
-                        if (rEf<=0) return;
-                        total+=rEf; ef+=rEf; cr+=rCr;
-                    } else if (_resumenFiltro==='credito') {
-                        if (rCr<=0) return;
-                        total+=rCr; ef+=rEf; cr+=rCr;
-                    } else {
-                        total+=rT; ef+=rEf; cr+=rCr;
-                    }
-                });
-                return {total,ef,cr};
-            })();
-            const egr    = sumFiltrado(_sheetEgresos||[],         'fechaISO','total','efectivo','credito');
-            const egrNeg = sumFiltrado(_sheetEgresosNegocio||[],  'fechaISO','total','efectivo','credito');
-
-            // Pagos (MONTO = siempre efectivo — son cobros/pagos de deuda)
-            const sumPago = (arr) => {
-                let t=0;
-                (arr||[]).forEach(p => {
-                    const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaISO||'');
-                    if (!enRango(fnum)) return;
-                    if (_resumenFiltro === 'credito') return;
-                    t += Number(p.monto||p.MONTO||0);
-                });
-                return t;
-            };
-            const piTotal  = sumPago(_sheetPagoIngresos||[]);
-            const pinTotal = sumPago(_sheetPagoIngNeg||[]);
-            const pcTotal  = sumPago(_sheetPagoCompras||[]);
-            const peTotal  = sumPago(_sheetPagoEgresos||[]);
-            const penTotal = sumPago(_pagoEgrNegSheet||_sheetPagoEgrNeg||[]);
-
-            // ── 12 conceptos combinados (Tabla + Pagos mismo ID) ──────────────
-            const _smp = (arr,campo,ids) => { let s=0; (arr||[]).forEach(p=>{ const pid=String(p[campo]||'').trim(); if(!pid||!ids.has(pid))return; const fn=parseFechaNum(p.fecha||p.FECHA||p.fechaISO||''); if(!enRango(fn))return; s+=Number(p.monto||p.MONTO||0); }); return s; };
-            let _pvEf=0,_pvCr=0; const _idsV=new Set(); (_sheetVentas||[]).forEach(v=>{ const fn=parseFechaNum(v.fechaISO||v.fecha||''); if(!enRango(fn))return; const id=String(v.id||'').trim(); if(id)_idsV.add(id); _pvEf+=Number(v.efectivo||0); _pvCr+=Number(v.deuda||0); });
-            const _pvP=_smp(_pagoVentasSheet,'idVenta',_idsV)+_smp(_pagoVentasSheet,'IDVENTAS',_idsV); const pagoEfVentas=_pvEf+_pvP, pagoCrVentas=Math.max(0,_pvCr-_pvP);
-            let _pcEf=0,_pcCr=0; const _idsC=new Set(); (_sheetCompras||[]).forEach(r=>{ const fn=parseFechaNum(r.fechaISO||r.fecha||''); if(!enRango(fn))return; const id=String(r.id||r.IDCOMPRAS||'').trim(); if(id)_idsC.add(id); _pcEf+=Number(r.efectivo||r.pagoEfectivo||0); _pcCr+=Number(r.credito||r.pagoCredito||0); });
-            const _pcP=_smp(_sheetPagoCompras,'IDCOMPRAS',_idsC)+_smp(_sheetPagoCompras,'idCompra',_idsC); const pagoEfCompras=_pcEf+_pcP, pagoCrCompras=Math.max(0,_pcCr-_pcP);
-            let _piEf=0,_piCr=0; const _idsI=new Set(); (_sheetIngresos||[]).forEach(r=>{ const fn=parseFechaNum(r.fechaISO||r.fecha||''); if(!enRango(fn))return; const id=String(r.id||r.IDINGRESOS||'').trim(); if(id)_idsI.add(id); _piEf+=Number(r.efectivo||0); _piCr+=Number(r.credito||0); });
-            const _piP=_smp(_sheetPagoIngresos,'IDINGRESOS',_idsI); const pagoEfIngresos=_piEf+_piP, pagoCrIngresos=Math.max(0,_piCr-_piP);
-            let _peEf=0,_peCr=0; const _idsE=new Set(); (_sheetEgresos||[]).forEach(r=>{ const fn=parseFechaNum(r.fechaISO||r.fecha||''); if(!enRango(fn))return; const id=String(r.id||r.IDEGRESOS||'').trim(); if(id)_idsE.add(id); _peEf+=Number(r.efectivo||0); _peCr+=Number(r.credito||0); });
-            const _peP=_smp(_sheetPagoEgresos,'IDEGRESOS',_idsE)+_smp(_sheetPagoEgresos,'idEgreso',_idsE); const pagoEfEgresos=_peEf+_peP, pagoCrEgresos=Math.max(0,_peCr-_peP);
-            let _pinEf=0,_pinCr=0; const _idsIN=new Set(); (_sheetIngresosNegocio||[]).forEach(r=>{ const fn=parseFechaNum(r.fechaISO||r.fecha||''); if(!enRango(fn))return; const id=String(r.id||r.IDINGRESOSNEGOCIO||'').trim(); if(id)_idsIN.add(id); _pinEf+=Number(r.efectivo||0); _pinCr+=Number(r.credito||0); });
-            const _pinP=_smp(_sheetPagoIngNeg,'IDINGRESOSNEGOCIO',_idsIN)+_smp(_sheetPagoIngNeg,'idIngNeg',_idsIN); const pagoEfIngNeg=_pinEf+_pinP, pagoCrIngNeg=Math.max(0,_pinCr-_pinP);
-            const _pENA=(_pagoEgrNegSheet||_sheetPagoEgrNeg||[]); let _penEf=0,_penCr=0; const _idsEN=new Set(); (_sheetEgresosNegocio||[]).forEach(r=>{ const fn=parseFechaNum(r.fechaISO||r.fecha||''); if(!enRango(fn))return; const id=String(r.id||r.IDEGRESOSNEGOCIO||'').trim(); if(id)_idsEN.add(id); _penEf+=Number(r.efectivo||0); _penCr+=Number(r.credito||0); });
-            const _penP=_smp(_pENA,'IDEGRESOSNEGOCIO',_idsEN)+_smp(_pENA,'idEgrNeg',_idsEN); const pagoEfEgrNeg=_penEf+_penP, pagoCrEgrNeg=Math.max(0,_penCr-_penP);
-            // Crédito cobrado = monto ya pagado de la deuda (tabla pagos, ID coincidente)
-            const creditoCobradoVentas  = _pvP;
-            const creditoCobradoCompras = _pcP;
-            const creditoCobradoIngNeg  = _pinP;
-            const creditoCobradoEgrNeg  = _penP;
-
-            // ── Totales generales — respetan categoría Y filtro ef/cr ──
-            const _cat = _resumenCategoria;
-            const _incNeg = _cat === 'total' || _cat === 'negocio';
-            const _incPer = _cat === 'total' || _cat === 'personal';
-
-            // ── Ganancias totales — fijas sin filtro de forma de pago ──
-            const ganTotal = _ganTotalSF + ing.gan + ingNeg.gan;
-            const ganEf    = _ganEfSF;
-            const ganCr    = _ganCrSF;
-
-            // Seleccionar el valor correcto según filtro ef/cr/total para cada fuente
-            const _vT   = _resumenFiltro==='efectivo' ? vEf       : _resumenFiltro==='credito' ? vCr       : vTotal;
-            const _ingT = _resumenFiltro==='efectivo' ? ing.ef     : _resumenFiltro==='credito' ? ing.cr     : ing.total;
-            const _ingNT= _resumenFiltro==='efectivo' ? ingNeg.ef  : _resumenFiltro==='credito' ? ingNeg.cr  : ingNeg.total;
-            const _cmpT = _resumenFiltro==='efectivo' ? comp.ef    : _resumenFiltro==='credito' ? comp.cr    : comp.total;
-            const _egrT = _resumenFiltro==='efectivo' ? egr.ef     : _resumenFiltro==='credito' ? egr.cr     : egr.total;
-            const _egrNT= _resumenFiltro==='efectivo' ? egrNeg.ef  : _resumenFiltro==='credito' ? egrNeg.cr  : egrNeg.total;
-
-            const totalEntradas = (_incNeg ? _vT + _ingNT + pvTotal + pinTotal : 0)
-                                + (_incPer ? _ingT + piTotal : 0)
-                                + (_cat === 'personal' ? (
-                                    _resumenFiltro === 'efectivo' ? ganEf :
-                                    _resumenFiltro === 'credito'  ? ganCr :
-                                    ganTotal
-                                ) : 0)
-                                - (_cat === 'negocio' ? (
-                                    _resumenFiltro === 'efectivo' ? ganEf :
-                                    _resumenFiltro === 'credito'  ? ganCr :
-                                    ganTotal
-                                ) : 0);
-            const totalSalidas  = (_incNeg ? _cmpT + _egrNT + pcTotal + penTotal : 0)
-                                + (_incPer ? _egrT + peTotal : 0);
-            const balance       = totalEntradas - totalSalidas;
-
-            // ── Dinero en efectivo que debería haber en caja — respeta categoría ──
-            const entEf = (_incNeg ? vEf + ingNeg.ef + pvTotal + pinTotal : 0)
-                        + (_incPer ? ing.ef + piTotal : 0)
-                        + (_cat === 'personal' ? (
-                            _resumenFiltro === 'efectivo' ? ganEf :
-                            _resumenFiltro === 'credito'  ? ganCr :
-                            ganTotal
-                        ) : 0)
-                        - (_cat === 'negocio' ? (
-                            _resumenFiltro === 'efectivo' ? ganEf :
-                            _resumenFiltro === 'credito'  ? ganCr :
-                            ganTotal
-                        ) : 0);
-            const salEf = (_incNeg ? comp.ef + egrNeg.ef + pcTotal + penTotal : 0)
-                        + (_incPer ? egr.ef + peTotal : 0);
-            const efectivoEnCaja = entEf - salEf;
-
-            // ── Actualizar botones filtro visual ──
+            // ── Actualizar botones filtro ──
             ['total','efectivo','credito'].forEach(f => {
-                const btn = document.getElementById('resumenFiltroBtn_'+f);
-                if (btn) btn.className = 'px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action ' +
-                    (f === _resumenFiltro ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+                const b = document.getElementById('epBtn_'+f);
+                if(b) b.className = 'px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action ' +
+                    (f===_epFiltro ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             });
 
-            // ── Actualizar botones categoría visual ──
-            ['total','negocio','personal'].forEach(c => {
-                const btn = document.getElementById('resumenCatBtn_'+c);
-                if (btn) btn.className = 'px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action ' +
-                    (c === _resumenCategoria ? 'bg-white text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
-            });
+            // ══════════════════════════════════════════════════════════════
+            // HELPERS
+            // ══════════════════════════════════════════════════════════════
+            const normSC = s => (s||'').toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
-            const colorMap = {emerald:'#10b981',blue:'#3b82f6',cyan:'#06b6d4',orange:'#f97316',red:'#ef4444',pink:'#ec4899'};
-            // kpiData para grillas TOTAL/NEGOCIO
-            const kpiData = [
-                { label:'Ventas',                        total:vTotal,         ef:vEf,            cr:vCr,            color:'emerald', cat:'negocio' },
-                { label:'Pago Ventas',                   total:pvTotal,        ef:pvTotal,         cr:0,              color:'emerald', cat:'negocio' },
-                { label:'💵 Pago Ef. Total Ventas',      total:pagoEfVentas,   ef:pagoEfVentas,    cr:0,              color:'emerald', cat:'negocio',  esEf:true },
-                { label:'💳 Pago Créd. Total Ventas',    total:pagoCrVentas,   ef:0,               cr:pagoCrVentas,   color:'emerald', cat:'negocio',  esCr:true },
-                { label:'Ingresos',                      total:ing.total,      ef:ing.ef,          cr:ing.cr,         color:'blue',    cat:'personal' },
-                { label:'Pago Ingresos',                 total:piTotal,        ef:piTotal,         cr:0,              color:'blue',    cat:'personal' },
-                { label:'💵 Pago Ef. Total Ingresos',    total:pagoEfIngresos, ef:pagoEfIngresos,  cr:0,              color:'blue',    cat:'personal', esEf:true },
-                { label:'💳 Pago Créd. Total Ingresos',  total:pagoCrIngresos, ef:0,               cr:pagoCrIngresos, color:'blue',    cat:'personal', esCr:true },
-                { label:'Ingresos Negocio',              total:ingNeg.total,   ef:ingNeg.ef,       cr:ingNeg.cr,      color:'cyan',    cat:'negocio' },
-                { label:'Pago Ing. Negocio',             total:pinTotal,       ef:pinTotal,        cr:0,              color:'cyan',    cat:'negocio' },
-                { label:'💵 Pago Ef. Total Ing. Neg.',   total:pagoEfIngNeg,   ef:pagoEfIngNeg,    cr:0,              color:'cyan',    cat:'negocio',  esEf:true },
-                { label:'💳 Pago Créd. Total Ing. Neg.', total:pagoCrIngNeg,   ef:0,               cr:pagoCrIngNeg,   color:'cyan',    cat:'negocio',  esCr:true },
-                { label:'Compras',                       total:comp.total,     ef:comp.ef,         cr:comp.cr,        color:'orange',  cat:'negocio' },
-                { label:'Pago Compras',                  total:pcTotal,        ef:pcTotal,         cr:0,              color:'orange',  cat:'negocio' },
-                { label:'💵 Pago Ef. Total Compras',     total:pagoEfCompras,  ef:pagoEfCompras,   cr:0,              color:'orange',  cat:'negocio',  esEf:true },
-                { label:'💳 Pago Créd. Total Compras',   total:pagoCrCompras,  ef:0,               cr:pagoCrCompras,  color:'orange',  cat:'negocio',  esCr:true },
-                { label:'Egresos',                       total:egr.total,      ef:egr.ef,          cr:egr.cr,         color:'red',     cat:'personal' },
-                { label:'Pago Egresos',                  total:peTotal,        ef:peTotal,         cr:0,              color:'red',     cat:'personal' },
-                { label:'💵 Pago Ef. Total Egresos',     total:pagoEfEgresos,  ef:pagoEfEgresos,   cr:0,              color:'red',     cat:'personal', esEf:true },
-                { label:'💳 Pago Créd. Total Egresos',   total:pagoCrEgresos,  ef:0,               cr:pagoCrEgresos,  color:'red',     cat:'personal', esCr:true },
-                { label:'Egresos Negocio',               total:egrNeg.total,   ef:egrNeg.ef,       cr:egrNeg.cr,      color:'pink',    cat:'negocio' },
-                { label:'Pago Egr. Negocio',             total:penTotal,       ef:penTotal,        cr:0,              color:'pink',    cat:'negocio' },
-                { label:'💵 Pago Ef. Total Egr. Neg.',   total:pagoEfEgrNeg,   ef:pagoEfEgrNeg,    cr:0,              color:'pink',    cat:'negocio',  esEf:true },
-                { label:'💳 Pago Créd. Total Egr. Neg.', total:pagoCrEgrNeg,   ef:0,               cr:pagoCrEgrNeg,   color:'pink',    cat:'negocio',  esCr:true },
-            ];
+            // Sumar campo de tabla INGRESOS/EGRESOS filtrada por SC y fecha
+            const sumSC = (arr, sc, campo) => (arr||[]).reduce((s,r) => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                if(normSC(r.proveedor||r.supercategoria||'') !== normSC(sc)) return s;
+                return s + Number(r[campo]||0);
+            }, 0);
 
-            // ── Función card genérica ──
-            const catFilter = k => _resumenCategoria === 'total' || k.cat === _resumenCategoria;
-            const kpiIngresos = kpiData.slice(0,12).filter(catFilter);
-            const kpiEgresos  = kpiData.slice(12,24).filter(catFilter);
-            const _mkCard = (k, esIng) => {
-                const isComb = k.esEf || k.esCr;
-                const bc  = k.esEf ? (esIng?'#22c55e88':'#f9731688') : k.esCr ? '#f8717188' : (esIng?'#10b98144':'#ef444444');
-                const bg  = k.esEf ? (esIng?'linear-gradient(135deg,#052e16 0%,#0f172a 100%)':'linear-gradient(135deg,#1a0a00 0%,#0f172a 100%)') : k.esCr ? 'linear-gradient(135deg,#1e0505 0%,#0f172a 100%)' : (esIng?'linear-gradient(135deg,#052e1a 0%,#0f172a 100%)':'linear-gradient(135deg,#2d0a0a 0%,#0f172a 100%)');
-                const lc  = k.esEf ? (esIng?'#4ade80':'#fb923c') : k.esCr ? '#f87171' : (esIng?'#10b981':'#ef4444');
-                const vc  = k.esEf ? (esIng?'#86efac':'#fdba74') : k.esCr ? '#fca5a5' : (esIng?'#34d399':'#f87171');
-                const efc = esIng ? '#6ee7b7' : '#fca5a5';
-                const crc = esIng ? '#fca5a5' : '#fda4af';
-                const arrow = esIng ? '▲' : '▼';
-                return '<div class="glass-card rounded-2xl p-3 border' + (isComb?' border-l-4':'') + '" style="border-color:' + bc + ';background:' + bg + ';">'
-                    + '<p style="font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:' + lc + ';margin-bottom:3px;">' + (isComb?'':arrow+' ') + k.label + '</p>'
-                    + '<p style="font-size:1.1rem;font-weight:900;font-family:monospace;color:' + vc + ';">$' + Utils.fmt(k.total) + '</p>'
-                    + (isComb
-                        ? '<p style="font-size:7px;color:#64748b;margin-top:2px;">' + (k.esEf?'Tabla + Pagos mismo ID':'Tabla − Pagos cobrados') + '</p>'
-                        : '<div style="display:flex;gap:8px;margin-top:3px;"><span style="font-size:8px;font-weight:700;color:' + efc + ';">EF $' + Utils.fmt(k.ef) + '</span>' + (k.cr>0?'<span style="font-size:8px;font-weight:700;color:' + crc + ';">CR $' + Utils.fmt(k.cr) + '</span>':'') + '</div>')
-                    + '</div>';
+            // IDs de registros de una SC (para filtrar pagos)
+            const idsSC = (arr, sc) => {
+                const ids = new Set();
+                (arr||[]).forEach(r => {
+                    if(normSC(r.proveedor||r.supercategoria||'') !== normSC(sc)) return;
+                    if(r.idSheet) ids.add(String(r.idSheet));
+                    if(r.id) ids.add(String(r.id));
+                });
+                return ids;
             };
 
-            // ── MODO PERSONAL / TOTAL: 3 cards simples ──────────────────────────────
-            // helper global: FECHA ORIGINAL tiene prioridad sobre FECHA en tablas de pago
-            const _fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+            // Sumar MONTO de tabla PAGO INGRESOS/EGRESOS por FECHA ORIGINAL, filtrando por IDs de SC
+            const sumPagos = (pagoArr, ids) => (pagoArr||[]).reduce((s,p) => {
+                if(!enRango(fnumPago(p))) return s;
+                const pid = String(p.IDINGRESOS||p.idingresos||p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
+                if(!ids.has(pid)) return s;
+                return s + Number(p.MONTO||p.monto||0);
+            }, 0);
 
-            // Variables de scope externo para acceso desde IIFEs de cards
-            let _ingAjenos = 0, _egrAjenos = 0;
-            let _ingPropios = 0, _egrPropios = 0;
+            // ══════════════════════════════════════════════════════════════
+            // GANANCIAS (siempre calculadas sobre ventas en rango)
+            // ══════════════════════════════════════════════════════════════
+            let ganTotal=0, ganEf=0, casaErazoTotal=0;
+            const _ppv = {};
+            (_pagoVentasSheet||[]).forEach(p => {
+                const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                if(!idV) return;
+                if(!enRango(parseFechaNum(p.fecha||p.FECHA||p.fechaOrig||''))) return;
+                _ppv[idV] = (_ppv[idV]||0) + Number(p.monto||p.MONTO||0);
+            });
+            const _vVistas = new Set();
+            (_sheetVentas||[]).forEach(v => {
+                const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                if(!enRango(fn)||_vVistas.has(v.id)) return;
+                _vVistas.add(v.id);
+                const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+                const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+                const cli = String(v.cliente||'').toUpperCase().trim();
+                const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
+                if(cli==='CASA ERAZO') casaErazoTotal += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                if(esEsp) return;
+                const ganBruta = Math.max(0, total - dinRec);
+                const cobEf = ef + (_ppv[String(v.id)]||0);
+                const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
+                const ganCrV = Math.max(0, ganBruta - ganEfV);
+                ganTotal += ganEfV + ganCrV;
+                ganEf    += ganEfV;
+            });
+            const ganCr = Math.max(0, ganTotal - ganEf);
 
-            if (_resumenCategoria === 'personal' || _resumenCategoria === 'total') {
-                // INGRESOS TOTALES = columna PAGO TOTAL de tabla INGRESOS (_sheetIngresos)
-                const _ingTotalPagoTotal = ing.total;
-                // EGRESOS TOTALES = columna PAGO TOTAL de tabla EGRESOS (_sheetEgresos)
-                const _egrTotalPagoTotal = egr.total;
-                // GANANCIAS TOTALES = ganTotal calculado de ventas
-                const _ganV = _resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal;
+            // ══════════════════════════════════════════════════════════════
+            // CALCULAR TODAS LAS VARIABLES SEGÚN FILTRO
+            // ══════════════════════════════════════════════════════════════
+            const fmt$ = v => '$' + Utils.fmt(Math.abs(v));
+            const fmtCol = v => v >= 0 ? '#10b981' : '#ef4444';
+            const fmtPre = v => v >= 0 ? '▲ ' : '▼ ';
 
-                // ── EFECTIVO INGRESOS: PAGO EFECTIVO (tabla INGRESOS, filtrado por fecha del ingreso)
-                //    + MONTO (PAGO INGRESOS, mismo IDINGRESOS, filtrado por FECHA ORIGINAL del pago) ──
-                let _ingEfectivo = 0;
-                // Paso 1: todos los sheetIds de ingresos (sin filtro de fecha) para poder matchear pagos
-                const _idsIngEfSheet = new Set();
-                const _idIngLocalToSheet = {};
-                (_sheetIngresos||[]).forEach(r => {
-                    const sheetId = String(r.idSheet||'').trim();
-                    const localId = String(r.id||'').trim();
-                    if (sheetId) _idsIngEfSheet.add(sheetId);
-                    if (localId && sheetId) _idIngLocalToSheet[localId] = sheetId;
-                });
-                // Paso 2: sumar PAGO EFECTIVO de ingresos que caen en el rango (por fecha del ingreso)
-                (_sheetIngresos||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _ingEfectivo += Number(r.efectivo||0);
-                });
-                // Paso 3: sumar pagos de _sheetPagoIngresos cuyo IDINGRESOS matchea Y cuya FECHA ORIGINAL cae en rango
-                (_sheetPagoIngresos||[]).forEach(p => {
-                    let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                    if (pid && !_idsIngEfSheet.has(pid)) pid = _idIngLocalToSheet[pid] || pid;
-                    if (!pid || !_idsIngEfSheet.has(pid)) return;
-                    if (!enRango(_fnumPago(p))) return;
-                    _ingEfectivo += Number(p.MONTO||p.monto||0);
-                });
+            // IDs para pagos
+            const idsIngP = idsSC(_sheetIngresos, 'INGRESOS PROPIOS');
+            const idsIngA = idsSC(_sheetIngresos, 'INGRESOS AJENOS');
+            const idsEgrP = idsSC(_sheetEgresos,  'EGRESOS PROPIOS');
+            const idsEgrA = idsSC(_sheetEgresos,  'EGRESOS AJENOS');
 
-                // ── EFECTIVO EGRESOS: PAGO EFECTIVO (tabla EGRESOS, filtrado por fecha del egreso)
-                //    + MONTO (PAGO EGRESOS, mismo IDEGRESOS, filtrado por FECHA ORIGINAL del pago) ──
-                let _egrEfectivo = 0;
-                // Paso 1: todos los sheetIds de egresos (sin filtro de fecha)
-                const _idsEgrEfSheet = new Set();
-                const _idEgrLocalToSheet = {};
-                (_sheetEgresos||[]).forEach(r => {
-                    const sheetId = String(r.idSheet||'').trim();
-                    const localId = String(r.id||'').trim();
-                    if (sheetId) _idsEgrEfSheet.add(sheetId);
-                    if (localId && sheetId) _idEgrLocalToSheet[localId] = sheetId;
-                });
-                // Paso 2: sumar PAGO EFECTIVO de egresos que caen en el rango
-                (_sheetEgresos||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _egrEfectivo += Number(r.efectivo||0);
-                });
-                // Paso 3: sumar pagos de _sheetPagoEgresos cuyo IDEGRESOS matchea Y cuya FECHA ORIGINAL cae en rango
-                (_sheetPagoEgresos||[]).forEach(p => {
-                    let pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                    if (pid && !_idsEgrEfSheet.has(pid)) pid = _idEgrLocalToSheet[pid] || pid;
-                    if (!pid || !_idsEgrEfSheet.has(pid)) return;
-                    if (!enRango(_fnumPago(p))) return;
-                    _egrEfectivo += Number(p.MONTO||p.monto||0);
-                });
+            // ── BLOQUE TOTAL ──────────────────────────────────────────────
+            const ingPropiosTot = sumSC(_sheetIngresos, 'INGRESOS PROPIOS', 'total');
+            const ingAjenosTot  = sumSC(_sheetIngresos, 'INGRESOS AJENOS',  'total');
+            const egrPropiosTot = sumSC(_sheetEgresos,  'EGRESOS PROPIOS',  'total');
+            const egrAjenosTot  = sumSC(_sheetEgresos,  'EGRESOS AJENOS',   'total');
+            // BALANCE TOTAL PROPIO = Ing.Propios - Egr.Propios
+            // (nota: Ganancias y Consumo son info, NO entran en balance total según fila 19)
+            const balTotProp = ingPropiosTot - egrPropiosTot;
+            const balTotAjen = ingAjenosTot  - egrAjenosTot;
+            const balTotGen  = balTotProp + balTotAjen;
 
-                // ── CRÉDITO EGRESOS: PAGO CREDITO (tabla EGRESOS) - MONTO (PAGO EGRESOS, mismo IDEGRESOS, FECHA ORIGINAL) ──
-                // Reutiliza _idsEgrEfSheet y _idEgrLocalToSheet ya construidos arriba
-                let _egrCredito = 0;
-                (_sheetEgresos||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _egrCredito += Number(r.credito||0);
-                });
-                (_sheetPagoEgresos||[]).forEach(p => {
-                    let pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                    if (pid && !_idsEgrEfSheet.has(pid)) pid = _idEgrLocalToSheet[pid] || pid;
-                    if (!pid || !_idsEgrEfSheet.has(pid)) return;
-                    if (!enRango(_fnumPago(p))) return;
-                    _egrCredito -= Number(p.monto||p.MONTO||0);
-                });
-                _egrCredito = Math.max(0, _egrCredito);
+            // ── BLOQUE EFECTIVO ───────────────────────────────────────────
+            const ingPropiosEf   = sumSC(_sheetIngresos, 'INGRESOS PROPIOS', 'efectivo');
+            const pagoIngPropEf  = sumPagos(_sheetPagoIngresos, idsIngP);
+            const ingAjenosEf    = sumSC(_sheetIngresos, 'INGRESOS AJENOS',  'efectivo');
+            const pagoIngAjenEf  = sumPagos(_sheetPagoIngresos, idsIngA);
+            const ganEfectivo    = ganEf;
+            const egrPropiosEf   = sumSC(_sheetEgresos,  'EGRESOS PROPIOS',  'efectivo');
+            const pagoEgrPropEf  = sumPagos(_sheetPagoEgresos, idsEgrP);
+            const egrAjenosEf    = sumSC(_sheetEgresos,  'EGRESOS AJENOS',   'efectivo');
+            const pagoEgrAjenEf  = sumPagos(_sheetPagoEgresos, idsEgrA);
+            const consumoNegocio = casaErazoTotal;
+            // BALANCE EFECTIVO PROPIO = (IngPropEf + PagoIngPropEf + GanEf) - (EgrPropEf + PagoEgrPropEf + Consumo)
+            const balEfProp = (ingPropiosEf + pagoIngPropEf + ganEfectivo) - (egrPropiosEf + pagoEgrPropEf + consumoNegocio);
+            // BALANCE EFECTIVO AJENO = (IngAjenEf + PagoIngAjenEf) - (EgrAjenEf + PagoEgrAjenEf)
+            const balEfAjen = (ingAjenosEf + pagoIngAjenEf) - (egrAjenosEf + pagoEgrAjenEf);
+            const balEfGen  = balEfProp + balEfAjen;
 
-                // ── CRÉDITO INGRESOS: PAGO CREDITO (tabla INGRESOS) - MONTO (PAGO INGRESOS, mismo IDINGRESOS, FECHA ORIGINAL) ──
-                // Reutiliza _idsIngEfSheet y _idIngLocalToSheet ya construidos arriba
-                let _ingCredito = 0;
-                (_sheetIngresos||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _ingCredito += Number(r.credito||0);
-                });
-                (_sheetPagoIngresos||[]).forEach(p => {
-                    let pid = String(p.IDINGRESOS||p.idingresos||'').trim();
-                    if (pid && !_idsIngEfSheet.has(pid)) pid = _idIngLocalToSheet[pid] || pid;
-                    if (!pid || !_idsIngEfSheet.has(pid)) return;
-                    if (!enRango(_fnumPago(p))) return;
-                    _ingCredito -= Number(p.monto||p.MONTO||0);
-                });
-                _ingCredito = Math.max(0, _ingCredito);
+            // ── BLOQUE CRÉDITO ────────────────────────────────────────────
+            const ingPropiosCr   = sumSC(_sheetIngresos, 'INGRESOS PROPIOS', 'credito');
+            const pagoIngPropCr  = sumPagos(_sheetPagoIngresos, idsIngP);  // mismos pagos (MONTO = cobrado)
+            const ingAjenosCr    = sumSC(_sheetIngresos, 'INGRESOS AJENOS',  'credito');
+            const pagoIngAjenCr  = sumPagos(_sheetPagoIngresos, idsIngA);
+            const ganCredito     = ganCr; // Ganancias Totales - Ganancias Efectivo
+            const egrPropiosCr   = sumSC(_sheetEgresos,  'EGRESOS PROPIOS',  'credito');
+            const pagoEgrPropCr  = sumPagos(_sheetPagoEgresos, idsEgrP);
+            const egrAjenosCr    = sumSC(_sheetEgresos,  'EGRESOS AJENOS',   'credito');
+            const pagoEgrAjenCr  = sumPagos(_sheetPagoEgresos, idsEgrA);
+            // BALANCE CREDITO PROPIO = (IngPropCr + GanCr - PagoIngPropCr) - (EgrPropCr - PagoEgrPropCr)
+            const balCrProp = (ingPropiosCr + ganCredito - pagoIngPropCr) - (egrPropiosCr - pagoEgrPropCr);
+            // BALANCE CREDITO AJENO = (IngAjenCr - PagoIngAjenCr) - (EgrAjenCr - PagoEgrAjenCr)
+            const balCrAjen = (ingAjenosCr - pagoIngAjenCr) - (egrAjenosCr - pagoEgrAjenCr);
+            const balCrGen  = balCrProp + balCrAjen;
 
-                const _esEf = _resumenFiltro === 'efectivo';
-                const _esCr = _resumenFiltro === 'credito';
-                const _labelIng = _esEf ? '▲ INGRESOS EFECTIVO TOTAL' : _esCr ? '▲ INGRESOS CRÉDITO TOTAL' : '▲ INGRESOS TOTALES';
-                const _labelEgr = _esEf ? '▼ EGRESOS EFECTIVO TOTAL'  : _esCr ? '▼ EGRESOS CRÉDITO TOTAL' : '▼ EGRESOS TOTALES';
-                const _subIng   = _esEf ? 'Pago Efectivo + Pago Ingresos (mismo ID)' : _esCr ? 'Pago Crédito − Pago Ingresos cobrados (mismo ID)' : 'Tabla Ingresos — columna Pago Total';
-                const _subEgr   = _esEf ? 'Pago Efectivo + Pago Egresos (mismo ID)'  : _esCr ? 'Pago Crédito − Pago Egresos cobrados (mismo ID)' : 'Tabla Egresos — columna Pago Total';
-                const _valIng   = _esEf ? _ingEfectivo : _esCr ? _ingCredito : _ingTotalPagoTotal;
-                const _valEgr   = _esEf ? _egrEfectivo : _esCr ? _egrCredito : _egrTotalPagoTotal;
+            // ══════════════════════════════════════════════════════════════
+            // RENDER
+            // ══════════════════════════════════════════════════════════════
+            const card = (nombre, valor, colorIzq, fuente) => `
+                <div style="background:#0f172a;border:1px solid ${colorIzq}33;border-left:3px solid ${colorIzq};border-radius:12px;padding:10px 14px;margin-bottom:6px;">
+                    <p style="font-size:9px;font-weight:900;color:${colorIzq};text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;">${nombre}</p>
+                    <p style="font-size:1.35rem;font-weight:900;font-family:monospace;color:#f1f5f9;margin:0;">${fmt$(valor)}</p>
+                    <p style="font-size:7px;color:#475569;margin:3px 0 0;">${fuente}</p>
+                </div>`;
 
-                // ── Calcular INGRESOS PROPIOS / AJENOS ──────────────────────────────
-                // DEBUG: ver supercategorías únicas
-                const _scDebug = [...new Set((_sheetIngresos||[]).map(r=>(r.proveedor||r.supercategoria||'').trim()))].slice(0,10);
-                console.log('[RESUMEN SC INGRESOS]', _scDebug);
-                const _scDebugE = [...new Set((_sheetEgresos||[]).map(r=>(r.proveedor||r.supercategoria||'').trim()))].slice(0,10);
-                console.log('[RESUMEN SC EGRESOS]', _scDebugE);
+            const cardBal = (nombre, valor, fuente) => `
+                <div style="background:linear-gradient(135deg,${fmtCol(valor)}0f 0%,#0f172a 100%);border:2px solid ${fmtCol(valor)}55;border-radius:14px;padding:12px 16px;">
+                    <p style="font-size:8px;font-weight:900;color:${fmtCol(valor)};text-transform:uppercase;letter-spacing:.08em;margin:0 0 4px;">⚖️ ${nombre}</p>
+                    <p style="font-size:1.5rem;font-weight:900;font-family:monospace;color:${fmtCol(valor)};margin:0;">${fmtPre(valor)}${fmt$(valor)}</p>
+                    <p style="font-size:7px;color:#475569;margin:3px 0 0;">${fuente}</p>
+                </div>`;
 
-                // Helper: calcular valor por SC para cada filtro
-                // EFECTIVO = r.efectivo + pagos (mismo ID, FECHA ORIGINAL en rango)
-                // CREDITO  = r.credito (PAGO CREDITO directo del sheet, sin restar pagos)
-                // TOTAL    = r.total
-
-                // ── _ingPropios: SC = INGRESOS PROPIOS ──
-                _ingPropios = 0;
-                (_sheetIngresos||[]).forEach(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
-                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS PROPIOS') return;
-                    if (_resumenFiltro === 'efectivo')     _ingPropios += Number(r.efectivo||0);
-                    else if (_resumenFiltro === 'credito') _ingPropios += Number(r.credito||0);
-                    else                                   _ingPropios += Number(r.total||0);
-                });
-
-
-                // ── _ingAjenos: SC = INGRESOS AJENOS ──
-                _ingAjenos = 0;
-                (_sheetIngresos||[]).forEach(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
-                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'INGRESOS AJENOS') return;
-                    if (_resumenFiltro === 'efectivo')     _ingAjenos += Number(r.efectivo||0);
-                    else if (_resumenFiltro === 'credito') _ingAjenos += Number(r.credito||0);
-                    else                                   _ingAjenos += Number(r.total||0);
-                });
-
-
-                // ── _egrPropios: SC = EGRESOS PROPIOS ──
-                let _egrPropios = 0;
-                (_sheetEgresos||[]).forEach(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
-                    const _sc = (r.proveedor||r.supercategoria||r['SUPER CATEGORIA']||'').toUpperCase().trim();
-                    if (_sc !== 'EGRESOS PROPIOS') return;
-                    if (_resumenFiltro === 'efectivo')     _egrPropios += Number(r.efectivo||0);
-                    else if (_resumenFiltro === 'credito') _egrPropios += Number(r.credito||0);
-                    else                                   _egrPropios += Number(r.total||r.pagoTotal||0);
-                });
-                console.log('[_egrPropios] total:', _egrPropios, '| registros EGRESOS PROPIOS:', (_sheetEgresos||[]).filter(r=>{ const s=(r.proveedor||r.supercategoria||'').toUpperCase().trim(); return s==='EGRESOS PROPIOS'; }).length, '| total _sheetEgresos:', (_sheetEgresos||[]).length);
-                if ((_sheetEgresos||[])[0]) console.log('[_egrPropios] muestra r[0].proveedor:', (_sheetEgresos||[])[0].proveedor, '| r[0].total:', (_sheetEgresos||[])[0].total);
-                // ── _egrAjenos: SC = EGRESOS AJENOS ──
-                _egrAjenos = 0;
-                (_sheetEgresos||[]).forEach(r => {
-                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
-                    if ((r.proveedor||r.supercategoria||'').toUpperCase().trim() !== 'EGRESOS AJENOS') return;
-                    if (_resumenFiltro === 'efectivo')     _egrAjenos += Number(r.efectivo||0);
-                    else if (_resumenFiltro === 'credito') _egrAjenos += Number(r.credito||0);
-                    else                                   _egrAjenos += Number(r.total||0);
-                });
-
-                // Guardar en window para el TOTAL GENERAL
-                window.__persIngPropios = _ingPropios;
-                window.__persIngAjenos  = _ingAjenos;
-                window.__persGanV       = _ganV;
-                window.__persEgrPropios = _egrPropios;
-                window.__persEgrAjenos  = _egrAjenos;
-
-
-                                const _sfx = _resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '';
-
-                document.getElementById('resumenKpis').innerHTML =
-                    '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
-                    // ── Columna INGRESOS (3 cards) ──
-                    + '<div style="display:flex;flex-direction:column;gap:8px;">'
-                    +   '<div style="padding:4px 6px;border-bottom:2px solid #10b98155;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.1em;">💚 INGRESOS</span></div>'
-                    // Card 1: INGRESOS TOTALES PROPIOS
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#10b98155;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS TOTALES PROPIOS' + _sfx + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_ingPropios) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Supercategoría: INGRESOS PROPIOS</p>'
-                    +   '</div>'
-                    // Card 2: GANANCIAS TOTALES
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f59e0b66;background:linear-gradient(135deg,#1a1100 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f59e0b;margin-bottom:6px;letter-spacing:.08em;">⭐ GANANCIAS TOTALES</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fbbf24;">$' + Utils.fmt(_ganV) + '</p>'
-                    +     '<div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:8px;font-weight:700;color:#fde68a;">EF $' + Utils.fmt(ganEf) + '</span>' + (ganCr>0?'<span style="font-size:8px;font-weight:700;color:#fca5a5;">CR $' + Utils.fmt(ganCr) + '</span>':'') + '</div>'
-                    +   '</div>'
-                    // Card 3: INGRESOS TOTALES AJENOS
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#06b6d455;background:linear-gradient(135deg,#021a2e 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#06b6d4;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS TOTALES AJENOS' + _sfx + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$' + Utils.fmt(_ingAjenos) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Supercategoría: INGRESOS AJENOS</p>'
-                    +   '</div>'
-                    + '</div>'
-                    // ── Columna EGRESOS (3 cards) ──
-                    + '<div style="display:flex;flex-direction:column;gap:8px;">'
-                    +   '<div style="padding:4px 6px;border-bottom:2px solid #ef444455;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;">🔴 EGRESOS</span></div>'
-                    // Card 4: EGRESOS TOTALES PROPIOS
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#ef444455;background:linear-gradient(135deg,#2d0a0a 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ef4444;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS TOTALES PROPIOS' + _sfx + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(_egrPropios) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Supercategoría: EGRESOS PROPIOS</p>'
-                    +   '</div>'
-                    // Card 5: CONSUMO DEL NEGOCIO (solo si NO es PERSONAL+CRÉDITO)
-                    + (()=>{
-                        if (_resumenCategoria === 'personal' && _resumenFiltro === 'credito') return '';
-                        let _casaErazoTotal = 0, _casaErazoCant = 0;
-                        const _vistasCE2 = new Set();
-                        (_sheetVentas||[]).forEach(v => {
-                            const uid = String(v.id||'').trim();
-                            if (!uid || _vistasCE2.has(uid)) return;
-                            _vistasCE2.add(uid);
-                            const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                            if (!enRango(fnum)) return;
-                            if (String(v.cliente||'').toUpperCase().trim() !== 'CASA ERAZO') return;
-                            _casaErazoTotal += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-                            _casaErazoCant++;
-                        });
-                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f9731655;background:linear-gradient(135deg,#1a0800 0%,#0f172a 100%);">'
-                            + '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f97316;margin-bottom:6px;letter-spacing:.08em;">🏪 CONSUMO DEL NEGOCIO</p>'
-                            + '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$' + Utils.fmt(_casaErazoTotal) + '</p>'
-                            + '<div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:8px;font-weight:700;color:#94a3b8;">Ventas CASA ERAZO: ' + _casaErazoCant + '</span></div>'
-                            + '<p style="font-size:7px;color:#64748b;margin-top:2px;">Dinero recuperado total</p>'
-                            + '</div>';
-                    })()
-                    // Card 6: EGRESOS TOTALES AJENOS
-                    + '<div class="glass-card rounded-2xl p-4 border" style="border-color:#a855f755;background:linear-gradient(135deg,#1a0a2e 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#a855f7;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS TOTALES AJENOS' + _sfx + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#d8b4fe;">$' + Utils.fmt(_egrAjenos) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Supercategoría: EGRESOS AJENOS</p>'
-                    +   '</div>'
-                    + '</div>'
-                    + '</div>';
-            } else {
-                // ── MODO NEGOCIO / TOTAL: 3 cards INGRESOS + 2 cards EGRESOS ──
-
-                // ── 1. VENTAS TOTALES S/ GANANCIAS: PAGO CREDITO/EFECTIVO/TOTAL de ventas - ganancias
-                // En CRÉDITO: vCr (pago crédito ventas pendientes) - ganCr
-                // En EFECTIVO: vEf - ganEf
-                // En TOTAL: vTotal - ganTotal
-                const _vGanFiltro = _resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal;
-                const _ventasPagoTotal = _resumenFiltro==='efectivo' ? vEf
-                                       : _resumenFiltro==='credito'  ? vCr
-                                       : vTotal;
-                // EFECTIVO y TOTAL: restar ganancias correspondientes
-                // CRÉDITO: usar suma bruta de v.deuda en rango (sin excluir pagadas) menos ganCr
-                let _vCrBruto = 0;
-                (_sheetVentas||[]).forEach(v => {
-                    const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _vCrBruto += Number(v.deuda||0);
-                });
-                const _ventasSinGan = _resumenFiltro === 'credito'
-                    ? Math.max(0, _vCrBruto - ganCr)
-                    : Math.max(0, _ventasPagoTotal - _vGanFiltro);
-                window.__ventasSinGan   = _ventasSinGan;
-
-                // ── 2. VENTAS CASA ERAZO: sumar dineroRecuperado de ventas cuyo cliente === 'CASA ERAZO' ──
-                let _casaErazoNeg = 0, _casaErazoCantNeg = 0;
-                const _vistasNegCE = new Set();
-                (_sheetVentas||[]).forEach(v => {
-                    const uid = String(v.id||'').trim();
-                    if (!uid || _vistasNegCE.has(uid)) return;
-                    _vistasNegCE.add(uid);
-                    const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                    if (!enRango(fnum)) return;
-                    if (String(v.cliente||'').toUpperCase().trim() !== 'CASA ERAZO') return;
-                    _casaErazoNeg += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0), 0);
-                    _casaErazoCantNeg++;
-                });
-                window.__casaErazoNeg   = _casaErazoNeg;
-
-                // ── 2b. VENTAS ERROR VENTA: sumar dineroRecuperado donde cliente = 'ERROR VENTA' o 'ERROR VENTAS' ──
-                let _errorVentaTotal = 0, _errorVentaCant = 0;
-                const _vistasEV = new Set();
-                (_sheetVentas||[]).forEach(v => {
-                    const uid = String(v.id||'').trim();
-                    if (!uid || _vistasEV.has(uid)) return;
-                    _vistasEV.add(uid);
-                    const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                    if (!enRango(fnum)) return;
-                    const cl = String(v.cliente||'').toUpperCase().trim();
-                    if (cl !== 'ERROR VENTA' && cl !== 'ERROR VENTAS') return;
-                    _errorVentaTotal += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0), 0);
-                    _errorVentaCant++;
-                });
-                window.__errorVentaTotal = _errorVentaTotal;
-
-                // ── 3. INGRESOS NEGOCIO TOTAL: tabla _sheetIngresosNegocio, columna pagoTotal ──
-                let _ingNegTotal = 0;
-                (_sheetIngresosNegocio||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _ingNegTotal += Number(r.pagoTotal||r.total||0);
-                });
-
-                // ── 4. COMPRAS TOTAL: tabla _sheetCompras, columna pagoTotal ──
-                let _comprasTotal = 0;
-                (_sheetCompras||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _comprasTotal += Number(r.pagoTotal||r.total||0);
-                });
-
-                // ── 5. EGRESOS NEGOCIO TOTAL: tabla _sheetEgresosNegocio, columna pagoTotal ──
-                let _egrNegTotal = 0;
-                (_sheetEgresosNegocio||[]).forEach(r => {
-                    const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                    if (!enRango(fnum)) return;
-                    _egrNegTotal += Number(r.pagoTotal||r.total||0);
-                });
-
-                document.getElementById('resumenKpis').innerHTML =
-                    '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
-
-                    // ── Columna INGRESOS (3 cards) ──
-                    + '<div style="display:flex;flex-direction:column;gap:8px;">'
-                    +   '<div style="padding:4px 6px;border-bottom:2px solid #10b98155;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.1em;">💚 INGRESOS</span></div>'
-
-                    // Card 1: VENTAS TOTALES S/ GANANCIAS
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#10b98155;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">▲ VENTAS TOTALES S/ GANANCIAS</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_ventasSinGan) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo − Ganancias Efectivo' : _resumenFiltro==='credito' ? 'Pago Crédito − Ganancias Crédito' : 'Ventas Pago Total − Ganancias') + '</p>'
-                    +   '</div>'
-
-                    // Card 1b: VENTAS A CASA ERAZO — ocultar en crédito
-                    + (_resumenFiltro==='credito' ? '' :
-                      '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f9731655;background:linear-gradient(135deg,#1a0800 0%,#0f172a 100%);">'
-                    +   '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f97316;margin-bottom:6px;letter-spacing:.08em;">🏠 VENTAS A CASA ERAZO</p>'
-                    +   '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$' + Utils.fmt(_casaErazoNeg) + '</p>'
-                    +   '<div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:8px;font-weight:700;color:#94a3b8;">Ventas: ' + _casaErazoCantNeg + '</span></div>'
-                    +   '<p style="font-size:7px;color:#64748b;margin-top:2px;">Suma Dinero Recuperado</p>'
-                    + '</div>')
-
-                    // Card 1c: ERROR VENTA — ocultar en crédito
-                    + (_resumenFiltro==='credito' ? '' :
-                      '<div class="glass-card rounded-2xl p-4 border" style="border-color:#ef444455;background:linear-gradient(135deg,#2d0a0a 0%,#0f172a 100%);">'
-                    +   '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ef4444;margin-bottom:6px;letter-spacing:.08em;">❌ ERROR VENTA</p>'
-                    +   '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(_errorVentaTotal) + '</p>'
-                    +   '<div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:8px;font-weight:700;color:#94a3b8;">Ventas: ' + _errorVentaCant + '</span></div>'
-                    +   '<p style="font-size:7px;color:#64748b;margin-top:2px;">Suma Dinero Recuperado</p>'
-                    + '</div>')
-
-                    // Card PAGO VENTAS (antes de INGRESOS NEGOCIO, solo ef/cr)
-                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
-                        var _pvCard=0;
-                        (_pagoVentasSheet||[]).forEach(function(p){
-                            var fn=parseFechaNum(p.fechaOriginal||p.fechaOrig||p['FECHA ORIGINAL']||p.fecha||p.FECHA||'');
-                            if(!enRango(fn))return;
-                            _pvCard+=Number(p.monto||p.MONTO||0);
-                        });
-                        window.__pagoVentasNeg=_pvCard;
-                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#34d39955;background:linear-gradient(135deg,#021a0e 0%,#0f172a 100%);">'
-                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#34d399;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO VENTAS</p>'
-                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#6ee7b7;">$'+Utils.fmt(_pvCard)+'</p>'
-                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Ventas · FECHA ORIGINAL en rango</p>'
-                            +'</div>';
-                    })() : '')
-
-                    // Card 2: INGRESOS NEGOCIO TOTAL (solo PAGO EFECTIVO de la tabla)
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#06b6d455;background:linear-gradient(135deg,#041520 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#06b6d4;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS NEGOCIO TOTAL' + (_resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '') + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? _pinEf : _resumenFiltro==='credito' ? _pinCr : _ingNegTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo tabla Ingresos Negocio' : _resumenFiltro==='credito' ? 'Pago Crédito tabla Ingresos Negocio' : 'Tabla Ingresos Negocio — Pago Total') + '</p>'
-                    +   '</div>'
-
-                    // Card PAGO INGRESOS NEGOCIO (despues de INGRESOS NEGOCIO, solo ef/cr)
-                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
-                        var _pinCard=0;
-                        (_sheetPagoIngNeg||[]).forEach(function(p){
-                            if(!enRango(_fnumPago(p)))return;
-                            _pinCard+=Number(p.MONTO||p.monto||0);
-                        });
-                        window.__pinIngNeg = _pinCard;
-                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#22d3ee55;background:linear-gradient(135deg,#021820 0%,#0f172a 100%);">'
-                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#22d3ee;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO INGRESOS NEGOCIO</p>'
-                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$'+Utils.fmt(_pinCard)+'</p>'
-                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Ingresos Negocio · FECHA ORIGINAL en rango</p>'
-                            +'</div>';
-                    })() : '')
-
-                    + '</div>'
-
-                    // ── Columna EGRESOS (2 cards) ──
-                    + '<div style="display:flex;flex-direction:column;gap:8px;">'
-                    +   '<div style="padding:4px 6px;border-bottom:2px solid #ef444455;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;">🔴 EGRESOS</span></div>'
-
-                    // Card 4: COMPRAS TOTAL EFECTIVO + PAGO COMPRAS
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f9731655;background:linear-gradient(135deg,#1a0800 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f97316;margin-bottom:6px;letter-spacing:.08em;">▼ COMPRAS TOTAL' + (_resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '') + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? _pcEf : _resumenFiltro==='credito' ? _pcCr : _comprasTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo tabla Compras' : _resumenFiltro==='credito' ? 'Pago Crédito tabla Compras' : 'Tabla Compras — Pago Total') + '</p>'
-                    +   '</div>'
-                    // Card PAGO COMPRAS (solo ef/cr)
-                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
-                        var _pcPagCard=0;
-                        (_sheetPagoCompras||[]).forEach(function(p){
-                            if(!enRango(_fnumPago(p)))return;
-                            _pcPagCard+=Number(p.MONTO||p.monto||0);
-                        });
-                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#fb923c55;background:linear-gradient(135deg,#1a0a00 0%,#0f172a 100%);">'
-                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#fb923c;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO COMPRAS</p>'
-                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$'+Utils.fmt(_pcPagCard)+'</p>'
-                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Compras · FECHA ORIGINAL en rango</p>'
-                            +'</div>';
-                    })() : '')
-
-                    // Card 5: EGRESOS NEGOCIO TOTAL (solo PAGO EFECTIVO) + PAGO EGRESOS NEGOCIO
-                    +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#ec489955;background:linear-gradient(135deg,#200515 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ec4899;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS NEGOCIO TOTAL' + (_resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '') + '</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f9a8d4;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? _penEf : _resumenFiltro==='credito' ? _penCr : _egrNegTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo tabla Egresos Negocio' : _resumenFiltro==='credito' ? 'Pago Crédito tabla Egresos Negocio' : 'Tabla Egresos Negocio — Pago Total') + '</p>'
-                    +   '</div>'
-                    // Card PAGO EGRESOS NEGOCIO (solo ef/cr)
-                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
-                        var _penPagCard=0;
-                        ([...(_sheetPagoEgrNeg||[]),...(_pagoEgrNegSheet||[])]).forEach(function(p){
-                            if(!enRango(_fnumPago(p)))return;
-                            _penPagCard+=Number(p.MONTO||p.monto||0);
-                        });
-                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f472b655;background:linear-gradient(135deg,#200515 0%,#0f172a 100%);">'
-                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f472b6;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO EGRESOS NEGOCIO</p>'
-                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f9a8d4;">$'+Utils.fmt(_penPagCard)+'</p>'
-                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Egresos Negocio · FECHA ORIGINAL en rango</p>'
-                            +'</div>';
-                    })() : '')
-
-                    + '</div>'
-                    + '</div>';
-            }
-
-            // ── Cards PAGO INGRESOS / PAGO EGRESOS — en EFECTIVO y CRÉDITO ──
-            window.__totPI = 0; window.__totPE = 0;
-            if (_resumenFiltro === 'efectivo' || _resumenFiltro === 'credito') {
-                let _totPI = 0;
-                if (_resumenCategoria === 'negocio') {
-                    // NEGOCIO: PAGO VENTAS ya calculado y mostrado en el bloque de arriba
-                    _totPI = window.__totPI || 0;
-                } else {
-                    (_sheetPagoIngresos||[]).forEach(p => {
-                        if (!enRango(_fnumPago(p))) return;
-                        _totPI += Number(p.MONTO||p.monto||0);
-                    });
-                }
-                let _totPE = 0;
-                (_sheetPagoEgresos||[]).forEach(p => {
-                    if (!enRango(_fnumPago(p))) return;
-                    _totPE += Number(p.MONTO||p.monto||0);
-                });
-                const _labelPI = _resumenFiltro === 'credito' ? '💰 PAGO INGRESOS (COBRADO)' : '💰 PAGO INGRESOS';
-                const _labelPE = _resumenFiltro === 'credito' ? '💸 PAGO EGRESOS (PAGADO)'   : '💸 PAGO EGRESOS';
-                const _subPI   = _resumenFiltro === 'credito' ? 'Crédito cobrado · FECHA ORIGINAL en rango' : 'Monto cobrado · FECHA ORIGINAL en rango';
-                const _subPE   = _resumenFiltro === 'credito' ? 'Crédito pagado · FECHA ORIGINAL en rango'  : 'Monto pagado · FECHA ORIGINAL en rango';
-                window.__totPI = _totPI;
-                window.__totPE = _totPE;
-                if (_resumenCategoria === 'negocio') { /* PAGO VENTAS ya mostrado arriba */ } else
-                document.getElementById('resumenKpis').innerHTML +=
-                    '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">'
-                    + '<div class="glass-card rounded-2xl p-4 border" style="border-color:#34d39955;background:linear-gradient(135deg,#021a0e 0%,#0f172a 100%);">'
-                    +   '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#34d399;margin-bottom:6px;letter-spacing:.08em;">' + _labelPI + '</p>'
-                    +   '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#6ee7b7;">$' + Utils.fmt(_totPI) + '</p>'
-                    +   '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + _subPI + '</p>'
-                    + '</div>'
-                    + '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f8717155;background:linear-gradient(135deg,#1a0505 0%,#0f172a 100%);">'
-                    +   '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f87171;margin-bottom:6px;letter-spacing:.08em;">' + _labelPE + '</p>'
-                    +   '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fca5a5;">$' + Utils.fmt(_totPE) + '</p>'
-                    +   '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + _subPE + '</p>'
-                    + '</div>'
-                    + '</div>';
-            }
-
-            // ── Cards INGRESOS PROPIOS / AJENOS / GANANCIAS / CAJA (todos los modos) ──
-            if (true) {
-                document.getElementById('resumenKpis').innerHTML +=
-                (()=>{  // Card INGRESOS PROPIOS
-                    let _entPropios = 0;
-                    let _salPropios = 0;
-                    if (_resumenCategoria === 'negocio') {
-                        // NEGOCIO EFECTIVO: ventasSinGan + casaErazo + errorVenta + pagoVentas
-                        // NEGOCIO CREDITO:  (vCr - ganCr) - pagoVentas
-                        if (_resumenFiltro === 'credito') {
-                            _entPropios = Math.max(0, Math.max(0, vCr - ganCr) - (window.__pagoVentasNeg||0));
-                        } else {
-                            _entPropios = (window.__ventasSinGan||0) + (window.__casaErazoNeg||0) + (window.__errorVentaTotal||0) + (window.__pagoVentasNeg||0);
-                        }
-                        _salPropios = _cmpT;
-                    } else {
-                        // PERSONAL: entradas = _ingPropios (ya incluye PAGO INGRESOS por IDINGRESOS) + GANANCIAS
-                        _entPropios = _ingPropios + (_resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal);
-                        // PERSONAL salidas:
-                        // TOTAL:    r.total egresos propios + dineroRecuperado CASA ERAZO
-                        // EFECTIVO: r.efectivo egresos propios + monto pago egresos (IDEGRESOS coincidente) + dineroRecuperado CASA ERAZO
-                        // CREDITO:  r.credito egresos propios
-                        // Paso 1: todos los sheetIds de egresos propios (sin filtro de fecha)
-                        const _idsEgrPropios = new Set();
-                        const _idEgrPropiosLocalToSheet = {};
-                        (_sheetEgresos||[]).forEach(r => {
-                            const _sc = (r.proveedor||r.supercategoria||'').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'');
-                            if (_sc !== 'EGRESOS PROPIOS') return;
-                            const sid = String(r.idSheet||'').trim();
-                            const lid = String(r.id||'').trim();
-                            if (sid) _idsEgrPropios.add(sid);
-                            if (lid && sid) _idEgrPropiosLocalToSheet[lid] = sid;
-                        });
-                        // Paso 2: sumar efectivo/credito de egresos propios en rango
-                        (_sheetEgresos||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const _sc = (r.proveedor||r.supercategoria||'').toUpperCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'');
-                            if (_sc !== 'EGRESOS PROPIOS') return;
-                            _salPropios += _resumenFiltro==='efectivo' ? Number(r.efectivo||0)
-                                         : _resumenFiltro==='credito'  ? Number(r.credito||0)
-                                         : Number(r.total||0);
-                        });
-                        // Paso 3: ajustar con PAGO EGRESOS filtrado por FECHA ORIGINAL
-                        // EFECTIVO: sumar pagos cobrados; CRÉDITO: restar pagos cobrados (reducen la deuda)
-                        (_sheetPagoEgresos||[]).forEach(p => {
-                            let _pid = String(p.IDEGRESOS||p.idEgreso||p.idegresos||'').trim();
-                            if (_pid && !_idsEgrPropios.has(_pid)) _pid = _idEgrPropiosLocalToSheet[_pid] || _pid;
-                            if (!_pid || !_idsEgrPropios.has(_pid)) return;
-                            if (!enRango(_fnumPago(p))) return;
-                            if (_resumenFiltro === 'efectivo') {
-                                _salPropios += Number(p.monto||p.MONTO||0);
-                            } else if (_resumenFiltro === 'credito') {
-                                _salPropios -= Number(p.monto||p.MONTO||0);
-                            }
-                        });
-                        _salPropios = Math.max(0, _salPropios);
-                        if (_resumenFiltro !== 'credito') {
-                            const _vistasCE = new Set();
-                            (_sheetVentas||[]).forEach(v => {
-                                const _uid = String(v.id||'').trim();
-                                if (!_uid || _vistasCE.has(_uid)) return;
-                                _vistasCE.add(_uid);
-                                const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                                if (!fnum || !enRango(fnum)) return;
-                                if (String(v.cliente||'').toUpperCase().trim() !== 'CASA ERAZO') return;
-                                _salPropios += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-                            });
-                        }
-                    }
-                    const _balPropios = _entPropios - _salPropios;
-                    window.__entPropios = _entPropios; window.__salPropios = _salPropios;
-                    if (_resumenCategoria === 'total') return '';
-                    return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#f59e0b55;background:linear-gradient(135deg,#1a1200 0%,#0f172a 100%);">
-                        <p style="font-size:9px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'💼 INGRESOS DEL NEGOCIO':(_resumenCategoria==='total'?'📊 BALANCE TOTAL':'🏠 INGRESOS PROPIOS')}</p>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Entradas del Negocio':(_resumenCategoria==='total'?'TOTAL ENTRADAS GENERAL':'Total Entradas de Ingresos Propios')}</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entPropios)}</p>
-                            </div>
-                            <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Salidas del Negocio':(_resumenCategoria==='total'?'TOTAL SALIDAS GENERAL':'Total Salidas de Egresos Propios')}</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salPropios)}</p>
-                            </div>
-                            ${_resumenCategoria!=='total'?`<div class="text-center">
-                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balPropios>=0?'#f59e0b':'#ef4444'}">${_resumenCategoria==='negocio'?'Balance del Negocio':'Balance Propios'}</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balPropios>=0?'#f59e0b':'#ef4444'};">$${Utils.fmt(_balPropios)}</p>
-                            </div>`:''}
+            const seccion2col = (tituloIzq, cardsIzq, tituloDer, cardsDer) => `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;">
+                    <div>
+                        <div style="padding:3px 6px;border-bottom:2px solid #10b98155;margin-bottom:8px;">
+                            <span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">💚 ${tituloIzq}</span>
                         </div>
-                    </div>`;
-                })()
-                // ── Card INGRESOS AJENOS ──
-                + (()=>{
-                    // Usar _ingAjenos y _egrAjenos ya calculados con PAGO INGRESOS/EGRESOS incluidos
-                    const _entAjenos = _ingAjenos;
-                    const _salAjenos = _egrAjenos;
-                    // Cuando la categoría es 'negocio', las entradas son el total de INGRESOS NEGOCIO
-                    const _entAjenosDisplay = _resumenCategoria === 'negocio'
-                        ? (_resumenFiltro==='efectivo' ? _pinEf + (window.__pinIngNeg||0) : _resumenFiltro==='credito' ? Math.max(0, _pinCr - (window.__pinIngNeg||0)) : ingNeg.total)
-                        : _entAjenos;
-                    // Cuando la categoría es 'negocio', las salidas son el total de EGRESOS NEGOCIO
-                    const _salAjenosDisplay = _resumenCategoria === 'negocio'
-                        ? (_resumenFiltro==='efectivo' ? egrNeg.ef : _resumenFiltro==='credito' ? egrNeg.cr : egrNeg.total)
-                        : _salAjenos;
-                    const _balAjenos = _entAjenosDisplay - _salAjenosDisplay;
-                    window.__entAjenos = _entAjenosDisplay; window.__salAjenos = _salAjenosDisplay;
-                    // En categoría TOTAL no mostrar esta card
-                    if (_resumenCategoria === 'total') { window.__entAjenos = 0; window.__salAjenos = 0; return ''; }
-                    return `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:#8b5cf655;background:linear-gradient(135deg,#0d0620 0%,#0f172a 100%);">
-                        <p style="font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">${_resumenCategoria==='negocio'?'📦 INGRESOS ADICIONALES DEL NEGOCIO':'🤝 INGRESOS AJENOS'}</p>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Entradas de Adicionales del Negocio':'Total Entradas de Ingresos Ajenos'}</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_entAjenosDisplay)}</p>
-                            </div>
-                            <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:4px;">${_resumenCategoria==='negocio'?'Total Salidas de Adicionales del Negocio':'Total Salidas de Egresos Ajenos'}</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_salAjenosDisplay)}</p>
-                            </div>
-                            <div class="text-center">
-                                <p style="font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:${_balAjenos>=0?'#a78bfa':'#ef4444'}">${_resumenCategoria==='negocio'?'Balance Adicionales':'Balance Ajenos'}</p>
-                                <p style="font-size:1.2rem;font-weight:900;font-family:monospace;color:${_balAjenos>=0?'#a78bfa':'#ef4444'};">$${Utils.fmt(_balAjenos)}</p>
-                            </div>
-                        </div>
-                    </div>`;
-                })()
-                // ── TOTAL GENERAL ──
-                + (()=>{
-                    let _totEnt, _totSal;
-                    if (_resumenCategoria === 'total') {
-                        // TOTAL ENTRADAS = ventas + ingresos manuales + ingresos negocio
-                        _totEnt = _vT + _ingT + _ingNT;
-                        // TOTAL SALIDAS = compras + egresos + egresos negocio
-                        _totSal = _cmpT + _egrT + _egrNT;
-                    } else if (_resumenCategoria === 'negocio') {
-                        // NEGOCIO Total Entradas:
-                        // __entPropios = ventasSinGan + casaErazo + errVenta + pagoVentas
-                        // __entAjenos  = _pinEf + __pinIngNeg (ya sumados)
-                        _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
-                        _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
-                    } else if (_resumenCategoria === 'personal' && _resumenFiltro === 'credito') {
-                        _totEnt = Math.max(0, (window.__entPropios||0) + (window.__entAjenos||0) - (window.__totPI||0));
-                        _totSal = Math.max(0, (window.__salPropios||0) + (window.__salAjenos||0) - (window.__totPE||0));
-                    } else {
-                        _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
-                        _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
-                    }
-                    const _totBal = _totEnt - _totSal;
-                    return `<div class="glass-card rounded-2xl p-4 border border-amber-500/40 col-span-2 md:col-span-4">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div class="text-center">
-                                <p class="text-[8px] font-black text-emerald-400 uppercase">Total Entradas</p>
-                                <p class="text-xl font-black text-emerald-400 font-mono">$${Utils.fmt(_totEnt)}</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-[8px] font-black text-red-400 uppercase">Total Salidas</p>
-                                <p class="text-xl font-black text-red-400 font-mono">$${Utils.fmt(_totSal)}</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-[8px] font-black text-amber-400 uppercase">Balance</p>
-                                <p class="text-xl font-black font-mono" style="color:${_totBal>=0?'#10b981':'#ef4444'}">$${Utils.fmt(_totBal)}</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-[8px] font-black text-slate-400 uppercase">Ventas (cant)</p>
-                                <p class="text-xl font-black text-white font-mono">${vCnt}</p>
-                            </div>
-                        </div>
-                    </div>`;
-                })()
-                // Ganancias
-                + `<div class="glass-card rounded-2xl p-4 border border-emerald-500/40 col-span-2 md:col-span-4">
-                    <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2">💰 Ganancias</p>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="text-center"><p class="text-[8px] font-black text-slate-400 uppercase">Total</p><p class="text-xl font-black text-emerald-400 font-mono">$${Utils.fmt(ganTotal)}</p></div>
-                        <div class="text-center"><p class="text-[8px] font-black text-slate-400 uppercase">Efectivo</p><p class="text-xl font-black text-emerald-400 font-mono">$${Utils.fmt(ganEf)}</p></div>
-                        <div class="text-center"><p class="text-[8px] font-black text-slate-400 uppercase">Crédito</p><p class="text-xl font-black text-amber-400 font-mono">$${Utils.fmt(ganCr)}</p></div>
+                        ${cardsIzq}
                     </div>
-                </div>`
-                // Efectivo en caja
-                + `<div class="glass-card rounded-2xl p-4 border col-span-2 md:col-span-4" style="border-color:${efectivoEnCaja>=0?'#10b98155':'#ef444455'}">
-                    <p class="text-[9px] font-black uppercase tracking-widest mb-2" style="color:${efectivoEnCaja>=0?'#10b981':'#ef4444'}">💵 Efectivo en caja (debería haber)</p>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="text-center"><p class="text-[8px] font-black text-emerald-400 uppercase">Entradas EF</p><p class="text-lg font-black text-emerald-400 font-mono">$${Utils.fmt(entEf)}</p></div>
-                        <div class="text-center">
-                            ${_resumenFiltro === 'total'
-                                ? `<p class="text-[8px] font-black uppercase tracking-widest mb-1" style="color:#a78bfa;">🙏 Diezmo Maria Jesus</p>
-                                   <p class="text-[8px] font-black uppercase" style="color:#c4b5fd;">(5% Gan. Total)</p>
-                                   <p class="text-xl font-black font-mono" style="color:#a78bfa;">$${Utils.fmt(ganTotal * 0.05)}</p>`
-                                : `<p class="text-[8px] font-black text-red-400 uppercase">Salidas EF</p><p class="text-lg font-black text-red-400 font-mono">$${Utils.fmt(salEf)}</p>`
-                            }
+                    <div>
+                        <div style="padding:3px 6px;border-bottom:2px solid #ef444455;margin-bottom:8px;">
+                            <span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;">🔴 ${tituloDer}</span>
                         </div>
-                        <div class="text-center"><p class="text-[8px] font-black uppercase" style="color:${efectivoEnCaja>=0?'#10b981':'#ef4444'}">En Caja</p><p class="text-2xl font-black font-mono" style="color:${efectivoEnCaja>=0?'#10b981':'#ef4444'}">$${Utils.fmt(efectivoEnCaja)}</p></div>
+                        ${cardsDer}
                     </div>
                 </div>`;
-            } // fin if !== personal
 
-            // ── Tablas ingresos y egresos por categoría (personal) lado a lado ──
-            const _catWrapper = document.getElementById('resumenCatWrapper');
-            const _catBoxEgr = document.getElementById('resumenEgresosCat');
-            const _catBoxIng = document.getElementById('resumenIngresosCat');
-
-            try {
-            if (true) {
-                if (_catWrapper) { _catWrapper.style.display = 'block'; _catWrapper.classList.remove('hidden'); }
-
-                // ── Precalcular mapas de pagos cobrados por ID ──
-                // PAGO EFECTIVO = efectivo tabla + monto pagos (mismo ID)
-                // PAGO CREDITO  = credito tabla - monto pagos (mismo ID)
-
-                // Pagos de EGRESOS (por IDEGRESOS)
-                const _pagoEgrMap = {};
-                (_sheetPagoEgresos||[]).forEach(p => {
-                    const pid = String(p.IDEGRESOS||p.idEgreso||'').trim();
-                    if (!pid) return;
-                    _pagoEgrMap[pid] = (_pagoEgrMap[pid]||0) + Number(p.MONTO||p.monto||0);
-                });
-                // Pagos de COMPRAS (por IDCOMPRAS)
-                const _pagoCompMap = {};
-                (_sheetPagoCompras||[]).forEach(p => {
-                    const pid = String(p.IDCOMPRAS||p.idCompra||'').trim();
-                    if (!pid) return;
-                    _pagoCompMap[pid] = (_pagoCompMap[pid]||0) + Number(p.MONTO||p.monto||0);
-                });
-                // Pagos de EGRESOS NEGOCIO (por IDEGRESOSNEGOCIO) — dos arrays posibles
-                const _pagoEgrNegMap = {};
-                [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])].forEach(p => {
-                    const pid = String(p.IDEGRESOSNEGOCIO||p.idEgrNeg||'').trim();
-                    if (!pid) return;
-                    _pagoEgrNegMap[pid] = (_pagoEgrNegMap[pid]||0) + Number(p.MONTO||p.monto||0);
-                });
-                // Pagos de INGRESOS (por IDINGRESOS)
-                const _pagoIngMap = {};
-                (_sheetPagoIngresos||[]).forEach(p => {
-                    const pid = String(p.IDINGRESOS||'').trim();
-                    if (!pid) return;
-                    _pagoIngMap[pid] = (_pagoIngMap[pid]||0) + Number(p.MONTO||p.monto||0);
-                });
-                // Pagos de INGRESOS NEGOCIO (por IDINGRESOSNEGOCIO)
-                const _pagoIngNegMap = {};
-                (_sheetPagoIngNeg||[]).forEach(p => {
-                    const pid = String(p.IDINGRESOSNEGOCIO||p.idIngNeg||'').trim();
-                    if (!pid) return;
-                    _pagoIngNegMap[pid] = (_pagoIngNegMap[pid]||0) + Number(p.MONTO||p.monto||0);
-                });
-                // Pagos de VENTAS (por IDVENTAS / idVenta)
-                const _pagoVentMap = {};
-                (_pagoVentasSheet||[]).forEach(p => {
-                    const pid = String(p.idVenta||p.IDVENTAS||'').trim();
-                    if (!pid) return;
-                    _pagoVentMap[pid] = (_pagoVentMap[pid]||0) + Number(p.monto||p.MONTO||0);
-                });
-
-                // Helper: obtener sheetId de un registro
-                const _sid = r => String(r.idSheet||r.id||'').trim();
-
-                // Helper: calcular valor segun filtro, tabla y mapa de pagos
-                // EFECTIVO = r.efectivo + MONTO pagos (mismo ID)
-                // CREDITO  = r.credito  - MONTO pagos (mismo ID), minimo 0
-                // TOTAL    = r.total (columna PAGO TOTAL del sheet)
-                const _val = (r, efField, crField, pagoMap) => {
-                    if (_resumenFiltro === 'efectivo') {
-                        const sid = _sid(r);
-                        const pagado = sid ? (pagoMap[sid]||0) : 0;
-                        return Number(r[efField]||0) + pagado;
-                    }
-                    if (_resumenFiltro === 'credito') {
-                        const sid = _sid(r);
-                        const pagado = sid ? (pagoMap[sid]||0) : 0;
-                        return Math.max(0, Number(r[crField]||0) - pagado);
-                    }
-                    return Number(r.total||r.pagoTotal||0);
-                };
-
-                // ── EGRESOS por categoría ──
-                if (_catBoxEgr) {
-                    const _eMap = {};
-                    // PERSONAL/TOTAL: tabla EGRESOS
-                    if (_cat !== 'negocio') {
-                        (_sheetEgresos||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
-                            const supercat = (r.proveedor||r.supercategoria||'').trim();
-                            if (!_eMap[cat]) _eMap[cat] = { cant: 0, total: 0, supercat };
-                            _eMap[cat].cant++;
-                            _eMap[cat].total += _val(r, 'efectivo', 'credito', _pagoEgrMap);
-                        });
-                    }
-                    // NEGOCIO/TOTAL: tabla COMPRAS
-                    if (_cat === 'negocio' || _cat === 'total') {
-                        (_sheetCompras||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const cat = (r.proveedor||r.concepto||r.categoria||'Sin categoría').trim();
-                            if (!_eMap[cat]) {
-                                const _pObj = (_sheetProductos||[]).find(p => (p.proveedor||'').trim().toUpperCase() === cat.toUpperCase() && p.foto);
-                                _eMap[cat] = { cant:0, total:0, supercat:'COMPRAS', img: _pObj ? driveUrl(_pObj.foto) : null };
-                            }
-                            _eMap[cat].cant++;
-                            _eMap[cat].total += _val(r, 'efectivo', 'credito', _pagoCompMap);
-                        });
-                        // tabla EGRESOS NEGOCIO
-                        (_sheetEgresosNegocio||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
-                            if (!_eMap[cat]) _eMap[cat] = { cant:0, total:0, supercat:'EGR. NEGOCIO', img: null };
-                            _eMap[cat].cant++;
-                            _eMap[cat].total += _val(r, 'efectivo', 'credito', _pagoEgrNegMap);
-                        });
-                    }
-                    const _eCats = Object.entries(_eMap).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
-                    const _eTotal = _eCats.reduce((s,[,v])=>s+v.total, 0);
-                    const _mkRow = ([cat,v],i) => {
-                        // Buscar imagen: 1) en _listaEgresos por nombre de categoría, 2) por supercategoría vía _getCatImg
-                        const _catUpper = cat.trim().toUpperCase();
-                        const _listaEgr = window._listaEgresos || [];
-                        const _listaEgrItem = _listaEgr.find(function(x){ return (x.nombre||'').trim().toUpperCase() === _catUpper; });
-                        const _imgLista = _listaEgrItem && _listaEgrItem.imagen ? _listaEgrItem.imagen : null;
-                        const _img = v.img || _imgLista || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat',v.supercat) : null);
-                        return `<tr style="border-bottom:1px solid #0f172a;background:${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
-                            <td style="padding:8px 14px;"><div style="display:flex;align-items:center;gap:8px;">
-                                ${_img?`<img src="${_img}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1.5px solid #f8717133;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;align-items:center;justify-content:center;font-size:14px;">💸</div>`:'<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">💸</div>'}
-                                <span style="font-size:11px;font-weight:700;color:#e2e8f0;">${cat}</span>
-                            </div></td>
-                            <td style="padding:8px 10px;text-align:center;font-size:11px;font-weight:900;color:#94a3b8;">${v.cant}</td>
-                            <td style="padding:8px 14px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(v.total)}</td>
-                        </tr>`;
-                    };
-                    _catBoxEgr.innerHTML = `<div class="glass-card rounded-2xl border border-red-500/30" style="background:linear-gradient(135deg,#1a0505 0%,#0f172a 100%);overflow:hidden;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #334155;">
-                            <span style="font-size:10px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.08em;">💸 EGRESOS POR CATEGORÍA</span>
-                            <span style="font-size:1rem;font-weight:900;font-family:monospace;color:#f87171;">$${Utils.fmt(_eTotal)}</span>
-                        </div>
-                        <table style="width:100%;border-collapse:collapse;">
-                            <thead><tr style="border-bottom:1px solid #1e293b;">
-                                <th style="padding:7px 14px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Categoría</th>
-                                <th style="padding:7px 10px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Cant</th>
-                                <th style="padding:7px 14px;text-align:right;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Monto</th>
-                            </tr></thead>
-                            <tbody>${_eCats.map(_mkRow).join('')}</tbody>
-                        </table>
-                    </div>`;
-                }
-
-                // ── INGRESOS por categoría ──
-                if (_catBoxIng) {
-                    const _iMap = {};
-                    // PERSONAL/TOTAL: tabla INGRESOS
-                    if (_cat !== 'negocio') {
-                        (_sheetIngresos||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const cat = (r.concepto||r.categoria||r.cat||'Sin categoría').trim();
-                            const supercat = (r.proveedor||r.supercategoria||'').trim();
-                            if (!_iMap[cat]) _iMap[cat] = { cant: 0, total: 0, supercat };
-                            _iMap[cat].cant++;
-                            _iMap[cat].total += _val(r, 'efectivo', 'credito', _pagoIngMap);
-                        });
-                    }
-                    // NEGOCIO/TOTAL: tabla VENTAS por cliente
-                    if (_cat === 'negocio' || _cat === 'total') {
-                        const _vVistas = new Set();
-                        (_sheetVentas||[]).forEach(v => {
-                            const uid = String(v.id||'').trim();
-                            if (!uid || _vVistas.has(uid)) return;
-                            _vVistas.add(uid);
-                            const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const cat = (v.cliente||'Sin categoría').trim();
-                            if (!_iMap[cat]) {
-                                const _cObj = (clientesDB||[]).find(c => (c.nombre||'').trim().toUpperCase() === cat.toUpperCase());
-                                _iMap[cat] = { cant:0, total:0, supercat:'VENTAS', img: _cObj && _cObj.foto ? driveUrl(_cObj.foto) : null };
-                            }
-                            _iMap[cat].cant++;
-                            // VENTAS: efectivo = v.efectivo + pagos cobrados; credito = v.deuda - pagos cobrados
-                            const _sid_v = String(v.id||'').trim();
-                            const _pagadoV = _sid_v ? (_pagoVentMap[_sid_v]||0) : 0;
-                            if (_resumenFiltro === 'efectivo') {
-                                _iMap[cat].total += Number(v.efectivo||0) + _pagadoV;
-                            } else if (_resumenFiltro === 'credito') {
-                                _iMap[cat].total += Math.max(0, Number(v.deuda||0) - _pagadoV);
-                            } else {
-                                _iMap[cat].total += Number(v.efectivo||0) + _pagadoV;
-                            }
-                        });
-                        // tabla INGRESOS NEGOCIO
-                        (_sheetIngresosNegocio||[]).forEach(r => {
-                            const fnum = parseFechaNum(r.fechaISO||r.fecha||'');
-                            if (!enRango(fnum)) return;
-                            const cat = (r.concepto||r.categoria||r.cliente||'Sin categoría').trim();
-                            if (!_iMap[cat]) _iMap[cat] = { cant:0, total:0, supercat:'ING. NEGOCIO', img: null };
-                            _iMap[cat].cant++;
-                            _iMap[cat].total += _val(r, 'efectivo', 'credito', _pagoIngNegMap);
-                        });
-                    }
-                    const _iCats = Object.entries(_iMap).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
-                    const _iTotal = _iCats.reduce((s,[,v])=>s+v.total, 0);
-                    const _mkRowI = ([cat,v],i) => {
-                        // Buscar imagen: 1) foto del cliente (negocio), 2) _listaIngresos, 3) _getCatImg
-                        const _catUpper = cat.trim().toUpperCase();
-                        const _listaIng = window._listaIngresos || [];
-                        const _listaIngItem = _listaIng.find(function(x){ return (x.nombre||'').trim().toUpperCase() === _catUpper; });
-                        const _imgLista = _listaIngItem && _listaIngItem.imagen ? _listaIngItem.imagen : null;
-                        const _img = v.img || _imgLista || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat',v.supercat) : null);
-                        return `<tr style="border-bottom:1px solid #0f172a;background:${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
-                            <td style="padding:8px 14px;"><div style="display:flex;align-items:center;gap:8px;">
-                                ${_img?`<img src="${_img}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1.5px solid #34d39933;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;align-items:center;justify-content:center;font-size:14px;">💚</div>`:'<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">💚</div>'}
-                                <span style="font-size:11px;font-weight:700;color:#e2e8f0;">${cat}</span>
-                            </div></td>
-                            <td style="padding:8px 10px;text-align:center;font-size:11px;font-weight:900;color:#94a3b8;">${v.cant}</td>
-                            <td style="padding:8px 14px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(v.total)}</td>
-                        </tr>`;
-                    };
-                    _catBoxIng.innerHTML = `<div class="glass-card rounded-2xl border border-emerald-500/30" style="background:linear-gradient(135deg,#051a0e 0%,#0f172a 100%);overflow:hidden;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #334155;">
-                            <span style="font-size:10px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;">💚 INGRESOS POR CATEGORÍA</span>
-                            <span style="font-size:1rem;font-weight:900;font-family:monospace;color:#34d399;">$${Utils.fmt(_iTotal)}</span>
-                        </div>
-                        <table style="width:100%;border-collapse:collapse;">
-                            <thead><tr style="border-bottom:1px solid #1e293b;">
-                                <th style="padding:7px 14px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Categoría</th>
-                                <th style="padding:7px 10px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Cant</th>
-                                <th style="padding:7px 14px;text-align:right;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Monto</th>
-                            </tr></thead>
-                            <tbody>${_iCats.map(_mkRowI).join('')}</tbody>
-                        </table>
-                    </div>`;
-                }
-            } else {
-                if (_catWrapper) { _catWrapper.style.display = 'none'; _catWrapper.classList.add('hidden'); }
-                if (_catBoxEgr) _catBoxEgr.innerHTML = '';
-                if (_catBoxIng) _catBoxIng.innerHTML = '';
-            }
-            } catch(e) { console.error('[CAT ERROR]', e); }
-
-            // ── Tabla detalle ──
-            document.getElementById('resumenTabla').innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <!-- INGRESOS -->
-                    <div>
-                        <p style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">💚 INGRESOS</p>
-                        <table class="w-full text-[9px]">
-                            <thead><tr class="border-b border-slate-700">
-                                <th class="py-2 text-left text-slate-400 font-black uppercase">Categoría</th>
-                                <th class="py-2 text-right text-slate-400 font-black uppercase">Total</th>
-                                <th class="py-2 text-right text-slate-400 font-black uppercase">Efectivo</th>
-                                <th class="py-2 text-right text-slate-400 font-black uppercase">Crédito</th>
-                            </tr></thead>
-                            <tbody>
-                                ${kpiData.slice(0,12).filter(catFilter).map(k=>`<tr class="border-b border-slate-800 hover:bg-slate-800/50">
-                                    <td class="py-2 font-bold text-white">${k.label}</td>
-                                    <td class="py-2 text-right font-black text-white font-mono">$${Utils.fmt(k.total)}</td>
-                                    <td class="py-2 text-right text-emerald-400 font-mono">${k.ef>0?'$'+Utils.fmt(k.ef):'—'}</td>
-                                    <td class="py-2 text-right text-red-400 font-mono">${k.cr>0?'$'+Utils.fmt(k.cr):'—'}</td>
-                                </tr>`).join('')}
-                                <tr class="border-t-2 border-amber-500/50">
-                                    <td class="py-2 font-black text-amber-400">⭐ GANANCIAS</td>
-                                    <td class="py-2 text-right font-black text-amber-400 font-mono">$${Utils.fmt(ganTotal)}</td>
-                                    <td class="py-2 text-right text-emerald-400 font-mono">$${Utils.fmt(ganEf)}</td>
-                                    <td class="py-2 text-right text-amber-400 font-mono">$${Utils.fmt(ganCr)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <!-- EGRESOS -->
-                    <div>
-                        <p style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">🔴 EGRESOS</p>
-                        <table class="w-full text-[9px]">
-                            <thead><tr class="border-b border-slate-700">
-                                <th class="py-2 text-left text-slate-400 font-black uppercase">Categoría</th>
-                                <th class="py-2 text-right text-slate-400 font-black uppercase">Total</th>
-                                <th class="py-2 text-right text-slate-400 font-black uppercase">Efectivo</th>
-                                <th class="py-2 text-right text-slate-400 font-black uppercase">Crédito</th>
-                            </tr></thead>
-                            <tbody>
-                                ${kpiData.slice(12,24).filter(catFilter).map(k=>`<tr class="border-b border-slate-800 hover:bg-slate-800/50">
-                                    <td class="py-2 font-bold text-white">${k.label}</td>
-                                    <td class="py-2 text-right font-black text-white font-mono">$${Utils.fmt(k.total)}</td>
-                                    <td class="py-2 text-right text-emerald-400 font-mono">${k.ef>0?'$'+Utils.fmt(k.ef):'—'}</td>
-                                    <td class="py-2 text-right text-red-400 font-mono">${k.cr>0?'$'+Utils.fmt(k.cr):'—'}</td>
-                                </tr>`).join('')}
-                                <tr class="border-t-2 border-cyan-500/50">
-                                    <td class="py-2 font-black" style="color:${efectivoEnCaja>=0?'#06b6d4':'#ef4444'}">💵 EF. EN CAJA</td>
-                                    <td class="py-2 text-right font-black font-mono" colspan="3" style="color:${efectivoEnCaja>=0?'#06b6d4':'#ef4444'}">$${Utils.fmt(efectivoEnCaja)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            const balances3 = (bp, ba, bg, fp, fa, fg) => `
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                    ${cardBal('Balance Propio',   bp, fp)}
+                    ${cardBal('Balance Ajeno',    ba, fa)}
+                    ${cardBal('Balance General',  bg, fg)}
                 </div>`;
+
+            // Listados de registros
+            const campoFil = _epFiltro==='efectivo' ? 'efectivo' : _epFiltro==='credito' ? 'credito' : 'total';
+            const scIng = ['INGRESOS PROPIOS','INGRESOS AJENOS'];
+            const scEgr = ['EGRESOS PROPIOS','EGRESOS AJENOS'];
+
+            const ingsRango = (_sheetIngresos||[]).filter(r => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return false;
+                return scIng.includes(normSC(r.proveedor||r.supercategoria||''));
+            }).sort((a,b)=>parseFechaNum(b.fechaISO||b.fecha||'')-parseFechaNum(a.fechaISO||a.fecha||''));
+
+            const egrsRango = (_sheetEgresos||[]).filter(r => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return false;
+                return scEgr.includes(normSC(r.proveedor||r.supercategoria||''));
+            }).sort((a,b)=>parseFechaNum(b.fechaISO||b.fecha||'')-parseFechaNum(a.fechaISO||a.fecha||''));
+
+            const thStyle = 'padding:6px 8px;font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;text-align:';
+            const thead = `<tr style="border-bottom:2px solid #1e293b;">
+                <th style="${thStyle}left;">Fecha</th>
+                <th style="${thStyle}left;">Concepto</th>
+                <th style="${thStyle}left;">Categoría</th>
+                <th style="${thStyle}right;">Monto</th>
+            </tr>`;
+
+            const filaIng = r => {
+                const v = Number(r[campoFil]||0); if(v<=0) return '';
+                const sc = normSC(r.proveedor||r.supercategoria||'');
+                return `<tr style="border-bottom:1px solid #0f172a;">
+                    <td style="padding:5px 8px;font-size:9px;color:#64748b;">${(r.fecha||r.fechaISO||'').substring(0,10)}</td>
+                    <td style="padding:5px 8px;font-size:9px;font-weight:700;color:#f1f5f9;">${r.concepto||r.proveedor||'—'}</td>
+                    <td style="padding:5px 8px;font-size:8px;color:#475569;">${sc}</td>
+                    <td style="padding:5px 8px;font-size:10px;font-weight:900;font-family:monospace;color:#34d399;text-align:right;">$${Utils.fmt(v)}</td>
+                </tr>`;
+            };
+            const filaEgr = r => {
+                const v = Number(r[campoFil]||0); if(v<=0) return '';
+                const sc = normSC(r.proveedor||r.supercategoria||'');
+                return `<tr style="border-bottom:1px solid #0f172a;">
+                    <td style="padding:5px 8px;font-size:9px;color:#64748b;">${(r.fecha||r.fechaISO||'').substring(0,10)}</td>
+                    <td style="padding:5px 8px;font-size:9px;font-weight:700;color:#f1f5f9;">${r.concepto||r.proveedor||'—'}</td>
+                    <td style="padding:5px 8px;font-size:8px;color:#475569;">${sc}</td>
+                    <td style="padding:5px 8px;font-size:10px;font-weight:900;font-family:monospace;color:#f87171;text-align:right;">$${Utils.fmt(v)}</td>
+                </tr>`;
+            };
+
+            const tablaIng = `
+                <div class="glass-card rounded-2xl border border-emerald-500/20" style="overflow:hidden;margin-bottom:10px;">
+                    <div style="padding:8px 14px;border-bottom:1px solid #1e293b;">
+                        <span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">📋 Listado Ingresos</span>
+                        <span style="font-size:9px;color:#475569;margin-left:8px;">${ingsRango.length} registros</span>
+                    </div>
+                    ${ingsRango.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${ingsRango.map(filaIng).join('')}</tbody></table></div>`
+                        : '<p style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</p>'}
+                </div>`;
+
+            const tablaEgr = `
+                <div class="glass-card rounded-2xl border border-red-500/20" style="overflow:hidden;margin-bottom:4px;">
+                    <div style="padding:8px 14px;border-bottom:1px solid #1e293b;">
+                        <span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;">📋 Listado Egresos</span>
+                        <span style="font-size:9px;color:#475569;margin-left:8px;">${egrsRango.length} registros</span>
+                    </div>
+                    ${egrsRango.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${egrsRango.map(filaEgr).join('')}</tbody></table></div>`
+                        : '<p style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</p>'}
+                </div>`;
+
+            // ── ARMAR CONTENIDO SEGÚN FILTRO ──
+            let html = '';
+
+            if (_epFiltro === 'total') {
+                html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 FILTRO: PERSONAL / TOTAL</span></div>`;
+                html += seccion2col(
+                    'INGRESOS',
+                    card('INGRESOS PROPIOS TOTALES',  ingPropiosTot, '#10b981', 'TABLA INGRESOS · SC=INGRESOS PROPIOS · Sumar PAGO TOTAL') +
+                    card('INGRESOS AJENOS TOTALES',   ingAjenosTot,  '#06b6d4', 'TABLA INGRESOS · SC=INGRESOS AJENOS · Sumar PAGO TOTAL') +
+                    card('GANANCIAS TOTALES',          ganTotal,      '#f59e0b', 'Pago Total − Dinero Recuperado (excluye CASA ERAZO y ERROR VENTA)'),
+                    'EGRESOS',
+                    card('EGRESOS PROPIOS TOTALES',  egrPropiosTot, '#ef4444', 'TABLA EGRESOS · SC=EGRESOS PROPIOS · Sumar PAGO TOTAL') +
+                    card('EGRESOS AJENOS TOTALES',   egrAjenosTot,  '#a855f7', 'TABLA EGRESOS · SC=EGRESOS AJENOS · Sumar PAGO TOTAL') +
+                    card('CONSUMO DEL NEGOCIO',       consumoNegocio,'#f97316', 'TABLA VENTAS · Sumar DINERO RECUPERADO · Cliente = CASA ERAZO')
+                );
+                html += balances3(
+                    balTotProp, balTotAjen, balTotGen,
+                    'Ing.Propios Totales − Egr.Propios Totales',
+                    'Ing.Ajenos Totales − Egr.Ajenos Totales',
+                    'Balance Total Propio + Balance Total Ajeno'
+                );
+
+            } else if (_epFiltro === 'efectivo') {
+                html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 FILTRO: PERSONAL / EFECTIVO</span></div>`;
+                html += seccion2col(
+                    'INGRESOS',
+                    card('INGRESOS PROPIOS EFECTIVO',       ingPropiosEf,  '#10b981', 'TABLA INGRESOS · SC=INGRESOS PROPIOS · Sumar PAGO EFECTIVO') +
+                    card('PAGO INGRESOS PROPIOS EFECTIVO',  pagoIngPropEf, '#34d399', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS PROPIOS') +
+                    card('INGRESOS AJENOS EFECTIVO',        ingAjenosEf,   '#06b6d4', 'TABLA INGRESOS · SC=INGRESOS AJENOS · Sumar PAGO EFECTIVO') +
+                    card('PAGO INGRESOS AJENOS EFECTIVO',   pagoIngAjenEf, '#67e8f9', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS AJENOS') +
+                    card('GANANCIAS EFECTIVO PROPIO',        ganEfectivo,   '#f59e0b', 'Pago Efectivo Ventas + MONTO Pago Ventas − cuando supera Dinero Recuperado'),
+                    'EGRESOS',
+                    card('EGRESOS PROPIOS EFECTIVO',        egrPropiosEf,  '#ef4444', 'TABLA EGRESOS · SC=EGRESOS PROPIOS · Sumar PAGO EFECTIVO') +
+                    card('PAGO EGRESOS PROPIOS EFECTIVO',   pagoEgrPropEf, '#f87171', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS PROPIOS') +
+                    card('EGRESOS AJENOS EFECTIVO',         egrAjenosEf,   '#a855f7', 'TABLA EGRESOS · SC=EGRESOS AJENOS · Sumar PAGO EFECTIVO') +
+                    card('PAGO EGRESOS AJENOS EFECTIVO',    pagoEgrAjenEf, '#c084fc', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS AJENOS') +
+                    card('CONSUMO DEL NEGOCIO PROPIO',       consumoNegocio,'#f97316', 'TABLA VENTAS · Sumar DINERO RECUPERADO · Cliente = CASA ERAZO')
+                );
+                html += balances3(
+                    balEfProp, balEfAjen, balEfGen,
+                    '(IngPropEf + PagoIngPropEf + GanEf) − (EgrPropEf + PagoEgrPropEf + Consumo)',
+                    '(IngAjenEf + PagoIngAjenEf) − (EgrAjenEf + PagoEgrAjenEf)',
+                    'Balance Efectivo Propio + Balance Efectivo Ajeno'
+                );
+
+            } else { // credito
+                html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 FILTRO: PERSONAL / CRÉDITO</span></div>`;
+                html += seccion2col(
+                    'INGRESOS',
+                    card('INGRESOS PROPIOS CRÉDITO',       ingPropiosCr,  '#10b981', 'TABLA INGRESOS · SC=INGRESOS PROPIOS · Sumar PAGO CRÉDITO') +
+                    card('PAGO INGRESOS PROPIOS CRÉDITO',  pagoIngPropCr, '#34d399', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS PROPIOS') +
+                    card('INGRESOS AJENOS CRÉDITO',        ingAjenosCr,   '#06b6d4', 'TABLA INGRESOS · SC=INGRESOS AJENOS · Sumar PAGO CRÉDITO') +
+                    card('PAGO INGRESOS AJENOS CRÉDITO',   pagoIngAjenCr, '#67e8f9', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS AJENOS') +
+                    card('GANANCIAS CRÉDITO PROPIOS',       ganCredito,    '#f59e0b', 'Ganancias Totales − Ganancias Efectivo'),
+                    'EGRESOS',
+                    card('EGRESOS PROPIOS CRÉDITO',        egrPropiosCr,  '#ef4444', 'TABLA EGRESOS · SC=EGRESOS PROPIOS · Sumar PAGO CRÉDITO') +
+                    card('PAGO EGRESOS PROPIOS CRÉDITO',   pagoEgrPropCr, '#f87171', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS PROPIOS') +
+                    card('EGRESOS AJENOS CRÉDITO',         egrAjenosCr,   '#a855f7', 'TABLA EGRESOS · SC=EGRESOS AJENOS · Sumar PAGO CRÉDITO') +
+                    card('PAGO EGRESOS AJENOS CRÉDITO',    pagoEgrAjenCr, '#c084fc', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS AJENOS')
+                );
+                html += balances3(
+                    balCrProp, balCrAjen, balCrGen,
+                    '(IngPropCr + GanCr − PagoIngPropCr) − (EgrPropCr − PagoEgrPropCr)',
+                    '(IngAjenCr − PagoIngAjenCr) − (EgrAjenCr − PagoEgrAjenCr)',
+                    'Balance Crédito Propio + Balance Crédito Ajeno'
+                );
+            }
+
+            html += tablaIng + tablaEgr;
+
+            document.getElementById('epContenido').innerHTML = html;
         }
-
 
         // ── TARJETA DE CRÉDITO ─────────────────────────────────────────────
         let _tcFiltro = 'todos';
