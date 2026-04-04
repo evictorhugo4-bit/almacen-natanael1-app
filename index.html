@@ -15184,10 +15184,10 @@ if (indicator) indicator.classList.remove('hidden');
                         if (_md && !_md.classList.contains('hidden')) abrirDetalleCliente(clienteDetalleId);
                     }
                 }
-                if (Array.isArray(data.pagoCompras))          _sheetPagoCompras         = data.pagoCompras.map(r=>({IDCOMPRAS:String(r['IDCOMPRAS']||'').trim(), MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase()}));
+                if (Array.isArray(data.pagoCompras))          _sheetPagoCompras         = data.pagoCompras.map(r=>({IDCOMPRAS:String(r['IDCOMPRAS']||'').trim(), MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase()}));
                 if (Array.isArray(data.pagoIngresos))         _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['NUMERO DE PAGO INGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoEgresos))          _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim()}));
-                if (Array.isArray(data.pagoIngresosNegocio))  _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim()}));
+                if (Array.isArray(data.pagoIngresosNegocio))  _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim()})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; }
                 // Negocio
                 syncIngEgrNeg(data.ingresosNegocio, _sheetIngresosNegocio, saveIngresosNeg, 'ingresosNegocio', _supercatsIngNegSheet, _catsIngNegSheet);
@@ -16900,8 +16900,8 @@ console.log("FILTRADAS:", filtradas.length);
                     // Card 1: VENTAS TOTALES S/ GANANCIAS
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#10b98155;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">'
                     +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">▲ VENTAS TOTALES S/ GANANCIAS</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? Math.max(0,pagoEfVentas-ganEf) : _resumenFiltro==='credito' ? Math.max(0,_pvCr-creditoCobradoVentas-ganCr) : _ventasSinGan) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Ventas Pago Total − Ganancias</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? Math.max(0,vEf-ganEf) : _resumenFiltro==='credito' ? Math.max(0,vCr-ganCr) : _ventasSinGan) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo − Ganancias Efectivo' : _resumenFiltro==='credito' ? 'Pago Crédito − Ganancias Crédito' : 'Ventas Pago Total − Ganancias') + '</p>'
                     +   '</div>'
 
                     // Card 1b: VENTAS A CASA ERAZO — ocultar en crédito
@@ -16922,12 +16922,43 @@ console.log("FILTRADAS:", filtradas.length);
                     +   '<p style="font-size:7px;color:#64748b;margin-top:2px;">Suma Dinero Recuperado</p>'
                     + '</div>')
 
-                    // Card 2: INGRESOS NEGOCIO TOTAL
+                    // Card PAGO VENTAS (antes de INGRESOS NEGOCIO, solo ef/cr)
+                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
+                        var _pvCard=0;
+                        (_pagoVentasSheet||[]).forEach(function(p){
+                            var fn=parseFechaNum(p.fechaOriginal||p.fechaOrig||p['FECHA ORIGINAL']||p.fecha||p.FECHA||'');
+                            if(!enRango(fn))return;
+                            _pvCard+=Number(p.monto||p.MONTO||0);
+                        });
+                        window.__pagoVentasNeg=_pvCard;
+                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#34d39955;background:linear-gradient(135deg,#021a0e 0%,#0f172a 100%);">'
+                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#34d399;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO VENTAS</p>'
+                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#6ee7b7;">$'+Utils.fmt(_pvCard)+'</p>'
+                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Ventas · FECHA ORIGINAL en rango</p>'
+                            +'</div>';
+                    })() : '')
+
+                    // Card 2: INGRESOS NEGOCIO TOTAL (solo PAGO EFECTIVO de la tabla)
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#06b6d455;background:linear-gradient(135deg,#041520 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#06b6d4;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS NEGOCIO TOTAL</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? pagoEfIngNeg : _resumenFiltro==='credito' ? Math.max(0,_pinCr-creditoCobradoIngNeg) : _ingNegTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Ingresos Negocio — Pago Total</p>'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#06b6d4;margin-bottom:6px;letter-spacing:.08em;">▲ INGRESOS NEGOCIO TOTAL' + (_resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '') + '</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? _pinEf : _resumenFiltro==='credito' ? _pinCr : _ingNegTotal) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo tabla Ingresos Negocio' : _resumenFiltro==='credito' ? 'Pago Crédito tabla Ingresos Negocio' : 'Tabla Ingresos Negocio — Pago Total') + '</p>'
                     +   '</div>'
+
+                    // Card PAGO INGRESOS NEGOCIO (despues de INGRESOS NEGOCIO, solo ef/cr)
+                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
+                        var _pinCard=0;
+                        (_sheetPagoIngNeg||[]).forEach(function(p){
+                            if(!enRango(_fnumPago(p)))return;
+                            _pinCard+=Number(p.MONTO||p.monto||0);
+                        });
+                        window.__pinIngNeg = _pinCard;
+                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#22d3ee55;background:linear-gradient(135deg,#021820 0%,#0f172a 100%);">'
+                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#22d3ee;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO INGRESOS NEGOCIO</p>'
+                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#67e8f9;">$'+Utils.fmt(_pinCard)+'</p>'
+                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Ingresos Negocio · FECHA ORIGINAL en rango</p>'
+                            +'</div>';
+                    })() : '')
 
                     + '</div>'
 
@@ -16935,19 +16966,45 @@ console.log("FILTRADAS:", filtradas.length);
                     + '<div style="display:flex;flex-direction:column;gap:8px;">'
                     +   '<div style="padding:4px 6px;border-bottom:2px solid #ef444455;margin-bottom:2px;"><span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.1em;">🔴 EGRESOS</span></div>'
 
-                    // Card 4: COMPRAS TOTAL
+                    // Card 4: COMPRAS TOTAL EFECTIVO + PAGO COMPRAS
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f9731655;background:linear-gradient(135deg,#1a0800 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f97316;margin-bottom:6px;letter-spacing:.08em;">▼ COMPRAS TOTAL</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? pagoEfCompras : _resumenFiltro==='credito' ? Math.max(0,_pcCr-creditoCobradoCompras) : _comprasTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Compras — Pago Total</p>'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f97316;margin-bottom:6px;letter-spacing:.08em;">▼ COMPRAS TOTAL' + (_resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '') + '</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? _pcEf : _resumenFiltro==='credito' ? _pcCr : _comprasTotal) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo tabla Compras' : _resumenFiltro==='credito' ? 'Pago Crédito tabla Compras' : 'Tabla Compras — Pago Total') + '</p>'
                     +   '</div>'
+                    // Card PAGO COMPRAS (solo ef/cr)
+                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
+                        var _pcPagCard=0;
+                        (_sheetPagoCompras||[]).forEach(function(p){
+                            if(!enRango(_fnumPago(p)))return;
+                            _pcPagCard+=Number(p.MONTO||p.monto||0);
+                        });
+                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#fb923c55;background:linear-gradient(135deg,#1a0a00 0%,#0f172a 100%);">'
+                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#fb923c;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO COMPRAS</p>'
+                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#fdba74;">$'+Utils.fmt(_pcPagCard)+'</p>'
+                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Compras · FECHA ORIGINAL en rango</p>'
+                            +'</div>';
+                    })() : '')
 
-                    // Card 5: EGRESOS NEGOCIO TOTAL
+                    // Card 5: EGRESOS NEGOCIO TOTAL (solo PAGO EFECTIVO) + PAGO EGRESOS NEGOCIO
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#ec489955;background:linear-gradient(135deg,#200515 0%,#0f172a 100%);">'
-                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ec4899;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS NEGOCIO TOTAL</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f9a8d4;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? pagoEfEgrNeg : _resumenFiltro==='credito' ? Math.max(0,_penCr-creditoCobradoEgrNeg) : _egrNegTotal) + '</p>'
-                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Egresos Negocio — Pago Total</p>'
+                    +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#ec4899;margin-bottom:6px;letter-spacing:.08em;">▼ EGRESOS NEGOCIO TOTAL' + (_resumenFiltro==='efectivo' ? ' EFECTIVO' : _resumenFiltro==='credito' ? ' CRÉDITO' : '') + '</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f9a8d4;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? _penEf : _resumenFiltro==='credito' ? _penCr : _egrNegTotal) + '</p>'
+                    +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo tabla Egresos Negocio' : _resumenFiltro==='credito' ? 'Pago Crédito tabla Egresos Negocio' : 'Tabla Egresos Negocio — Pago Total') + '</p>'
                     +   '</div>'
+                    // Card PAGO EGRESOS NEGOCIO (solo ef/cr)
+                    + ((_resumenFiltro==='efectivo'||_resumenFiltro==='credito') ? (function(){
+                        var _penPagCard=0;
+                        ([...(_sheetPagoEgrNeg||[]),...(_pagoEgrNegSheet||[])]).forEach(function(p){
+                            if(!enRango(_fnumPago(p)))return;
+                            _penPagCard+=Number(p.MONTO||p.monto||0);
+                        });
+                        return '<div class="glass-card rounded-2xl p-4 border" style="border-color:#f472b655;background:linear-gradient(135deg,#200515 0%,#0f172a 100%);">'
+                            +'<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#f472b6;margin-bottom:6px;letter-spacing:.08em;">&#128176; PAGO EGRESOS NEGOCIO</p>'
+                            +'<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f9a8d4;">$'+Utils.fmt(_penPagCard)+'</p>'
+                            +'<p style="font-size:7px;color:#64748b;margin-top:4px;">Tabla Pago Egresos Negocio · FECHA ORIGINAL en rango</p>'
+                            +'</div>';
+                    })() : '')
 
                     + '</div>'
                     + '</div>';
@@ -16957,10 +17014,15 @@ console.log("FILTRADAS:", filtradas.length);
             window.__totPI = 0; window.__totPE = 0;
             if (_resumenFiltro === 'efectivo' || _resumenFiltro === 'credito') {
                 let _totPI = 0;
-                (_sheetPagoIngresos||[]).forEach(p => {
-                    if (!enRango(_fnumPago(p))) return;
-                    _totPI += Number(p.MONTO||p.monto||0);
-                });
+                if (_resumenCategoria === 'negocio') {
+                    // NEGOCIO: PAGO VENTAS ya calculado y mostrado en el bloque de arriba
+                    _totPI = window.__totPI || 0;
+                } else {
+                    (_sheetPagoIngresos||[]).forEach(p => {
+                        if (!enRango(_fnumPago(p))) return;
+                        _totPI += Number(p.MONTO||p.monto||0);
+                    });
+                }
                 let _totPE = 0;
                 (_sheetPagoEgresos||[]).forEach(p => {
                     if (!enRango(_fnumPago(p))) return;
@@ -16972,6 +17034,7 @@ console.log("FILTRADAS:", filtradas.length);
                 const _subPE   = _resumenFiltro === 'credito' ? 'Crédito pagado · FECHA ORIGINAL en rango'  : 'Monto pagado · FECHA ORIGINAL en rango';
                 window.__totPI = _totPI;
                 window.__totPE = _totPE;
+                if (_resumenCategoria === 'negocio') { /* PAGO VENTAS ya mostrado arriba */ } else
                 document.getElementById('resumenKpis').innerHTML +=
                     '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">'
                     + '<div class="glass-card rounded-2xl p-4 border" style="border-color:#34d39955;background:linear-gradient(135deg,#021a0e 0%,#0f172a 100%);">'
@@ -16994,8 +17057,13 @@ console.log("FILTRADAS:", filtradas.length);
                     let _entPropios = 0;
                     let _salPropios = 0;
                     if (_resumenCategoria === 'negocio') {
-                        // NEGOCIO: entradas = ventasSinGan + casaErazo + errorVenta
-                        _entPropios = (window.__ventasSinGan||0) + (window.__casaErazoNeg||0) + (window.__errorVentaTotal||0);
+                        // NEGOCIO EFECTIVO: ventasSinGan + casaErazo + errorVenta + pagoVentas
+                        // NEGOCIO CREDITO:  (vCr - ganCr) - pagoVentas
+                        if (_resumenFiltro === 'credito') {
+                            _entPropios = Math.max(0, Math.max(0, vCr - ganCr) - (window.__pagoVentasNeg||0));
+                        } else {
+                            _entPropios = (window.__ventasSinGan||0) + (window.__casaErazoNeg||0) + (window.__errorVentaTotal||0) + (window.__pagoVentasNeg||0);
+                        }
                         _salPropios = _cmpT;
                     } else {
                         // PERSONAL: entradas = _ingPropios (ya incluye PAGO INGRESOS por IDINGRESOS) + GANANCIAS
@@ -17080,7 +17148,7 @@ console.log("FILTRADAS:", filtradas.length);
                     const _salAjenos = _egrAjenos;
                     // Cuando la categoría es 'negocio', las entradas son el total de INGRESOS NEGOCIO
                     const _entAjenosDisplay = _resumenCategoria === 'negocio'
-                        ? (_resumenFiltro==='efectivo' ? ingNeg.ef : _resumenFiltro==='credito' ? ingNeg.cr : ingNeg.total)
+                        ? (_resumenFiltro==='efectivo' ? _pinEf + (window.__pinIngNeg||0) : _resumenFiltro==='credito' ? Math.max(0, _pinCr - (window.__pinIngNeg||0)) : ingNeg.total)
                         : _entAjenos;
                     // Cuando la categoría es 'negocio', las salidas son el total de EGRESOS NEGOCIO
                     const _salAjenosDisplay = _resumenCategoria === 'negocio'
@@ -17116,8 +17184,16 @@ console.log("FILTRADAS:", filtradas.length);
                         _totEnt = _vT + _ingT + _ingNT;
                         // TOTAL SALIDAS = compras + egresos + egresos negocio
                         _totSal = _cmpT + _egrT + _egrNT;
+                    } else if (_resumenCategoria === 'negocio') {
+                        // NEGOCIO Total Entradas:
+                        // __entPropios = ventasSinGan + casaErazo + errVenta + pagoVentas
+                        // __entAjenos  = _pinEf + __pinIngNeg (ya sumados)
+                        _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
+                        _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
+                    } else if (_resumenCategoria === 'personal' && _resumenFiltro === 'credito') {
+                        _totEnt = Math.max(0, (window.__entPropios||0) + (window.__entAjenos||0) - (window.__totPI||0));
+                        _totSal = Math.max(0, (window.__salPropios||0) + (window.__salAjenos||0) - (window.__totPE||0));
                     } else {
-                        // PERSONAL y NEGOCIO: usar __entPropios/__salPropios + __entAjenos/__salAjenos
                         _totEnt = (window.__entPropios||0) + (window.__entAjenos||0);
                         _totSal = (window.__salPropios||0) + (window.__salAjenos||0);
                     }
