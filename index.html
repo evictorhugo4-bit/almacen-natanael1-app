@@ -16380,14 +16380,16 @@ console.log("FILTRADAS:", filtradas.length);
             const idsEgrP = idsSC(_sheetEgresos,  'EGRESOS PROPIOS');
             const idsEgrA = idsSC(_sheetEgresos,  'EGRESOS AJENOS');
 
+            // consumoNegocio definido aquí para usar en todos los bloques
+            const consumoNegocio = casaErazoTotal;
+
             // ── BLOQUE TOTAL ──────────────────────────────────────────────
             const ingPropiosTot = sumSC(_sheetIngresos, 'INGRESOS PROPIOS', 'total');
             const ingAjenosTot  = sumSC(_sheetIngresos, 'INGRESOS AJENOS',  'total');
             const egrPropiosTot = sumSC(_sheetEgresos,  'EGRESOS PROPIOS',  'total');
             const egrAjenosTot  = sumSC(_sheetEgresos,  'EGRESOS AJENOS',   'total');
-            // BALANCE TOTAL PROPIO = Ing.Propios - Egr.Propios
-            // (nota: Ganancias y Consumo son info, NO entran en balance total según fila 19)
-            const balTotProp = ingPropiosTot - egrPropiosTot;
+            // BALANCE TOTAL PROPIO = (Ing.Propios + Ganancias Totales) - (Egr.Propios + Consumo del Negocio)
+            const balTotProp = (ingPropiosTot + ganTotal) - (egrPropiosTot + consumoNegocio);
             const balTotAjen = ingAjenosTot  - egrAjenosTot;
             const balTotGen  = balTotProp + balTotAjen;
 
@@ -16401,7 +16403,7 @@ console.log("FILTRADAS:", filtradas.length);
             const pagoEgrPropEf  = sumPagos(_sheetPagoEgresos, idsEgrP);
             const egrAjenosEf    = sumSC(_sheetEgresos,  'EGRESOS AJENOS',   'efectivo');
             const pagoEgrAjenEf  = sumPagos(_sheetPagoEgresos, idsEgrA);
-            const consumoNegocio = casaErazoTotal;
+            // consumoNegocio ya definido arriba (= casaErazoTotal)
             // BALANCE EFECTIVO PROPIO = (IngPropEf + PagoIngPropEf + GanEf) - (EgrPropEf + PagoEgrPropEf + Consumo)
             const balEfProp = (ingPropiosEf + pagoIngPropEf + ganEfectivo) - (egrPropiosEf + pagoEgrPropEf + consumoNegocio);
             // BALANCE EFECTIVO AJENO = (IngAjenEf + PagoIngAjenEf) - (EgrAjenEf + PagoEgrAjenEf)
@@ -16481,32 +16483,79 @@ console.log("FILTRADAS:", filtradas.length);
 
             const thStyle = 'padding:6px 8px;font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;text-align:';
             const thead = `<tr style="border-bottom:2px solid #1e293b;">
-                <th style="${thStyle}left;">Fecha</th>
+                <th style="${thStyle}left;width:50px;"></th>
                 <th style="${thStyle}left;">Concepto</th>
                 <th style="${thStyle}left;">Categoría</th>
                 <th style="${thStyle}right;">Monto</th>
             </tr>`;
 
-            const filaIng = r => {
+            // Helper: busca imagen en lista de categorías o _getCatImg
+            const _getRowImg = (r, lista) => {
+                const _map = {}; (lista||[]).forEach(it=>{ if(it.nombre&&it.imagen) _map[it.nombre.toUpperCase().trim()]=it.imagen; });
+                const pk = (r.proveedor||'').toUpperCase().trim();
+                const ck = (r.concepto||'').toUpperCase().trim();
+                return r.imagen || _map[pk] || _map[ck]
+                    || ((typeof window._getCatImg==='function') ? (window._getCatImg('supercat',r.proveedor)||window._getCatImg('supercat',r.concepto)) : null);
+            };
+
+            // Card uniforme para filas normales
+            const _cardFila = (r, colorMonto, acento, emoji, lista) => {
                 const v = Number(r[campoFil]||0); if(v<=0) return '';
                 const sc = normSC(r.proveedor||r.supercategoria||'');
-                return `<tr style="border-bottom:1px solid #0f172a;">
-                    <td style="padding:5px 8px;font-size:9px;color:#64748b;">${(r.fecha||r.fechaISO||'').substring(0,10)}</td>
-                    <td style="padding:5px 8px;font-size:9px;font-weight:700;color:#f1f5f9;">${r.concepto||r.proveedor||'—'}</td>
-                    <td style="padding:5px 8px;font-size:8px;color:#475569;">${sc}</td>
-                    <td style="padding:5px 8px;font-size:10px;font-weight:900;font-family:monospace;color:#34d399;text-align:right;">$${Utils.fmt(v)}</td>
-                </tr>`;
+                const fecha = (r.fecha||r.fechaISO||'').substring(0,10);
+                const imgUrl = _getRowImg(r, lista);
+                const img48 = `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${acento}44;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${
+                    imgUrl
+                        ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span style="font-size:22px;display:none;line-height:1;">${emoji}</span>`
+                        : `<span style="font-size:22px;line-height:1;">${emoji}</span>`
+                }</div>`;
+                return `<tr><td colspan="4" style="padding:5px 10px;">
+                  <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid ${acento}33;border-radius:14px;padding:10px 14px;">
+                    ${img48}
+                    <div style="flex:1;min-width:0;">
+                      <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:${acento};text-transform:uppercase;letter-spacing:.06em;">${sc}</p>
+                      <p style="margin:0 0 2px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.concepto||r.proveedor||'—'}</p>
+                      <p style="margin:0;font-size:9px;font-weight:700;color:#475569;">${fecha}</p>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                      <p style="margin:0;font-size:18px;font-weight:900;color:${colorMonto};font-family:monospace;line-height:1.1;">$${Utils.fmt(v)}</p>
+                    </div>
+                  </div>
+                </td></tr>`;
             };
-            const filaEgr = r => {
-                const v = Number(r[campoFil]||0); if(v<=0) return '';
-                const sc = normSC(r.proveedor||r.supercategoria||'');
-                return `<tr style="border-bottom:1px solid #0f172a;">
-                    <td style="padding:5px 8px;font-size:9px;color:#64748b;">${(r.fecha||r.fechaISO||'').substring(0,10)}</td>
-                    <td style="padding:5px 8px;font-size:9px;font-weight:700;color:#f1f5f9;">${r.concepto||r.proveedor||'—'}</td>
-                    <td style="padding:5px 8px;font-size:8px;color:#475569;">${sc}</td>
-                    <td style="padding:5px 8px;font-size:10px;font-weight:900;font-family:monospace;color:#f87171;text-align:right;">$${Utils.fmt(v)}</td>
-                </tr>`;
-            };
+
+            const filaIng = r => _cardFila(r, '#34d399', '#10b981', '📈', window._listaIngresos);
+            const filaEgr = r => _cardFila(r, '#f87171', '#ef4444', '📉', window._listaEgresos);
+
+            // Card especial: Ganancias Totales
+            const filaGanancias = ganTotal > 0 ? `<tr><td colspan="4" style="padding:5px 10px;">
+              <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid #f59e0b55;border-radius:14px;padding:10px 14px;">
+                <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#f59e0b15;border:1.5px solid #f59e0b44;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:26px;line-height:1;">📈</div>
+                <div style="flex:1;min-width:0;">
+                  <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.06em;">Ganancias Totales</p>
+                  <p style="margin:0 0 3px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">VENTAS DEL PERÍODO</p>
+                  <span style="display:inline-block;font-size:8px;font-weight:900;background:#f59e0b15;color:#fbbf24;border:1px solid #f59e0b33;border-radius:6px;padding:2px 8px;text-transform:uppercase;">Excluye CASA ERAZO y ERROR VENTA</span>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <p style="margin:0;font-size:18px;font-weight:900;color:#f59e0b;font-family:monospace;line-height:1.1;">$${Utils.fmt(ganTotal)}</p>
+                </div>
+              </div>
+            </td></tr>` : '';
+
+            // Card especial: Consumo del Negocio
+            const filaConsumo = consumoNegocio > 0 ? `<tr><td colspan="4" style="padding:5px 10px;">
+              <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid #f9731655;border-radius:14px;padding:10px 14px;">
+                <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#f9731615;border:1.5px solid #f9731644;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:26px;line-height:1;">🏪</div>
+                <div style="flex:1;min-width:0;">
+                  <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">Consumo del Negocio</p>
+                  <p style="margin:0 0 3px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">VENTAS DEL PERÍODO</p>
+                  <span style="display:inline-block;font-size:8px;font-weight:900;background:#f9731615;color:#fb923c;border:1px solid #f9731633;border-radius:6px;padding:2px 8px;text-transform:uppercase;">Cliente = CASA ERAZO</span>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <p style="margin:0;font-size:18px;font-weight:900;color:#f97316;font-family:monospace;line-height:1.1;">$${Utils.fmt(consumoNegocio)}</p>
+                </div>
+              </div>
+            </td></tr>` : '';
 
             const tablaIng = `
                 <div class="glass-card rounded-2xl border border-emerald-500/20" style="overflow:hidden;margin-bottom:10px;">
@@ -16514,8 +16563,7 @@ console.log("FILTRADAS:", filtradas.length);
                         <span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">📋 Listado Ingresos</span>
                         <span style="font-size:9px;color:#475569;margin-left:8px;">${ingsRango.length} registros</span>
                     </div>
-                    ${ingsRango.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${ingsRango.map(filaIng).join('')}</tbody></table></div>`
-                        : '<p style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</p>'}
+                    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${ingsRango.map(filaIng).join('')}${filaGanancias}</tbody></table></div>
                 </div>`;
 
             const tablaEgr = `
@@ -16524,8 +16572,7 @@ console.log("FILTRADAS:", filtradas.length);
                         <span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;">📋 Listado Egresos</span>
                         <span style="font-size:9px;color:#475569;margin-left:8px;">${egrsRango.length} registros</span>
                     </div>
-                    ${egrsRango.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${egrsRango.map(filaEgr).join('')}</tbody></table></div>`
-                        : '<p style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</p>'}
+                    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${egrsRango.map(filaEgr).join('')}${filaConsumo}</tbody></table></div>
                 </div>`;
 
             // ── ARMAR CONTENIDO SEGÚN FILTRO ──
