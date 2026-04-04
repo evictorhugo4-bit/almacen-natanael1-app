@@ -16903,10 +16903,16 @@ console.log("FILTRADAS:", filtradas.length);
                 const _ventasPagoTotal = _resumenFiltro==='efectivo' ? vEf
                                        : _resumenFiltro==='credito'  ? vCr
                                        : vTotal;
-                // CRÉDITO: mostrar vCr puro (ganancia no realizada, no se resta)
-                // EFECTIVO y TOTAL: restar ganancias
+                // EFECTIVO y TOTAL: restar ganancias correspondientes
+                // CRÉDITO: usar suma bruta de v.deuda en rango (sin excluir pagadas) menos ganCr
+                let _vCrBruto = 0;
+                (_sheetVentas||[]).forEach(v => {
+                    const fnum = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fnum)) return;
+                    _vCrBruto += Number(v.deuda||0);
+                });
                 const _ventasSinGan = _resumenFiltro === 'credito'
-                    ? vCr
+                    ? Math.max(0, _vCrBruto - ganCr)
                     : Math.max(0, _ventasPagoTotal - _vGanFiltro);
                 window.__ventasSinGan   = _ventasSinGan;
 
@@ -16975,7 +16981,7 @@ console.log("FILTRADAS:", filtradas.length);
                     // Card 1: VENTAS TOTALES S/ GANANCIAS
                     +   '<div class="glass-card rounded-2xl p-4 border" style="border-color:#10b98155;background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">'
                     +     '<p style="font-size:9px;font-weight:900;text-transform:uppercase;color:#10b981;margin-bottom:6px;letter-spacing:.08em;">▲ VENTAS TOTALES S/ GANANCIAS</p>'
-                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_resumenFiltro==='efectivo' ? Math.max(0,vEf-ganEf) : _resumenFiltro==='credito' ? Math.max(0,vCr-ganCr) : _ventasSinGan) + '</p>'
+                    +     '<p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#34d399;">$' + Utils.fmt(_ventasSinGan) + '</p>'
                     +     '<p style="font-size:7px;color:#64748b;margin-top:4px;">' + (_resumenFiltro==='efectivo' ? 'Pago Efectivo − Ganancias Efectivo' : _resumenFiltro==='credito' ? 'Pago Crédito − Ganancias Crédito' : 'Ventas Pago Total − Ganancias') + '</p>'
                     +   '</div>'
 
