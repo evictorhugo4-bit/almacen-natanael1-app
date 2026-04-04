@@ -16827,12 +16827,19 @@ console.log("FILTRADAS:", filtradas.length);
             } else {
                 // ── MODO NEGOCIO / TOTAL: 3 cards INGRESOS + 2 cards EGRESOS ──
 
-                // ── 1. VENTAS TOTALES S/ GANANCIAS: (ventas tabla + pago ventas) - ganancias ──
+                // ── 1. VENTAS TOTALES S/ GANANCIAS: PAGO CREDITO/EFECTIVO/TOTAL de ventas - ganancias
+                // En CRÉDITO: vCr (pago crédito ventas pendientes) - ganCr
+                // En EFECTIVO: vEf - ganEf
+                // En TOTAL: vTotal - ganTotal
                 const _vGanFiltro = _resumenFiltro==='efectivo' ? ganEf : _resumenFiltro==='credito' ? ganCr : ganTotal;
                 const _ventasPagoTotal = _resumenFiltro==='efectivo' ? vEf
                                        : _resumenFiltro==='credito'  ? vCr
                                        : vTotal;
-                const _ventasSinGan = Math.max(0, _ventasPagoTotal - _vGanFiltro);
+                // CRÉDITO: mostrar vCr puro (ganancia no realizada, no se resta)
+                // EFECTIVO y TOTAL: restar ganancias
+                const _ventasSinGan = _resumenFiltro === 'credito'
+                    ? vCr
+                    : Math.max(0, _ventasPagoTotal - _vGanFiltro);
                 window.__ventasSinGan   = _ventasSinGan;
 
                 // ── 2. VENTAS CASA ERAZO: sumar dineroRecuperado de ventas cuyo cliente === 'CASA ERAZO' ──
