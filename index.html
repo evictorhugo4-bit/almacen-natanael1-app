@@ -3154,7 +3154,7 @@ GUARDAR PRODUCTO
                 </div>
             </div>
             <div class="p-5 border-t border-slate-700 shrink-0">
-                <button onclick="confirmarPagoIngreso()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
+                <button id="btnConfPagoIngreso" onclick="confirmarPagoIngreso()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
                     ✓ CONFIRMAR PAGO
                 </button>
             </div>
@@ -3210,7 +3210,7 @@ GUARDAR PRODUCTO
                 </div>
             </div>
             <div class="p-5 border-t border-slate-700 shrink-0">
-                <button onclick="confirmarPagoEgreso()" class="w-full py-3 bg-red-500 text-white font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
+                <button id="btnConfPagoEgreso" onclick="confirmarPagoEgreso()" class="w-full py-3 bg-red-500 text-white font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
                     ✓ CONFIRMAR PAGO
                 </button>
             </div>
@@ -3243,7 +3243,7 @@ GUARDAR PRODUCTO
                 </div></div>
             </div>
             <div class="p-5 border-t border-slate-700 shrink-0"><button type="button"
-onclick="confirmarPagoCompra()"
+id="btnConfPagoCompra" onclick="confirmarPagoCompra()"
 class="w-full py-3 bg-blue-500 text-white font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
 CONFIRMAR PAGO
 </button>
@@ -3275,7 +3275,7 @@ CONFIRMAR PAGO
                     <button type="button" onclick="selPagoIngNegFP('TRANSFERENCIA')" id="pinBtn_TRANSFERENCIA" class="py-2 rounded-xl text-xs font-black uppercase border-2 border-slate-700 bg-slate-900 text-slate-400 transition-all">TRANSFER</button>
                 </div></div>
             </div>
-            <div class="p-5 border-t border-slate-700 shrink-0"><button onclick="confirmarPagoIngNeg()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">CONFIRMAR PAGO</button></div>
+            <div class="p-5 border-t border-slate-700 shrink-0"><button id="btnConfPagoIngNeg" onclick="confirmarPagoIngNeg()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">CONFIRMAR PAGO</button></div>
         </div>
     </div>
 
@@ -3304,7 +3304,7 @@ CONFIRMAR PAGO
                     <button type="button" onclick="selPagoEgrNegFP('TRANSFERENCIA')" id="penBtn_TRANSFERENCIA" class="py-2 rounded-xl text-xs font-black uppercase border-2 border-slate-700 bg-slate-900 text-slate-400 transition-all">TRANSFER</button>
                 </div></div>
             </div>
-            <div class="p-5 border-t border-slate-700 shrink-0"><button onclick="confirmarPagoEgrNeg()" class="w-full py-3 bg-orange-500 text-white font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">CONFIRMAR PAGO</button></div>
+            <div class="p-5 border-t border-slate-700 shrink-0"><button id="btnConfPagoEgrNeg" onclick="confirmarPagoEgrNeg()" class="w-full py-3 bg-orange-500 text-white font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">CONFIRMAR PAGO</button></div>
         </div>
     </div>
 
@@ -3341,7 +3341,7 @@ CONFIRMAR PAGO
                 </div>
             </div>
             <div class="p-5 border-t border-slate-700 shrink-0">
-                <button onclick="confirmarPagoVenta()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">CONFIRMAR PAGO</button>
+                <button id="btnConfPagoVenta" onclick="confirmarPagoVenta()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">CONFIRMAR PAGO</button>
             </div>
         </div>
     </div>
@@ -11825,7 +11825,8 @@ console.log("INGRESOS DB:", _sheetIngresos);
             document.getElementById('pagoIngresoSaldo').textContent = '$' + Utils.fmt(nuevoSaldo);
         }
 
-        function confirmarPagoIngreso() {
+        function confirmarPagoIngreso() { _ejecutarPagoUnico('btnConfPagoIngreso', _confirmarPagoIngresoImpl); }
+        function _confirmarPagoIngresoImpl() {
 
 const r = _sheetIngresos.find(c => String(c.id) === String(_pagoIngresoId));
 
@@ -11885,7 +11886,7 @@ fetchSheets({
   })
 });
 toggleModal('modalPagoIngreso', false);
-
+_liberarPago('btnConfPagoIngreso');
 mostrarToast(`✓ Pago de $${Utils.fmt(monto)} registrado`);
 
 renderIngresos();
@@ -11953,7 +11954,8 @@ renderIngresos();
             document.getElementById('pagoEgresoSaldo').textContent = '$' + Utils.fmt(Math.max(0, (r.total || 0) - yaPagado - monto));
         }
 
-        function confirmarPagoEgreso() {
+        function confirmarPagoEgreso() { _ejecutarPagoUnico('btnConfPagoEgreso', _confirmarPagoEgresoImpl); }
+        function _confirmarPagoEgresoImpl() {
 
     const r = _sheetEgresos.find(c => String(c.id) === String(_pagoEgresoId) || String(c.idSheet||'') === String(_pagoEgresoId));
     if (!r) return;
@@ -12005,6 +12007,7 @@ renderIngresos();
     });
 
     toggleModal('modalPagoEgreso', false);
+    _liberarPago('btnConfPagoEgreso');
     mostrarToast(`✓ Pago de $${Utils.fmt(monto)} registrado`);
     renderIngEgr('egreso');
 }
@@ -12042,6 +12045,64 @@ renderIngresos();
         }
 
         // ── FIN PAGO EGRESOS ───────────────────────────────────────────────
+
+
+        // ══════════════════════════════════════════════════════════════════
+        // PROTECCIÓN DOBLE CLIC / RACE CONDITION EN PAGOS
+        // ══════════════════════════════════════════════════════════════════
+        // Flag global: true mientras se está procesando un pago
+        let _pagoEnProceso = false;
+
+        /**
+         * Bloquea el botón de confirmar e impide un segundo envío.
+         * Llama fn(); al terminar libera el bloqueo automáticamente
+         * después de un timeout de seguridad (3 segundos).
+         * @param {string} btnId  — id del botón a deshabilitar
+         * @param {Function} fn   — lógica de guardado a ejecutar
+         */
+        function _ejecutarPagoUnico(btnId, fn) {
+            if (_pagoEnProceso) {
+                mostrarToast('⏳ Pago en proceso, esperá un momento...', 'error');
+                return;
+            }
+            _pagoEnProceso = true;
+            const btn = document.getElementById(btnId);
+            const textoOrig = btn ? btn.textContent : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor  = 'not-allowed';
+                btn.textContent   = '⏳ Guardando...';
+            }
+            try {
+                fn();
+            } finally {
+                // Liberar después de 3 s como máximo (por si el modal no se cierra)
+                setTimeout(function() {
+                    _pagoEnProceso = false;
+                    if (btn) {
+                        btn.disabled  = false;
+                        btn.style.opacity = '';
+                        btn.style.cursor  = '';
+                        btn.textContent   = textoOrig;
+                    }
+                }, 3000);
+            }
+        }
+
+        /**
+         * Libera el flag de pago en proceso inmediatamente.
+         * Llamar desde cada toggleModal de cierre de pago.
+         */
+        function _liberarPago(btnId) {
+            _pagoEnProceso = false;
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.disabled  = false;
+                btn.style.opacity = '';
+                btn.style.cursor  = '';
+            }
+        }
 
         // ═══════════════════════════════════════════════════════════════════
         // PAGO VENTAS
@@ -12126,7 +12187,8 @@ renderIngresos();
             document.getElementById('pagoVentaSaldo').textContent = '$'+Utils.fmt(Math.max(0,(r.deuda||0)-yaPagado-monto));
         }
 
-        function confirmarPagoVenta() {
+        function confirmarPagoVenta() { _ejecutarPagoUnico('btnConfPagoVenta', _confirmarPagoVentaImpl); }
+        function _confirmarPagoVentaImpl() {
             const r = todasLasVentas().find(v => v.id === _pagoVentaId); if (!r) return;
             const monto = parseFloat(document.getElementById('inputPagoVentaMonto').value)||0;
             if (monto <= 0) { mostrarToast('Ingresá un monto válido','error'); return; }
@@ -12181,6 +12243,7 @@ renderIngresos();
             });
             window._pagoVentasSheet = _pagoVentasSheet;
             toggleModal('modalPagoVenta', false);
+            _liberarPago('btnConfPagoVenta');
             mostrarToast(`✓ Pago de $${Utils.fmt(monto)} registrado`);
             renderHistorial();
             renderClientes();
@@ -12288,7 +12351,8 @@ renderIngresos();
             const monto = parseFloat(document.getElementById('inputPagoCompraMonto').value)||0;
             document.getElementById('pagoCompraSaldo').textContent = '$'+Utils.fmt(Math.max(0,(r.total||0)-yaPagado-monto));
         }
-     function confirmarPagoCompra() {
+     function confirmarPagoCompra() { _ejecutarPagoUnico('btnConfPagoCompra', _confirmarPagoCompraImpl); }
+     function _confirmarPagoCompraImpl() {
 
 console.log("CONFIRMAR PAGO COMPRA INICIO");
 console.log("ID BUSCADO:", _pagoCompraId);
@@ -12343,7 +12407,7 @@ fetchSheets({
 console.log("FETCH ENVIADO");
 
 toggleModal('modalPagoCompra', false);
-
+_liberarPago('btnConfPagoCompra');
 mostrarToast(`✓ Pago de $${Utils.fmt(monto)} registrado`);
 
 renderCompras();
@@ -12425,7 +12489,8 @@ console.log("FUNCION TERMINADA"); }
             const monto = parseFloat(document.getElementById('inputPagoIngNegMonto').value)||0;
             document.getElementById('pagoIngNegSaldo').textContent = '$'+Utils.fmt(Math.max(0,(r.total||0)-yaPagado-monto));
         }
-        function confirmarPagoIngNeg() {
+        function confirmarPagoIngNeg() { _ejecutarPagoUnico('btnConfPagoIngNeg', _confirmarPagoIngNegImpl); }
+        function _confirmarPagoIngNegImpl() {
 
 console.log("CLICK CONFIRMAR PAGO");
             const r = _sheetIngresosNegocio.find(c => c.id===_pagoIngNegId); if(!r) return;
@@ -12467,6 +12532,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
 });
 
 toggleModal('modalPagoIngNeg', false);
+_liberarPago('btnConfPagoIngNeg');
 
 renderIngNeg('ingresosNegocio');
 
@@ -12550,7 +12616,8 @@ _pagoEgrNegFP = 'EFECTIVO';
             const monto = parseFloat(document.getElementById('inputPagoEgrNegMonto').value)||0;
             document.getElementById('pagoEgrNegSaldo').textContent = '$'+Utils.fmt(Math.max(0, creditoTotal - yaPagado - monto));
         }
-        function confirmarPagoEgrNeg() {
+        function confirmarPagoEgrNeg() { _ejecutarPagoUnico('btnConfPagoEgrNeg', _confirmarPagoEgrNegImpl); }
+        function _confirmarPagoEgrNegImpl() {
             const r = _sheetEgresosNegocio.find(c => c.id===_pagoEgrNegId); if(!r) return;
             const monto = parseFloat(document.getElementById('inputPagoEgrNegMonto').value)||0;
             if(monto<=0) { mostrarToast('Ingresá un monto válido','error'); return; }
@@ -12598,6 +12665,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
                 fechaOriginal: r.fechaISO ? fechaSheet(new Date(r.fechaISO)) : (r.fecha||'')
             }) });
             toggleModal('modalPagoEgrNeg', false);
+            _liberarPago('btnConfPagoEgrNeg');
             mostrarToast(`✓ Pago de $${Utils.fmt(monto)} registrado`);
             renderIngNeg('egresosNegocio');
             // Refrescar detalle cliente si está abierto
