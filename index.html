@@ -18396,13 +18396,178 @@ console.log("FILTRADAS:", filtradas.length);
             }
 
             const nombreUp = nombre.toUpperCase();
+            const fmt$ = v => '$' + Utils.fmt(v);
 
-            // ── STOCK DEL PROVEEDOR ── recalcular primero
+            // ══════════════════════════════════════════════════════════
+            // 1. COMPRAS DEL PROVEEDOR — estilo modal detalleProveedor
+            // ══════════════════════════════════════════════════════════
+            const comprasProv = (_sheetCompras||[]).filter(c =>
+                String(c.proveedor||'').trim().toUpperCase() === nombreUp
+            ).sort((a,b) => {
+                const fa = parseFechaNum(a.fechaISO||a.fecha||'');
+                const fb = parseFechaNum(b.fechaISO||b.fecha||'');
+                return (fb||0) - (fa||0);
+            });
+
+            const pagosComp = (_sheetPagoCompras||[]).filter(p =>
+                String(p.proveedor||'').trim().toUpperCase() === nombreUp
+            );
+
+            const totalCompras = comprasProv.reduce((s,c) => s + (Number(c.total)||0), 0);
+            const totalCredito = comprasProv.reduce((s,c) => s + (Number(c.credito)||0), 0);
+            const totalPagado  = pagosComp.reduce((s,p) => s + (Number(p.MONTO||p.monto)||0), 0);
+            const deudaReal    = Math.max(0, totalCredito - totalPagado);
+
+            // Armar filas de compras pendientes (con saldo > 0)
+            const filasPend = [];
+            comprasProv.forEach(c => {
+                if ((Number(c.credito)||0) <= 0) return;
+                const idC = String(c.idSheet||c.id||'').trim();
+                const pagadoEsta = (_sheetPagoCompras||[])
+                    .filter(p => {
+                        const pid = String(p.IDCOMPRAS||p.idCompra||'').trim();
+                        return pid === idC || (!pid && String(p.proveedor||'').trim().toUpperCase() === nombreUp);
+                    })
+                    .reduce((s,p) => s+(Number(p.MONTO||p.monto)||0), 0);
+                const saldo = Math.max(0, (Number(c.credito)||0) - pagadoEsta);
+                if (saldo <= 0) return;
+                filasPend.push({ c, saldo });
+            });
+
+            // Armar filas de compras pagadas (saldo = 0)
+            const filasPag = [];
+            comprasProv.forEach(c => {
+                const idC = String(c.idSheet||c.id||'').trim();
+                const pagadoEsta = (_sheetPagoCompras||[])
+                    .filter(p => {
+                        const pid = String(p.IDCOMPRAS||p.idCompra||'').trim();
+                        return pid === idC || (!pid && String(p.proveedor||'').trim().toUpperCase() === nombreUp);
+                    })
+                    .reduce((s,p) => s+(Number(p.MONTO||p.monto)||0), 0);
+                const saldo = Math.max(0, (Number(c.credito)||0) - pagadoEsta);
+                if (saldo > 0 || (Number(c.credito)||0) <= 0) return;
+                filasPag.push({ c });
+            });
+
+            // Foto del proveedor
+            const provObj = [...(_sheetProveedoresNegocio||[]), ...(_sheetProveedoresGastos||[])]
+                .find(p => String(p.nombre||'').trim().toUpperCase() === nombreUp);
+            const provFoto = provObj?.foto
+                ? `<img src="${driveUrl(provObj.foto)}" style="width:36px;height:36px;border-radius:10px;object-fit:cover;" onerror="this.style.display='none'">`
+                : `<span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1e293b,#334155);border:2px solid #475569;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#94a3b8;">🏭</span>`;
+
+            const itemRow = (c, saldo, isPend) => {
+                const items = c.items && c.items.length > 0 ? c.items : [{ nombre: c.producto||'—', cantidad: 1 }];
+                const fecha = c.fecha || c.fechaISO || '';
+                const color = isPend ? '#f87171' : '#34d399';
+                const borderColor = isPend ? '#7f1d1d' : '#1e293b';
+                return `
+                <div style="background:#0f172a;border:1px solid ${borderColor};border-radius:12px;overflow:hidden;margin-bottom:6px;">
+                    <!-- Cabecera de la compra -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:${isPend?'#130505':'#050d12'};">
+                        <span style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">${Utils.escHtml(fecha)}</span>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <button onclick="verDetalleProveedor('negocio','${provObj?.id||''}')" style="padding:3px 10px;background:#0f172a;border:1px solid #334155;border-radius:8px;font-size:9px;font-weight:900;color:#94a3b8;cursor:pointer;">🔎 Ver</button>
+                            <span style="font-size:14px;font-weight:900;font-family:monospace;color:${color};">${fmt$(isPend?saldo:c.total||0)}</span>
+                        </div>
+                    </div>
+                    <!-- Ítems -->
+                    ${items.map(item => {
+                        const cant = Number(item.cantidad)||1;
+                        const nomProd = (cant > 1 ? cant+'x ' : '') + (item.nombre||'—');
+                        const precioItem = (Number(item.precio)||0) * cant;
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-top:1px solid #1e293b;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="width:8px;height:8px;border-radius:50%;background:${isPend?'#f59e0b':'#34d399'};flex-shrink:0;"></span>
+                                <span style="font-size:10px;font-weight:700;color:#cbd5e1;">${Utils.escHtml(nomProd)}</span>
+                            </div>
+                            ${precioItem > 0 ? `<span style="font-size:10px;font-weight:900;color:#94a3b8;font-family:monospace;">${fmt$(precioItem)}</span>` : ''}
+                            ${isPend ? `<button onclick="abrirPagoCompra('${c.id||c.idSheet||''}')" style="padding:4px 10px;background:#064e3b;border:none;border-radius:8px;font-size:9px;font-weight:900;color:#34d399;cursor:pointer;">− Pagar</button>` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            };
+
+            const comprasHtml = `
+                <div class="glass-card rounded-2xl border border-slate-700" style="overflow:hidden;">
+                    <!-- Header estilo modal -->
+                    <div style="padding:14px 18px;background:#0f172a;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            ${provFoto}
+                            <div>
+                                <p style="font-size:14px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0;font-style:italic;">${Utils.escHtml(nombre)}</p>
+                                <p style="font-size:8px;color:#475569;font-weight:700;margin:0;text-transform:uppercase;">Historial de Compras</p>
+                            </div>
+                        </div>
+                        ${deudaReal > 0 ? `<button onclick="verDetalleProveedor('negocio','${provObj?.id||''}')" style="padding:7px 14px;background:#064e3b;color:#34d399;border:1.5px solid #10b98155;border-radius:12px;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;letter-spacing:.04em;">💳 Pago Rápido</button>` : ''}
+                    </div>
+                    <!-- KPIs -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1e293b;">
+                        <div style="padding:16px;text-align:center;background:#0a1120;">
+                            <p style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;">Total Compras</p>
+                            <p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:#f1f5f9;margin:0;">${fmt$(totalCompras)}</p>
+                        </div>
+                        <div style="padding:16px;text-align:center;background:#0a1120;">
+                            <p style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px;">Deuda Pendiente</p>
+                            <p style="font-size:1.6rem;font-weight:900;font-family:monospace;color:${deudaReal>0?'#f87171':'#34d399'};margin:0;">${fmt$(deudaReal)}</p>
+                        </div>
+                    </div>
+                    <!-- Cuerpo -->
+                    <div style="padding:14px 16px;">
+                        <!-- Compras pendientes -->
+                        <div style="margin-bottom:10px;">
+                            <h4 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" 
+                                style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none;">
+                                Compras con saldo pendiente
+                                <span style="font-size:10px;">▲</span>
+                            </h4>
+                            <div>
+                                ${filasPend.length
+                                    ? filasPend.map(({c,saldo}) => itemRow(c, saldo, true)).join('')
+                                    : '<p style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;font-style:italic;padding:8px 0;">Sin saldo pendiente</p>'}
+                            </div>
+                        </div>
+                        <!-- Compras pagadas -->
+                        ${filasPag.length ? `
+                        <div style="margin-bottom:10px;">
+                            <h4 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"
+                                style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none;">
+                                Compras pagadas
+                                <span style="font-size:10px;">▼</span>
+                            </h4>
+                            <div style="display:none;">
+                                ${filasPag.map(({c}) => itemRow(c, 0, false)).join('')}
+                            </div>
+                        </div>` : ''}
+                        <!-- Pagos realizados -->
+                        ${pagosComp.length ? `
+                        <div>
+                            <h4 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"
+                                style="font-size:9px;font-weight:900;color:#3b82f6;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none;">
+                                Pagos realizados
+                                <span style="font-size:10px;">▼</span>
+                            </h4>
+                            <div style="display:none;">
+                                ${pagosComp.map(p => `
+                                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+                                    <div>
+                                        <span style="display:block;font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">${Utils.escHtml(p.fecha||p.FECHA||'')}</span>
+                                        <span style="display:block;font-size:10px;color:#94a3b8;">${Utils.escHtml(p.PRODUCTO||p.producto||p['FORMA DE PAGO']||'')}</span>
+                                    </div>
+                                    <span style="font-size:13px;font-weight:900;color:#34d399;font-family:monospace;">${fmt$(p.MONTO||p.monto||0)}</span>
+                                </div>`).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+
+            // ══════════════════════════════════════════════════════════
+            // 2. STOCK DEL PROVEEDOR
+            // ══════════════════════════════════════════════════════════
             recalcularTodosLosStocks();
             const productos = (_sheetProductos||[])
                 .filter(p => String(p.proveedor||'').trim().toUpperCase() === nombreUp)
                 .map(p => {
-                    // Usar stockCalculado si es un número válido y > 0, sino stock del sheet
                     const sc = p.stockCalculado;
                     const ss = parseFloat(p.stock) || 0;
                     const stockAct = (sc !== null && sc !== undefined && !isNaN(sc) && sc > 0) ? sc : ss;
@@ -18417,8 +18582,8 @@ console.log("FILTRADAS:", filtradas.length);
             const stockHtml = `
                 <div class="glass-card rounded-2xl p-4 border border-blue-500/30">
                     <div class="flex items-center justify-between mb-3">
-                        <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">📦 Stock de ${nombre}</p>
-                        <p class="text-lg font-black text-blue-400 font-mono">$${Utils.fmt(totalStock)}</p>
+                        <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">📦 Stock de ${Utils.escHtml(nombre)}</p>
+                        <p class="text-lg font-black text-blue-400 font-mono">${fmt$(totalStock)}</p>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-[10px]">
@@ -18430,17 +18595,19 @@ console.log("FILTRADAS:", filtradas.length);
                             </tr></thead>
                             <tbody>
                                 ${productos.map(p => `<tr style="border-bottom:1px solid #0f172a;">
-                                    <td class="py-2 pr-3 font-bold text-white">${p.nombre}</td>
+                                    <td class="py-2 pr-3 font-bold text-white">${Utils.escHtml(p.nombre)}</td>
                                     <td class="py-2 pr-3 text-right font-black text-emerald-400">${Utils.fmt(p.stock)}</td>
-                                    <td class="py-2 pr-3 text-right text-slate-400 font-mono">$${Utils.fmt(p.costo)}</td>
-                                    <td class="py-2 text-right font-black text-blue-400 font-mono">$${Utils.fmt(p.subtotal)}</td>
+                                    <td class="py-2 pr-3 text-right text-slate-400 font-mono">${fmt$(p.costo)}</td>
+                                    <td class="py-2 text-right font-black text-blue-400 font-mono">${fmt$(p.subtotal)}</td>
                                 </tr>`).join('')}
                             </tbody>
                         </table>
                     </div>
                 </div>`;
 
-            // ── DEUDA DE CLIENTES AL PROVEEDOR ──
+            // ══════════════════════════════════════════════════════════
+            // 3. DEUDA DE CLIENTES AL PROVEEDOR
+            // ══════════════════════════════════════════════════════════
             const todasV = [...(typeof historial!=='undefined'?historial:[]),
                 ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
 
@@ -18458,19 +18625,12 @@ console.log("FILTRADAS:", filtradas.length);
                 if (saldo <= 0) return;
                 itemsProv.forEach(it => {
                     const cant = parseFloat(it.cantidad) || 1;
-                    // Buscar costo real desde inventario, fallback a it.costo
                     const prodInv = (_sheetProductos||[]).find(p => String(p.nombre||'').trim().toUpperCase() === String(it.nombre||'').trim().toUpperCase());
                     const costo = parseFloat(prodInv?.costo || it.costo) || 0;
-                    deudaRows.push({
-                        cliente: v.cliente || '—',
-                        producto: it.nombre || '—',
-                        cantidad: cant,
-                        deuda: costo * cant
-                    });
+                    deudaRows.push({ cliente: v.cliente || '—', producto: it.nombre || '—', cantidad: cant, deuda: costo * cant });
                 });
             });
 
-            // Agrupar por cliente+producto
             const deudaMap = {};
             deudaRows.forEach(r => {
                 const k = r.cliente + '|||' + r.producto;
@@ -18478,34 +18638,24 @@ console.log("FILTRADAS:", filtradas.length);
                 deudaMap[k].cantidad += r.cantidad;
                 deudaMap[k].deuda += r.deuda;
             });
-            // Calcular deuda total por cliente para ordenar
             const deudaPorCliente = {};
-            Object.values(deudaMap).forEach(r => {
-                deudaPorCliente[r.cliente] = (deudaPorCliente[r.cliente] || 0) + r.deuda;
-            });
-            // Ordenar: primero por deuda total del cliente desc, luego por deuda del item desc
+            Object.values(deudaMap).forEach(r => { deudaPorCliente[r.cliente] = (deudaPorCliente[r.cliente]||0) + r.deuda; });
             const deudaFinal = Object.values(deudaMap).sort((a,b) => {
-                const diffCli = (deudaPorCliente[b.cliente]||0) - (deudaPorCliente[a.cliente]||0);
-                if (diffCli !== 0) return diffCli;
-                return b.deuda - a.deuda;
+                const d = (deudaPorCliente[b.cliente]||0) - (deudaPorCliente[a.cliente]||0);
+                return d !== 0 ? d : b.deuda - a.deuda;
             });
             const totalDeuda = deudaFinal.reduce((s,r) => s + r.deuda, 0);
 
-            // Mapas para fotos
             const _cliMapP = {};
-            (typeof clientesDB !== 'undefined' ? clientesDB : []).forEach(c => {
-                _cliMapP[String(c.nombre||'').trim().toUpperCase()] = c;
-            });
+            (typeof clientesDB !== 'undefined' ? clientesDB : []).forEach(c => { _cliMapP[String(c.nombre||'').trim().toUpperCase()] = c; });
             const _prodMapP = {};
-            (_sheetProductos||[]).forEach(p => {
-                _prodMapP[String(p.nombre||'').trim().toUpperCase()] = p;
-            });
+            (_sheetProductos||[]).forEach(p => { _prodMapP[String(p.nombre||'').trim().toUpperCase()] = p; });
 
             const deudaHtml = `
                 <div class="glass-card rounded-2xl p-4 border border-red-500/30">
                     <div class="flex items-center justify-between mb-3">
-                        <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">💰 Clientes deben — a pagar a ${nombre}</p>
-                        <p class="text-lg font-black text-red-400 font-mono">$${Utils.fmt(totalDeuda)}</p>
+                        <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">💰 Clientes deben — a pagar a ${Utils.escHtml(nombre)}</p>
+                        <p class="text-lg font-black text-red-400 font-mono">${fmt$(totalDeuda)}</p>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-[10px]">
@@ -18528,18 +18678,13 @@ console.log("FILTRADAS:", filtradas.length);
                                     const esNuevoCliente = idx === 0 || deudaFinal[idx-1].cliente !== r.cliente;
                                     const borderTop = esNuevoCliente && idx > 0 ? 'border-top:2px solid #334155;' : '';
                                     const clienteTd = esNuevoCliente
-                                        ? `<div style="display:flex;align-items:center;gap:7px;">${cliFoto}<span style="font-weight:800;color:#f1f5f9;font-size:11px;">${r.cliente}</span><span style="font-size:9px;color:#64748b;margin-left:4px;">$${Utils.fmt(deudaPorCliente[r.cliente]||0)}</span></div>`
+                                        ? `<div style="display:flex;align-items:center;gap:7px;">${cliFoto}<span style="font-weight:800;color:#f1f5f9;font-size:11px;">${Utils.escHtml(r.cliente)}</span><span style="font-size:9px;color:#64748b;margin-left:4px;">${fmt$(deudaPorCliente[r.cliente]||0)}</span></div>`
                                         : `<div style="display:flex;align-items:center;gap:7px;"><span style="width:26px;flex-shrink:0;"></span><span style="color:#475569;font-size:10px;">↳</span></div>`;
                                     return `<tr style="border-bottom:1px solid #0f172a;${borderTop}">
                                         <td class="py-2 pr-3">${clienteTd}</td>
                                         <td class="py-2 pr-3" style="text-align:right;font-weight:900;color:#cbd5e1;">${Utils.fmt(r.cantidad)}</td>
-                                        <td class="py-2 pr-3">
-                                            <div style="display:flex;align-items:center;gap:7px;">
-                                                ${prodFoto}
-                                                <span style="color:#cbd5e1;font-size:11px;font-weight:700;">${r.producto}</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-2" style="text-align:right;font-weight:900;color:#f87171;font-family:monospace;font-size:11px;">$${Utils.fmt(r.deuda)}</td>
+                                        <td class="py-2 pr-3"><div style="display:flex;align-items:center;gap:7px;">${prodFoto}<span style="color:#cbd5e1;font-size:11px;font-weight:700;">${Utils.escHtml(r.producto)}</span></div></td>
+                                        <td class="py-2" style="text-align:right;font-weight:900;color:#f87171;font-family:monospace;font-size:11px;">${fmt$(r.deuda)}</td>
                                     </tr>`;
                                 }).join('') : '<tr><td colspan="4" class="py-4 text-center text-slate-500">Sin deudas pendientes</td></tr>'}
                             </tbody>
@@ -18547,40 +18692,33 @@ console.log("FILTRADAS:", filtradas.length);
                     </div>
                 </div>`;
 
-            // ── DEUDA REAL AL PROVEEDOR (compras a crédito - pagos realizados) ──
-            const comprasProv = (_sheetCompras||[]).filter(c => String(c.proveedor||'').trim().toUpperCase() === nombreUp);
-            const totalCreditoProv = comprasProv.reduce((s,c) => s + (Number(c.credito)||0), 0);
-            const idsComprasProv = new Set(comprasProv.map(c => String(c.idSheet||c.id||'').trim()).filter(Boolean));
-            const totalPagadoProv = (_sheetPagoCompras||[])
-                .filter(pg => { const id = String(pg.IDCOMPRAS||'').trim(); return id ? idsComprasProv.has(id) : String(pg.proveedor||'').trim().toUpperCase()===nombreUp; })
-                .reduce((s,pg) => s + (Number(pg.MONTO||pg.monto)||0), 0);
-            const deudaRealProv = Math.max(0, totalCreditoProv - totalPagadoProv);
-
-            // ── RESUMEN ──
+            // ══════════════════════════════════════════════════════════
+            // 4. RESUMEN (deuda real al proveedor)
+            // ══════════════════════════════════════════════════════════
             const resumenHtml = `
                 <div class="glass-card rounded-2xl p-4 border border-amber-500/40">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
                         <div style="padding:8px;background:#0f172a;border-radius:12px;border:1px solid #1e3a5f;">
                             <p style="font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Stock del Proveedor</p>
-                            <p style="font-size:18px;font-weight:900;color:#60a5fa;font-family:monospace;margin-top:4px;">$${Utils.fmt(totalStock)}</p>
+                            <p style="font-size:18px;font-weight:900;color:#60a5fa;font-family:monospace;margin-top:4px;">${fmt$(totalStock)}</p>
                         </div>
                         <div style="padding:8px;background:#0f172a;border-radius:12px;border:1px solid #064e3b;">
                             <p style="font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Clientes te deben</p>
-                            <p style="font-size:18px;font-weight:900;color:#34d399;font-family:monospace;margin-top:4px;">$${Utils.fmt(totalDeuda)}</p>
+                            <p style="font-size:18px;font-weight:900;color:#34d399;font-family:monospace;margin-top:4px;">${fmt$(totalDeuda)}</p>
                         </div>
                         <div style="padding:8px;background:#0f172a;border-radius:12px;border:1px solid #7f1d1d;">
                             <p style="font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Deuda al Proveedor</p>
-                            <p style="font-size:18px;font-weight:900;color:#f87171;font-family:monospace;margin-top:4px;">$${Utils.fmt(deudaRealProv)}</p>
+                            <p style="font-size:18px;font-weight:900;color:#f87171;font-family:monospace;margin-top:4px;">${fmt$(deudaReal)}</p>
                         </div>
                         <div style="padding:8px;background:#0f172a;border-radius:12px;border:1px solid #78350f;">
                             <p style="font-size:8px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.06em;">⚠️ A pagar al proveedor</p>
-                            <p style="font-size:18px;font-weight:900;color:#f59e0b;font-family:monospace;margin-top:4px;">$${Utils.fmt(Math.max(0, deudaRealProv - totalDeuda - totalStock))}</p>
+                            <p style="font-size:18px;font-weight:900;color:#f59e0b;font-family:monospace;margin-top:4px;">${fmt$(Math.max(0, deudaReal - totalDeuda - totalStock))}</p>
                             <p style="font-size:8px;color:#64748b;margin-top:2px;">Deuda − Clientes − Stock</p>
                         </div>
                     </div>
                 </div>`;
 
-            cont.innerHTML = resumenHtml + stockHtml + deudaHtml;
+            cont.innerHTML = comprasHtml + resumenHtml + stockHtml + deudaHtml;
         }
 
         function regSetPeriodo(dias) {
