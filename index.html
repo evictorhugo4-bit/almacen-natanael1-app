@@ -1993,6 +1993,7 @@ GUARDAR PRODUCTO
                     <button id="tabBtnProductos" onclick="switchStatsTab('productos')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Productos</button>
                     <button id="tabBtnRegistros" onclick="switchStatsTab('registros')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Registros</button>
                     <button id="tabBtnTarjeta" onclick="switchStatsTab('tarjeta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💳 Tarjeta</button>
+                    <button id="tabBtnNegocio" onclick="switchStatsTab('negocio')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🏪 Negocio</button>
                 </div>
             </div>
             <!-- Filtros fecha (solo ventas) -->
@@ -2151,7 +2152,39 @@ GUARDAR PRODUCTO
             <div id="epContenido"></div>
         </div>
 
-        <!-- TAB TARJETA DE CRÉDITO -->
+        <!-- TAB ESTADO NEGOCIO -->
+        <div id="tabNegocio" class="hidden space-y-4">
+            <div style="display:flex;align-items:center;gap:10px;padding:2px 0 6px;">
+                <span style="font-size:20px;">🏪</span>
+                <div>
+                    <h3 style="font-size:14px;font-weight:900;color:#f1f5f9;text-transform:uppercase;margin:0;letter-spacing:.05em;">Estado del Negocio</h3>
+                    <p style="font-size:9px;color:#64748b;font-weight:700;margin:0;text-transform:uppercase;">Ventas · Compras · Ingresos · Egresos · Balances</p>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-2 items-end">
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label>
+                    <input type="datetime-local" id="enDesde" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label>
+                    <input type="datetime-local" id="enHasta" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                </div>
+                <button onclick="renderEstadoNegocio()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
+                <button onclick="enSetPeriodo(1)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">HOY</button>
+                <button onclick="enSetPeriodo(7)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">7D</button>
+                <button onclick="enSetPeriodo(30)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">30D</button>
+                <button onclick="enSetPeriodo(90)" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">90D</button>
+                <div class="flex gap-1 ml-2 border-l border-slate-700 pl-2">
+                    <button id="enBtn_total"    onclick="_enFiltro='total';   renderEstadoNegocio()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-amber-500 text-black">Total</button>
+                    <button id="enBtn_efectivo" onclick="_enFiltro='efectivo';renderEstadoNegocio()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300">Efectivo</button>
+                    <button id="enBtn_credito"  onclick="_enFiltro='credito'; renderEstadoNegocio()" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action bg-slate-700 text-slate-300">Crédito</button>
+                </div>
+            </div>
+            <div id="enContenido"></div>
+        </div>
+
+                <!-- TAB TARJETA DE CRÉDITO -->
         <div id="tabTarjeta" class="hidden space-y-4">
 
             <!-- HERO: tarjeta visual + resumen -->
@@ -16559,20 +16592,26 @@ console.log("FILTRADAS:", filtradas.length);
 
             const tablaIng = `
                 <div class="glass-card rounded-2xl border border-emerald-500/20" style="overflow:hidden;margin-bottom:10px;">
-                    <div style="padding:8px 14px;border-bottom:1px solid #1e293b;">
-                        <span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">📋 Listado Ingresos</span>
-                        <span style="font-size:9px;color:#475569;margin-left:8px;">${ingsRango.length} registros</span>
+                    <div onclick="(function(el){var b=el.parentElement.querySelector('.ep-body-ing');var a=el.querySelector('.ep-arrow-ing');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+                        <div>
+                            <span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">📋 Listado Ingresos</span>
+                            <span style="font-size:9px;color:#475569;margin-left:8px;">${ingsRango.length} registros</span>
+                        </div>
+                        <span class="ep-arrow-ing" style="color:#475569;font-size:14px;transition:transform .2s;transform:rotate(-90deg);">▼</span>
                     </div>
-                    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${ingsRango.map(filaIng).join('')}${filaGanancias}</tbody></table></div>
+                    <div class="ep-body-ing" style="display:none;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${ingsRango.map(filaIng).join('')}${filaGanancias}</tbody></table></div>
                 </div>`;
 
             const tablaEgr = `
                 <div class="glass-card rounded-2xl border border-red-500/20" style="overflow:hidden;margin-bottom:4px;">
-                    <div style="padding:8px 14px;border-bottom:1px solid #1e293b;">
-                        <span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;">📋 Listado Egresos</span>
-                        <span style="font-size:9px;color:#475569;margin-left:8px;">${egrsRango.length} registros</span>
+                    <div onclick="(function(el){var b=el.parentElement.querySelector('.ep-body-egr');var a=el.querySelector('.ep-arrow-egr');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+                        <div>
+                            <span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;">📋 Listado Egresos</span>
+                            <span style="font-size:9px;color:#475569;margin-left:8px;">${egrsRango.length} registros</span>
+                        </div>
+                        <span class="ep-arrow-egr" style="color:#475569;font-size:14px;transition:transform .2s;transform:rotate(-90deg);">▼</span>
                     </div>
-                    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${egrsRango.map(filaEgr).join('')}${filaConsumo}</tbody></table></div>
+                    <div class="ep-body-egr" style="display:none;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${thead}</thead><tbody>${egrsRango.map(filaEgr).join('')}${filaConsumo}</tbody></table></div>
                 </div>`;
 
             // ── ARMAR CONTENIDO SEGÚN FILTRO ──
@@ -16648,7 +16687,529 @@ console.log("FILTRADAS:", filtradas.length);
             document.getElementById('epContenido').innerHTML = html;
         }
 
-        // ── TARJETA DE CRÉDITO ─────────────────────────────────────────────
+        // ── ESTADO NEGOCIO ──────────────────────────────────────────────────────
+        let _enFiltro = 'total';
+
+        function enSetPeriodo(dias) {
+            const hoy = new Date();
+            const hasta = hoy; hasta.setHours(23,59,59,0);
+            const desde = new Date(hoy);
+            if (dias === 1) { desde.setHours(0,0,0,0); }
+            else { desde.setDate(desde.getDate() - dias + 1); desde.setHours(0,0,0,0); }
+            const fmt = d => new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+            document.getElementById('enDesde').value = fmt(desde);
+            document.getElementById('enHasta').value = fmt(hasta);
+            renderEstadoNegocio();
+        }
+
+        function enSetPeriodoDefault() {
+            const el = document.getElementById('enDesde');
+            if (el && !el.value) enSetPeriodo(30);
+        }
+
+        function renderEstadoNegocio() {
+            const container = document.getElementById('enContenido');
+            if (!container) return;
+
+            const desdeVal = document.getElementById('enDesde').value;
+            const hastaVal = document.getElementById('enHasta').value;
+            const fdNum = desdeVal ? parseFechaNum(desdeVal) : null;
+            const fhNum = hastaVal ? parseFechaNum(hastaVal) : null;
+            const enRango = fn => { if(!fn) return false; if(fdNum&&fn<fdNum) return false; if(fhNum&&fn>fhNum) return false; return true; };
+            const fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+
+            // Actualizar botones filtro
+            ['total','efectivo','credito'].forEach(f => {
+                const b = document.getElementById('enBtn_'+f);
+                if(b) b.className = 'px-3 py-1.5 rounded-lg font-black text-[10px] uppercase btn-action ' +
+                    (f===_enFiltro ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            });
+
+            const fmt$ = v => '$' + Utils.fmt(Math.abs(v));
+            const fmtCol = v => v >= 0 ? '#34d399' : '#f87171';
+            const fmtPre = v => v >= 0 ? '▲ ' : '▼ ';
+
+            // ── Helper: suma campo de ventas en rango, excluyendo clientes especiales ──
+            const sumVentas = (campo, excluir) => {
+                let tot = 0;
+                const todasV = [...(typeof historial !== 'undefined' ? historial : []),
+                    ...(_sheetVentas||[]).filter(v => !(typeof historial !== 'undefined' ? historial : []).some(h=>h.id===v.id))];
+                todasV.forEach(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn)) return;
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    if (excluir && excluir.includes(cli)) return;
+                    // credito: Sheet usa v.deuda, local usa v.credito o v.pagoCredito
+                    let val;
+                    if (campo === 'credito') {
+                        val = Number(v.deuda||v.credito||v.pagoCredito||0);
+                    } else if (campo === 'efectivo') {
+                        val = Number(v.efectivo||v.pagoEfectivo||0);
+                    } else {
+                        val = Number(v[campo]||0);
+                    }
+                    tot += val;
+                });
+                return tot;
+            };
+
+            // ── Helper: suma dineroRecuperado por cliente ──
+            const sumDinRecCliente = (clienteKey) => {
+                let tot = 0;
+                const todasV = [...(typeof historial !== 'undefined' ? historial : []),
+                    ...(_sheetVentas||[]).filter(v => !(typeof historial !== 'undefined' ? historial : []).some(h=>h.id===v.id))];
+                todasV.forEach(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn)) return;
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    if (cli !== clienteKey) return;
+                    tot += (v.items||[]).reduce((s,i) => s + Number(i.dineroRecuperado||0), 0);
+                });
+                return tot;
+            };
+
+            // ── Helper: suma campo de compras en rango ──
+            const sumCompras = campo => (_sheetCompras||[]).reduce((s,c) => {
+                if (!enRango(parseFechaNum(c.fechaISO||c.fecha||''))) return s;
+                return s + Number(c[campo]||0);
+            }, 0);
+
+            // ── Helper: suma campo de tabla ingresos/egresos negocio en rango ──
+            const sumNeg = (arr, campo) => {
+                const vistos = new Set();
+                return (arr||[]).reduce((s,r) => {
+                    if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                    const uid = r.idSheet || r.id || '';
+                    if (uid && vistos.has(uid)) return s;
+                    if (uid) vistos.add(uid);
+                    return s + Number(r[campo]||0);
+                }, 0);
+            };
+
+            // ── Helper: suma monto de tabla pago por fecha original en rango ──
+            const sumPagoFechaOrig = arr => (arr||[]).reduce((s,p) => {
+                if (!enRango(fnumPago(p))) return s;
+                return s + Number(p.MONTO||p.monto||0);
+            }, 0);
+
+            // ══════════════════════════════════════
+            // CÁLCULOS COMUNES
+            // ══════════════════════════════════════
+            const casaErazo   = sumDinRecCliente('CASA ERAZO');
+            const errorVenta  = sumDinRecCliente('ERROR VENTA');
+
+            // Ganancias totales y efectivo (reutilizando lógica de renderResumen)
+            let ganTotEN=0, ganEfEN=0, casaErazoTotEN=0;
+            const _ppvEN = {};
+            (_pagoVentasSheet||[]).forEach(p => {
+                const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                if(!idV) return;
+                if(!enRango(fnumPago(p))) return;
+                _ppvEN[idV] = (_ppvEN[idV]||0) + Number(p.monto||p.MONTO||0);
+            });
+            const todasVEN = [...(typeof historial!=='undefined'?historial:[]),
+                ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+            const _vVistasEN = new Set();
+            todasVEN.forEach(v => {
+                const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                if(!enRango(fn)||_vVistasEN.has(v.id)) return;
+                _vVistasEN.add(v.id);
+                const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+                const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+                const cli = String(v.cliente||'').toUpperCase().trim();
+                const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
+                if(cli==='CASA ERAZO') casaErazoTotEN += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                if(esEsp) return;
+                const ganBruta = Math.max(0, total - dinRec);
+                const cobEf = ef + (_ppvEN[String(v.id)]||0);
+                const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
+                ganTotEN += ganEfV + Math.max(0, ganBruta - ganEfV);
+                ganEfEN  += ganEfV;
+            });
+            const ganCrEN = Math.max(0, ganTotEN - ganEfEN);
+
+            // ══════════════════════════════════════
+            // BLOQUE TOTAL
+            // ══════════════════════════════════════
+            const ventasTot    = sumVentas('total',    ['CASA ERAZO','ERROR VENTA','ERROR VENTAS']);
+            const comprasTot   = sumCompras('total');
+            const egrNegTot    = sumNeg(_sheetEgresosNegocio, 'total');
+            const ingNegTot    = sumNeg(_sheetIngresosNegocio, 'total');
+
+            // BALANCE NEGOCIO TOTAL = (ventasTot + casaErazo + errorVenta - ganTotEN) - comprasTot
+            const balNegTot    = (ventasTot + casaErazo + errorVenta - ganTotEN) - comprasTot;
+            // BALANCE COMPLEMENTARIO TOTAL = ingNegTot - egrNegTot
+            const balCompTot   = ingNegTot - egrNegTot;
+            // BALANCE TOTAL = balNegTot + balCompTot
+            const balTotEN     = balNegTot + balCompTot;
+
+            // ══════════════════════════════════════
+            // BLOQUE EFECTIVO
+            // ══════════════════════════════════════
+            const ventasEf     = sumVentas('efectivo', ['CASA ERAZO','ERROR VENTA','ERROR VENTAS']);
+            const comprasEf    = sumCompras('efectivo');
+            const pagoCompEf   = sumPagoFechaOrig(_sheetPagoCompras);
+            const pagoVentEf   = sumPagoFechaOrig(_pagoVentasSheet);
+            const egrNegEf     = sumNeg(_sheetEgresosNegocio, 'efectivo');
+            const pagoEgrNegEf = sumPagoFechaOrig(_sheetPagoEgrNeg);
+            const ingNegEf     = sumNeg(_sheetIngresosNegocio, 'efectivo');
+            const pagoIngNegEf = sumPagoFechaOrig(_sheetPagoIngNeg);
+
+            // BALANCE NEGOCIO EFECTIVO = (ventasEf + casaErazo + errorVenta - ganEfEN + pagoVentEf) - (comprasEf + pagoCompEf)
+            const balNegEf     = (ventasEf + casaErazo + errorVenta - ganEfEN + pagoVentEf) - (comprasEf + pagoCompEf);
+            // BALANCE COMPLEMENTARIO EFECTIVO = (ingNegEf + pagoIngNegEf) - (egrNegEf + pagoEgrNegEf)
+            const balCompEf    = (ingNegEf + pagoIngNegEf) - (egrNegEf + pagoEgrNegEf);
+            // BALANCE EFECTIVO = balNegEf + balCompEf
+            const balEfEN      = balNegEf + balCompEf;
+
+            // ══════════════════════════════════════
+            // BLOQUE CRÉDITO
+            // ══════════════════════════════════════
+            const ventasCr     = sumVentas('credito',  ['CASA ERAZO','ERROR VENTA','ERROR VENTAS']);
+            const comprasCr    = sumCompras('credito');
+            const pagoCompCr   = sumPagoFechaOrig(_sheetPagoCompras);
+            const pagoVentCr   = sumPagoFechaOrig(_pagoVentasSheet);
+            const egrNegCr     = sumNeg(_sheetEgresosNegocio, 'credito');
+            const pagoEgrNegCr = sumPagoFechaOrig(_sheetPagoEgrNeg);
+            const ingNegCr     = sumNeg(_sheetIngresosNegocio, 'credito');
+            const pagoIngNegCr = sumPagoFechaOrig(_sheetPagoIngNeg);
+
+            // BALANCE NEGOCIO CRÉDITO = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr)
+            const balNegCr     = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr);
+            // BALANCE COMPLEMENTARIO CRÉDITO = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr)
+            const balCompCr    = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr);
+            // BALANCE CRÉDITO = balNegCr + balCompCr
+            const balCrEN      = balNegCr + balCompCr;
+
+            // ══════════════════════════════════════
+            // RENDER
+            // ══════════════════════════════════════
+            const enCard = (titulo, valor, color, desc) => `
+                <div class="glass-card rounded-2xl p-4 border" style="border-color:${color}33;">
+                    <p style="font-size:8px;font-weight:900;color:${color};text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px;">${titulo}</p>
+                    <p style="font-size:20px;font-weight:900;color:#f1f5f9;font-family:monospace;margin:0 0 2px;">$${Utils.fmt(valor)}</p>
+                    <p style="font-size:8px;color:#475569;margin:0;">${desc}</p>
+                </div>`;
+
+            const enBalance = (titulo, valor, desc) => `
+                <div class="glass-card rounded-2xl p-4 border-2" style="border-color:${fmtCol(valor)}55;background:linear-gradient(135deg,#0f172a,#1e293b);">
+                    <p style="font-size:8px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px;">⚖️ ${titulo}</p>
+                    <p style="font-size:24px;font-weight:900;color:${fmtCol(valor)};font-family:monospace;margin:0 0 2px;">${fmtPre(valor)}${fmt$(valor)}</p>
+                    <p style="font-size:8px;color:#475569;margin:0;">${desc}</p>
+                </div>`;
+
+            const enSec2col = (titIng, cardsIng, titEgr, cardsEgr) => `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;">💚 ${titIng}</p>
+                        <div style="display:flex;flex-direction:column;gap:8px;">${cardsIng}</div>
+                    </div>
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;">🔴 ${titEgr}</p>
+                        <div style="display:flex;flex-direction:column;gap:8px;">${cardsEgr}</div>
+                    </div>
+                </div>`;
+
+            let html = '';
+            const filtroLabel = _enFiltro === 'efectivo' ? 'EFECTIVO' : _enFiltro === 'credito' ? 'CRÉDITO' : 'TOTAL';
+            html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em;">📊 NEGOCIO / ${filtroLabel}</span></div>`;
+
+            if (_enFiltro === 'total') {
+                html += enSec2col(
+                    'INGRESOS',
+                    enCard('Ventas Totales',        ventasTot,  '#10b981', 'TABLA VENTAS · Suma PAGO TOTAL · excl. CASA ERAZO y ERROR VENTA') +
+                    enCard('Ventas a Casa Erazo',   casaErazo,  '#06b6d4', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = CASA ERAZO') +
+                    enCard('Error Venta',            errorVenta, '#f59e0b', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = ERROR VENTA') +
+                    enCard('Ganancias Totales',      ganTotEN,   '#fbbf24', 'Pago Total − Dinero Recuperado (excl. CASA ERAZO y ERROR VENTA)') +
+                    enCard('Ingresos Negocio Tot.',  ingNegTot,  '#34d399', 'TABLA INGRESOS NEGOCIO · Suma PAGO TOTAL'),
+                    'EGRESOS',
+                    enCard('Compras Totales',        comprasTot, '#ef4444', 'TABLA COMPRAS · Suma PAGO TOTAL') +
+                    enCard('Egresos Negocio Tot.',   egrNegTot,  '#f87171', 'TABLA EGRESOS NEGOCIO · Suma PAGO TOTAL')
+                );
+                html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                    ${enBalance('Balance Negocio Total',   balNegTot,  '(Ventas+CasaErazo+ErrorVenta−Ganancias) − Compras')}
+                    ${enBalance('Balance Complementario',  balCompTot, 'Ingresos Negocio − Egresos Negocio')}
+                    ${enBalance('Balance Total',           balTotEN,   'Balance Negocio + Balance Complementario')}
+                </div>`;
+
+            } else if (_enFiltro === 'efectivo') {
+                html += enSec2col(
+                    'INGRESOS',
+                    enCard('Ventas Efectivo',         ventasEf,    '#10b981', 'TABLA VENTAS · Suma PAGO EFECTIVO · excl. CASA ERAZO y ERROR VENTA') +
+                    enCard('Ventas a Casa Erazo',     casaErazo,   '#06b6d4', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = CASA ERAZO') +
+                    enCard('Error Venta',              errorVenta,  '#f59e0b', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = ERROR VENTA') +
+                    enCard('Ganancias Efectivo',       ganEfEN,     '#fbbf24', 'Ganancia efectivo de ventas + MONTO Pago Ventas cuando supera Dinero Recuperado') +
+                    enCard('Pago Ventas',              pagoVentEf,  '#34d399', 'TABLA PAGO VENTAS · Suma MONTO · por FECHA ORIGINAL') +
+                    enCard('Ingresos Negocio Ef.',     ingNegEf,    '#a3e635', 'TABLA INGRESOS NEGOCIO · Suma PAGO EFECTIVO') +
+                    enCard('Pago Ingresos Negocio',    pagoIngNegEf,'#86efac', 'TABLA PAGO INGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL'),
+                    'EGRESOS',
+                    enCard('Compras Efectivo',         comprasEf,   '#ef4444', 'TABLA COMPRAS · Suma PAGO EFECTIVO') +
+                    enCard('Pago Compras',             pagoCompEf,  '#f87171', 'TABLA PAGO COMPRAS · Suma MONTO · por FECHA ORIGINAL') +
+                    enCard('Egresos Negocio Ef.',      egrNegEf,    '#fb923c', 'TABLA EGRESOS NEGOCIO · Suma PAGO EFECTIVO') +
+                    enCard('Pago Egresos Negocio',     pagoEgrNegEf,'#fca5a5', 'TABLA PAGO EGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL')
+                );
+                html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                    ${enBalance('Balance Negocio Efectivo',   balNegEf,  '(VentasEf+CasaErazo+ErrVenta−GanEf+PagoVent) − (ComprasEf+PagoComp)')}
+                    ${enBalance('Balance Complementario Ef.', balCompEf, '(IngNegEf+PagoIngNeg) − (EgrNegEf+PagoEgrNeg)')}
+                    ${enBalance('Balance Efectivo',           balEfEN,   'Balance Negocio Ef. + Balance Complementario Ef.')}
+                </div>`;
+
+            } else { // credito
+                html += enSec2col(
+                    'INGRESOS',
+                    enCard('Ventas Crédito',           ventasCr,    '#10b981', 'TABLA VENTAS · Suma PAGO CRÉDITO · excl. CASA ERAZO y ERROR VENTA') +
+                    enCard('Ganancias Crédito',         ganCrEN,     '#fbbf24', 'Ganancias Totales − Ganancias Efectivo') +
+                    enCard('Pago Ventas',               pagoVentCr,  '#34d399', 'TABLA PAGO VENTAS · Suma MONTO · por FECHA ORIGINAL') +
+                    enCard('Ingresos Negocio Cr.',      ingNegCr,    '#a3e635', 'TABLA INGRESOS NEGOCIO · Suma PAGO CRÉDITO') +
+                    enCard('Pago Ingresos Negocio',     pagoIngNegCr,'#86efac', 'TABLA PAGO INGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL'),
+                    'EGRESOS',
+                    enCard('Compras Crédito',           comprasCr,   '#ef4444', 'TABLA COMPRAS · Suma PAGO CRÉDITO') +
+                    enCard('Pago Compras',              pagoCompCr,  '#f87171', 'TABLA PAGO COMPRAS · Suma MONTO · por FECHA ORIGINAL') +
+                    enCard('Egresos Negocio Cr.',       egrNegCr,    '#fb923c', 'TABLA EGRESOS NEGOCIO · Suma PAGO CRÉDITO') +
+                    enCard('Pago Egresos Negocio',      pagoEgrNegCr,'#fca5a5', 'TABLA PAGO EGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL')
+                );
+                html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                    ${enBalance('Balance Negocio Crédito',    balNegCr,  '(VentasCr−GanCr−PagoVent) − (ComprasCr−PagoComp)')}
+                    ${enBalance('Balance Complementario Cr.', balCompCr, '(IngNegCr−PagoIngNeg) − (EgrNegCr−PagoEgrNeg)')}
+                    ${enBalance('Balance Crédito',            balCrEN,   'Balance Negocio Cr. + Balance Complementario Cr.')}
+                </div>`;
+            }
+
+            // ── LISTADOS INGRESOS / EGRESOS NEGOCIO ──────────────────────────────
+            const campoEN = _enFiltro === 'efectivo' ? 'efectivo' : _enFiltro === 'credito' ? 'credito' : 'total';
+
+            const ingNegRango = (_sheetIngresosNegocio||[]).filter(r => {
+                return enRango(parseFechaNum(r.fechaISO||r.fecha||''));
+            }).sort((a,b) => parseFechaNum(b.fechaISO||b.fecha||'') - parseFechaNum(a.fechaISO||a.fecha||''));
+
+            const egrNegRango = (_sheetEgresosNegocio||[]).filter(r => {
+                return enRango(parseFechaNum(r.fechaISO||r.fecha||''));
+            }).sort((a,b) => parseFechaNum(b.fechaISO||b.fecha||'') - parseFechaNum(a.fechaISO||a.fecha||''));
+
+            // Deduplicar por idSheet
+            const _dedupArr = arr => {
+                const seen = new Set();
+                return arr.filter(r => {
+                    const uid = r.idSheet || r.id || '';
+                    if (uid && seen.has(uid)) return false;
+                    if (uid) seen.add(uid);
+                    return true;
+                });
+            };
+            const ingNegDedup = _dedupArr(ingNegRango);
+            const egrNegDedup = _dedupArr(egrNegRango);
+
+            const _enCardFila = (r, colorMonto, acento, emoji, lista) => {
+                const v = Number(r[campoEN]||0); if (v <= 0) return '';
+                const fecha = (r.fechaISO||r.fecha||'').substring(0,10);
+                const concepto = r.cliente || r.proveedor || r.concepto || '—';
+                const sc = r.formaPago || '';
+                const imgMap = {}; (lista||[]).forEach(it => { if(it.nombre&&it.imagen) imgMap[it.nombre.toUpperCase().trim()]=it.imagen; });
+                const imgUrl = r.imagen || imgMap[(concepto).toUpperCase().trim()]
+                    || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat', concepto) : null);
+                const imgHtml = imgUrl
+                    ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span style="font-size:22px;display:none;line-height:1;">${emoji}</span>`
+                    : `<span style="font-size:22px;line-height:1;">${emoji}</span>`;
+                return `<tr><td colspan="4" style="padding:5px 10px;">
+                  <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid ${acento}33;border-radius:14px;padding:10px 14px;">
+                    <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${acento}44;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${imgHtml}</div>
+                    <div style="flex:1;min-width:0;">
+                      <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:${acento};text-transform:uppercase;letter-spacing:.06em;">${sc}</p>
+                      <p style="margin:0 0 2px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${concepto}</p>
+                      <p style="margin:0;font-size:9px;font-weight:700;color:#475569;">${fecha}</p>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                      <p style="margin:0;font-size:18px;font-weight:900;color:${colorMonto};font-family:monospace;line-height:1.1;">$${Utils.fmt(v)}</p>
+                    </div>
+                  </div>
+                </td></tr>`;
+            };
+
+            const theadEN = `<tr style="border-bottom:2px solid #1e293b;">
+                <th style="padding:6px 8px;font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;width:50px;"></th>
+                <th style="padding:6px 8px;font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;text-align:left;">Concepto</th>
+                <th style="padding:6px 8px;font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;text-align:left;">Forma Pago</th>
+                <th style="padding:6px 8px;font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;text-align:right;">Monto</th>
+            </tr>`;
+
+            const tablaIngNeg = `
+                <div class="glass-card rounded-2xl border border-emerald-500/20" style="overflow:hidden;margin-bottom:10px;">
+                    <div onclick="(function(el){var b=el.parentElement.querySelector('.en-body-ingneg');var a=el.querySelector('.en-arrow-ingneg');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+                        <div>
+                            <span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">📋 Listado Ingresos Negocio</span>
+                            <span style="font-size:9px;color:#475569;margin-left:8px;">${ingNegDedup.length} registros</span>
+                        </div>
+                        <span class="en-arrow-ingneg" style="color:#475569;font-size:14px;transition:transform .2s;transform:rotate(-90deg);">▼</span>
+                    </div>
+                    <div class="en-body-ingneg" style="display:none;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${theadEN}</thead><tbody>${
+                        ingNegDedup.length
+                            ? ingNegDedup.map(r => _enCardFila(r, '#34d399', '#10b981', '📈', window._listaIngresos)).join('')
+                            : '<tr><td colspan="4" style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</td></tr>'
+                    }</tbody></table></div>
+                </div>`;
+
+            const tablaEgrNeg = `
+                <div class="glass-card rounded-2xl border border-red-500/20" style="overflow:hidden;margin-bottom:4px;">
+                    <div onclick="(function(el){var b=el.parentElement.querySelector('.en-body-egrneg');var a=el.querySelector('.en-arrow-egrneg');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+                        <div>
+                            <span style="font-size:10px;font-weight:900;color:#ef4444;text-transform:uppercase;">📋 Listado Egresos Negocio</span>
+                            <span style="font-size:9px;color:#475569;margin-left:8px;">${egrNegDedup.length} registros</span>
+                        </div>
+                        <span class="en-arrow-egrneg" style="color:#475569;font-size:14px;transition:transform .2s;transform:rotate(-90deg);">▼</span>
+                    </div>
+                    <div class="en-body-egrneg" style="display:none;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${theadEN}</thead><tbody>${
+                        egrNegDedup.length
+                            ? egrNegDedup.map(r => _enCardFila(r, '#f87171', '#ef4444', '📉', window._listaEgresos)).join('')
+                            : '<tr><td colspan="4" style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</td></tr>'
+                    }</tbody></table></div>
+                </div>`;
+
+            // ── VENTAS en rango ──
+            const ventasRango = (() => {
+                const todasV = [...(typeof historial!=='undefined'?historial:[]),
+                    ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                return todasV.filter(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn)) return false;
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    return !['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
+                }).sort((a,b) => parseFechaNum(b.fechaISO||b.fecha||'') - parseFechaNum(a.fechaISO||a.fecha||''));
+            })();
+
+            // ── COMPRAS en rango ──
+            const comprasRango = (_sheetCompras||[]).filter(c =>
+                enRango(parseFechaNum(c.fechaISO||c.fecha||''))
+            ).sort((a,b) => parseFechaNum(b.fechaISO||b.fecha||'') - parseFechaNum(a.fechaISO||a.fecha||''));
+
+            // ── PAGO VENTAS en rango (por fecha original) ──
+            const pagoVentRango = (_pagoVentasSheet||[]).filter(p =>
+                enRango(fnumPago(p))
+            ).sort((a,b) => fnumPago(b) - fnumPago(a));
+
+            // ── PAGO COMPRAS en rango (por fecha original) ──
+            const pagoCompRango = (_sheetPagoCompras||[]).filter(p =>
+                enRango(fnumPago(p))
+            ).sort((a,b) => fnumPago(b) - fnumPago(a));
+
+            // ── PAGO INGRESOS NEGOCIO en rango ──
+            const pagoIngNegRango = (_sheetPagoIngNeg||[]).filter(p =>
+                enRango(fnumPago(p))
+            ).sort((a,b) => fnumPago(b) - fnumPago(a));
+
+            // ── PAGO EGRESOS NEGOCIO en rango ──
+            const pagoEgrNegRango = (_sheetPagoEgrNeg||_pagoEgrNegSheet||[]).filter(p =>
+                enRango(fnumPago(p))
+            ).sort((a,b) => fnumPago(b) - fnumPago(a));
+
+            // ── Card fila para VENTAS ──
+            const _enCardVenta = v => {
+                const monto = campoEN==='credito' ? Number(v.deuda||v.credito||v.pagoCredito||0)
+                            : campoEN==='efectivo' ? Number(v.efectivo||v.pagoEfectivo||0)
+                            : Number(v.total||0);
+                if (monto <= 0) return '';
+                const fecha = (v.fechaISO||v.fecha||'').substring(0,10);
+                const concepto = v.cliente || '—';
+                const items = (v.items||[]).map(i=>i.nombre||'').filter(Boolean).join(', ').substring(0,50);
+                return `<tr><td colspan="4" style="padding:5px 10px;">
+                  <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid #10b98133;border-radius:14px;padding:10px 14px;">
+                    <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid #10b98144;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:26px;line-height:1;">🛒</div>
+                    <div style="flex:1;min-width:0;">
+                      <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;">${v.formaPago||''}</p>
+                      <p style="margin:0 0 2px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${concepto}</p>
+                      <p style="margin:0;font-size:9px;font-weight:700;color:#475569;">${fecha}${items?' · '+items:''}</p>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                      <p style="margin:0;font-size:18px;font-weight:900;color:#34d399;font-family:monospace;line-height:1.1;">$${Utils.fmt(monto)}</p>
+                    </div>
+                  </div>
+                </td></tr>`;
+            };
+
+            // ── Card fila para COMPRAS ──
+            const _enCardCompra = c => {
+                const monto = campoEN==='credito' ? Number(c.credito||0)
+                            : campoEN==='efectivo' ? Number(c.efectivo||0)
+                            : Number(c.total||0);
+                if (monto <= 0) return '';
+                const fecha = (c.fechaISO||c.fecha||'').substring(0,10);
+                const concepto = c.proveedor || '—';
+                const imgUrl = (typeof window._getCatImg==='function') ? window._getCatImg('supercat', concepto) : null;
+                const imgHtml = imgUrl
+                    ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span style="font-size:22px;display:none;line-height:1;">🏪</span>`
+                    : `<span style="font-size:22px;line-height:1;">🏪</span>`;
+                return `<tr><td colspan="4" style="padding:5px 10px;">
+                  <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid #ef444433;border-radius:14px;padding:10px 14px;">
+                    <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid #ef444444;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${imgHtml}</div>
+                    <div style="flex:1;min-width:0;">
+                      <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.06em;">${c.formaPago||''}</p>
+                      <p style="margin:0 0 2px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${concepto}</p>
+                      <p style="margin:0;font-size:9px;font-weight:700;color:#475569;">${fecha}</p>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                      <p style="margin:0;font-size:18px;font-weight:900;color:#f87171;font-family:monospace;line-height:1.1;">$${Utils.fmt(monto)}</p>
+                    </div>
+                  </div>
+                </td></tr>`;
+            };
+
+            // ── Card fila genérica para PAGOS ──
+            const _enCardPago = (p, colorMonto, acento, emoji, conceptoFn, montoFn) => {
+                const monto = montoFn(p); if (monto <= 0) return '';
+                const concepto = conceptoFn(p);
+                const fecha = (p.fechaOrig||p['FECHA ORIGINAL']||p.fechaOriginal||p.fecha||p.FECHA||'').substring(0,10);
+                return `<tr><td colspan="4" style="padding:5px 10px;">
+                  <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1.5px solid ${acento}33;border-radius:14px;padding:10px 14px;">
+                    <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${acento}44;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:26px;line-height:1;">${emoji}</div>
+                    <div style="flex:1;min-width:0;">
+                      <p style="margin:0 0 1px;font-size:8px;font-weight:900;color:${acento};text-transform:uppercase;letter-spacing:.06em;">${p.formaPago||p['FORMA DE PAGO']||''}</p>
+                      <p style="margin:0 0 2px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${concepto}</p>
+                      <p style="margin:0;font-size:9px;font-weight:700;color:#475569;">${fecha}</p>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                      <p style="margin:0;font-size:18px;font-weight:900;color:${colorMonto};font-family:monospace;line-height:1.1;">$${Utils.fmt(monto)}</p>
+                    </div>
+                  </div>
+                </td></tr>`;
+            };
+
+            // ── Helper tabla con header ──
+            let _enTablaIdx = 0;
+            const _enTabla = (titulo, colorTitulo, count, filas, hayFilas) => {
+                const uid = 'entbl_' + (++_enTablaIdx);
+                return `<div class="glass-card rounded-2xl border" style="border-color:${colorTitulo}33;overflow:hidden;margin-bottom:10px;">
+                    <div onclick="(function(el){var b=document.getElementById('${uid}');var a=el.querySelector('#arr_${uid}');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})(this)" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+                        <div>
+                            <span style="font-size:10px;font-weight:900;color:${colorTitulo};text-transform:uppercase;">📋 ${titulo}</span>
+                            <span style="font-size:9px;color:#475569;margin-left:8px;">${count} registros</span>
+                        </div>
+                        <span id="arr_${uid}" style="color:#475569;font-size:14px;transition:transform .2s;transform:rotate(-90deg);">▼</span>
+                    </div>
+                    <div id="${uid}" style="display:none;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><tbody>${
+                        hayFilas ? filas : '<tr><td colspan="4" style="padding:14px;text-align:center;color:#475569;font-size:10px;font-weight:700;">Sin registros para el período</td></tr>'
+                    }</tbody></table></div>
+                </div>`;
+            };
+
+            const filasVentas   = ventasRango.map(_enCardVenta).join('');
+            const filasCompras  = comprasRango.map(_enCardCompra).join('');
+            const filasPagoV    = pagoVentRango.map(p  => _enCardPago(p,  '#34d399','#10b981','💳', p=>p.cliente||p.idVenta||'—',    p=>Number(p.monto||0))).join('');
+            const filasPagoC    = pagoCompRango.map(p  => _enCardPago(p,  '#f87171','#ef4444','💳', p=>p.proveedor||p.IDCOMPRAS||'—', p=>Number(p.MONTO||p.monto||0))).join('');
+            const filasPagoIN   = pagoIngNegRango.map(p=> _enCardPago(p,  '#34d399','#10b981','💰', p=>p.cliente||p.IDINGRESOSNEGOCIO||'—', p=>Number(p.MONTO||p.monto||0))).join('');
+            const filasPagoEN   = pagoEgrNegRango.map(p=> _enCardPago(p,  '#f87171','#ef4444','💸', p=>p.cliente||p.idEgresoNeg||'—',       p=>Number(p.monto||p.MONTO||0))).join('');
+
+            html += _enTabla('Listado Ventas',              '#10b981', ventasRango.length,    filasVentas,  filasVentas.length>0);
+            html += _enTabla('Listado Compras',             '#ef4444', comprasRango.length,   filasCompras, filasCompras.length>0);
+            html += _enTabla('Pago Ventas',                 '#34d399', pagoVentRango.length,  filasPagoV,   filasPagoV.length>0);
+            html += _enTabla('Pago Compras',                '#f87171', pagoCompRango.length,  filasPagoC,   filasPagoC.length>0);
+            html += tablaIngNeg + tablaEgrNeg;
+            html += _enTabla('Pago Ingresos Negocio',       '#a3e635', pagoIngNegRango.length,filasPagoIN,  filasPagoIN.length>0);
+            html += _enTabla('Pago Egresos Negocio',        '#fb923c', pagoEgrNegRango.length,filasPagoEN,  filasPagoEN.length>0);
+
+            container.innerHTML = html;
+        }
+
+                // ── TARJETA DE CRÉDITO ─────────────────────────────────────────────
         let _tcFiltro = 'todos';
         let _tcTipo   = 'todos';
         let _tcDonutChart = null;
@@ -17555,6 +18116,7 @@ console.log("FILTRADAS:", filtradas.length);
             const isTarjeta   = tab === 'tarjeta';
             const isCaja      = tab === 'caja';
             const isHojaRuta  = tab === 'hojaRuta';
+            const isNegocio   = tab === 'negocio';
 
             const _sb = id => { const el = document.getElementById(id); if(el) return el; };
             if(_sb('tabBtnVentas'))    _sb('tabBtnVentas').className    = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isVentas    ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
@@ -17565,6 +18127,7 @@ console.log("FILTRADAS:", filtradas.length);
             if(_sb('tabBtnTarjeta'))   _sb('tabBtnTarjeta').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isTarjeta   ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnHojaRuta'))  _sb('tabBtnHojaRuta').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isHojaRuta  ? 'bg-orange-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnCaja'))      _sb('tabBtnCaja').className      = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCaja      ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            if(_sb('tabBtnNegocio'))   _sb('tabBtnNegocio').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isNegocio   ? 'bg-cyan-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
 
             const filtros = document.getElementById('statsFiltrosFecha');
             if (filtros) filtros.classList.toggle('hidden', !isVentas);
@@ -17586,9 +18149,12 @@ console.log("FILTRADAS:", filtradas.length);
             const tabHojaRuta  = document.getElementById('tabHojaRuta');
             if (tabHojaRuta)  tabHojaRuta.classList.toggle('hidden', !isHojaRuta);
             if (tabCaja)      tabCaja.classList.toggle('hidden', !isCaja);
+            const tabNegocio  = document.getElementById('tabNegocio');
+            if (tabNegocio)   tabNegocio.classList.toggle('hidden', !isNegocio);
 
             if (isProductos) renderEstadisticasProductos();
             if (isResumen)   renderResumen();
+            if (isNegocio)  { enSetPeriodoDefault(); renderEstadoNegocio(); }
             if (isRegistros) {
                 const regDesde = document.getElementById('regDesde');
                 const regHasta = document.getElementById('regHasta');
