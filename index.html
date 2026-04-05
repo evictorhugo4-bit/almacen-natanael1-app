@@ -7243,6 +7243,7 @@ return;
                 // DEBUG
                 const _dbgV = todasLasVentas().find(v => { const i=String(v.idCliente||'').trim(),n=String(v.cliente||'').trim().toUpperCase(); return i?i===idCl:n===nomCl; });
                 if (_dbgV) console.warn('[DBG] id:'+_dbgV.id+' deuda:'+_dbgV.deuda+' total:'+_dbgV.total+' fechaISO=['+_dbgV.fechaISO+'] fecha=['+_dbgV.fecha+'] mora='+calcularInteresMora(_dbgV.deuda,_dbgV.fechaISO)+' keys:'+Object.keys(_dbgV).join(','));
+                if (_dbgV) console.warn('[DBG ITEMS] items count:'+(_dbgV.items||[]).length+' | item0='+JSON.stringify((_dbgV.items||[])[0]));
                 todasLasVentas().forEach(v => {
                     const vId  = String(v.idCliente || '').trim();
                     const vNom = String(v.cliente   || '').trim().toUpperCase();
@@ -7988,6 +7989,8 @@ clienteDetalleId = null;
         }
 
        function descargarPDFPago() {
+    // Formato numérico explícito es-AR para evitar locale del sistema en jsPDF
+    const fmtPDF = n => Number(n).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:2});
 
     const c = clientesDB.find(c => c.id === clienteDetalleId);
     if (!c) return;
@@ -8048,7 +8051,13 @@ clienteDetalleId = null;
 
     });
 
-    const ventasPendientes = todasLasVentas()
+    console.log('[PDF] idCl='+idCl+' | c.id='+c.id+' | c.idSheet='+c.idSheet);
+    const _todasV = todasLasVentas();
+    console.log('[PDF] total ventas='+_todasV.length+' | sample idCliente='+(_todasV[0]?_todasV[0].idCliente:'none'));
+    const _ventasCliente = _todasV.filter(v => String(v.idCliente||'').trim() === idCl);
+    console.log('[PDF] ventas de este cliente='+_ventasCliente.length);
+    if(_ventasCliente[0]) console.log('[PDF] primera venta: id='+_ventasCliente[0].id+' deuda='+_ventasCliente[0].deuda+' total='+_ventasCliente[0].total);
+    const ventasPendientes = _todasV
         .filter(v => String(v.idCliente || '').trim() === idCl)
         .map(v => {
             const credito = parseFloat(v.deuda || 0);
@@ -8056,8 +8065,8 @@ clienteDetalleId = null;
             const idVSheet = v.idSheet ? String(v.idSheet).trim() : (idV.startsWith('sheet_V_') ? idV.replace('sheet_V_','') : idV);
             const pagado = _pagoVentasSheet
                 .filter(p =>
-                    String(p.idCliente || '').trim() === idCl &&
-                    String(p.idVenta || p.IDVENTAS || '') === String(v.id)
+                    (String(p.idVenta||p.IDVENTAS||'').trim()===idV ||
+                     String(p.idVenta||p.IDVENTAS||'').trim()===idVSheet)
                 )
                 .reduce((s,p)=> s + parseFloat(p.monto || p.MONTO || 0), 0);
             const restante = credito - pagado;
@@ -8069,18 +8078,36 @@ clienteDetalleId = null;
             const totalItems = items.reduce((s,i)=>(s+(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1)),0);
             const itemsConSaldo = items.map(item => {
                 const subTotal = (parseFloat(item.precio)||0) * (parseFloat(item.cantidad)||1);
-                const nomUp = ((item.cantidad>1?item.cantidad+'x ':'')+item.nombre).trim().toUpperCase();
-                const yaPagItem = (_pagoVentasSheet||[])
-                    .filter(p=>(String(p.idVenta||p.IDVENTAS||'').trim()===idV||String(p.idVenta||p.IDVENTAS||'').trim()===idVSheet)&&String(p.producto||p.PRODUCTO||'').trim().toUpperCase()===nomUp)
-                    .reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
-                const saldoItem = Math.max(0, subTotal - yaPagItem);
+                // Usar pagoCredito del ítem si existe (más confiable que buscar en _pagoVentasSheet)
+                const creditoItem = parseFloat(item.pagoCredito||item.deuda||0);
+                let saldoItem;
+                if (creditoItem > 0) {
+                    // El ítem ya trae cuánto se debe directamente
+                    const nomUp = ((item.cantidad>1?item.cantidad+'x ':'')+item.nombre).trim().toUpperCase();
+                    const yaPagItem = (_pagoVentasSheet||[])
+                        .filter(p=>(String(p.idVenta||p.IDVENTAS||'').trim()===idV||String(p.idVenta||p.IDVENTAS||'').trim()===idVSheet)&&String(p.producto||p.PRODUCTO||'').trim().toUpperCase()===nomUp)
+                        .reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
+                    saldoItem = Math.max(0, creditoItem - yaPagItem);
+                } else {
+                    const nomUp = ((item.cantidad>1?item.cantidad+'x ':'')+item.nombre).trim().toUpperCase();
+                    const yaPagItem = (_pagoVentasSheet||[])
+                        .filter(p=>(String(p.idVenta||p.IDVENTAS||'').trim()===idV||String(p.idVenta||p.IDVENTAS||'').trim()===idVSheet)&&String(p.producto||p.PRODUCTO||'').trim().toUpperCase()===nomUp)
+                        .reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
+                    saldoItem = Math.max(0, subTotal - yaPagItem);
+                }
                 return { ...item, subTotal, saldoItem };
             }).filter(i => i.saldoItem > 0);
             return {
                 fecha: fmtFecha24(v.fechaISO || v.fecha || ''),
                 fechaISO: v.fechaISO || v.fecha || '',
                 fechaLocal: v.fecha || v.fechaISO || '',
-                items: itemsConSaldo.length > 0 ? itemsConSaldo : items.map(i=>({...i, subTotal:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1), saldoItem:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1)})),
+                items: itemsConSaldo.length > 0 ? itemsConSaldo : [{
+                    nombre: items[0]?.nombre || v.cliente || 'Sin detalle',
+                    cantidad: 1,
+                    precio: restante,
+                    subTotal: restante,
+                    saldoItem: restante
+                }],
                 deuda: restante
             };
         })
@@ -8102,7 +8129,7 @@ clienteDetalleId = null;
     doc.setTextColor(59,130,246);
     doc.setFontSize(18);
     doc.setFont('helvetica','bold');
-    doc.text('$'+Utils.fmt(totalDeuda), 15, y+22);
+    doc.text('$'+fmtPDF(totalDeuda), 15, y+22);
 
 
 
@@ -8126,6 +8153,8 @@ clienteDetalleId = null;
     doc.text('DEBE',     W-14, y+3.5, {align:'right'});
     y += 9;
 
+    console.log('[PDF RENDER] ventasPendientes count='+ventasPendientes.length);
+    ventasPendientes.forEach((v,vi) => console.log('[PDF RENDER] venta['+vi+'] fecha='+v.fecha+' deuda='+v.deuda+' items='+JSON.stringify(v.items.map(i=>({n:i.nombre,saldo:i.saldoItem,sub:i.subTotal})))));
     let rowIdx = 0;
     ventasPendientes.forEach((v) => {
         v.items.forEach((item, iIdx) => {
@@ -8147,11 +8176,11 @@ clienteDetalleId = null;
 
             // PRECIO
             doc.setTextColor(180,180,180); doc.setFontSize(7); doc.setFont('helvetica','normal');
-            doc.text('$'+Utils.fmt(item.saldoItem), W-35, y+5.5, {align:'right'});
+            doc.text('$'+fmtPDF(item.saldoItem), W-35, y+5.5, {align:'right'});
 
             // DEBE
             doc.setTextColor(248,113,113); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-            doc.text('$'+Utils.fmt(item.saldoItem), W-14, y+5.5, {align:'right'});
+            doc.text('$'+fmtPDF(item.saldoItem), W-14, y+5.5, {align:'right'});
 
             y += filH;
             rowIdx++;
@@ -8190,6 +8219,7 @@ clienteDetalleId = null;
         // MÓDULO PDF CLIENTE
         // ============================================================
         function descargarPDFCliente() {
+            const fmtPDF = n => Number(n).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:2});
             const c = clientesDB.find(c => c.id === clienteDetalleId);
             if (!c) return;
 
@@ -8281,14 +8311,22 @@ clienteDetalleId = null;
                     const itemsConSaldo = items.map(item => {
                         const subTotal = (parseFloat(item.precio)||0)*(parseFloat(item.cantidad)||1);
                         const nomUp = ((item.cantidad>1?item.cantidad+'x ':'')+item.nombre).trim().toUpperCase();
+                        const creditoItem = parseFloat(item.pagoCredito||item.deuda||0);
                         const yaPag = (_pagoVentasSheet||[]).filter(p=>(String(p.idVenta||p.IDVENTAS||'').trim()===idV||String(p.idVenta||p.IDVENTAS||'').trim()===idVSheet)&&String(p.producto||p.PRODUCTO||'').trim().toUpperCase()===nomUp).reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
-                        return {...item, subTotal, saldoItem: Math.max(0, subTotal - yaPag)};
+                        const saldoItem = creditoItem > 0 ? Math.max(0, creditoItem - yaPag) : Math.max(0, subTotal - yaPag);
+                        return {...item, subTotal, saldoItem};
                     }).filter(i=>i.saldoItem>0);
                     return {
                         fecha: fmtFecha24(v.fechaISO||v.fecha||''),
                         fechaISO: v.fechaISO||v.fecha||'',
                         fechaLocal: v.fecha||v.fechaISO||'',
-                        items: itemsConSaldo.length>0 ? itemsConSaldo : items.map(i=>({...i,subTotal:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1),saldoItem:(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1)})),
+                        items: itemsConSaldo.length>0 ? itemsConSaldo : [{
+                            nombre: items[0]?.nombre||'Sin detalle',
+                            cantidad: 1,
+                            precio: restante,
+                            subTotal: restante,
+                            saldoItem: restante
+                        }],
                         deuda: restante
                     };
                 }).filter(Boolean);
@@ -8297,10 +8335,10 @@ clienteDetalleId = null;
 
             const boxW = (W - 35) / 4;
             const boxes = [
-                { label: 'TOTAL COMPRAS',   value: '$'+Utils.fmt(totalCompras),     color: [255,255,255] },
-                { label: 'DEUDA PENDIENTE', value: '$'+Utils.fmt(deudaVentas),       color: deudaVentas>0?[248,113,113]:[52,211,153] },
-                { label: 'PRÉSTAMO DEUDA',  value: '$'+Utils.fmt(deudaPrestamos),    color: deudaPrestamos>0?[251,146,60]:[52,211,153] },
-                { label: 'DEUDA TOTAL',     value: '$'+Utils.fmt(deudaTotalConMora), color: deudaTotalConMora>0?[248,113,113]:[52,211,153] },
+                { label: 'TOTAL COMPRAS',   value: '$'+fmtPDF(totalCompras),     color: [255,255,255] },
+                { label: 'DEUDA PENDIENTE', value: '$'+fmtPDF(deudaVentas),       color: deudaVentas>0?[248,113,113]:[52,211,153] },
+                { label: 'PRÉSTAMO DEUDA',  value: '$'+fmtPDF(deudaPrestamos),    color: deudaPrestamos>0?[251,146,60]:[52,211,153] },
+                { label: 'DEUDA TOTAL',     value: '$'+fmtPDF(deudaTotalConMora), color: deudaTotalConMora>0?[248,113,113]:[52,211,153] },
             ];
             boxes.forEach((b, i) => {
                 const bx = 10 + i*(boxW+5);
@@ -8365,13 +8403,13 @@ clienteDetalleId = null;
 
                         // PRECIO
                         doc.setTextColor(180,180,180); doc.setFontSize(7); doc.setFont('helvetica','normal');
-                        doc.text('$'+Utils.fmt(item.saldoItem), W-62, y+5.5, {align:'right'});
+                        doc.text('$'+fmtPDF(item.saldoItem), W-62, y+5.5, {align:'right'});
 
 
 
                         // DEBE
                         doc.setTextColor(248,113,113); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-                        doc.text('$'+Utils.fmt(debeTotal), W-12, y+5.5, {align:'right'});
+                        doc.text('$'+fmtPDF(debeTotal), W-12, y+5.5, {align:'right'});
 
 
                         y += filH;
@@ -8400,9 +8438,9 @@ clienteDetalleId = null;
                     const desc = String(p.cliente||p.concepto||p.proveedor||'-');
                     doc.text(desc.length>34?desc.substring(0,33)+'…':desc, 50, y+5);
                     doc.setTextColor(255,255,255);
-                    doc.text('$'+Utils.fmt(parseFloat(p.credito)||0), W-55, y+5);
+                    doc.text('$'+fmtPDF(parseFloat(p.credito)||0), W-55, y+5);
                     doc.setTextColor(251,146,60); doc.setFont('helvetica','bold');
-                    doc.text('$'+Utils.fmt(p.saldoPend), W-22, y+5);
+                    doc.text('$'+fmtPDF(p.saldoPend), W-22, y+5);
                     y += 10;
                 });
             }
