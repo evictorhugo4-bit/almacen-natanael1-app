@@ -13615,6 +13615,7 @@ window.verDetalleProveedor = function(tipo, id) {
 
     // -- COMPRAS/GASTOS PENDIENTES: agrupadas por fechaISO --
     console.warn('[PROV DBG] c0:', comprasProveedor.length > 0 ? JSON.stringify({id:comprasProveedor[0].id, credito:comprasProveedor[0].credito, total:comprasProveedor[0].total, items:comprasProveedor[0].items, tickets:comprasProveedor[0].tickets}) : 'VACIO');
+    console.warn('[PROV DBG] ALL items sample:', comprasProveedor.slice(0,3).map(c=>({id:c.id,cred:c.credito,total:c.total,items:(c.items||[]).map(i=>({n:i.nombre,cant:i.cantidad,costo:i.costo,sub:i.subtotal}))})));
     const gruposCompra = new Map();
     comprasProveedor.forEach(c => {
         const idC = esGasto ? String(c.idSheet||c.id||'').trim() : String(c.id||'').trim();
@@ -13635,12 +13636,13 @@ window.verDetalleProveedor = function(tipo, id) {
         const tkC = c.tickets && c.tickets.length > 0 ? c.tickets : (c.ticket ? [c.ticket] : []);
         tkC.forEach(t => { if (t && !g.tickets.includes(t)) g.tickets.push(t); });
         const itemsC = c.items && c.items.length > 0 ? c.items
-            : esGasto ? [{nombre: (c.detalle||c.concepto||'—'), cantidad:1, costo: c.credito, subtotal: c.credito}]
-            : [{nombre: c.producto||'—', cantidad:1, costo: c.credito, subtotal: c.credito}];
-        const totalItems = itemsC.reduce((s,i) => s + (parseFloat(i.subtotal||0) || (parseFloat(i.costo||0))*(parseFloat(i.cantidad)||1)), 0);
+            : esGasto ? [{nombre: (c.detalle||c.concepto||'—'), cantidad:1, costo: montoBruto, subtotal: montoBruto}]
+            : [{nombre: c.producto||'—', cantidad:1, costo: montoBruto, subtotal: montoBruto}];
+        const _costoTotal = itemsC.reduce((s,i) => s + (parseFloat(i.costo||0))*(parseFloat(i.cantidad)||1), 0);
+        const totalItems = _costoTotal > 0 ? _costoTotal : itemsC.reduce((s,i) => s + parseFloat(i.subtotal||0), 0) || montoBruto;
         itemsC.forEach(item => {
-            const sub = parseFloat(item.subtotal||0) || (parseFloat(item.costo||0)) * (parseFloat(item.cantidad)||1);
-            const saldoItem = totalItems > 0 ? Math.round(saldo * sub / totalItems) : sub;
+            const sub = (parseFloat(item.costo||0))*(parseFloat(item.cantidad)||1) || parseFloat(item.subtotal||0) || (montoBruto/Math.max(itemsC.length,1));
+            const saldoItem = totalItems > 0 ? Math.round(saldo * sub / totalItems) : Math.round(saldo/Math.max(itemsC.length,1));
             g.items.push({...item, _saldoItem: saldoItem, _idC: idC});
             g.saldoTotal += saldoItem;
         });
@@ -13653,8 +13655,7 @@ window.verDetalleProveedor = function(tipo, id) {
         : comprasPendList.map(({fecha, idC, saldoTotal, items, tickets}) => {
             const itemsHtml = items.map(item => {
                 const nom = (item.cantidad>1?item.cantidad+'x ':'')+( item.nombre||'—');
-                const subtotalReal = parseFloat(item.subtotal||0) || (parseFloat(item.costo||0)) * (parseFloat(item.cantidad)||1);
-                const subtotal = subtotalReal;
+                const subtotal = item._saldoItem || 0;
                 const itemIdC = item._idC || idC;
                 return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #1e293b20;">
                     <span style="font-size:9px;color:#94a3b8;">📦</span>
