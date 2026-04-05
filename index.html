@@ -2113,6 +2113,15 @@ GUARDAR PRODUCTO
                 <p class="text-[9px] text-slate-500 font-bold mb-3">Debo al proveedor − Valor del stock en mano − Lo que me deben clientes (fiado de ese proveedor)</p>
                 <div id="cajaProveedores" class="space-y-2"></div>
             </div>
+
+            <!-- EFECTIVO A ENTREGAR AL PROVEEDOR -->
+            <div class="glass-card rounded-2xl p-5 border border-emerald-500/30" style="background:linear-gradient(135deg,#052e1a 0%,#0f172a 100%);">
+                <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest mb-1">&#128181; Efectivo a Entregar al Proveedor</h3>
+                <p class="text-[9px] text-slate-500 font-bold mb-3">Ventas en rango donde el ítem sea del proveedor elegido: si (Pago Efectivo + Cobros PAGO VENTAS) cubre Dinero Recuperado &rarr; el excedente es ganancia &mdash; lo restante es para el proveedor</p>
+                <div id="cardEfectivoProveedor">
+                    <p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:16px;text-transform:uppercase;">Elegí un proveedor para ver el cálculo</p>
+                </div>
+            </div>
         </div>
 
         <div id="tabResumen" class="hidden space-y-4">
@@ -17476,6 +17485,7 @@ console.log("FILTRADAS:", filtradas.length);
             if (cd) cd.value = desde;
             if (ch) ch.value = hasta;
             renderCaja();
+            renderCardEfectivoProveedor();
         }
         function provSepSetHoy() {
             const hoy = new Date().toISOString().slice(0,10);
@@ -17850,6 +17860,172 @@ console.log("FILTRADAS:", filtradas.length);
             }
 
         }
+        // ── CARD: EFECTIVO A ENTREGAR AL PROVEEDOR ──────────────────────────
+        function renderCardEfectivoProveedor() {
+            const cont = document.getElementById('cardEfectivoProveedor');
+            if (!cont) return;
+
+            const provNombre = (document.getElementById('provStatSelect')?.value || '').trim().toUpperCase();
+            if (!provNombre) {
+                cont.innerHTML = '<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:16px;text-transform:uppercase;">Elegí un proveedor para ver el cálculo</p>';
+                return;
+            }
+
+            // Rango de fechas del bloque "Dinero a Separar" (provSepDesde/provSepHasta)
+            const desdeStr = document.getElementById('provSepDesde')?.value || '';
+            const hastaStr = document.getElementById('provSepHasta')?.value || '';
+            const dNum = desdeStr ? parseFechaNum(desdeStr + 'T00:00:00') : null;
+            const hNum = hastaStr ? parseFechaNum(hastaStr + 'T23:59:59') : null;
+            const enR = fn => {
+                if (!fn) return false;
+                if (dNum && fn < dNum) return false;
+                if (hNum && fn > hNum) return false;
+                return true;
+            };
+
+            // Mapa cobros extra por venta (PAGO VENTAS por IDVENTAS)
+            const cobrosPorVenta = {};
+            (_pagoVentasSheet || []).forEach(p => {
+                const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!idV) return;
+                cobrosPorVenta[idV] = (cobrosPorVenta[idV] || 0) + Number(p.monto || p.MONTO || 0);
+            });
+
+            const todasV = [...(typeof historial !== 'undefined' ? historial : []),
+                           ...(_sheetVentas || []).filter(v => !(typeof historial !== 'undefined' ? historial : []).some(h => h.id === v.id))];
+            const vistas = new Set();
+
+            let totalParaProveedor = 0;
+            let totalGanancia      = 0;
+            let totalCobrado       = 0;
+            let totalDinRec        = 0;
+            let cantVentas         = 0;
+            const detalleVentas    = [];
+
+            todasV.forEach(v => {
+                const fn = parseFechaNum(v.fechaISO || v.fecha || '');
+                if (!enR(fn) || vistas.has(v.id)) return;
+                vistas.add(v.id);
+
+                // Solo items del proveedor elegido
+                const itemsProv = (v.items || []).filter(i =>
+                    (i.proveedor || '').trim().toUpperCase() === provNombre
+                );
+                if (!itemsProv.length) return;
+
+                const totalVenta = Number(v.total || 0) || 1;
+                const ef         = Number(v.efectivo || 0);
+                const idVSheet   = v.idSheet
+                    ? String(v.idSheet).trim()
+                    : (String(v.id || '').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_', '') : String(v.id || '').trim());
+
+                // Cobros de PAGO VENTAS (mismo IDVENTAS)
+                const cobrosExtra = (cobrosPorVenta[idVSheet] || 0) + (cobrosPorVenta[String(v.id || '')] || 0);
+                const totalCobradoVenta = ef + cobrosExtra;
+
+                // Proporción de precio de items del proveedor sobre total de la venta
+                const precioItemsProv = itemsProv.reduce((s, i) => s + (Number(i.precio || 0) * (Number(i.cantidad) || 1)), 0);
+                const proporcion = totalVenta > 0 ? precioItemsProv / totalVenta : 0;
+
+                // Dinero recuperado específico de los items del proveedor
+                const dinRecItemsProv = itemsProv.reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0);
+
+                // Cobrado proporcional para estos items
+                const cobradoProp = totalCobradoVenta * proporcion;
+
+                // Cuánto del dinero recuperado fue cubierto por los cobros
+                const dinRecCubierto = Math.min(cobradoProp, dinRecItemsProv);
+                // Ganancia = lo que sobra después de cubrir el costo
+                const gananciaItem   = Math.max(0, cobradoProp - dinRecItemsProv);
+
+                totalParaProveedor += dinRecCubierto;
+                totalGanancia      += gananciaItem;
+                totalCobrado       += cobradoProp;
+                totalDinRec        += dinRecItemsProv;
+                cantVentas++;
+
+                detalleVentas.push({
+                    fecha:  (v.fechaISO || v.fecha || '').substring(0, 10),
+                    cliente: v.cliente || '—',
+                    items:   itemsProv.map(i => (Number(i.cantidad) > 1 ? i.cantidad + 'x ' : '') + (i.nombre || '')).join(', '),
+                    cobrado: cobradoProp,
+                    dinRec:  dinRecItemsProv,
+                    paraProv: dinRecCubierto,
+                    ganancia: gananciaItem
+                });
+            });
+
+            if (!cantVentas) {
+                cont.innerHTML = '<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:16px;text-transform:uppercase;">Sin ventas de ' + Utils.escHtml(provNombre) + ' en el período</p>';
+                return;
+            }
+
+            const fmt$ = v => '$' + Utils.fmt(v);
+            const pct  = totalDinRec > 0 ? Math.min(100, (totalCobrado / totalDinRec) * 100) : 0;
+            const cPct = pct >= 100 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+
+            cont.innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+                <div style="background:#0f172a;border:1px solid #10b98133;border-left:3px solid #10b981;border-radius:12px;padding:12px 14px;">
+                    <p style="font-size:8px;font-weight:900;color:#10b981;text-transform:uppercase;margin:0 0 4px;">💵 Para el Proveedor</p>
+                    <p style="font-size:1.5rem;font-weight:900;font-family:monospace;color:#34d399;margin:0;">${fmt$(totalParaProveedor)}</p>
+                    <p style="font-size:7px;color:#475569;margin:3px 0 0;">Dinero recuperado cubierto por cobros</p>
+                </div>
+                <div style="background:#0f172a;border:1px solid #f59e0b33;border-left:3px solid #f59e0b;border-radius:12px;padding:12px 14px;">
+                    <p style="font-size:8px;font-weight:900;color:#f59e0b;text-transform:uppercase;margin:0 0 4px;">⭐ Mi Ganancia</p>
+                    <p style="font-size:1.5rem;font-weight:900;font-family:monospace;color:#fbbf24;margin:0;">${fmt$(totalGanancia)}</p>
+                    <p style="font-size:7px;color:#475569;margin:3px 0 0;">Cobrado que supera el costo</p>
+                </div>
+                <div style="background:#0f172a;border:1px solid #3b82f633;border-left:3px solid #3b82f6;border-radius:12px;padding:12px 14px;">
+                    <p style="font-size:8px;font-weight:900;color:#3b82f6;text-transform:uppercase;margin:0 0 4px;">💰 Total Cobrado</p>
+                    <p style="font-size:1.5rem;font-weight:900;font-family:monospace;color:#93c5fd;margin:0;">${fmt$(totalCobrado)}</p>
+                    <p style="font-size:7px;color:#475569;margin:3px 0 0;">Pago Ef. + Cobros Pago Ventas (proporcional)</p>
+                </div>
+            </div>
+            <div style="background:#0f172a;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                    <span style="font-size:8px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Cobertura del costo (${pct.toFixed(1)}%)</span>
+                    <span style="font-size:8px;font-weight:700;color:#64748b;">Din. Recuperado total: ${fmt$(totalDinRec)}</span>
+                </div>
+                <div style="height:8px;background:#1e293b;border-radius:999px;overflow:hidden;">
+                    <div style="height:100%;width:${Math.min(pct,100)}%;background:${cPct};border-radius:999px;transition:width .6s ease;"></div>
+                </div>
+            </div>
+            <div style="overflow-x:auto;border-radius:10px;border:1px solid #1e293b;">
+                <table style="width:100%;border-collapse:collapse;font-size:9px;">
+                    <thead>
+                        <tr style="background:#080e1a;border-bottom:2px solid #1e293b;">
+                            <th style="padding:7px 10px;text-align:left;font-weight:900;color:#475569;text-transform:uppercase;">Fecha</th>
+                            <th style="padding:7px 10px;text-align:left;font-weight:900;color:#475569;text-transform:uppercase;">Cliente</th>
+                            <th style="padding:7px 10px;text-align:left;font-weight:900;color:#475569;text-transform:uppercase;">Items</th>
+                            <th style="padding:7px 10px;text-align:right;font-weight:900;color:#3b82f6;text-transform:uppercase;">Cobrado</th>
+                            <th style="padding:7px 10px;text-align:right;font-weight:900;color:#94a3b8;text-transform:uppercase;">Din.Rec.</th>
+                            <th style="padding:7px 10px;text-align:right;font-weight:900;color:#10b981;text-transform:uppercase;">Prov.</th>
+                            <th style="padding:7px 10px;text-align:right;font-weight:900;color:#f59e0b;text-transform:uppercase;">Gan.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${detalleVentas.map((d, i) => `
+                        <tr style="background:${i%2===0?'#0f172a':'#0a1120'};border-bottom:1px solid #1e293b;">
+                            <td style="padding:6px 10px;color:#64748b;">${d.fecha}</td>
+                            <td style="padding:6px 10px;font-weight:700;color:#e2e8f0;">${Utils.escHtml(d.cliente)}</td>
+                            <td style="padding:6px 10px;color:#94a3b8;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Utils.escHtml(d.items)}</td>
+                            <td style="padding:6px 10px;text-align:right;font-family:monospace;color:#93c5fd;">${fmt$(d.cobrado)}</td>
+                            <td style="padding:6px 10px;text-align:right;font-family:monospace;color:#64748b;">${fmt$(d.dinRec)}</td>
+                            <td style="padding:6px 10px;text-align:right;font-family:monospace;font-weight:900;color:#34d399;">${fmt$(d.paraProv)}</td>
+                            <td style="padding:6px 10px;text-align:right;font-family:monospace;color:#fbbf24;">${d.ganancia>0?fmt$(d.ganancia):'—'}</td>
+                        </tr>`).join('')}
+                        <tr style="background:#1e293b;border-top:2px solid #334155;">
+                            <td colspan="3" style="padding:8px 10px;font-weight:900;color:#94a3b8;text-transform:uppercase;">TOTAL (${cantVentas} ventas)</td>
+                            <td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:900;color:#93c5fd;">${fmt$(totalCobrado)}</td>
+                            <td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:900;color:#64748b;">${fmt$(totalDinRec)}</td>
+                            <td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:900;color:#34d399;">${fmt$(totalParaProveedor)}</td>
+                            <td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:900;color:#fbbf24;">${fmt$(totalGanancia)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>`;
+        }
         // ── FIN CAJA & PROVEEDORES ─────────────────────────────────────────
 
         /* ══════════════════════════════════════════
@@ -18209,6 +18385,8 @@ console.log("FILTRADAS:", filtradas.length);
         }
 
         function renderTabProveedor() {
+            // render efectivo card always
+            setTimeout(renderCardEfectivoProveedor, 0);
             const nombre = (document.getElementById('provStatSelect')?.value || '').trim();
             const cont = document.getElementById('tabProveedorContent');
             if (!cont) return;
