@@ -17958,24 +17958,35 @@ console.log("FILTRADAS:", filtradas.length);
                     ? String(v.idSheet).trim()
                     : (String(v.id || '').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_', '') : String(v.id || '').trim());
 
-                // Cobros de PAGO VENTAS (mismo IDVENTAS)
-                const cobrosExtra = (cobrosPorVenta[idVSheet] || 0) + (cobrosPorVenta[String(v.id || '')] || 0);
-                const totalCobradoVenta = ef + cobrosExtra;
-
-                // Proporción de precio de items del proveedor sobre total de la venta
-                const precioItemsProv = itemsProv.reduce((s, i) => s + (Number(i.precio || 0) * (Number(i.cantidad) || 1)), 0);
-                const proporcion = totalVenta > 0 ? precioItemsProv / totalVenta : 0;
-
                 // Dinero recuperado específico de los items del proveedor
                 const dinRecItemsProv = itemsProv.reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0);
 
-                // Cobrado proporcional para estos items
-                const cobradoProp = totalCobradoVenta * proporcion;
+                const cli = String(v.cliente || '').toUpperCase().trim();
+                const esClienteEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
 
-                // Cuánto del dinero recuperado fue cubierto por los cobros
-                const dinRecCubierto = Math.min(cobradoProp, dinRecItemsProv);
-                // Ganancia = lo que sobra después de cubrir el costo
-                const gananciaItem   = Math.max(0, cobradoProp - dinRecItemsProv);
+                let cobradoProp, dinRecCubierto, gananciaItem;
+
+                if (esClienteEsp) {
+                    // CASA ERAZO / ERROR VENTA: el dinero recuperado va directo al proveedor, sin ganancia
+                    cobradoProp    = dinRecItemsProv;
+                    dinRecCubierto = dinRecItemsProv;
+                    gananciaItem   = 0;
+                } else {
+                    // Cobros de PAGO VENTAS (mismo IDVENTAS)
+                    const cobrosExtra = (cobrosPorVenta[idVSheet] || 0) + (cobrosPorVenta[String(v.id || '')] || 0);
+                    const totalCobradoVenta = ef + cobrosExtra;
+
+                    // Proporción de precio de items del proveedor sobre total de la venta
+                    const precioItemsProv = itemsProv.reduce((s, i) => s + (Number(i.precio || 0) * (Number(i.cantidad) || 1)), 0);
+                    const proporcion = totalVenta > 0 ? precioItemsProv / totalVenta : 0;
+
+                    // Cobrado proporcional para estos items
+                    cobradoProp    = totalCobradoVenta * proporcion;
+                    // Cuánto del dinero recuperado fue cubierto por los cobros
+                    dinRecCubierto = Math.min(cobradoProp, dinRecItemsProv);
+                    // Ganancia = lo que sobra después de cubrir el costo
+                    gananciaItem   = Math.max(0, cobradoProp - dinRecItemsProv);
+                }
 
                 totalParaProveedor += dinRecCubierto;
                 totalGanancia      += gananciaItem;
