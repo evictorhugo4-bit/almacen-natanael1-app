@@ -11161,7 +11161,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     idCompra: _idParaSheet,
                     fecha: compra.fechaISO || compra.fecha || '',
                     proveedor: prov,
-                    ticket: todosUrls[0] || null,
+                    ticket: todosUrls.join('|') || null,
                     tickets: todosUrls
                 });
 
@@ -14915,7 +14915,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
                                 credito: 0,
                                 formaPago: String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase(),
                                 estado: String(row['ESTADO'] || row['Estado'] || '').trim(),
-                                tickets: String(row['TICKET'] || row['Ticket'] || '').trim() ? [String(row['TICKET'] || row['Ticket'] || '').trim()] : [],
+                                tickets: String(row['TICKET'] || row['Ticket'] || '').trim() ? String(row['TICKET'] || row['Ticket'] || '').trim().split('|').map(u=>u.trim()).filter(Boolean) : [],
                                 fromSheet: true,
                                 items: []
                             };
@@ -14928,7 +14928,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
                         const fpRow = String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase();
                         if (fpRow && !comprasMap[key].formaPago) comprasMap[key].formaPago = fpRow;
                         const tkVal = String(row['TICKET']||row['Ticket']||'').trim();
-                        if (tkVal && !comprasMap[key].tickets.includes(tkVal)) comprasMap[key].tickets.push(tkVal);
+                        if (tkVal) { tkVal.split('|').map(u=>u.trim()).filter(Boolean).forEach(u => { if (!comprasMap[key].tickets.includes(u)) comprasMap[key].tickets.push(u); }); }
                         const itemNombre = String(row['PRODUCTO'] || row['Producto'] || '').trim();
                         if (itemNombre) comprasMap[key].items.push({
                             nombre:   itemNombre,
