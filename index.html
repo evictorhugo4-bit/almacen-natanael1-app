@@ -4387,7 +4387,18 @@ _sheetProductos.forEach(p => {
         // ============================================================
         // NAVEGACIÓN
         // ============================================================
+        window._vistaActual = 'ventas'; // track vista activa
+
+        // Renderiza solo si la vista esta actualmente visible
+        window.renderSiVisible = function(vista) {
+            if (window._vistaActual !== vista) return;
+            if      (vista === 'compras')    renderCompras();
+            else if (vista === 'inventario') renderInventario();
+            else if (vista === 'clientes')   renderClientes();
+        };
+
         window.cambiarVista = function(vista) {
+            window._vistaActual = vista;
             ['ventas','inventario','clientes','compras','ingresos','egresos','ingresosNegocio','egresosNegocio','estadisticas','pagos','proveedoresNegocio','proveedoresGastos','listaCat'].forEach(v => {
                 document.getElementById('vista'+v.charAt(0).toUpperCase()+v.slice(1)).classList.toggle('hidden', vista !== v);
                 const btn = document.getElementById('btn'+v.charAt(0).toUpperCase()+v.slice(1));
@@ -6170,12 +6181,13 @@ const productosOrdenados = [...inventarioFiltrado].sort((a, b) => {
 const PRODUCTOS_POR_RENDER = 60;
 const productosVisibles = productosOrdenados.slice(0, PRODUCTOS_POR_RENDER);
 
+// Pre-indexar productos por id una sola vez — O(n) en vez de findIndex por cada tarjeta
+const _idxPorIdMap = new Map();
+_sheetProductos.forEach((sp, i) => { if (sp.id) _idxPorIdMap.set(String(sp.id), i); });
+
 container.innerHTML = productosVisibles.map((p) => {
 
-    // Buscar por id para evitar problemas de referencia tras sync
-    const index = _sheetProductos.findIndex(sp => sp.id && p.id && sp.id === p.id) !== -1
-        ? _sheetProductos.findIndex(sp => sp.id && p.id && sp.id === p.id)
-        : _sheetProductos.indexOf(p);
+    const index = (p.id && _idxPorIdMap.has(String(p.id))) ? _idxPorIdMap.get(String(p.id)) : _sheetProductos.indexOf(p);
     const stockActual = p.stockCalculado ?? 0;
     const bajoMinimo = p.minimo && stockActual < p.minimo;
     const vencProx = p.fechaVencimiento && 
@@ -6822,38 +6834,115 @@ console.log("CLIENTE COMPLETO:", c);
                 return;
             }
 
-            // Ordenar de mayor a menor deuda
-            const datosOrdenados = [...datos].sort((a, b) => {
-                const da = getDeudaCliente(a);
-                const db = getDeudaCliente(b);
-                return db - da;
+            // ══════════════════════════════════════════════════════════════
+            // PRE-COMPUTAR TODOS LOS ÍNDICES — UNA SOLA VEZ, O(n) total
+            // ══════════════════════════════════════════════════════════════
+
+            const _todasVentas = todasLasVentas();
+            const _ingTodos    = typeof _sheetIngresosNegocio !== 'undefined' ? _sheetIngresosNegocio : [];
+
+            // 1) Índice: idVenta → total pagado
+            const _pagosPorVenta = new Map();
+            (_pagoVentasSheet || []).forEach(p => {
+                const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!idV) return;
+                _pagosPorVenta.set(idV, (_pagosPorVenta.get(idV) || 0) + parseFloat(p.monto || p.MONTO || 0));
             });
 
-            // ── KPIs globales ──────────────────────────────────────
-            let _kpiDebe = 0, _kpiCapital = 0, _kpiGanancia = 0;
-            datosOrdenados.forEach(c => {
-                // Solo deuda de compras (sin préstamos) para el KPI "Total Debe"
+            // 2) Índice: ventas por idCliente / por nombre
+            const _ventasPorIdCl = new Map();
+            const _ventasPorNom  = new Map();
+            _todasVentas.forEach(v => {
+                const vId  = String(v.idCliente || '').trim();
+                const vNom = String(v.cliente   || '').trim().toUpperCase();
+                if (vId) {
+                    if (!_ventasPorIdCl.has(vId)) _ventasPorIdCl.set(vId, []);
+                    _ventasPorIdCl.get(vId).push(v);
+                } else if (vNom) {
+                    if (!_ventasPorNom.has(vNom)) _ventasPorNom.set(vNom, []);
+                    _ventasPorNom.get(vNom).push(v);
+                }
+            });
+
+            // 3) Índice: préstamos por idCliente / por nombre → { monto, idSheets[] }
+            const _prestPorIdCl = new Map();
+            const _prestPorNom  = new Map();
+            const _prestVisto   = new Set();
+            _ingTodos.forEach(e => {
+                const eIdCl = String(e.idCliente || '').trim();
+                const eNom  = String(e.cliente   || '').trim().toUpperCase();
+                const key   = String(e.idSheet || (e.fechaISO + '|' + e.credito));
+                const monto = parseFloat(e.credito || 0);
+                const idS   = String(e.idSheet || '').trim();
+                const entry = eIdCl
+                    ? (_prestPorIdCl.get(eIdCl) || { monto: 0, ids: new Set() })
+                    : (eNom ? (_prestPorNom.get(eNom) || { monto: 0, ids: new Set() }) : null);
+                if (!entry) return;
+                if (!_prestVisto.has(key)) { _prestVisto.add(key); entry.monto += monto; }
+                if (idS) entry.ids.add(idS);
+                if (eIdCl) _prestPorIdCl.set(eIdCl, entry);
+                else if (eNom) _prestPorNom.set(eNom, entry);
+            });
+
+            // 4) Índice: idIngreso → total pagado de préstamos
+            const _pagosPorIng = new Map();
+            (_sheetPagoIngNeg || []).forEach(p => {
+                const idI = String(p.IDINGRESOSNEGOCIO || '').trim();
+                if (!idI) return;
+                _pagosPorIng.set(idI, (_pagosPorIng.get(idI) || 0) + parseFloat(p.MONTO || 0));
+            });
+            // Pagos sin IDINGRESOSNEGOCIO (campo vacío) → se suman a todos; acumular aparte
+            const _pagosSinId = (_sheetPagoIngNeg || [])
+                .filter(p => !String(p.IDINGRESOSNEGOCIO || '').trim())
+                .reduce((s, p) => s + parseFloat(p.MONTO || 0), 0);
+
+            // ── Helpers usando los índices ──
+            const _ventasDeCliente = c => {
                 const idCl  = String(c.idSheet || c.id || '').trim();
                 const nomCl = String(c.nombre  || '').trim().toUpperCase();
-                const ventasCl = todasLasVentas().filter(v => {
-                    const vId  = String(v.idCliente || '').trim();
-                    const vNom = String(v.cliente   || '').trim().toUpperCase();
-                    return vId ? (vId === idCl) : (nomCl && vNom === nomCl);
-                });
-                const soloCredito = ventasCl.reduce((s, v) => {
+                return idCl ? (_ventasPorIdCl.get(idCl) || []) : (_ventasPorNom.get(nomCl) || []);
+            };
+
+            const _deudaRapida = c => {
+                const idCl  = String(c.idSheet || c.id || '').trim();
+                const nomCl = String(c.nombre  || '').trim().toUpperCase();
+
+                // Crédito ventas
+                let totalCredito = 0;
+                _ventasDeCliente(c).forEach(v => {
                     const credito = parseFloat(v.deuda || 0);
-                    if (credito <= 0) return s;
+                    if (credito <= 0) return;
                     const idVenta = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
-                    const pagadoV = _pagoVentasSheet
-                        .filter(p => idVenta && (String(p.idVenta||'').trim()===idVenta || String(p.IDVENTAS||'').trim()===idVenta))
-                        .reduce((a, p) => a + parseFloat(p.monto||p.MONTO||0), 0);
-                    return s + Math.max(0, credito - pagadoV);
-                }, 0);
-                _kpiDebe += soloCredito;
-                // Capital y Ganancia usando exactamente los mismos saldos que getDeudaCliente
-                getSaldosVentasCliente(c).forEach(({ v, saldo }) => {
+                    totalCredito += Math.max(0, credito - (_pagosPorVenta.get(idVenta) || 0));
+                });
+
+                // Préstamos
+                const prest = (idCl ? _prestPorIdCl.get(idCl) : null) || (nomCl ? _prestPorNom.get(nomCl) : null);
+                if (!prest || prest.monto <= 0) return totalCredito;
+                let pagadoPrestamos = _pagosSinId;
+                prest.ids.forEach(idS => { pagadoPrestamos += (_pagosPorIng.get(idS) || 0); });
+                return totalCredito + Math.max(0, prest.monto - pagadoPrestamos);
+            };
+
+            // ── Calcular deuda una sola vez por cliente ──
+            const _deudaMap = new Map();
+            datos.forEach(c => _deudaMap.set(c.id, _deudaRapida(c)));
+
+            // ── Ordenar con valores ya calculados ──
+            const datosOrdenados = [...datos].sort((a, b) => (_deudaMap.get(b.id) || 0) - (_deudaMap.get(a.id) || 0));
+
+            // ── KPIs globales en un solo loop, sin recalcular deuda ──
+            let _kpiDebe = 0, _kpiCapital = 0, _kpiGanancia = 0;
+            datosOrdenados.forEach(c => {
+                _ventasDeCliente(c).forEach(v => {
+                    const credito = parseFloat(v.deuda || 0);
+                    if (credito <= 0) return;
+                    const idVenta = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
+                    const saldo   = Math.max(0, credito - (_pagosPorVenta.get(idVenta) || 0));
+                    if (saldo <= 0) return;
+                    _kpiDebe += saldo;
                     const items = (v.items && v.items.length > 0) ? v.items : [{nombre:'—',cantidad:1,precio:v.total,costo:0}];
-                    const totalPrecio = items.reduce((s,i)=>s+(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1),0);
+                    const totalPrecio = items.reduce((s,i) => s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1), 0);
                     items.forEach(item => {
                         const precio = (parseFloat(item.precio)||0)*(parseFloat(item.cantidad)||1);
                         const costo  = (parseFloat(item.costo)||0)*(parseFloat(item.cantidad)||1);
@@ -6872,17 +6961,10 @@ console.log("CLIENTE COMPLETO:", c);
             if (_elC) _elC.textContent = '$' + Utils.fmt(Math.round(_kpiCapital));
             if (_elG) _elG.textContent = '$' + Utils.fmt(Math.round(_kpiGanancia));
 
+            // ── Render HTML usando valores pre-calculados — cero recálculos ──
             container.innerHTML = datosOrdenados.map(c => {
-                // Calcular deuda: historial local + ventas del Sheet
-                const idCl_r        = String(c.idSheet || c.id || '')
-                const nom_r         = c.nombre.trim().toUpperCase();
-                const ventasCliente = todasLasVentas().filter(v => {
-                    const vIdCl = String(v.idCliente||'').trim();
-                    return vIdCl ? vIdCl === idCl_r : String(v.cliente||'').trim().toUpperCase() === nom_r;
-                });
-                const deudaReal     = getDeudaCliente(c);
-
-
+                const ventasCliente = _ventasDeCliente(c);
+                const deudaReal     = _deudaMap.get(c.id) || 0;
 
                 const fotoHtml = c.foto
                     ? `<img src="${driveUrl(c.foto)}" class="w-12 h-12 rounded-xl object-cover" alt="">`
@@ -10578,8 +10660,8 @@ const fecha =
 
     cerrarNuevaCompra();
     resetTicketUI();
-    renderCompras();
-    renderInventario();
+    if (window._vistaActual === 'compras')   renderCompras();
+    if (window._vistaActual === 'inventario') renderInventario();
     mostrarToast(`✓ Compra de $${Utils.fmt(total)} registrada`);
 
     // Envío a Sheets
@@ -10952,8 +11034,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const prodsAfectadosC = [...new Set((compra.items||[]).map(i=>i.nombre))]
                 .map(nom => _sheetProductos.find(p=>p.nombre===nom)).filter(Boolean);
             syncStockSheet(prodsAfectadosC);
-            renderCompras();
-            renderInventario();
+            if (window._vistaActual === 'compras')    renderCompras();
+            if (window._vistaActual === 'inventario') renderInventario();
             mostrarToast('✓ Compra eliminada y stock sincronizado');
         }
 
@@ -11167,8 +11249,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
 
                 toggleModal('modalEditarCompra', false);
                 _editandoCompraIdx = -1;
-                renderCompras();
-                renderInventario();
+                if (window._vistaActual === 'compras')    renderCompras();
+                if (window._vistaActual === 'inventario') renderInventario();
                 mostrarToast('✓ Compra actualizada');
             });
         }
