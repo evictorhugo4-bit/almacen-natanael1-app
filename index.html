@@ -4165,7 +4165,6 @@ Agregar
             console.log('=== DIAGNÓSTICO STOCK ===');
             console.log('_sheetProductos:', _sheetProductos.length, 'productos');
             console.log('historial:', historial.length, 'ventas locales');
-            console.log('_sheetVentas:', (_sheetVentas||[]).length, 'ventas sheet');
             
             console.log('_sheetCompras:', (_sheetCompras||[]).length, 'compras sheet');
             const pConStock = _sheetProductos.find(p => p.stockInicio > 0);
@@ -4187,7 +4186,6 @@ Agregar
                 console.log('  KEYS:', Object.keys(vConItems).join(', '));
                 console.log('  item[0]:', JSON.stringify(vConItems.items[0]));
             } else {
-                console.log('_sheetVentas sin items. Total:', (_sheetVentas||[]).length);
                 if ((_sheetVentas||[]).length > 0) console.log('  KEYS:', Object.keys(_sheetVentas[0]).join(', '));
             }
         };
@@ -6762,15 +6760,20 @@ console.log("CLIENTE COMPLETO:", c);
         return vId ? (vId === idCl) : (nomCl && vNom === nomCl);
     });
 
+    // Precomputar Map idVenta→pagado para O(n) en lugar de O(n²)
+    const _pvMapGDC = new Map();
+    (_pagoVentasSheet || []).forEach(p => {
+        const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+        if (!idV) return;
+        _pvMapGDC.set(idV, (_pvMapGDC.get(idV) || 0) + parseFloat(p.monto || p.MONTO || 0));
+    });
+
     // Sumar crédito pendiente real por venta (descontando pagos por venta)
     const totalCredito = ventasCliente.reduce((s, v) => {
         const credito = parseFloat(v.deuda || 0);
         if (credito <= 0) return s;
         const idVenta = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
-        const pagadoVenta = _pagoVentasSheet
-            .filter(p => idVenta && (String(p.idVenta || '').trim() === idVenta || String(p.IDVENTAS || '').trim() === idVenta))
-            .reduce((a, p) => a + parseFloat(p.monto || p.MONTO || 0), 0);
-        return s + Math.max(0, credito - pagadoVenta);
+        return s + Math.max(0, credito - (_pvMapGDC.get(idVenta) || 0));
     }, 0);
 
     // Sumar préstamos pendientes (ingresosNegocio credito - pagos de _sheetPagoIngNeg)
@@ -6802,21 +6805,25 @@ console.log("CLIENTE COMPLETO:", c);
     return totalCredito + Math.max(0, totalPrestamos - pagadoPrestamos);
 }
 
-        // Devuelve array de {v, saldo} con el saldo real por venta, mismo método que getDeudaCliente
+        // Devuelve array de {v, saldo} con el saldo real por venta
         function getSaldosVentasCliente(c) {
             const idCl  = String(c.idSheet || c.id || '').trim();
             const nomCl = String(c.nombre  || '').trim().toUpperCase();
             const result = [];
+            // Precomputar Map O(n) una sola vez
+            const _pvMapGSV = new Map();
+            (_pagoVentasSheet || []).forEach(p => {
+                const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!idV) return;
+                _pvMapGSV.set(idV, (_pvMapGSV.get(idV) || 0) + parseFloat(p.monto || p.MONTO || 0));
+            });
             todasLasVentas().forEach(v => {
                 const vId  = String(v.idCliente||'').trim();
                 const vNom = String(v.cliente||'').trim().toUpperCase();
                 if (!(vId ? vId === idCl : vNom === nomCl)) return;
                 const credito = parseFloat(v.deuda||0); if (credito <= 0) return;
                 const idVenta = String(v.idVenta||v.IDVENTAS||v.id||'').trim();
-                const pagado = _pagoVentasSheet
-                    .filter(p => idVenta && (String(p.idVenta||'').trim()===idVenta || String(p.IDVENTAS||'').trim()===idVenta))
-                    .reduce((a,p) => a+parseFloat(p.monto||p.MONTO||0), 0);
-                const saldo = Math.max(0, credito - pagado);
+                const saldo = Math.max(0, credito - (_pvMapGSV.get(idVenta) || 0));
                 if (saldo > 0) result.push({ v, saldo });
             });
             return result;
@@ -7180,10 +7187,8 @@ clienteDetalleId = id;
 
 const c = clientesDB.find(x => x.id === id);
 
-console.log('[DETALLE] cliente encontrado:', c ? c.nombre : 'NO ENCONTRADO');
 
 if (!c) {
-console.error('[DETALLE] cliente no encontrado para id:', id);
 return;
 }
 
@@ -7200,41 +7205,101 @@ return;
                 fotoEl.classList.add('hidden'); phEl.classList.remove('hidden');
             }
 
-            // ── Variables reutilizables (declaradas aquí para uso en toda la función) ──
+            // ══════════════════════════════════════════════════════════
+            // PRE-COMPUTAR ÍNDICES — O(n) total, una sola vez por apertura
+            // ══════════════════════════════════════════════════════════
             const idCl  = String(c.idSheet || c.id || '').trim();
             const nomCl = c.nombre.trim().toUpperCase();
 
+            // 1) Todas las ventas — UNA llamada
+            const _todasV = todasLasVentas();
+
+            // 2) Map idVenta → total pagado
+            const _pvMap = new Map();
+            (_pagoVentasSheet || []).forEach(p => {
+                const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!idV) return;
+                _pvMap.set(idV, (_pvMap.get(idV) || 0) + parseFloat(p.monto || p.MONTO || 0));
+            });
+
+            // 3) Map idVenta → Map nombreProductoUpper → totalPagadoPorItem
+            const _pvItemMap = new Map();
+            (_pagoVentasSheet || []).forEach(p => {
+                const idV  = String(p.idVenta || p.IDVENTAS || '').trim();
+                const nom  = String(p.producto || p.PRODUCTO || '').trim().toUpperCase();
+                if (!idV) return;
+                if (!_pvItemMap.has(idV)) _pvItemMap.set(idV, new Map());
+                const m = _pvItemMap.get(idV);
+                m.set(nom, (m.get(nom) || 0) + parseFloat(p.monto || p.MONTO || 0));
+            });
+
+            // 4) Map idVenta → venta (para lookup rápido en historial pagos)
+            const _ventaById = new Map();
+            _todasV.forEach(v => {
+                const idV = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
+                if (idV) _ventaById.set(idV, v);
+            });
+
+            // 5) Ventas de este cliente — una sola pasada
+            const _ventasCl = _todasV.filter(v => {
+                const vId  = String(v.idCliente || '').trim();
+                const vNom = String(v.cliente   || '').trim().toUpperCase();
+                return vId ? vId === idCl : vNom === nomCl;
+            });
+
             // ── Totales ──────────────────────────────────────────────
-            // deudaReal = solo deuda de VENTAS (compras con saldo pendiente)
-            const deudaReal = todasLasVentas()
-                .filter(v => {
-                    const vId  = String(v.idCliente || '').trim();
-                    const vNom = String(v.cliente   || '').trim().toUpperCase();
-                    return vId ? vId === idCl : vNom === nomCl;
-                })
-                .reduce((s, v) => {
-                    const credito = parseFloat(v.deuda || 0);
-                    if (credito <= 0) return s;
-                    const idVenta   = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
-                    const pagadoV   = _pagoVentasSheet
-                        .filter(p => idVenta && (String(p.idVenta || '').trim() === idVenta || String(p.IDVENTAS || '').trim() === idVenta))
-                        .reduce((a, p) => a + parseFloat(p.monto || p.MONTO || 0), 0);
-                    return s + Math.max(0, credito - pagadoV);
-                }, 0);
-            const totalComp  = todasLasVentas()
-                .filter(v => {
-                    const vId  = String(v.idCliente || '').trim();
-                    const vNom = String(v.cliente   || '').trim().toUpperCase();
-                    return vId ? vId === idCl : vNom === nomCl;
-                })
-                .reduce((s, v) => s + (parseFloat(v.total) || 0), 0);
-            // PRESTAMOS: suma credito de EGRESOS NEGOCIO menos MONTO de PAGO EGRESOS NEGOCIO, relacionados por IDCLIENTE
-            // Combinar pagos sheet+local, deduplicar por id
-            const _pagoVistosSet = new Set();
-            // PRÉSTAMOS: vienen de INGRESOS NEGOCIO (campo credito), pagos de _sheetPagoIngNeg (campo MONTO)
+            let deudaReal  = 0;
+            let totalComp  = 0;
+            let _capitalDeuda = 0, _gananciaDeuda = 0;
+            const ventasPend = [];  // ventas con saldo > 0
+            const comprasPag = [];  // ventas completamente pagadas
+
+            _ventasCl.forEach(v => {
+                totalComp += parseFloat(v.total) || 0;
+                const credito = parseFloat(v.deuda || 0);
+                const idV     = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
+                const pagado  = _pvMap.get(idV) || 0;
+
+                if (credito > 0) {
+                    const saldo = Math.max(0, credito - pagado);
+                    deudaReal  += saldo;
+
+                    // Capital / Ganancia
+                    if (saldo > 0) {
+                        const items = (v.items && v.items.length > 0) ? v.items : [{ nombre: v.producto||'—', cantidad: 1, precio: v.total, costo: 0 }];
+                        const totalPrecioItems = items.reduce((s,i) => s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1), 0);
+                        items.forEach(item => {
+                            const precio = (parseFloat(item.precio)||0)*(parseFloat(item.cantidad)||1);
+                            const costo  = (parseFloat(item.costo)||0)*(parseFloat(item.cantidad)||1);
+                            const prop   = totalPrecioItems > 0 ? precio/totalPrecioItems : 1/items.length;
+                            const saldoI = saldo * prop;
+                            const costoR = precio > 0 ? costo/precio : 0;
+                            _capitalDeuda  += saldoI * costoR;
+                            _gananciaDeuda += saldoI * (1 - costoR);
+                        });
+                        ventasPend.push({ v, idV, saldo });
+                    } else {
+                        comprasPag.push(v);
+                    }
+                } else {
+                    // sin deuda original → pagada
+                    comprasPag.push(v);
+                }
+            });
+
+            // ── Actualizar DOM: Totales ──────────────────────────────
+            const el1 = document.getElementById('detalleTotalCompras');
+            const el2 = document.getElementById('detalleTotalDeuda');
+            const el3 = document.getElementById('detalleTotalPrestamo');
+            const el4 = document.getElementById('detalleTotalGeneral');
+            if (el1) el1.textContent = '$' + Utils.fmt(totalComp);
+            if (el2) {
+                el2.textContent = '$' + Utils.fmt(deudaReal);
+                el2.className   = 'text-2xl font-black font-mono ' + (deudaReal > 0 ? 'text-red-400' : 'text-emerald-400');
+            }
+
+            // ── Préstamos ────────────────────────────────────────────
             const ingresosNegTodos = typeof _sheetIngresosNegocio !== 'undefined' ? _sheetIngresosNegocio : [];
-            console.log('[ING DBG] total ingresosNeg:', ingresosNegTodos.length, '| idCl:', idCl, '| nomCl:', nomCl);
-            if (ingresosNegTodos.length > 0) console.log('[ING DBG] primer ingreso:', JSON.stringify(ingresosNegTodos[0]));
             const _ingNegVistos = new Set();
             const ingresosNegCliente = ingresosNegTodos.filter(e => {
                 const eIdCl = String(e.idCliente || '').trim();
@@ -7246,31 +7311,18 @@ return;
                 _ingNegVistos.add(key);
                 return true;
             });
-
             const totalCredito = ingresosNegCliente.reduce((s,e) => s + (parseFloat(e.credito)||0), 0);
-            console.log('[ING DBG] ingresosNegCliente count:', ingresosNegCliente.length, '| totalCredito:', totalCredito);
+            const _ingNegIds   = new Set(ingresosNegCliente.map(e => String(e.idSheet||'').trim()).filter(Boolean));
             const totalPagado  = (_sheetPagoIngNeg||[])
                 .filter(p => {
-                    // match por idCliente si existe, sino por IDINGRESOSNEGOCIO que pertenezca al cliente
                     const pIdCl = String(p.IDCLIENTE || p.idCliente || '').trim();
                     if (pIdCl) return pIdCl === idCl;
-                    // fallback: el ingreso al que pertenece es de este cliente
                     const pIdIng = String(p.IDINGRESOSNEGOCIO || '').trim();
-                    return ingresosNegCliente.some(e => String(e.idSheet||'').trim() === pIdIng);
+                    return _ingNegIds.has(pIdIng);
                 })
                 .reduce((s,p) => s + (parseFloat(p.MONTO)||0), 0);
             const totalPrestamo = Math.max(0, totalCredito - totalPagado);
 
-            const el1 = document.getElementById('detalleTotalCompras');
-            const el2 = document.getElementById('detalleTotalDeuda');
-            const el3 = document.getElementById('detalleTotalPrestamo');
-            const el4 = document.getElementById('detalleTotalGeneral');
-            if (el1) el1.textContent = '$' + Utils.fmt(totalComp);
-
-            if (el2) {
-                el2.textContent = '$' + Utils.fmt(deudaReal);
-                el2.className   = 'text-2xl font-black font-mono ' + (deudaReal > 0 ? 'text-red-400' : 'text-emerald-400');
-            }
             if (el3) el3.textContent = '$' + Utils.fmt(totalPrestamo);
             if (el4) {
                 const total = deudaReal + totalPrestamo;
@@ -7278,101 +7330,45 @@ return;
                 el4.className   = 'text-2xl font-black font-mono ' + (total > 0 ? 'text-red-400' : 'text-emerald-400');
             }
 
-            // ── Deuda Capital y Ganancia en Deuda ──────────────────
+            // ── Capital / Ganancia en deuda ──────────────────────────
             const elCap = document.getElementById('detalleDeudaCapital');
             const elGan = document.getElementById('detalleGananciaDeuda');
-            if (elCap || elGan) {
-                let _capitalDeuda = 0;
-                let _gananciaDeuda = 0;
-                todasLasVentas().forEach(v => {
-                    const vId  = String(v.idCliente||'').trim();
-                    const vNom = String(v.cliente||'').trim().toUpperCase();
-                    if (!(vId ? vId === idCl : vNom === nomCl)) return;
-                    const deuda = parseFloat(v.deuda||0); if (deuda <= 0) return;
-                    const idV = String(v.id||'').trim();
-                    const pagado = idV ? (_pagoVentasSheet||[])
-                        .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === idV)
-                        .reduce((a,p) => a+(parseFloat(p.monto)||0), 0) : 0;
-                    const saldo = Math.max(0, deuda - pagado); if (saldo <= 0) return;
-                    const items = (v.items && v.items.length > 0) ? v.items : [{ nombre: v.producto||'—', cantidad: 1, precio: v.total, costo: 0 }];
-                    const totalPrecioItems = items.reduce((s,i) => s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1), 0);
-                    items.forEach(item => {
-                        const precio   = (parseFloat(item.precio)||0) * (parseFloat(item.cantidad)||1);
-                        const costo    = (parseFloat(item.costo)||0)  * (parseFloat(item.cantidad)||1);
-                        const proporcion = totalPrecioItems > 0 ? precio / totalPrecioItems : 1 / items.length;
-                        const saldoItem  = saldo * proporcion;
-                        // Capital = costo proporcional al saldo pendiente
-                        const costoRatio = precio > 0 ? costo / precio : 0;
-                        _capitalDeuda  += saldoItem * costoRatio;
-                        _gananciaDeuda += saldoItem * (1 - costoRatio);
-                    });
-                });
-                _capitalDeuda  = Math.round(_capitalDeuda  * 100) / 100;
-                _gananciaDeuda = Math.round(_gananciaDeuda * 100) / 100;
-                if (elCap) elCap.textContent = '$' + Utils.fmt(_capitalDeuda);
-                if (elGan) elGan.textContent = '$' + Utils.fmt(_gananciaDeuda);
-            }
+            if (elCap) elCap.textContent = '$' + Utils.fmt(Math.round(_capitalDeuda * 100)/100);
+            if (elGan) elGan.textContent = '$' + Utils.fmt(Math.round(_gananciaDeuda * 100)/100);
             const interesBox = document.getElementById('detalleInteresBox');
             if (interesBox) interesBox.classList.add('hidden');
-
-            // ── Variables reutilizables (ya declaradas arriba) ──────
 
             // ── Compras con saldo pendiente ──────────────────────────
             const contCompDeuda = document.getElementById('detalleComprasDeuda');
             if (contCompDeuda) {
-                // Armar ventas agrupadas con saldo pendiente
-                const ventasPend = [];
-                // DEBUG
-                const _dbgV = todasLasVentas().find(v => { const i=String(v.idCliente||'').trim(),n=String(v.cliente||'').trim().toUpperCase(); return i?i===idCl:n===nomCl; });
-                if (_dbgV) console.warn('[DBG] id:'+_dbgV.id+' deuda:'+_dbgV.deuda+' total:'+_dbgV.total+' fechaISO=['+_dbgV.fechaISO+'] fecha=['+_dbgV.fecha+'] mora='+calcularInteresMora(_dbgV.deuda,_dbgV.fechaISO)+' keys:'+Object.keys(_dbgV).join(','));
-                if (_dbgV) console.warn('[DBG ITEMS] items count:'+(_dbgV.items||[]).length+' | item0='+JSON.stringify((_dbgV.items||[])[0]));
-                todasLasVentas().forEach(v => {
-                    const vId  = String(v.idCliente || '').trim();
-                    const vNom = String(v.cliente   || '').trim().toUpperCase();
-                    if (!(vId ? vId === idCl : vNom === nomCl)) return;
-                    if ((parseFloat(v.deuda) || 0) <= 0) return;
-                    const idV = String(v.id || '').trim();
-                    const pagado = idV ? (_pagoVentasSheet||[])
-                        .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === idV)
-                        .reduce((a,p) => a + (parseFloat(p.monto)||0), 0) : 0;
-                    const saldo = Math.max(0, (parseFloat(v.deuda)||0) - pagado);
-                    if (saldo <= 0) return;
-                    const items = v.items && v.items.length > 0 ? v.items : [{ nombre: v.producto || '—', cantidad: 1, precio: v.total }];
-                    ventasPend.push({ v, items, saldo, idV });
-                });
                 contCompDeuda.innerHTML = ventasPend.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin saldo pendiente</p>'
-                    : ventasPend.map(({ v, items, saldo }) => {
+                    : ventasPend.map(({ v, idV, saldo }) => {
                         const ticketBtn = v.ticket
                             ? `<button onclick="verTicketVentaDetalle('${v.id}')" style="padding:3px 7px;background:#1e3a5f;color:#93c5fd;border:1px solid #1d4ed8;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;" title="Ver ticket">🧾</button>`
                             : '';
-                        const idVstr = String(v.id||'').trim();
-                        const idSstr = v.idSheet ? String(v.idSheet).trim() : (idVstr.startsWith('sheet_V_') ? idVstr.replace('sheet_V_','') : idVstr);
-                        const fechaVenta = v.fecha || v.fechaISO || ''; // v.fecha es local, v.fechaISO puede ser UTC
+                        const idSstr = v.idSheet ? String(v.idSheet).trim() : (idV.startsWith('sheet_V_') ? idV.replace('sheet_V_','') : idV);
+                        const fechaVenta = v.fecha || v.fechaISO || '';
                         const _fvStr = String(fechaVenta).trim();
                         const _fvDMY = _fvStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
                         const _fvISO = _fvStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
                         const _fvD = _fvDMY ? new Date(+_fvDMY[3],+_fvDMY[2]-1,+_fvDMY[1]) : (_fvISO ? new Date(+_fvISO[1],+_fvISO[2]-1,+_fvISO[3]) : new Date(_fvStr));
                         const _hoyDM = new Date(); _hoyDM.setHours(0,0,0,0); _fvD.setHours(0,0,0,0);
-                        const diasDeuda = Math.max(0, Math.floor((_hoyDM - _fvD) / (1000*60*60*24)));
+                        const items = v.items && v.items.length > 0 ? v.items : [{ nombre: v.producto || '—', cantidad: 1, precio: v.total }];
+                        // Usar _pvItemMap precomputado: O(1) por ítem
+                        const itemMapForV = _pvItemMap.get(idV) || _pvItemMap.get(idSstr) || new Map();
                         const itemsHtml = items.map(item => {
                             const nomProd  = (item.cantidad > 1 ? item.cantidad + 'x ' : '') + (item.nombre || '—');
                             const subTotal = (parseFloat(item.precio)||0) * (parseFloat(item.cantidad)||1);
                             const nomUp    = nomProd.trim().toUpperCase();
-                            // yaPagado POR ÍTEM: filtrar por producto
-                            const yaPagadoItem = (_pagoVentasSheet||[])
-                                .filter(p => (String(p.idVenta||p.IDVENTAS||'').trim()===idVstr || String(p.idVenta||p.IDVENTAS||'').trim()===idSstr) && String(p.producto||p.PRODUCTO||'').trim().toUpperCase()===nomUp)
-                                .reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
+                            const yaPagadoItem = itemMapForV.get(nomUp) || 0;
                             const saldoItem = Math.max(0, subTotal - yaPagadoItem);
-                            const pagado    = yaPagadoItem > 0 && saldoItem <= 0;
-                            // Interés por este ítem
-                            const interesItem = 0;
-                            const totalConInt  = saldoItem;
+                            const pagadoItem = yaPagadoItem > 0 && saldoItem <= 0;
                             return `<div class="py-1.5 border-t border-slate-800">
                                 <div class="flex justify-between items-center gap-2">
-                                    <span class="text-[10px] font-bold ${pagado ? 'text-emerald-400 line-through' : 'text-slate-300'} flex-1 truncate">📦 ${Utils.escHtml(nomProd)}</span>
+                                    <span class="text-[10px] font-bold ${pagadoItem ? 'text-emerald-400 line-through' : 'text-slate-300'} flex-1 truncate">📦 ${Utils.escHtml(nomProd)}</span>
                                     <div class="flex items-center gap-1.5 shrink-0">
-                                        <span class="text-[11px] font-mono ${pagado ? 'text-emerald-400' : 'text-slate-400'}">$${Utils.fmt(saldoItem > 0 ? saldoItem : subTotal)}</span>
+                                        <span class="text-[11px] font-mono ${pagadoItem ? 'text-emerald-400' : 'text-slate-400'}">$${Utils.fmt(saldoItem > 0 ? saldoItem : subTotal)}</span>
                                         ${saldoItem > 0
                                             ? `<button onclick="abrirPagoDesdeVenta('${v.id || ''}', '${c.id}', '${nomProd.replace(/'/g,"\\'")}',${subTotal})"
                                                 style="padding:3px 8px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:12px;font-weight:900;line-height:1;"
@@ -7400,25 +7396,25 @@ return;
             // ── Préstamos con saldo pendiente ────────────────────────
             const contPrestPend = document.getElementById('detallePrestamosPend');
             if (contPrestPend) {
+                // Map idIng → totalPagado para O(1) por préstamo
+                const _pagIngMap = new Map();
+                (_sheetPagoIngNeg||[]).forEach(p => {
+                    const idI = String(p.IDINGRESOSNEGOCIO || '').trim();
+                    if (!idI) return;
+                    _pagIngMap.set(idI, (_pagIngMap.get(idI) || 0) + parseFloat(p.MONTO || 0));
+                });
                 const prestPendConSaldo = ingresosNegCliente
                     .filter(e => (parseFloat(e.credito) || 0) > 0)
                     .map(e => {
                         const idIng   = String(e.idSheet || '').trim();
                         const credito = parseFloat(e.credito) || 0;
-                        const pagado  = (_sheetPagoIngNeg||[])
-                            .filter(p => {
-                                const pIdIng = String(p.IDINGRESOSNEGOCIO || '').trim();
-                                return !idIng || !pIdIng || pIdIng === idIng;
-                            })
-                            .reduce((s,p) => s + (parseFloat(p.MONTO) || 0), 0);
+                        const pagado  = idIng ? (_pagIngMap.get(idIng) || 0) : 0;
                         return { ...e, saldoPend: Math.max(0, credito - pagado) };
                     })
                     .filter(e => e.saldoPend > 0);
                 contPrestPend.innerHTML = prestPendConSaldo.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin préstamos pendientes</p>'
-                    : prestPendConSaldo.map(p => {
-                        const int = 0;
-                        return `
+                    : prestPendConSaldo.map(p => `
                         <div class="bg-slate-900/50 p-3 rounded-xl border border-orange-800 flex justify-between items-center gap-2">
                             <div class="flex-1 min-w-0">
                                 <span class="block text-[9px] font-black text-slate-400 uppercase">${Utils.escHtml(p.fecha || '')}</span>
@@ -7428,27 +7424,13 @@ return;
                                 <div class="text-right">
                                     <span class="text-sm font-black text-orange-400 font-mono">$${Utils.fmt(p.saldoPend)}</span>
                                 </div>
-                                <button onclick="abrirPagoIngNeg('${p.id || p.idSheet || ''}')"
-                                    style="padding:6px 10px;background:#431407;color:#fb923c;border:1px solid #7c2d12;border-radius:8px;cursor:pointer;font-size:13px;font-weight:900;line-height:1;"
-                                    title="Registrar pago préstamo">🧾</button>
                             </div>
-                        </div>`}).join('');
+                        </div>`).join('');
             }
 
-            // ── Compras pagadas (sin saldo pendiente) ────────────────
+            // ── Compras pagadas ──────────────────────────────────────
             const contCompPag = document.getElementById('detalleComprasPagadas');
             if (contCompPag) {
-                const comprasPag = todasLasVentas().filter(v => {
-                    const vId  = String(v.idCliente || '').trim();
-                    const vNom = String(v.cliente   || '').trim().toUpperCase();
-                    const match = vId ? vId === idCl : vNom === nomCl;
-                    if (!match) return false;
-                    const credito = parseFloat(v.deuda || 0);
-                    if (credito <= 0) return true; // sin deuda original → pagada
-                    const idV = String(v.idVenta || v.IDVENTAS || v.id || '').trim();
-                    const pagV = _pagoVentasSheet.filter(p => idV && String(p.idVenta||'').trim()===idV).reduce((a,p)=>a+parseFloat(p.monto||0),0);
-                    return Math.max(0, credito - pagV) === 0;
-                });
                 contCompPag.innerHTML = comprasPag.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin compras pagadas</p>'
                     : comprasPag.map(v => {
@@ -7466,12 +7448,13 @@ return;
             // ── Historial pagos de compras ────────────────────────────
             const contPagosComp = document.getElementById('detallePagos');
             if (contPagosComp) {
-                const idCl_p   = String(c.idSheet || '').trim();
+                const idCl_p = String(c.idSheet || '').trim();
+                const SVG_TRASH = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
                 const pagosSheet = _pagoVentasSheet
                     .filter(p => String(p.idCliente || '').trim() === idCl_p)
                     .map(p => {
-                        const venta = todasLasVentas().find(v =>
-                            String(v.IDVENTAS || '').trim() === String(p.idVenta || '').trim());
+                        const idVp  = String(p.idVenta || p.IDVENTAS || '').trim();
+                        const venta = _ventaById.get(idVp);
                         return {
                             id:        p.id,
                             fecha:     fmtFecha(p.fecha) || p.fecha || '',
@@ -7483,7 +7466,6 @@ return;
                     });
                 const todosPagos = [...(c.pagos||[]), ...pagosSheet]
                     .sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
-                const SVG_TRASH = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
                 contPagosComp.innerHTML = todosPagos.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin pagos registrados</p>'
                     : todosPagos.map(p => {
@@ -7526,10 +7508,7 @@ return;
             if (inputFecha) inputFecha.value = new Date().toISOString().slice(0,16);
             if (inputMonto) inputMonto.value = deudaReal > 0 ? deudaReal : '';
 
-            console.log('[DETALLE] abriendo modal...');
 toggleModal('modalDetalleCliente', true);
-console.log('[DETALLE] modal abierto');
-
 if (typeof lucide !== 'undefined') lucide.createIcons();
 
 }
@@ -13152,7 +13131,6 @@ function calcularCajaEsperada() {
     console.log('Desde:', desde ? desde.toLocaleString('es-AR') : 'sin filtro');
     console.log('Monto inicial:', inicial);
     console.log('── ENTRADAS ──');
-    console.log('  ventasEf:    ', ventasEf,     '| ventas en rango:', (_sheetVentas||[]).filter(despues).length);
     console.log('  ingresosEf:  ', ingresosEf);
     console.log('  ingNegEf:    ', ingNegEf);
     console.log('  pagoVentasEf:', pagoVentasEf);
@@ -14380,7 +14358,6 @@ function verDetalleProveedor(tipo, id){
             console.log('=== DIAGNÓSTICO STOCK ===');
             console.log('_sheetProductos:', _sheetProductos.length, 'productos');
             console.log('historial:', historial.length, 'ventas locales');
-            console.log('_sheetVentas:', (_sheetVentas||[]).length, 'ventas sheet');
             console.log('_sheetCompras:', _sheetCompras.length, 'compras locales');
             console.log('_sheetCompras:', (_sheetCompras||[]).length, 'compras sheet');
 
@@ -14415,9 +14392,7 @@ function verDetalleProveedor(tipo, id){
                 // Mostrar TODAS las keys del objeto
                 console.log('  KEYS:', Object.keys(vConItems).join(', '));
             } else {
-                console.log('\n⚠ _sheetVentas vacío o sin items');
                 if ((_sheetVentas||[]).length > 0) {
-                    console.log('  KEYS primera venta:', Object.keys(_sheetVentas[0]).join(', '));
                 }
             }
 
@@ -14776,7 +14751,6 @@ function verDetalleProveedor(tipo, id){
                         });
                     });
                     _sheetVentas = Object.values(ventasMap);
-                    console.log('✓ Sheet ventas cargadas:', _sheetVentas.length);
                     // Debug: verificar efectivo en primeras ventas del día actual
                     const _hoy = new Date(); const _hoyStr = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')+'-'+String(_hoy.getDate()).padStart(2,'0');
                     const _ventasHoy = _sheetVentas.filter(v => (v.fechaISO||v.fecha||'').startsWith(_hoyStr) || parseFechaNum(v.fechaISO||v.fecha||'') >= parseFechaNum(_hoyStr+'T00:00'));
@@ -15862,7 +15836,6 @@ if (indicator) indicator.classList.remove('hidden');
 
             const noData = document.getElementById('statsNoData');
 
-console.log("TOTAL VENTAS:", _sheetVentas.length);
 console.log("FILTRADAS:", filtradas.length);
 
             if (filtradas.length === 0) {
