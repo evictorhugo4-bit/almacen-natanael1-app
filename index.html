@@ -3853,9 +3853,19 @@ CONFIRMAR PAGO
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Total de la venta</label>
                     <div id="editarVentaTotal" class="text-2xl font-black text-white font-mono bg-slate-900 px-4 py-2 rounded-xl border border-slate-800"></div>
                 </div>
-                <div>
+                <div class="relative">
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Cliente</label>
-                    <input type="text" id="editarVentaCliente" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase">
+                    <div class="relative flex items-center">
+                        <input type="text" id="editarVentaCliente" autocomplete="off"
+                            class="w-full bg-slate-900 border-2 border-slate-800 p-3 pr-8 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase"
+                            oninput="filtrarClientesEditVenta(this.value)"
+                            onfocus="filtrarClientesEditVenta(this.value)"
+                            onblur="setTimeout(function(){ document.getElementById('dropdownClientesEdit').classList.add('hidden'); }, 180)">
+                        <button type="button" onclick="document.getElementById('editarVentaCliente').value=''; document.getElementById('editarVentaCliente').focus(); filtrarClientesEditVenta('');"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm bg-slate-700 hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center transition-colors">&#x2715;</button>
+                    </div>
+                    <div id="dropdownClientesEdit" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-xl mt-1 shadow-xl max-h-48 overflow-y-auto custom-scrollbar" style="top:100%;">
+                    </div>
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Efectivo recibido</label>
@@ -3864,6 +3874,19 @@ CONFIRMAR PAGO
                 <div>
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Fecha</label>
                     <input type="datetime-local" id="editarVentaFecha" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm">
+                </div>
+                <!-- PRODUCTOS DE LA VENTA -->
+                <div>
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-2">Productos</label>
+                    <div id="editarVentaItems" class="space-y-2 max-h-[28vh] overflow-y-auto custom-scrollbar pr-1"></div>
+                    <div class="relative mt-2">
+                        <input type="text" id="editarVentaBuscarProd" autocomplete="off" placeholder="+ Agregar producto..."
+                            class="w-full bg-slate-900 border-2 border-dashed border-slate-700 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-500"
+                            oninput="filtrarProdsEditVenta(this.value)"
+                            onfocus="filtrarProdsEditVenta(this.value)"
+                            onblur="setTimeout(function(){ document.getElementById('dropdownProdsEdit').classList.add('hidden'); }, 200)">
+                        <div id="dropdownProdsEdit" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-xl mt-1 shadow-xl max-h-48 overflow-y-auto custom-scrollbar" style="top:100%;"></div>
+                    </div>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -5710,6 +5733,9 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             mostrarToast('✓ Venta eliminada');
         }
 
+        // Items temporales de la venta en edición
+        var _editVentaItems = [];
+
         function editarVenta(id) {
             const v = historial.find(function(v){ return String(v.id) === String(id); });
             if (!v) return;
@@ -5720,7 +5746,100 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             const fISO = v.fechaISO || v.fecha || '';
             const fEl = document.getElementById('editarVentaFecha');
             if (fEl && fISO) { try { fEl.value = new Date(new Date(fISO) - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16); } catch(e){} }
+            // Cargar copia de items para edición
+            _editVentaItems = JSON.parse(JSON.stringify(v.items || []));
+            renderItemsEditVenta();
+            // Limpiar buscador
+            var bp = document.getElementById('editarVentaBuscarProd');
+            if (bp) bp.value = '';
             toggleModal('modalEditarVenta', true);
+        }
+
+        function renderItemsEditVenta() {
+            var cont = document.getElementById('editarVentaItems');
+            if (!cont) return;
+            if (_editVentaItems.length === 0) {
+                cont.innerHTML = '<p style="font-size:11px;color:#64748b;text-align:center;padding:8px 0;">Sin productos</p>';
+                return;
+            }
+            cont.innerHTML = _editVentaItems.map(function(item, idx) {
+                var foto = item.foto || item.imagen || '';
+                var thumb = foto
+                    ? '<img src="' + foto + '" style="width:32px;height:32px;object-fit:cover;border-radius:8px;flex-shrink:0;">'
+                    : '<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">📦</div>';
+                return '<div style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:8px 10px;">' +
+                    thumb +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<p style="font-size:11px;font-weight:900;color:#f1f5f9;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;">' + Utils.escHtml(item.nombre || '') + '</p>' +
+                        '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
+                            '<button onmousedown="evItemEditVenta(' + idx + ',-1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">−</button>' +
+                            '<span style="font-size:12px;font-weight:900;color:#10b981;min-width:20px;text-align:center;">' + (item.cantidad || 1) + '</span>' +
+                            '<button onmousedown="evItemEditVenta(' + idx + ',1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>' +
+                            '<span style="font-size:11px;color:#64748b;font-weight:700;">$' + Utils.fmt(item.precio || 0) + ' c/u</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<button onmousedown="quitarItemEditVenta(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#450a0a';this.style.color='#f87171';" onmouseout="this.style.background='#1e293b';this.style.color='#64748b';">✕</button>' +
+                '</div>';
+            }).join('');
+            // Recalcular total
+            var nuevoTotal = _editVentaItems.reduce(function(s, i){ return s + (parseFloat(i.precio)||0) * (parseFloat(i.cantidad)||1); }, 0);
+            document.getElementById('editarVentaTotal').textContent = '$' + Utils.fmt(nuevoTotal);
+        }
+
+        function evItemEditVenta(idx, delta) {
+            if (!_editVentaItems[idx]) return;
+            var nuevaCant = (parseFloat(_editVentaItems[idx].cantidad) || 1) + delta;
+            if (nuevaCant <= 0) { quitarItemEditVenta(idx); return; }
+            _editVentaItems[idx].cantidad = nuevaCant;
+            renderItemsEditVenta();
+        }
+
+        function quitarItemEditVenta(idx) {
+            _editVentaItems.splice(idx, 1);
+            renderItemsEditVenta();
+        }
+
+        function filtrarProdsEditVenta(query) {
+            var drop = document.getElementById('dropdownProdsEdit');
+            if (!drop) return;
+            var q = (query || '').trim().toUpperCase();
+            if (!q) { drop.classList.add('hidden'); return; }
+            var fuente = (typeof _sheetProductos !== 'undefined' ? _sheetProductos : []);
+            var filtrados = fuente.filter(function(p){ return (p.nombre||'').toUpperCase().includes(q); }).slice(0, 20);
+            if (filtrados.length === 0) { drop.classList.add('hidden'); return; }
+            drop.innerHTML = filtrados.map(function(p) {
+                var foto = p.foto || p.imagen || '';
+                var thumb = foto
+                    ? '<img src="' + foto + '" style="width:28px;height:28px;object-fit:cover;border-radius:6px;flex-shrink:0;">'
+                    : '<div style="width:28px;height:28px;border-radius:6px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">📦</div>';
+                var pSafe = (p.nombre||'').replace(/'/g, "\\'");
+                return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #1e293b;" ' +
+                    'onmouseover="this.style.background='rgba(16,185,129,0.08)'" onmouseout="this.style.background=''" ' +
+                    'onmousedown="agregarProdEditVenta('' + (p.id||'') + '','' + pSafe + '',' + (p.precio||0) + ',' + (p.costo||0) + ')">' +
+                    thumb +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<p style="font-size:11px;font-weight:900;color:#f1f5f9;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;">' + Utils.escHtml(p.nombre||'') + '</p>' +
+                        '<p style="font-size:10px;color:#64748b;font-weight:700;margin:0;">$' + Utils.fmt(p.precio||0) + '</p>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            drop.classList.remove('hidden');
+        }
+
+        function agregarProdEditVenta(id, nombre, precio, costo) {
+            // Si ya existe, sumar cantidad
+            var existente = _editVentaItems.find(function(i){ return i.nombre.toUpperCase() === nombre.toUpperCase(); });
+            if (existente) {
+                existente.cantidad = (parseFloat(existente.cantidad)||1) + 1;
+            } else {
+                _editVentaItems.push({ nombre: nombre, cantidad: 1, precio: precio, costo: costo, id: id });
+            }
+            // Limpiar buscador y cerrar dropdown
+            var bp = document.getElementById('editarVentaBuscarProd');
+            if (bp) bp.value = '';
+            var drop = document.getElementById('dropdownProdsEdit');
+            if (drop) drop.classList.add('hidden');
+            renderItemsEditVenta();
         }
 
         function confirmarEditarVenta() {
@@ -5743,17 +5862,38 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             const nuevaFecha = document.getElementById('editarVentaFecha')?.value || '';
             if (nuevoCliente) v.cliente = nuevoCliente;
             v.efectivo = nuevoEfectivo;
+            // Aplicar items editados
+            if (_editVentaItems.length > 0) {
+                v.items = JSON.parse(JSON.stringify(_editVentaItems));
+                v.total = _editVentaItems.reduce(function(s,i){ return s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1); }, 0);
+            }
             v.deuda = Math.max(0, v.total - v.efectivo);
+            // Helper: formatea cualquier fecha a "dd/MM/yyyy HH:mm:ss" en hora local
+            function fmtFechaSheet(fechaStr) {
+                if (!fechaStr) return '';
+                if (/^\d{2}\/\d{2}\/\d{4}/.test(String(fechaStr))) return String(fechaStr);
+                var d = new Date(fechaStr);
+                if (isNaN(d)) return String(fechaStr);
+                return String(d.getDate()).padStart(2,'0') + '/' +
+                       String(d.getMonth()+1).padStart(2,'0') + '/' +
+                       d.getFullYear() + ' ' +
+                       String(d.getHours()).padStart(2,'0') + ':' +
+                       String(d.getMinutes()).padStart(2,'0') + ':' +
+                       String(d.getSeconds()).padStart(2,'0');
+            }
             if (nuevaFecha) {
-                const d = new Date(nuevaFecha);
+                // datetime-local devuelve "2026-04-07T23:11" — parsear como hora LOCAL
+                const partes = nuevaFecha.split('T');
+                const fechaSplit = partes[0].split('-');
+                const horaSplit  = (partes[1] || '00:00').split(':');
+                const d = new Date(+fechaSplit[0], +fechaSplit[1]-1, +fechaSplit[2], +horaSplit[0], +horaSplit[1], 0);
                 if (!isNaN(d)) {
                     v.fechaISO = d.toISOString();
-                    v.fecha = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
-                    // Enviar al sheet
+                    v.fecha = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':00';
                     editarEnSheet({
                         tipo: 'actualizar_venta',
                         idVenta: String(v.id || v.IDVENTAS || ''),
-                        fecha: v.fechaISO,
+                        fecha: v.fecha,
                         cliente: v.cliente,
                         efectivo: v.efectivo,
                         credito: v.deuda,
@@ -5761,18 +5901,33 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                     });
                 }
             } else {
-                // Sin cambio de fecha, igual enviar cliente y efectivo
+                // Sin cambio de fecha, enviar la fecha ya en formato dd/MM/yyyy
                 editarEnSheet({
                     tipo: 'actualizar_venta',
                     idVenta: String(v.id || v.IDVENTAS || ''),
-                    fecha: v.fechaISO || '',
+                    fecha: fmtFechaSheet(v.fecha || v.fechaISO || ''),
                     cliente: v.cliente,
                     efectivo: v.efectivo,
                     credito: v.deuda,
                     total: v.total
                 });
             }
-            
+            // Si se modificaron productos, re-enviar cada item al sheet
+            if (_editVentaItems.length > 0) {
+                _editVentaItems.forEach(function(item) {
+                    var prod = (typeof _sheetProductos !== 'undefined' ? _sheetProductos : [])
+                        .find(function(p){ return (p.nombre||'').toUpperCase() === (item.nombre||'').toUpperCase(); }) || {};
+                    editarEnSheet({
+                        tipo: 'actualizar_venta',
+                        idVenta: String(v.id || v.IDVENTAS || ''),
+                        fecha: fmtFechaSheet(v.fecha || v.fechaISO || ''),
+                        cliente: v.cliente,
+                        efectivo: v.efectivo,
+                        credito: v.deuda,
+                        total: v.total
+                    });
+                });
+            }
             toggleModal('modalEditarVenta', false);
             DB.saveHistorial();
             if (typeof sincronizarSheetsSilencioso === 'function') sincronizarSheetsSilencioso();
@@ -5780,6 +5935,33 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             mostrarToast('✓ Venta actualizada');
         }
 
+        function filtrarClientesEditVenta(query) {
+            const drop = document.getElementById('dropdownClientesEdit');
+            if (!drop) return;
+            const q = (query || '').trim().toUpperCase();
+            // Fuentes de clientes: clientesDB local + clientes del sheet
+            const fuentes = [];
+            if (typeof clientesDB !== 'undefined') {
+                clientesDB.forEach(function(c) { if (c.nombre) fuentes.push(c.nombre.toUpperCase()); });
+            }
+            if (typeof _sheetClientes !== 'undefined') {
+                (_sheetClientes || []).forEach(function(c) {
+                    var n = (c.NOMBRE || c.nombre || '').toUpperCase();
+                    if (n && fuentes.indexOf(n) === -1) fuentes.push(n);
+                });
+            }
+            const filtrados = q
+                ? fuentes.filter(function(n){ return n.includes(q); })
+                : fuentes;
+            if (filtrados.length === 0) { drop.classList.add('hidden'); return; }
+            drop.innerHTML = filtrados.map(function(nombre) {
+                return '<div class="px-4 py-3 text-sm font-bold text-white uppercase cursor-pointer hover:bg-emerald-500/20 border-b border-slate-800 last:border-0" ' +
+                    'onmousedown="document.getElementById(\'editarVentaCliente\').value=\'' + nombre.replace(/'/g,"\\'") + '\';' +
+                    'document.getElementById(\'dropdownClientesEdit\').classList.add(\'hidden\');">' +
+                    nombre + '</div>';
+            }).join('');
+            drop.classList.remove('hidden');
+        }
 
         function descargarBackupCSV() {
             const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
@@ -5894,31 +6076,6 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             toggleModal('modalEliminarVenta', false);
             renderHistorial();
             mostrarToast('✓ Venta eliminada');
-        }
-
-        function editarVenta(id) {
-            ventaAccionId = id;
-            const v = historial.find(v => v.id === id);
-            if (!v) return;
-            document.getElementById('editarVentaCliente').value = v.cliente;
-            document.getElementById('editarVentaEfectivo').value = v.efectivo;
-            document.getElementById('editarVentaTotal').textContent = '$' + Utils.fmt(v.total);
-            toggleModal('modalEditarVenta', true);
-        }
-
-        function confirmarEditarVenta() {
-            const v = historial.find(v => v.id === ventaAccionId);
-            if (!v) return;
-            const nuevoCliente = document.getElementById('editarVentaCliente').value.trim();
-            const nuevoEfectivo = parseFloat(document.getElementById('editarVentaEfectivo').value) || 0;
-            if (nuevoCliente) v.cliente = nuevoCliente;
-            v.efectivo = nuevoEfectivo;
-            v.deuda = Math.max(0, v.total - v.efectivo);
-           
-            if (window._fbSyncHistorial) window._fbSyncHistorial();
-            toggleModal('modalEditarVenta', false);
-            renderHistorial();
-            mostrarToast('✓ Venta actualizada');
         }
 
         // ============================================================
