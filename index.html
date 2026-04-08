@@ -10511,13 +10511,26 @@ function calcularWidgetGastoFamiliar() {
         String(_ahora.getMonth() + 1).padStart(2, '0') + '-' +
         String(_ahora.getDate()).padStart(2, '0');
 
-    // Determina si una fecha pertenece a hoy (soporta ISO y dd/MM/yyyy)
+    // Determina si una fecha pertenece a hoy.
+    // Soporta: "dd-MM-yyyy HH:mm:ss" (local), "dd/MM/yyyy" e ISO "YYYY-MM-DDT...Z" (UTC).
+    // Para ISO UTC se convierte a fecha local antes de comparar.
     function esHoy(f) {
         if (!f) return false;
         const s = String(f).trim();
+        // Formato local del sheet: "08-04-2026 12:15:04" o "08/04/2026"
+        const mLocal = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})/);
+        if (mLocal) return mLocal[3] + '-' + mLocal[2].padStart(2,'0') + '-' + mLocal[1].padStart(2,'0') === _hoyStr;
+        // Formato ISO UTC: convertir a hora local para comparar
+        if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+            const d = new Date(s);
+            if (isNaN(d)) return false;
+            const localStr = d.getFullYear() + '-' +
+                String(d.getMonth()+1).padStart(2,'0') + '-' +
+                String(d.getDate()).padStart(2,'0');
+            return localStr === _hoyStr;
+        }
+        // Formato ISO sin T: "YYYY-MM-DD"
         if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.startsWith(_hoyStr);
-        const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-        if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0') === _hoyStr;
         return false;
     }
 
@@ -10526,33 +10539,31 @@ function calcularWidgetGastoFamiliar() {
     // así que no inflan el total. Evita la doble contabilización historial+sheet.
     const idsEnSheet = new Set((_sheetVentas || []).map(v => v.id));
 
-    // Ventas del sheet de Casa Erazo de hoy
+    // CASA ERAZO: suma v.total de ventas del sheet de hoy.
+    // dineroRecuperado no es confiable (el sheet lo llena con precio en algunos casos).
+    // v.total es el PAGO TOTAL ya acumulado correctamente por ventasMap.
+    // CASA ERAZO: filtrar por fecha LOCAL (campo "fecha": "dd-MM-yyyy HH:mm:ss")
+    // v.total es 0 para Casa Erazo — el sheet guarda PAGO TOTAL:0 y usa DINERO RECUPERADO.
+    // Sumamos precio × cantidad de cada ítem, que es el gasto real del negocio.
     const _ventasCasaHoy = (_sheetVentas || []).filter(v =>
         String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO' &&
-        esHoy(v.fechaISO || v.fecha || '')
+        esHoy(v.fecha || v.fechaISO || '')
     );
-    console.log('[CE DBG] ventas sheet hoy:', _ventasCasaHoy.length);
-    _ventasCasaHoy.forEach((v,vi) => {
-        (v.items||[]).forEach((it,ii) => {
-            console.log('[CE DBG] v'+vi+' item'+ii+' nombre:'+it.nombre+' dinRec:'+it.dineroRecuperado+' precio:'+it.precio+' costo:'+it.costo+' pagoEf:'+it.pagoEfectivo);
-        });
-    });
-    const casaErazoSheet = _ventasCasaHoy
-        .reduce((s, v) =>
-            s + (v.items || []).reduce((si, i) => si + parseFloat(i.dineroRecuperado || 0), 0)
-        , 0);
-    console.log('[CE DBG] casaErazoSheet:', casaErazoSheet);
 
-    // Ventas locales de Casa Erazo de hoy que AÚN no llegaron al sheet (sin duplicar)
+    const casaErazoSheet = _ventasCasaHoy.reduce((s, v) =>
+        s + (v.items || []).reduce((si, i) =>
+            si + (parseFloat(i.precio) || 0) * (parseFloat(i.cantidad) || 1)
+        , 0)
+    , 0);
+
+    // Ventas locales aún no sincronizadas con el sheet — usar total directo
     const casaErazoLocal = (historial || [])
         .filter(v =>
             !idsEnSheet.has(v.id) &&
             String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO' &&
-            esHoy(v.fechaISO || v.fecha || '')
+            esHoy(v.fecha || v.fechaISO || '')
         )
-        .reduce((s, v) =>
-            s + (v.items || []).reduce((si, i) => si + parseFloat(i.dineroRecuperado || 0), 0)
-        , 0);
+        .reduce((s, v) => s + (parseFloat(v.total) || 0), 0);
 
     const casaErazoHoy = casaErazoSheet + casaErazoLocal;
 
