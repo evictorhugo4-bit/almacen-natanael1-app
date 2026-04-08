@@ -5530,6 +5530,11 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                 const fISO = v.fechaISO || v.fecha || '';
                 const fEl = document.getElementById('editarVentaFecha');
                 if (fEl && fISO) { try { fEl.value = new Date(new Date(fISO) - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16); } catch(e){} }
+                // Cargar items para edición y recalcular total en tiempo real
+                _editVentaItems = JSON.parse(JSON.stringify(v.items || []));
+                renderItemsEditVenta();
+                var bp = document.getElementById('editarVentaBuscarProd');
+                if (bp) bp.value = '';
                 toggleModal('modalEditarVenta', true);
             }
         }
@@ -5778,7 +5783,7 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                             '<span style="font-size:11px;color:#64748b;font-weight:700;">$' + Utils.fmt(item.precio || 0) + ' c/u</span>' +
                         '</div>' +
                     '</div>' +
-                    '<button onmousedown="quitarItemEditVenta(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#450a0a';this.style.color='#f87171';" onmouseout="this.style.background='#1e293b';this.style.color='#64748b';">✕</button>' +
+                    '<button onmousedown="quitarItemEditVenta(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'#450a0a\';this.style.color=\'#f87171\';" onmouseout="this.style.background=\'#1e293b\';this.style.color=\'#64748b\';">✕</button>' +
                 '</div>';
             }).join('');
             // Recalcular total
@@ -5812,10 +5817,11 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                 var thumb = foto
                     ? '<img src="' + foto + '" style="width:28px;height:28px;object-fit:cover;border-radius:6px;flex-shrink:0;">'
                     : '<div style="width:28px;height:28px;border-radius:6px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">📦</div>';
-                var pSafe = (p.nombre||'').replace(/'/g, "\\'");
+                var pSafe = (p.nombre||'').replace(/'/g, "\'");
+                var onDown = 'agregarProdEditVenta(' + JSON.stringify(String(p.id||'')) + ',' + JSON.stringify(pSafe) + ',' + (p.precio||0) + ',' + (p.costo||0) + ')';
                 return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #1e293b;" ' +
-                    'onmouseover="this.style.background='rgba(16,185,129,0.08)'" onmouseout="this.style.background=''" ' +
-                    'onmousedown="agregarProdEditVenta('' + (p.id||'') + '','' + pSafe + '',' + (p.precio||0) + ',' + (p.costo||0) + ')">' +
+                    'onmouseover="this.style.background=\'rgba(16,185,129,0.08)\'" onmouseout="this.style.background=\'\'\'" ' +
+                    'onmousedown="' + onDown + '">' +
                     thumb +
                     '<div style="flex:1;min-width:0;">' +
                         '<p style="font-size:11px;font-weight:900;color:#f1f5f9;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;">' + Utils.escHtml(p.nombre||'') + '</p>' +
@@ -5862,11 +5868,9 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             const nuevaFecha = document.getElementById('editarVentaFecha')?.value || '';
             if (nuevoCliente) v.cliente = nuevoCliente;
             v.efectivo = nuevoEfectivo;
-            // Aplicar items editados
-            if (_editVentaItems.length > 0) {
-                v.items = JSON.parse(JSON.stringify(_editVentaItems));
-                v.total = _editVentaItems.reduce(function(s,i){ return s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1); }, 0);
-            }
+            // Aplicar items editados — siempre, aunque no se hayan tocado
+            v.items = JSON.parse(JSON.stringify(_editVentaItems));
+            v.total = _editVentaItems.reduce(function(s,i){ return s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1); }, 0);
             v.deuda = Math.max(0, v.total - v.efectivo);
             // Helper: formatea cualquier fecha a "dd/MM/yyyy HH:mm:ss" en hora local
             function fmtFechaSheet(fechaStr) {
@@ -5912,22 +5916,17 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                     total: v.total
                 });
             }
-            // Si se modificaron productos, re-enviar cada item al sheet
-            if (_editVentaItems.length > 0) {
-                _editVentaItems.forEach(function(item) {
-                    var prod = (typeof _sheetProductos !== 'undefined' ? _sheetProductos : [])
-                        .find(function(p){ return (p.nombre||'').toUpperCase() === (item.nombre||'').toUpperCase(); }) || {};
-                    editarEnSheet({
-                        tipo: 'actualizar_venta',
-                        idVenta: String(v.id || v.IDVENTAS || ''),
-                        fecha: fmtFechaSheet(v.fecha || v.fechaISO || ''),
-                        cliente: v.cliente,
-                        efectivo: v.efectivo,
-                        credito: v.deuda,
-                        total: v.total
-                    });
-                });
-            }
+            // Enviar items actualizados al sheet (una sola llamada con total recalculado)
+            editarEnSheet({
+                tipo: 'actualizar_venta',
+                idVenta: String(v.id || v.IDVENTAS || ''),
+                fecha: fmtFechaSheet(v.fecha || v.fechaISO || ''),
+                cliente: v.cliente,
+                efectivo: v.efectivo,
+                credito: v.deuda,
+                total: v.total,
+                items: JSON.stringify(_editVentaItems)
+            });
             toggleModal('modalEditarVenta', false);
             DB.saveHistorial();
             if (typeof sincronizarSheetsSilencioso === 'function') sincronizarSheetsSilencioso();
