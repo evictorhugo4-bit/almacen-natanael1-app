@@ -666,6 +666,9 @@ z-index:999999999;
                 </div>
             </div>
 
+            <!-- WIDGET ALERTA CASA ERAZO + COMIDA FAMILIAR -->
+            <div id="widgetCasaErazoComida" class="hidden"></div>
+
             <!-- WIDGET VENCIMIENTOS -->
             <div id="widgetVencimientos" class="glass-card p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 hidden">
                 <div class="flex items-center gap-2 mb-3">
@@ -10464,6 +10467,89 @@ window.abrirEditVencWidget = function(idProd) {
 
 
 
+function calcularYMostrarAlertaGasto() {
+    const widget = document.getElementById('widgetCasaErazoComida');
+    if (!widget) return;
+
+    // --- Suma DINERO RECUPERADO de ventas donde cliente = CASA ERAZO ---
+    const ventas = (typeof historial !== 'undefined' ? historial : []).concat(
+        typeof _sheetVentas !== 'undefined' ? (_sheetVentas || []) : []
+    );
+    let totalCasaErazo = 0;
+    ventas.forEach(function(v) {
+        if (String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO') {
+            (v.items || []).forEach(function(item) {
+                totalCasaErazo += parseFloat(item.dineroRecuperado || 0);
+            });
+            // fallback: si la venta tiene dineroRecuperado a nivel raíz
+            if (typeof v.dineroRecuperado === 'number') totalCasaErazo += v.dineroRecuperado;
+        }
+    });
+
+    // --- Suma PAGO EFECTIVO de egresos donde CATEGORIA = COMIDA FAMILIAR ---
+    let totalComidaFamiliar = 0;
+    (window._sheetEgresos || []).forEach(function(e) {
+        const cat = String(e.concepto || '').toUpperCase().trim();
+        if (cat === 'COMIDA FAMILIAR') {
+            totalComidaFamiliar += parseFloat(e.efectivo || 0);
+        }
+    });
+
+    const umbral = 15000;
+    const supera = (totalCasaErazo + totalComidaFamiliar) > umbral;
+
+    if (!supera && totalCasaErazo === 0 && totalComidaFamiliar === 0) {
+        widget.classList.add('hidden');
+        widget.innerHTML = '';
+        return;
+    }
+
+    widget.classList.remove('hidden');
+
+    const fmtNum = n => Number(n).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+    const superaColor  = supera ? '#f87171' : '#34d399';
+    const superaBorder = supera ? 'rgba(248,113,113,0.35)' : 'rgba(52,211,153,0.25)';
+    const superaBg     = supera ? 'rgba(248,113,113,0.07)' : 'rgba(52,211,153,0.05)';
+    const superaLabel  = supera ? '⚠️ SUPERA EL LÍMITE' : 'Dentro del límite';
+    const pulso        = supera ? 'animation:pulsoAlerta 1.6s ease-in-out infinite;' : '';
+
+    widget.innerHTML = `
+        <style>
+            @keyframes pulsoAlerta {
+                0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.0); }
+                50%      { box-shadow: 0 0 0 6px rgba(248,113,113,0.22); }
+            }
+        </style>
+        <div style="background:${superaBg};border:2px solid ${superaBorder};border-radius:18px;padding:16px 18px;${pulso}">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+                <span style="font-size:26px;line-height:1;">🏠🍽️</span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:11px;font-weight:900;color:${superaColor};text-transform:uppercase;letter-spacing:0.08em;">
+                        Gasto Familiar — ${superaLabel}
+                    </div>
+                    <div style="font-size:9px;color:#64748b;font-weight:700;margin-top:2px;">
+                        Casa Erazo + Comida Familiar &nbsp;|&nbsp; Límite: $${fmtNum(umbral)}
+                    </div>
+                </div>
+                <div style="font-size:22px;font-weight:900;font-family:monospace;color:${superaColor};letter-spacing:-0.02em;">
+                    $${fmtNum(totalCasaErazo + totalComidaFamiliar)}
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div style="background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.25);border-radius:12px;padding:10px 12px;">
+                    <div style="font-size:9px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">🏠 Casa Erazo</div>
+                    <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:6px;">Dinero Recuperado (ventas)</div>
+                    <div style="font-size:18px;font-weight:900;font-family:monospace;color:#e2e8f0;">$${fmtNum(totalCasaErazo)}</div>
+                </div>
+                <div style="background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.25);border-radius:12px;padding:10px 12px;">
+                    <div style="font-size:9px;font-weight:900;color:#fb923c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">🍽️ Comida Familiar</div>
+                    <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:6px;">Pago Efectivo (egresos)</div>
+                    <div style="font-size:18px;font-weight:900;font-family:monospace;color:#e2e8f0;">$${fmtNum(totalComidaFamiliar)}</div>
+                </div>
+            </div>
+        </div>`;
+}
+
 function revisarVencimientos(){
     const hoy = new Date();
     const porVencer = [];
@@ -10493,6 +10579,7 @@ function revisarVencimientos(){
         porVencer.sort((a, b) => a.dias - b.dias),
         vencidos.sort((a, b) => new Date(a.vencimiento) - new Date(b.vencimiento))
     );
+    calcularYMostrarAlertaGasto();
 }
 
 
@@ -13435,6 +13522,7 @@ function calcularCajaEsperada() {
                     if (_sheetVentas && _sheetVentas.length > 0) {
                         renderHistorialConSheet();
                     }
+                    if (typeof calcularYMostrarAlertaGasto === 'function') calcularYMostrarAlertaGasto();
                     // Guardar caché fresco después del primer sync
                     _guardarCache();
                 }, 300);
@@ -15337,6 +15425,7 @@ console.log('Generos cargados:', _generosEgrSheet);
                         const vistaEgr = document.getElementById('vistaEgresos');
                         if (vistaEgr && !vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
                         console.log('✓ Gastos Sheet: ' + agregados + ' nuevos, ' + actualizados + ' actualizados');
+                        if (typeof calcularYMostrarAlertaGasto === 'function') calcularYMostrarAlertaGasto();
                     }
                 }
 
