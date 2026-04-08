@@ -10534,38 +10534,41 @@ function calcularWidgetGastoFamiliar() {
         return false;
     }
 
-    // CASA ERAZO — fuente: _sheetVentas únicamente (tiene DINERO RECUPERADO real del sheet).
-    // Para ventas recién registradas aún no sincronizadas, el costo de los items es 0,
-    // así que no inflan el total. Evita la doble contabilización historial+sheet.
+    // CASA ERAZO — suma DINERO RECUPERADO por ítem (campo real del sheet para ventas internas).
+    // Se usa dineroRecuperado porque PAGO TOTAL es 0 para clientes especiales como CASA ERAZO.
+    // Para evitar doble conteo: solo _sheetVentas; las ventas locales no sincronizadas usan
+    // la suma de dineroRecuperado de sus ítems (o total si no hay dineroRecuperado).
     const idsEnSheet = new Set((_sheetVentas || []).map(v => v.id));
 
-    // CASA ERAZO: suma v.total de ventas del sheet de hoy.
-    // dineroRecuperado no es confiable (el sheet lo llena con precio en algunos casos).
-    // v.total es el PAGO TOTAL ya acumulado correctamente por ventasMap.
-    // CASA ERAZO: filtrar por fecha LOCAL (campo "fecha": "dd-MM-yyyy HH:mm:ss")
-    // v.total es 0 para Casa Erazo — el sheet guarda PAGO TOTAL:0 y usa DINERO RECUPERADO.
-    // Sumamos precio × cantidad de cada ítem, que es el gasto real del negocio.
     const _ventasCasaHoy = (_sheetVentas || []).filter(v =>
         String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO' &&
         esHoy(v.fecha || v.fechaISO || '')
     );
 
-    const casaErazoSheet = _ventasCasaHoy.reduce((s, v) =>
-        s + (v.items || []).reduce((si, i) =>
-            si + (parseFloat(i.precio) || 0) * (parseFloat(i.cantidad) || 1)
-        , 0)
-    , 0);
+    // Sumar dineroRecuperado de cada ítem (= precio de costo del producto, lo que realmente gastó)
+    const casaErazoSheet = _ventasCasaHoy.reduce((s, v) => {
+        const drItems = (v.items || []).reduce((si, i) => si + (parseFloat(i.dineroRecuperado) || 0), 0);
+        // Fallback: si no hay dineroRecuperado en items, usar precio × cantidad
+        if (drItems > 0) return s + drItems;
+        return s + (v.items || []).reduce((si, i) =>
+            si + (parseFloat(i.precio) || 0) * (parseFloat(i.cantidad) || 1), 0);
+    }, 0);
 
-    // Ventas locales aún no sincronizadas con el sheet — usar total directo
+    // Ventas locales recién registradas aún no sincronizadas
     const casaErazoLocal = (historial || [])
         .filter(v =>
             !idsEnSheet.has(v.id) &&
             String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO' &&
             esHoy(v.fecha || v.fechaISO || '')
         )
-        .reduce((s, v) => s + (parseFloat(v.total) || 0), 0);
+        .reduce((s, v) => {
+            const drItems = (v.items || []).reduce((si, i) => si + (parseFloat(i.dineroRecuperado) || 0), 0);
+            return s + (drItems > 0 ? drItems : (parseFloat(v.total) || 0));
+        }, 0);
 
     const casaErazoHoy = casaErazoSheet + casaErazoLocal;
+    console.log('[GastoFamiliar] Casa Erazo hoy: $' + casaErazoHoy,
+        '| ventas:', _ventasCasaHoy.map(v => ({fecha: v.fecha, items: (v.items||[]).map(i => ({nom:i.nombre, dr:i.dineroRecuperado, precio:i.precio, cant:i.cantidad}))})));
 
     // COMIDA FAMILIAR — suma PAGO EFECTIVO de egresos de hoy
     const comidaFamiliarHoy = (_sheetEgresos || [])
