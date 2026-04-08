@@ -666,8 +666,8 @@ z-index:999999999;
                 </div>
             </div>
 
-            <!-- WIDGET ALERTA CASA ERAZO + COMIDA FAMILIAR -->
-            <div id="widgetCasaErazoComida" class="hidden"></div>
+            <!-- WIDGET GASTO FAMILIAR HOY -->
+            <div id="widgetGastoFamiliar" class="hidden"></div>
 
             <!-- WIDGET VENCIMIENTOS -->
             <div id="widgetVencimientos" class="glass-card p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 hidden">
@@ -5166,6 +5166,7 @@ setTimeout(() => {
     setTimeout(() => {
         renderHistorial();
         renderInventario();
+        if (typeof calcularWidgetGastoFamiliar === 'function') calcularWidgetGastoFamiliar();
     }, 0);
 
     // 🔥 Construir payload ANTES del setTimeout (snapshot del carrito actual)
@@ -10467,89 +10468,6 @@ window.abrirEditVencWidget = function(idProd) {
 
 
 
-function calcularYMostrarAlertaGasto() {
-    const widget = document.getElementById('widgetCasaErazoComida');
-    if (!widget) return;
-
-    // --- Suma DINERO RECUPERADO de ventas donde cliente = CASA ERAZO ---
-    const ventas = (typeof historial !== 'undefined' ? historial : []).concat(
-        typeof _sheetVentas !== 'undefined' ? (_sheetVentas || []) : []
-    );
-    let totalCasaErazo = 0;
-    ventas.forEach(function(v) {
-        if (String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO') {
-            (v.items || []).forEach(function(item) {
-                totalCasaErazo += parseFloat(item.dineroRecuperado || 0);
-            });
-            // fallback: si la venta tiene dineroRecuperado a nivel raíz
-            if (typeof v.dineroRecuperado === 'number') totalCasaErazo += v.dineroRecuperado;
-        }
-    });
-
-    // --- Suma PAGO EFECTIVO de egresos donde CATEGORIA = COMIDA FAMILIAR ---
-    let totalComidaFamiliar = 0;
-    (window._sheetEgresos || []).forEach(function(e) {
-        const cat = String(e.concepto || '').toUpperCase().trim();
-        if (cat === 'COMIDA FAMILIAR') {
-            totalComidaFamiliar += parseFloat(e.efectivo || 0);
-        }
-    });
-
-    const umbral = 15000;
-    const supera = (totalCasaErazo + totalComidaFamiliar) > umbral;
-
-    if (!supera && totalCasaErazo === 0 && totalComidaFamiliar === 0) {
-        widget.classList.add('hidden');
-        widget.innerHTML = '';
-        return;
-    }
-
-    widget.classList.remove('hidden');
-
-    const fmtNum = n => Number(n).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
-    const superaColor  = supera ? '#f87171' : '#34d399';
-    const superaBorder = supera ? 'rgba(248,113,113,0.35)' : 'rgba(52,211,153,0.25)';
-    const superaBg     = supera ? 'rgba(248,113,113,0.07)' : 'rgba(52,211,153,0.05)';
-    const superaLabel  = supera ? '⚠️ SUPERA EL LÍMITE' : 'Dentro del límite';
-    const pulso        = supera ? 'animation:pulsoAlerta 1.6s ease-in-out infinite;' : '';
-
-    widget.innerHTML = `
-        <style>
-            @keyframes pulsoAlerta {
-                0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.0); }
-                50%      { box-shadow: 0 0 0 6px rgba(248,113,113,0.22); }
-            }
-        </style>
-        <div style="background:${superaBg};border:2px solid ${superaBorder};border-radius:18px;padding:16px 18px;${pulso}">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-                <span style="font-size:26px;line-height:1;">🏠🍽️</span>
-                <div style="flex:1;min-width:0;">
-                    <div style="font-size:11px;font-weight:900;color:${superaColor};text-transform:uppercase;letter-spacing:0.08em;">
-                        Gasto Familiar — ${superaLabel}
-                    </div>
-                    <div style="font-size:9px;color:#64748b;font-weight:700;margin-top:2px;">
-                        Casa Erazo + Comida Familiar &nbsp;|&nbsp; Límite: $${fmtNum(umbral)}
-                    </div>
-                </div>
-                <div style="font-size:22px;font-weight:900;font-family:monospace;color:${superaColor};letter-spacing:-0.02em;">
-                    $${fmtNum(totalCasaErazo + totalComidaFamiliar)}
-                </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div style="background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.25);border-radius:12px;padding:10px 12px;">
-                    <div style="font-size:9px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">🏠 Casa Erazo</div>
-                    <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:6px;">Dinero Recuperado (ventas)</div>
-                    <div style="font-size:18px;font-weight:900;font-family:monospace;color:#e2e8f0;">$${fmtNum(totalCasaErazo)}</div>
-                </div>
-                <div style="background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.25);border-radius:12px;padding:10px 12px;">
-                    <div style="font-size:9px;font-weight:900;color:#fb923c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">🍽️ Comida Familiar</div>
-                    <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:6px;">Pago Efectivo (egresos)</div>
-                    <div style="font-size:18px;font-weight:900;font-family:monospace;color:#e2e8f0;">$${fmtNum(totalComidaFamiliar)}</div>
-                </div>
-            </div>
-        </div>`;
-}
-
 function revisarVencimientos(){
     const hoy = new Date();
     const porVencer = [];
@@ -10579,9 +10497,118 @@ function revisarVencimientos(){
         porVencer.sort((a, b) => a.dias - b.dias),
         vencidos.sort((a, b) => new Date(a.vencimiento) - new Date(b.vencimiento))
     );
-    calcularYMostrarAlertaGasto();
 }
 
+
+// ─── Widget Gasto Familiar del Día (Casa Erazo + Comida Familiar) ─────────────
+function calcularWidgetGastoFamiliar() {
+    const widget = document.getElementById('widgetGastoFamiliar');
+    if (!widget) return;
+
+    // Hoy en formato YYYY-MM-DD (hora local argentina)
+    const _ahora  = new Date();
+    const _hoyStr = _ahora.getFullYear() + '-' +
+        String(_ahora.getMonth() + 1).padStart(2, '0') + '-' +
+        String(_ahora.getDate()).padStart(2, '0');
+
+    // Determina si una fecha pertenece a hoy (soporta ISO y dd/MM/yyyy)
+    function esHoy(f) {
+        if (!f) return false;
+        const s = String(f).trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.startsWith(_hoyStr);
+        const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0') === _hoyStr;
+        return false;
+    }
+
+    // CASA ERAZO — fuente: _sheetVentas únicamente (tiene DINERO RECUPERADO real del sheet).
+    // Para ventas recién registradas aún no sincronizadas, el costo de los items es 0,
+    // así que no inflan el total. Evita la doble contabilización historial+sheet.
+    const idsEnSheet = new Set((_sheetVentas || []).map(v => v.id));
+
+    // Ventas del sheet de Casa Erazo de hoy
+    const _ventasCasaHoy = (_sheetVentas || []).filter(v =>
+        String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO' &&
+        esHoy(v.fechaISO || v.fecha || '')
+    );
+    console.log('[CE DBG] ventas sheet hoy:', _ventasCasaHoy.length);
+    _ventasCasaHoy.forEach((v,vi) => {
+        (v.items||[]).forEach((it,ii) => {
+            console.log('[CE DBG] v'+vi+' item'+ii+' nombre:'+it.nombre+' dinRec:'+it.dineroRecuperado+' precio:'+it.precio+' costo:'+it.costo+' pagoEf:'+it.pagoEfectivo);
+        });
+    });
+    const casaErazoSheet = _ventasCasaHoy
+        .reduce((s, v) =>
+            s + (v.items || []).reduce((si, i) => si + parseFloat(i.dineroRecuperado || 0), 0)
+        , 0);
+    console.log('[CE DBG] casaErazoSheet:', casaErazoSheet);
+
+    // Ventas locales de Casa Erazo de hoy que AÚN no llegaron al sheet (sin duplicar)
+    const casaErazoLocal = (historial || [])
+        .filter(v =>
+            !idsEnSheet.has(v.id) &&
+            String(v.cliente || '').toUpperCase().trim() === 'CASA ERAZO' &&
+            esHoy(v.fechaISO || v.fecha || '')
+        )
+        .reduce((s, v) =>
+            s + (v.items || []).reduce((si, i) => si + parseFloat(i.dineroRecuperado || 0), 0)
+        , 0);
+
+    const casaErazoHoy = casaErazoSheet + casaErazoLocal;
+
+    // COMIDA FAMILIAR — suma PAGO EFECTIVO de egresos de hoy
+    const comidaFamiliarHoy = (_sheetEgresos || [])
+        .filter(e =>
+            String(e.concepto || e.categoria || e.supercategoria || '').toUpperCase().trim() === 'COMIDA FAMILIAR' &&
+            esHoy(e.fechaISO || e.fecha || '')
+        )
+        .reduce((s, e) => s + parseFloat(e.efectivo || e.pagoEfectivo || 0), 0);
+
+    const total  = casaErazoHoy + comidaFamiliarHoy;
+    const UMBRAL = 15000;
+
+    if (total <= UMBRAL) {
+        widget.classList.add('hidden');
+        widget.innerHTML = '';
+        return;
+    }
+
+    const fmtN  = n => Utils.fmt(Math.round(n));
+    const diaStr = String(_ahora.getDate()).padStart(2,'0') + '/' +
+                   String(_ahora.getMonth()+1).padStart(2,'0') + '/' +
+                   _ahora.getFullYear();
+
+    widget.classList.remove('hidden');
+    widget.innerHTML = `
+        <div style="background:linear-gradient(135deg,rgba(239,68,68,0.13) 0%,rgba(249,115,22,0.10) 100%);border:2px solid rgba(239,68,68,0.50);border-radius:16px;padding:14px 16px;box-shadow:0 0 22px rgba(239,68,68,0.18);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+                <span style="font-size:24px;line-height:1;flex-shrink:0;">🏠🍽️</span>
+                <div style="flex:1;min-width:0;">
+                    <span style="font-size:11px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:0.08em;display:block;">Gasto familiar hoy · ${diaStr}</span>
+                    <span style="font-size:9px;color:#94a3b8;font-weight:600;">Casa Erazo (din. recuperado) + Comida Familiar (efectivo)</span>
+                </div>
+                <span style="font-size:18px;font-weight:900;color:#f87171;font-family:monospace;background:rgba(239,68,68,0.18);padding:4px 14px;border-radius:10px;border:1.5px solid rgba(239,68,68,0.40);white-space:nowrap;">
+                    $${fmtN(total)}
+                </span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:110px;background:rgba(6,182,212,0.10);border:1px solid rgba(6,182,212,0.30);border-radius:10px;padding:8px 12px;">
+                    <span style="font-size:9px;font-weight:900;color:#67e8f9;text-transform:uppercase;display:block;margin-bottom:2px;">🏠 Casa Erazo</span>
+                    <span style="font-size:15px;font-weight:900;color:#e2e8f0;font-family:monospace;">$${fmtN(casaErazoHoy)}</span>
+                    <span style="font-size:8px;color:#64748b;display:block;margin-top:1px;">Dinero recuperado</span>
+                </div>
+                <div style="flex:1;min-width:110px;background:rgba(249,115,22,0.10);border:1px solid rgba(249,115,22,0.30);border-radius:10px;padding:8px 12px;">
+                    <span style="font-size:9px;font-weight:900;color:#fdba74;text-transform:uppercase;display:block;margin-bottom:2px;">🍽️ Comida Familiar</span>
+                    <span style="font-size:15px;font-weight:900;color:#e2e8f0;font-family:monospace;">$${fmtN(comidaFamiliarHoy)}</span>
+                    <span style="font-size:8px;color:#64748b;display:block;margin-top:1px;">Pago efectivo egresos</span>
+                </div>
+            </div>
+            <div style="margin-top:8px;font-size:8px;color:#ef4444;font-weight:700;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">
+                ⚠️ Supera el límite de $${Utils.fmt(UMBRAL)} en el día
+            </div>
+        </div>`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function guardarPreciosEditados(){
 
@@ -12025,6 +12052,7 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
 
             toggleModal('modalIngEgr', false);
             mostrarToast(`✓ ${ingEgrTipo === 'ingreso' ? 'Ingreso' : 'Egreso'} de $${Utils.fmt(total)} registrado`);
+            if (typeof calcularWidgetGastoFamiliar === 'function') calcularWidgetGastoFamiliar();
         }
 
         let _filtroIngreso = 'todos';
@@ -13522,7 +13550,6 @@ function calcularCajaEsperada() {
                     if (_sheetVentas && _sheetVentas.length > 0) {
                         renderHistorialConSheet();
                     }
-                    if (typeof calcularYMostrarAlertaGasto === 'function') calcularYMostrarAlertaGasto();
                     // Guardar caché fresco después del primer sync
                     _guardarCache();
                 }, 300);
@@ -15075,6 +15102,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     indexarProductos();
     recalcularTodosLosStocks();
     revisarVencimientos();
+    if (typeof calcularWidgetGastoFamiliar === "function") calcularWidgetGastoFamiliar();
     setTimeout(() => { filtrarInventario(); }, 300);
 
 } else {
@@ -15425,7 +15453,6 @@ console.log('Generos cargados:', _generosEgrSheet);
                         const vistaEgr = document.getElementById('vistaEgresos');
                         if (vistaEgr && !vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
                         console.log('✓ Gastos Sheet: ' + agregados + ' nuevos, ' + actualizados + ' actualizados');
-                        if (typeof calcularYMostrarAlertaGasto === 'function') calcularYMostrarAlertaGasto();
                     }
                 }
 
