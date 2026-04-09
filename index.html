@@ -17519,6 +17519,18 @@ console.log("FILTRADAS:", filtradas.length);
                 }).sort((a,b) => parseFechaNum(b.fechaISO||b.fecha||'') - parseFechaNum(a.fechaISO||a.fecha||''));
             })();
 
+            // ── VENTAS ESPECIALES (CASA ERAZO, ERROR VENTA) en rango — para dinero recuperado por proveedor ──
+            const ventasEspecialesRango = (() => {
+                const todasV = [...(typeof historial!=='undefined'?historial:[]),
+                    ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                return todasV.filter(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn)) return false;
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    return ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
+                });
+            })();
+
             // ── COMPRAS en rango ──
             const comprasRango = (_sheetCompras||[]).filter(c =>
                 enRango(parseFechaNum(c.fechaISO||c.fecha||''))
@@ -17650,9 +17662,9 @@ console.log("FILTRADAS:", filtradas.length);
 
             // ── EFECTIVO A ENTREGAR POR PROVEEDOR ──────────────────────────────
             (function() {
-                // Recopilar todos los proveedores que tienen ventas en el rango
+                // Recopilar todos los proveedores — ventas normales Y ventas especiales (CASA ERAZO/ERROR VENTA)
                 const proveedoresSet = new Set();
-                ventasRango.forEach(v => {
+                [...ventasRango, ...ventasEspecialesRango].forEach(v => {
                     (v.items || []).forEach(i => {
                         const p = (i.proveedor || '').trim().toUpperCase();
                         if (p) proveedoresSet.add(p);
@@ -17675,7 +17687,9 @@ console.log("FILTRADAS:", filtradas.length);
                 const resumenProvs = proveedores.map(provNombre => {
                     let totalParaProv = 0, totalGan = 0, totalCob = 0, totalDR = 0;
 
-                    ventasRango.forEach(v => {
+                    // Ventas normales + ventas especiales (CASA ERAZO / ERROR VENTA)
+                    const todasVentas = [...ventasRango, ...ventasEspecialesRango];
+                    todasVentas.forEach(v => {
                         const itemsProv = (v.items || []).filter(i =>
                             (i.proveedor || '').trim().toUpperCase() === provNombre
                         );
