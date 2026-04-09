@@ -17648,6 +17648,120 @@ console.log("FILTRADAS:", filtradas.length);
             html += _enTabla('Pago Ingresos Negocio',       '#a3e635', pagoIngNegRango.length,filasPagoIN,  filasPagoIN.length>0);
             html += _enTabla('Pago Egresos Negocio',        '#fb923c', pagoEgrNegRango.length,filasPagoEN,  filasPagoEN.length>0);
 
+            // ── EFECTIVO A ENTREGAR POR PROVEEDOR ──────────────────────────────
+            (function() {
+                // Recopilar todos los proveedores que tienen ventas en el rango
+                const proveedoresSet = new Set();
+                ventasRango.forEach(v => {
+                    (v.items || []).forEach(i => {
+                        const p = (i.proveedor || '').trim().toUpperCase();
+                        if (p) proveedoresSet.add(p);
+                    });
+                });
+                const proveedores = [...proveedoresSet].sort();
+                if (!proveedores.length) return;
+
+                // Mapa cobros por venta (PAGO VENTAS por IDVENTAS, sin filtro de fecha — suma histórica)
+                const cobrosPorVenta = {};
+                (_pagoVentasSheet || []).forEach(p => {
+                    const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                    if (!idV) return;
+                    cobrosPorVenta[idV] = (cobrosPorVenta[idV] || 0) + Number(p.monto || p.MONTO || 0);
+                });
+
+                const fmt$ = v => '$' + Utils.fmt(v);
+
+                // Calcular para cada proveedor
+                const resumenProvs = proveedores.map(provNombre => {
+                    let totalParaProv = 0, totalGan = 0, totalCob = 0, totalDR = 0;
+
+                    ventasRango.forEach(v => {
+                        const itemsProv = (v.items || []).filter(i =>
+                            (i.proveedor || '').trim().toUpperCase() === provNombre
+                        );
+                        if (!itemsProv.length) return;
+
+                        const totalVenta = Number(v.total || 0) || 1;
+                        const ef         = Number(v.efectivo || 0);
+                        const idVSheet   = v.idSheet
+                            ? String(v.idSheet).trim()
+                            : (String(v.id || '').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_', '') : String(v.id || '').trim());
+
+                        const dinRecItemsProv = itemsProv.reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0);
+                        const cli = String(v.cliente || '').toUpperCase().trim();
+                        const esClienteEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
+
+                        let cobradoProp, dinRecCubierto, gananciaItem;
+                        if (esClienteEsp) {
+                            cobradoProp    = dinRecItemsProv;
+                            dinRecCubierto = dinRecItemsProv;
+                            gananciaItem   = 0;
+                        } else {
+                            const cobrosExtra       = (cobrosPorVenta[idVSheet] || 0) + (cobrosPorVenta[String(v.id || '')] || 0);
+                            const totalCobradoVenta = ef + cobrosExtra;
+                            const precioItemsProv   = itemsProv.reduce((s, i) => s + (Number(i.precio || 0) * (Number(i.cantidad) || 1)), 0);
+                            const proporcion        = totalVenta > 0 ? precioItemsProv / totalVenta : 0;
+                            cobradoProp    = totalCobradoVenta * proporcion;
+                            dinRecCubierto = Math.min(cobradoProp, dinRecItemsProv);
+                            gananciaItem   = Math.max(0, cobradoProp - dinRecItemsProv);
+                        }
+                        totalParaProv += dinRecCubierto;
+                        totalGan      += gananciaItem;
+                        totalCob      += cobradoProp;
+                        totalDR       += dinRecItemsProv;
+                    });
+
+                    return { provNombre, totalParaProv, totalGan, totalCob, totalDR };
+                }).filter(r => r.totalDR > 0);
+
+                if (!resumenProvs.length) return;
+
+                const granTotal = resumenProvs.reduce((s, r) => s + r.totalParaProv, 0);
+
+                let tablaHTML = '<div style="overflow-x:auto;border-radius:14px;border:1.5px solid #10b98133;">'
+                    + '<table style="width:100%;border-collapse:collapse;min-width:400px;">'
+                    + '<thead><tr style="background:#0a1a0e;">'
+                    + '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">Proveedor</th>'
+                    + '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Din. Rec.</th>'
+                    + '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:900;color:#3b82f6;text-transform:uppercase;">Cobrado</th>'
+                    + '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:900;color:#fbbf24;text-transform:uppercase;">Ganancia</th>'
+                    + '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:900;color:#34d399;text-transform:uppercase;">💵 Para Proveedor</th>'
+                    + '</tr></thead><tbody>';
+
+                resumenProvs.forEach((r, i) => {
+                    const pct = r.totalDR > 0 ? Math.min(100, (r.totalCob / r.totalDR) * 100) : 0;
+                    const cPct = pct >= 100 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+                    tablaHTML += '<tr style="background:' + (i%2===0?'#0f172a':'#0a1120') + ';border-bottom:1px solid #1e293b;">'
+                        + '<td style="padding:9px 14px;font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">' + Utils.escHtml(r.provNombre) + '</td>'
+                        + '<td style="padding:9px 14px;text-align:right;font-family:monospace;font-size:12px;color:#64748b;">' + fmt$(r.totalDR) + '</td>'
+                        + '<td style="padding:9px 14px;text-align:right;font-family:monospace;font-size:12px;color:#93c5fd;">' + fmt$(r.totalCob) + '</td>'
+                        + '<td style="padding:9px 14px;text-align:right;font-family:monospace;font-size:12px;color:#fbbf24;">' + (r.totalGan > 0 ? fmt$(r.totalGan) : '—') + '</td>'
+                        + '<td style="padding:9px 14px;text-align:right;font-family:monospace;font-size:13px;font-weight:900;color:#34d399;">' + fmt$(r.totalParaProv)
+                        +   '<div style="margin-top:3px;height:4px;background:#1e293b;border-radius:999px;overflow:hidden;"><div style="height:100%;width:' + pct.toFixed(0) + '%;background:' + cPct + ';border-radius:999px;"></div></div>'
+                        + '</td>'
+                        + '</tr>';
+                });
+
+                tablaHTML += '<tr style="background:#111827;border-top:2px solid #334155;">'
+                    + '<td style="padding:10px 14px;font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">TOTAL</td>'
+                    + '<td colspan="3" style="padding:10px 14px;"></td>'
+                    + '<td style="padding:10px 14px;text-align:right;font-family:monospace;font-size:15px;font-weight:900;color:#34d399;">' + fmt$(granTotal) + '</td>'
+                    + '</tr>'
+                    + '</tbody></table></div>';
+
+                const uid2 = 'entbl_provef';
+                html += '<div class="glass-card rounded-2xl border" style="border-color:#10b98133;overflow:hidden;margin-bottom:10px;">'
+                    + '<div onclick="(function(el){var b=document.getElementById(\'' + uid2 + '\');var a=el.querySelector(\'#arr_' + uid2 + '\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';a.style.transform=open?\'rotate(-90deg)\':\'rotate(0deg)\';})(this)" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">'
+                    + '<div>'
+                    + '<span style="font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;">💵 Efectivo a Entregar por Proveedor</span>'
+                    + '<span style="font-size:9px;color:#475569;margin-left:8px;">' + resumenProvs.length + ' proveedores</span>'
+                    + '</div>'
+                    + '<span id="arr_' + uid2 + '" style="color:#475569;font-size:14px;transition:transform .2s;transform:rotate(0deg);">▼</span>'
+                    + '</div>'
+                    + '<div id="' + uid2 + '" style="display:block;padding:10px;">' + tablaHTML + '</div>'
+                    + '</div>';
+            })();
+
             container.innerHTML = html;
         }
 
