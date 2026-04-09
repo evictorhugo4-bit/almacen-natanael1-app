@@ -15526,6 +15526,13 @@ if (indicator) indicator.classList.remove('hidden');
         // ── syncIngEgrNeg global (usada en sincronizarSheets y _procesarDatosSecundarios) ──
         window.syncIngEgrNeg = function syncIngEgrNeg(rows, db, saveFn, renderTipo, supercatsRef, catsRef) {
             if (!Array.isArray(rows) || !rows.length) return;
+            // Limpiar duplicados del array local antes de sync
+            const _vistos = new Set();
+            for (let i = db.length - 1; i >= 0; i--) {
+                const uid = db[i].idSheet || db[i].id || '';
+                if (uid && _vistos.has(uid)) { db.splice(i, 1); continue; }
+                if (uid) _vistos.add(uid);
+            }
             const supercatsSet = new Set(); const catsMap = {};
             rows.forEach(row => {
                 const sc = String(row['SUPER CATEGORIA']||row['Supercategoria']||row['Supercategoría']||'').trim().toUpperCase();
@@ -15676,9 +15683,6 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.pagoEgresos))          _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoIngresosNegocio))  _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim()})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; }
-                // Negocio
-                syncIngEgrNeg(data.ingresosNegocio, _sheetIngresosNegocio, saveIngresosNeg, 'ingresosNegocio', _supercatsIngNegSheet, _catsIngNegSheet);
-                syncIngEgrNeg(data.egresosNegocio,  _sheetEgresosNegocio,  saveEgresosNeg,  'egresosNegocio',  _supercatsEgrNegSheet, _catsEgrNegSheet);
                 // Proveedores
                 syncProveedoresDesdeSheet(data.proveedoresNegocio, 'negocio');
                 syncProveedoresDesdeSheet(data.proveedoresGastos, 'gastos');
@@ -17377,30 +17381,33 @@ console.log("FILTRADAS:", filtradas.length);
                 );
 
             } else if (_enFiltro === 'efectivo') {
-                // Cada fila muestra su propio concepto con los pagos correspondientes
-                // Ventas 3eros efectivo + Pago Ventas (cobros de deudas de ventas)
-                const v3ef       = ventasEf - ganEfEN + pagoVentEf;
-                // Compras efectivo + Pago Compras (pagos de deudas de compras)
-                const egr1ef     = comprasEf + pagoCompEf;
-                const ing1ef     = v3ef + casaErazo + errorVenta;
-                const bal1ef     = ing1ef - egr1ef;
-                // Ingresos Negocio efectivo + Pago Ingresos Negocio
-                const ing2ef     = ingNegEf + pagoIngNegEf;
-                // Egresos Negocio efectivo + Pago Egresos Negocio
-                const egr2ef     = egrNegEf + pagoEgrNegEf;
-                const bal2ef     = ing2ef - egr2ef;
-                const ingTotEf   = ing1ef + ing2ef;
-                const egrTotEf   = egr1ef + egr2ef;
+                // Ventas 3eros efectivo SIN sumar pagoVentas (va en fila separada)
+                const v3ef       = ventasEf - ganEfEN;
+                // Compras efectivo SIN sumar pagoCompras (va en fila separada)
+                const egr1ef     = comprasEf;
+                const ing1ef     = v3ef + casaErazo + errorVenta + pagoVentEf;
+                const egr1efTot  = egr1ef + pagoCompEf;
+                const bal1ef     = ing1ef - egr1efTot;
+                // Ingresos Negocio efectivo + Pago Ingresos Negocio (filas separadas)
+                const ing2ef     = ingNegEf;
+                const egr2ef     = egrNegEf;
+                const bal2ef     = (ing2ef + pagoIngNegEf) - (egr2ef + pagoEgrNegEf);
+                const ingTotEf   = ing1ef + ing2ef + pagoIngNegEf;
+                const egrTotEf   = egr1efTot + egr2ef + pagoEgrNegEf;
 
                 html += tablaSpread(
-                    fila('Ventas a 3eros (efectivo)',          v3ef,       0, 0, '#86efac') +
-                    fila('Ventas a Casa Erazo',                casaErazo,  0, 0, '#67e8f9') +
-                    fila('Error Venta',                        errorVenta, 0, 0, '#fde68a') +
-                    fila('Compras (efectivo)',                  0, egr1ef,     0, '#fca5a5') +
-                    filaBal('', ing1ef, 'COMPRAS EFECTIVO', egr1ef, bal1ef) +
-                    fila('Ingresos Negocio (ef.)',              ing2ef,     0,  0, '#86efac') +
-                    fila('Egresos Negocio (ef.)',               0, egr2ef,     0, '#fca5a5') +
-                    filaBal('INGRESOS NEGOCIO', ing2ef, 'EGRESOS NEGOCIO', egr2ef, bal2ef) +
+                    fila('Ventas a 3eros (efectivo)',          v3ef,        0,          0, '#86efac') +
+                    fila('Pago Ventas (cobros deudas)',        pagoVentEf,  0,          0, '#34d399') +
+                    fila('Ventas a Casa Erazo',                casaErazo,   0,          0, '#67e8f9') +
+                    fila('Error Venta',                        errorVenta,  0,          0, '#fde68a') +
+                    fila('Compras (efectivo)',                  0,          egr1ef,     0, '#fca5a5') +
+                    fila('Pago Compras (pagos deudas)',         0,          pagoCompEf, 0, '#f87171') +
+                    filaBal('', ing1ef, 'COMPRAS EFECTIVO', egr1efTot, bal1ef) +
+                    fila('Ingresos Negocio (ef.)',              ing2ef,      0,          0, '#86efac') +
+                    fila('Pago Ingresos Negocio',              pagoIngNegEf,0,          0, '#34d399') +
+                    fila('Egresos Negocio (ef.)',               0,          egr2ef,     0, '#fca5a5') +
+                    fila('Pago Egresos Negocio',                0,          pagoEgrNegEf,0,'#f87171') +
+                    filaBal('INGRESOS NEGOCIO', ing2ef + pagoIngNegEf, 'EGRESOS NEGOCIO', egr2ef + pagoEgrNegEf, bal2ef) +
                     filaTot('INGRESOS TOTALES / EGRESOS TOTALES', ingTotEf, egrTotEf, ingTotEf - egrTotEf)
                 );
 
