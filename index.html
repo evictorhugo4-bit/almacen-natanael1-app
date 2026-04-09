@@ -17254,11 +17254,15 @@ console.log("FILTRADAS:", filtradas.length);
             const pagoCompEf   = sumPagoFechaOrig(_sheetPagoCompras);
             const pagoVentEf   = sumPagoFechaOrig(_pagoVentasSheet);
             const egrNegEf     = sumNeg(_sheetEgresosNegocio, 'efectivo');
-            // Combinar ambas fuentes de pago egresos negocio y normalizar campo fecha original
-            const _pagoEgrNegAll = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])].map(p => ({
-                ...p,
-                fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || ''
-            }));
+            // Combinar ambas fuentes de pago egresos negocio, deduplicar por id y normalizar fechaOrig
+            const _pagoEgrNegRaw = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])];
+            const _pagoEgrNegSeen = new Set();
+            const _pagoEgrNegAll = _pagoEgrNegRaw.filter(p => {
+                const uid = p.id || p.idEgresoNeg || p.IDPAGOEGRESOSNEGOCIO || '';
+                if (uid && _pagoEgrNegSeen.has(uid)) return false;
+                if (uid) _pagoEgrNegSeen.add(uid);
+                return true;
+            }).map(p => ({ ...p, fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || '' }));
             const _pagoIngNegAll = (_sheetPagoIngNeg||[]).map(p => ({
                 ...p,
                 fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || ''
