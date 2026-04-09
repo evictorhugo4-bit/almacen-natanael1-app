@@ -15015,7 +15015,7 @@ function verDetalleProveedor(tipo, id){
                         }
                         // PAGO TOTAL acumula por ítem (cada fila es el precio del ítem)
                         ventasMap[key].total    += parseSheetNum(row['PAGO TOTAL']   ||row['Pago Total']||0);
-                        // PAGO EFECTIVO y PAGO CREDITO: sumar todas las filas de la venta
+                        // PAGO EFECTIVO y PAGO CREDITO: distribuido proporcionalmente por ítem → sumar todas las filas
                         const _rowEf = parseSheetNum(row['PAGO EFECTIVO']||row['Pago Efectivo']||0);
                         const _rowCr = parseSheetNum(row['PAGO CREDITO'] ||row['Pago credito']||row['Pago Credito']||0);
                         ventasMap[key].efectivo += _rowEf;
@@ -16090,6 +16090,18 @@ if (indicator) indicator.classList.remove('hidden');
             renderEstadisticas();
         }
 
+        // ── Helper central: sheet es la fuente de verdad; historial local solo como fallback de inicio ──
+        function ventasParaCalculo() {
+            const sheetTiene = _sheetVentas && _sheetVentas.length > 0;
+            if (sheetTiene) {
+                const sheetIds = new Set(_sheetVentas.map(v => String(v.id||'').trim()));
+                const soloLocales = (typeof historial !== 'undefined' ? historial : [])
+                    .filter(v => { const lid = String(v.id||'').trim(); return lid && !sheetIds.has(lid); });
+                return [..._sheetVentas, ...soloLocales];
+            }
+            return typeof historial !== 'undefined' ? historial : [];
+        }
+
         function renderEstadisticas() {
             const desdeVal = document.getElementById('statsDesde').value;
             const hastaVal = document.getElementById('statsHasta').value;
@@ -16717,7 +16729,7 @@ console.log("FILTRADAS:", filtradas.length);
             const fdNum = desdeVal ? parseFechaNum(desdeVal) : null;
             const fhNum = hastaVal ? parseFechaNum(hastaVal) : null;
             const enRango = fn => { if(!fn) return false; if(fdNum&&fn<fdNum) return false; if(fhNum&&fn>fhNum) return false; return true; };
-            const fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+            const fnumPago = p => parseFechaNum(p.fechaOrig||p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
 
             // ── Actualizar botones filtro ──
             ['total','efectivo','credito'].forEach(f => {
@@ -17105,7 +17117,7 @@ console.log("FILTRADAS:", filtradas.length);
             const fdNum = desdeVal ? parseFechaNum(desdeVal) : null;
             const fhNum = hastaVal ? parseFechaNum(hastaVal) : null;
             const enRango = fn => { if(!fn) return false; if(fdNum&&fn<fdNum) return false; if(fhNum&&fn>fhNum) return false; return true; };
-            const fnumPago = p => parseFechaNum(p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+            const fnumPago = p => parseFechaNum(p.fechaOrig||p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
 
             // Actualizar botones filtro
             ['total','efectivo','credito'].forEach(f => {
@@ -17121,8 +17133,7 @@ console.log("FILTRADAS:", filtradas.length);
             // ── Helper: suma campo de ventas en rango, excluyendo clientes especiales ──
             const sumVentas = (campo, excluir) => {
                 let tot = 0;
-                const todasV = [...(typeof historial !== 'undefined' ? historial : []),
-                    ...(_sheetVentas||[]).filter(v => !(typeof historial !== 'undefined' ? historial : []).some(h=>h.id===v.id))];
+                const todasV = ventasParaCalculo();
                 todasV.forEach(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha||'');
                     if (!enRango(fn)) return;
@@ -17145,8 +17156,7 @@ console.log("FILTRADAS:", filtradas.length);
             // ── Helper: suma dineroRecuperado por cliente ──
             const sumDinRecCliente = (clienteKey) => {
                 let tot = 0;
-                const todasV = [...(typeof historial !== 'undefined' ? historial : []),
-                    ...(_sheetVentas||[]).filter(v => !(typeof historial !== 'undefined' ? historial : []).some(h=>h.id===v.id))];
+                const todasV = ventasParaCalculo();
                 todasV.forEach(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha||'');
                     if (!enRango(fn)) return;
@@ -17196,8 +17206,7 @@ console.log("FILTRADAS:", filtradas.length);
                 if(!enRango(fnumPago(p))) return;
                 _ppvEN[idV] = (_ppvEN[idV]||0) + Number(p.monto||p.MONTO||0);
             });
-            const todasVEN = [...(typeof historial!=='undefined'?historial:[]),
-                ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+            const todasVEN = ventasParaCalculo();
             const _vVistasEN = new Set();
             todasVEN.forEach(v => {
                 const fn = parseFechaNum(v.fechaISO||v.fecha||'');
@@ -17509,8 +17518,7 @@ console.log("FILTRADAS:", filtradas.length);
 
             // ── VENTAS en rango ──
             const ventasRango = (() => {
-                const todasV = [...(typeof historial!=='undefined'?historial:[]),
-                    ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                const todasV = ventasParaCalculo();
                 return todasV.filter(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha||'');
                     if (!enRango(fn)) return false;
@@ -17521,8 +17529,7 @@ console.log("FILTRADAS:", filtradas.length);
 
             // ── VENTAS ESPECIALES (CASA ERAZO, ERROR VENTA) en rango — para dinero recuperado por proveedor ──
             const ventasEspecialesRango = (() => {
-                const todasV = [...(typeof historial!=='undefined'?historial:[]),
-                    ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                const todasV = ventasParaCalculo();
                 return todasV.filter(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha||'');
                     if (!enRango(fn)) return false;
@@ -18115,7 +18122,7 @@ console.log("FILTRADAS:", filtradas.length);
 
             // ── 1. VENTAS EN EFECTIVO del período (total cobrado, no ganancia) ─
             let ventasEf = 0;
-            const _todasV = [...(typeof historial!=='undefined'?historial:[]), ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+            const _todasV = ventasParaCalculo();
             const _idsVistas = new Set();
             let gananciaEf = 0;
             let consumoPersonal = 0;
@@ -18246,7 +18253,7 @@ console.log("FILTRADAS:", filtradas.length);
                     valorStockProv[prov] = (valorStockProv[prov]||0) + stockAct*(parseFloat(prod.costo)||0);
                 });
 
-                const _todasV2 = [...(typeof historial!=='undefined'?historial:[]),  ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                const _todasV2 = ventasParaCalculo();
                 const cobrarDeProv = {};
                 _todasV2.forEach(v => {
                     // PAGO_CREDITO (v.credito) como crédito otorgado
@@ -18298,7 +18305,7 @@ console.log("FILTRADAS:", filtradas.length);
 
             } else {
                 // ── PERÍODO ──────────────────────────────────────────────────
-                const _todasV3 = [...(typeof historial!=='undefined'?historial:[]), ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                const _todasV3 = ventasParaCalculo();
 
                 // 1) DEBO al proveedor = compras a crédito del período
                 const deboProv = {};
@@ -18452,8 +18459,7 @@ console.log("FILTRADAS:", filtradas.length);
                 cobrosPorVenta[idV] = (cobrosPorVenta[idV] || 0) + Number(p.monto || p.MONTO || 0);
             });
 
-            const todasV = [...(typeof historial !== 'undefined' ? historial : []),
-                           ...(_sheetVentas || []).filter(v => !(typeof historial !== 'undefined' ? historial : []).some(h => h.id === v.id))];
+            const todasV = ventasParaCalculo();
             const vistas = new Set();
 
             let totalParaProveedor = 0;
@@ -18701,9 +18707,9 @@ console.log("FILTRADAS:", filtradas.length);
             try {
                 const modo = _hrModo;
                 const pago = _hrPago;
-                const todasVentas = typeof historial!=='undefined'
-                    ? [...historial,  ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))]
-                    : (_sheetVentas||[]);
+                const todasVentas = ventasParaCalculo();
+
+
                 const ventas      = _hrFiltrarPorFecha(todasVentas,              'fechaISO');
                 const compras     = _hrFiltrarPorFecha(_sheetCompras||[],         'fechaISO');
                 const ingresos    = _hrFiltrarPorFecha(_sheetIngresos||[],        'fechaISO');
@@ -19180,8 +19186,7 @@ console.log("FILTRADAS:", filtradas.length);
             // ══════════════════════════════════════════════════════════
             // 3. DEUDA DE CLIENTES AL PROVEEDOR
             // ══════════════════════════════════════════════════════════
-            const todasV = [...(typeof historial!=='undefined'?historial:[]),
-                ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+            const todasV = ventasParaCalculo();
 
             const deudaRows = [];
             todasV.forEach(v => {
@@ -19392,7 +19397,7 @@ console.log("FILTRADAS:", filtradas.length);
             const rows = [];
 
             // ── VENTAS — una fila por ítem ──
-            const todasV = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
+            const todasV = ventasParaCalculo();
             const vVistas = new Set();
             todasV.forEach(v => {
                 if (!enRango(v.fechaISO||v.fecha) || vVistas.has(v.id)) return;
@@ -19768,7 +19773,7 @@ console.log("FILTRADAS:", filtradas.length);
             const fh = hasta ? parseFechaNum(hasta) : null;
 
             // Acumular ventas por nombre de producto
-            const todasV = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
+            const todasV = ventasParaCalculo();
             const ventasMap = {};
             todasV.forEach(v => {
                 const fn = parseFechaNum(v.fechaISO||v.fecha);
@@ -19923,8 +19928,7 @@ console.log("FILTRADAS:", filtradas.length);
                         </div>
                     </div>`).join('');
             } else {
-                const todasV = [...(typeof historial!=='undefined'?historial:[]),
-                    ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+                const todasV = ventasParaCalculo();
                 const movs = [];
                 todasV.forEach(v => {
                     const ts = new Date(v.fechaISO || v.fecha || '').getTime() || 0;
@@ -19953,8 +19957,7 @@ console.log("FILTRADAS:", filtradas.length);
         }
 
         function verDetalleVentaKardex(ventaId) {
-            const todasV = [...(typeof historial!=='undefined'?historial:[]),
-                ...(_sheetVentas||[]).filter(v=>!(typeof historial!=='undefined'?historial:[]).some(h=>h.id===v.id))];
+            const todasV = ventasParaCalculo();
             const v = todasV.find(x => String(x.id||'').trim() === String(ventaId).trim());
             if (!v) { mostrarToast('Venta no encontrada'); return; }
             document.getElementById('dvkFecha').textContent   = v.fecha || v.fechaISO || '';
@@ -20049,7 +20052,7 @@ console.log("FILTRADAS:", filtradas.length);
             }
 
             // Ventas
-            const todasV = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
+            const todasV = ventasParaCalculo();
             console.log('[KARDEX VENTAS] total:', todasV.length, '| refNum:', refNum, '| buscando:', nombreUp);
             todasV.forEach(v => {
                 // Intentar todos los campos fecha posibles
