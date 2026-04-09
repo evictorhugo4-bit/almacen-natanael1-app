@@ -17254,9 +17254,18 @@ console.log("FILTRADAS:", filtradas.length);
             const pagoCompEf   = sumPagoFechaOrig(_sheetPagoCompras);
             const pagoVentEf   = sumPagoFechaOrig(_pagoVentasSheet);
             const egrNegEf     = sumNeg(_sheetEgresosNegocio, 'efectivo');
-            const pagoEgrNegEf = sumPagoFechaOrig(_sheetPagoEgrNeg);
+            // Combinar ambas fuentes de pago egresos negocio y normalizar campo fecha original
+            const _pagoEgrNegAll = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])].map(p => ({
+                ...p,
+                fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || ''
+            }));
+            const _pagoIngNegAll = (_sheetPagoIngNeg||[]).map(p => ({
+                ...p,
+                fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || ''
+            }));
+            const pagoEgrNegEf = sumPagoFechaOrig(_pagoEgrNegAll);
             const ingNegEf     = sumNeg(_sheetIngresosNegocio, 'efectivo');
-            const pagoIngNegEf = sumPagoFechaOrig(_sheetPagoIngNeg);
+            const pagoIngNegEf = sumPagoFechaOrig(_pagoIngNegAll);
 
             // BALANCE NEGOCIO EFECTIVO = (ventasEf + casaErazo + errorVenta - ganEfEN + pagoVentEf) - (comprasEf + pagoCompEf)
             const balNegEf     = (ventasEf + casaErazo + errorVenta - ganEfEN + pagoVentEf) - (comprasEf + pagoCompEf);
@@ -17402,12 +17411,12 @@ console.log("FILTRADAS:", filtradas.length);
                     fila('Error Venta',                        errorVenta,  0,          0, '#fde68a') +
                     fila('Compras (efectivo)',                  0,          egr1ef,     0, '#fca5a5') +
                     fila('Pago Compras (pagos deudas)',         0,          pagoCompEf, 0, '#f87171') +
-                    filaBal('', ing1ef, 'COMPRAS EFECTIVO', egr1efTot, bal1ef) +
+                    filaBal('', ing1ef, 'BALANCE PARCIAL', egr1efTot, bal1ef) +
                     fila('Ingresos Negocio (ef.)',              ing2ef,      0,          0, '#86efac') +
                     fila('Pago Ingresos Negocio',              pagoIngNegEf,0,          0, '#34d399') +
                     fila('Egresos Negocio (ef.)',               0,          egr2ef,     0, '#fca5a5') +
                     fila('Pago Egresos Negocio',                0,          pagoEgrNegEf,0,'#f87171') +
-                    filaBal('INGRESOS NEGOCIO', ing2ef + pagoIngNegEf, 'EGRESOS NEGOCIO', egr2ef + pagoEgrNegEf, bal2ef) +
+                    filaBal('BALANCE PARCIAL', ing2ef + pagoIngNegEf, 'EGRESOS NEGOCIO', egr2ef + pagoEgrNegEf, bal2ef) +
                     filaTot('INGRESOS TOTALES / EGRESOS TOTALES', ingTotEf, egrTotEf, ingTotEf - egrTotEf)
                 );
 
