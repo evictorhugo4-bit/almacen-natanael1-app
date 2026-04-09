@@ -17189,11 +17189,17 @@ console.log("FILTRADAS:", filtradas.length);
                 }, 0);
             };
 
-            // ── Helper: suma monto de tabla pago por fecha original en rango ──
-            const sumPagoFechaOrig = arr => (arr||[]).reduce((s,p) => {
-                if (!enRango(fnumPago(p))) return s;
-                return s + Number(p.MONTO||p.monto||0);
-            }, 0);
+            // ── Helper: suma monto de tabla pago por fecha original en rango — deduplicando por id ──
+            const sumPagoFechaOrig = arr => {
+                const _vistos = new Set();
+                return (arr||[]).reduce((s,p) => {
+                    const pid = String(p.id||p.IDPAGODEVENTAS||p.IDPAGOCOMPRAS||p.IDPAGOSINGRESOSNEGOCIO||p.IDPAGOEGRESOSNEGOCIO||'').trim();
+                    if (pid && _vistos.has(pid)) return s;
+                    if (pid) _vistos.add(pid);
+                    if (!enRango(fnumPago(p))) return s;
+                    return s + Number(p.MONTO||p.monto||0);
+                }, 0);
+            };
 
             // ══════════════════════════════════════
             // CÁLCULOS COMUNES
@@ -17204,7 +17210,11 @@ console.log("FILTRADAS:", filtradas.length);
             // Ganancias totales y efectivo (reutilizando lógica de renderResumen)
             let ganTotEN=0, ganEfEN=0, casaErazoTotEN=0;
             const _ppvEN = {};
+            const _ppvENVistos = new Set();
             (_pagoVentasSheet||[]).forEach(p => {
+                const pid = String(p.id||p.IDPAGODEVENTAS||'').trim();
+                if (pid && _ppvENVistos.has(pid)) return;
+                if (pid) _ppvENVistos.add(pid);
                 const idV = String(p.idVenta||p.IDVENTAS||'').trim();
                 if(!idV) return;
                 if(!enRango(fnumPago(p))) return;
@@ -17700,9 +17710,13 @@ console.log("FILTRADAS:", filtradas.length);
                 const proveedores = [...proveedoresSet].sort();
                 if (!proveedores.length) return;
 
-                // Mapa cobros por venta (PAGO VENTAS por IDVENTAS, sin filtro de fecha — suma histórica)
+                // Mapa cobros por venta — deduplicar por id de pago antes de acumular
                 const cobrosPorVenta = {};
+                const _cobrosVistos = new Set();
                 (_pagoVentasSheet || []).forEach(p => {
+                    const pid = String(p.id || p.IDPAGODEVENTAS || '').trim();
+                    if (pid && _cobrosVistos.has(pid)) return;
+                    if (pid) _cobrosVistos.add(pid);
                     const idV = String(p.idVenta || p.IDVENTAS || '').trim();
                     if (!idV) return;
                     cobrosPorVenta[idV] = (cobrosPorVenta[idV] || 0) + Number(p.monto || p.MONTO || 0);
