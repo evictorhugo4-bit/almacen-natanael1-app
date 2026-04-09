@@ -8706,7 +8706,25 @@ clienteDetalleId = null;
         function saveEgresosNeg()  { try { localStorage.setItem('natanael_egrneg_v1',  JSON.stringify(_sheetEgresosNegocio));  } catch(e){} }
 
         function renderIngNeg(tipo) {
-            const db      = tipo === 'ingresosNegocio' ? _sheetIngresosNegocio : _sheetEgresosNegocio;
+            const dbRef   = tipo === 'ingresosNegocio' ? _sheetIngresosNegocio : _sheetEgresosNegocio;
+            // Deduplicar en el momento del render: si hay un registro local y uno del sheet con mismo
+            // idSheet, el del sheet tiene prioridad. También deduplicar por id directo.
+            const seenIds = new Set(); const seenSheetIds = new Set();
+            const dbDedup = [];
+            // Primero pasar los fromSheet (tienen prioridad)
+            [...dbRef].sort((a,b) => (b.fromSheet?1:0)-(a.fromSheet?1:0)).forEach(r => {
+                if (seenIds.has(r.id)) return;
+                if (r.idSheet && seenSheetIds.has(r.idSheet)) return;
+                seenIds.add(r.id);
+                if (r.idSheet) seenSheetIds.add(r.idSheet);
+                dbDedup.push(r);
+            });
+            // Reemplazar contenido del array original con deduplicado (in-place)
+            if (dbDedup.length !== dbRef.length) {
+                dbRef.splice(0, dbRef.length, ...dbDedup);
+                console.log('[renderIngNeg] '+tipo+': deduplicados '+(dbDedup.length)+' (eran '+dbRef.length+')');
+            }
+            const db      = dbRef;
             const pfx     = tipo === 'ingresosNegocio' ? 'ingNeg' : 'egrNeg';
             const listaId = tipo === 'ingresosNegocio' ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
             const el = id => document.getElementById(id);
@@ -15541,32 +15559,44 @@ if (indicator) indicator.classList.remove('hidden');
                 let fechaRaw = String(row['FECHA']||row['Fecha']||row['Fecha...']||'').trim();
                 let fechaDisplay = fechaRaw;
                 try { if (fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))) { const d=new Date(fechaRaw); if(!isNaN(d)) fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); } } catch(e){}
+                // idRow: ID real guardado en el sheet por la app al crear el registro
                 const idRow = String(row['IDINGRESOSNEGOCIO']||row['IDEGRESOSNEGOCIO']||row['NUMERO DE INGRESOS NEGOCIO']||row['NUMERO DE EGRESOS']||row['ID_INGRESOS']||row['Id_Gastos']||'').trim();
                 const total = parseFloat(row['PAGO TOTAL']||row['Pago Total'])||0;
-                const key = idRow||(fechaRaw+'|'+String(row['Supercategoria']||'').trim()+'|'+total);
+                const cliente = String(row['CLIENTE']||row['Cliente']||'').trim();
+                // Key: usar idRow si existe; si no, fecha+cliente+monto (más específico que antes)
+                const key = idRow || (fechaRaw+'|'+cliente+'|'+total);
                 const id = 'sheet_NN_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
                 idsSheetNN.add(id);
+                // Si el idRow coincide con el id local (fromSheet:false), unificar en lugar de duplicar
+                const idxLocal = db.findIndex(r => !r.fromSheet && (r.id === idRow || r.id === key));
+                const idxSheet = db.findIndex(r => r.id === id);
                 const reg = { id, idSheet: idRow, fecha:fechaDisplay, fechaISO:fechaRaw,
                     idCliente: String(row['IDCLIENTE']||row['IdCliente']||'').trim(),
-                    cliente:   String(row['CLIENTE']||row['Cliente']||'').trim(),
-                    proveedor: String(row['CLIENTE']||row['Cliente']||'').trim(),
+                    cliente,
+                    proveedor: cliente,
                     estado:    String(row['ESTADO']||row['Estado']||'').trim(),
                     formaPago: String(row['FORMA DE PAGO']||row['Forma de Pago']||'').trim(),
                     total, efectivo: parseFloat(row['PAGO EFECTIVO']||row['Pago Efectivo'])||0,
                     credito: parseFloat(row['PAGO CREDITO']||row['Pago Credito']||row['PAGO CRÉDITO'])||0,
                     fechaPago: String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim(),
                     fromSheet: true, items:[] };
-                const idx = db.findIndex(r=>r.id===id);
-                if (idx>=0) { db[idx]={...db[idx],...reg}; ac++; } else { db.push(reg); ag++; }
+                if (idxSheet >= 0) {
+                    // Ya existe con id sheet_NN_... → actualizar
+                    db[idxSheet] = {...db[idxSheet], ...reg}; ac++;
+                } else if (idxLocal >= 0) {
+                    // Existe como registro local (fromSheet:false) → reemplazar con versión del sheet
+                    db[idxLocal] = {...db[idxLocal], ...reg}; ac++;
+                } else {
+                    db.push(reg); ag++;
+                }
             });
-            // Eliminar del array local los registros que ya no están en el sheet
+            // Eliminar registros fromSheet que el sheet ya no tiene
             const borrados = db.filter(r => r.fromSheet && !idsSheetNN.has(r.id)).length;
             db.splice(0, db.length, ...db.filter(r => !r.fromSheet || idsSheetNN.has(r.id)));
-            if(borrados>0){ ac++; console.log('[Sync] '+renderTipo+' eliminados del sheet: '+borrados); }
             if (ag>0||ac>0||borrados>0) {
                 const vista = document.getElementById('vista'+renderTipo.charAt(0).toUpperCase()+renderTipo.slice(1));
                 if (vista&&!vista.classList.contains('hidden')) renderIngNeg(renderTipo);
-                console.log('✓ '+renderTipo+': '+ag+' nuevos, '+ac+' actualizados, '+borrados+' borrados');
+                console.log('[Sync] '+renderTipo+': +'+ag+' nuevos, ~'+ac+' actualizados, -'+borrados+' borrados');
             }
         };
 
@@ -15581,11 +15611,10 @@ if (indicator) indicator.classList.remove('hidden');
         // Se llama cuando llega la etapa 2 del sync en background
         function _procesarDatosSecundarios(data) {
             try {
-                // Ingresos — reemplazar completamente desde el sheet (fuente de verdad)
+                // Ingresos
                 if (Array.isArray(data.ingresos)) {
                     let ag=0,ac=0;
                     const normI = s => String(s||'').trim().toUpperCase();
-                    const idsSheetIng = new Set();
                     data.ingresos.forEach(row => {
                         let fechaRaw = String(row['FECHA']||row['Fecha']||'').trim();
                         let fechaDisplay = fechaRaw;
@@ -15594,7 +15623,6 @@ if (indicator) indicator.classList.remove('hidden');
                         const pagoTotal = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
                         const key = idIngreso || (fechaRaw+'|'+normI(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
                         const id = 'sheet_IN_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
-                        idsSheetIng.add(id);
                         const reg = { id, idSheet:idIngreso, fecha:fechaDisplay, fechaISO:fechaRaw,
                             proveedor:String(row['SUPER CATEGORIA']||row['Supercategoria']||'').trim(),
                             concepto:String(row['CATEGORIA']||row['Categoria']||'').trim(),
@@ -15609,11 +15637,6 @@ if (indicator) indicator.classList.remove('hidden');
                         const idx = _sheetIngresos.findIndex(r=>r.id===id);
                         if(idx>=0){_sheetIngresos[idx]={..._sheetIngresos[idx],...reg};ac++;}else{_sheetIngresos.push(reg);ag++;}
                     });
-                    // Eliminar registros que ya no existen en el sheet
-                    const antesIng = _sheetIngresos.length;
-                    const borradosIng = _sheetIngresos.filter(r => r.fromSheet && !idsSheetIng.has(r.id)).length;
-                    _sheetIngresos.splice(0, _sheetIngresos.length, ..._sheetIngresos.filter(r => !r.fromSheet || idsSheetIng.has(r.id)));
-                    if(borradosIng>0){ag++;console.log('[Sync] Ingresos eliminados del sheet: '+borradosIng);}
                     // Extraer géneros únicos de ingresos
                     _generosIngSheet = [...new Set(_sheetIngresos.map(r=>r.genero).filter(Boolean))].sort();
                     window._generosIngSheet = _generosIngSheet;
@@ -15624,12 +15647,11 @@ if (indicator) indicator.classList.remove('hidden');
                       _catsIngSheet={}; Object.keys(cMap).forEach(k=>{_catsIngSheet[k]=[...cMap[k]].sort();}); window._catsIngSheet=_catsIngSheet; }
                     if(ag>0||ac>0){const v=document.getElementById('vistaIngresos');if(v&&!v.classList.contains('hidden'))renderIngEgr('ingreso');}
                 }
-                // Egresos — reemplazar completamente desde el sheet (fuente de verdad)
+                // Egresos
                 if (Array.isArray(data.egresos||data.gastos)) {
                     const src = data.egresos||data.gastos;
                     let ag=0,ac=0;
                     const normE = s=>String(s||'').trim().toUpperCase();
-                    const idsSheetEgr = new Set();
                     src.forEach(row => {
                         let fechaRaw=String(row['FECHA']||row['Fecha']||'').trim();
                         let fechaDisplay=fechaRaw;
@@ -15638,7 +15660,6 @@ if (indicator) indicator.classList.remove('hidden');
                         const pagoTotal=parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
                         const key=idGasto||(fechaRaw+'|'+normE(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
                         const id='sheet_EG_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
-                        idsSheetEgr.add(id);
                         const reg={id,idSheet:idGasto,fecha:fechaDisplay,fechaISO:fechaRaw,
                             proveedor:String(row['SUPER CATEGORIA']||row['Supercategoria']||'').trim(),
                             concepto:String(row['CATEGORIA']||row['Categoria']||'').trim(),
@@ -15653,10 +15674,6 @@ if (indicator) indicator.classList.remove('hidden');
                         const idx=_sheetEgresos.findIndex(r=>r.id===id);
                         if(idx>=0){_sheetEgresos[idx]={..._sheetEgresos[idx],...reg};ac++;}else{_sheetEgresos.push(reg);ag++;}
                     });
-                    // Eliminar registros que ya no existen en el sheet
-                    const borradosEgr = _sheetEgresos.filter(r => r.fromSheet && !idsSheetEgr.has(r.id)).length;
-                    _sheetEgresos.splice(0, _sheetEgresos.length, ..._sheetEgresos.filter(r => !r.fromSheet || idsSheetEgr.has(r.id)));
-                    if(borradosEgr>0){ag++;console.log('[Sync] Egresos eliminados del sheet: '+borradosEgr);}
                     // Extraer géneros únicos de egresos
                     _generosEgrSheet = [...new Set(_sheetEgresos.map(r=>r.genero).filter(Boolean))].sort();
                     window._generosEgrSheet = _generosEgrSheet;
