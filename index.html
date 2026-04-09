@@ -8706,25 +8706,7 @@ clienteDetalleId = null;
         function saveEgresosNeg()  { try { localStorage.setItem('natanael_egrneg_v1',  JSON.stringify(_sheetEgresosNegocio));  } catch(e){} }
 
         function renderIngNeg(tipo) {
-            const dbRef   = tipo === 'ingresosNegocio' ? _sheetIngresosNegocio : _sheetEgresosNegocio;
-            // Deduplicar en el momento del render: si hay un registro local y uno del sheet con mismo
-            // idSheet, el del sheet tiene prioridad. También deduplicar por id directo.
-            const seenIds = new Set(); const seenSheetIds = new Set();
-            const dbDedup = [];
-            // Primero pasar los fromSheet (tienen prioridad)
-            [...dbRef].sort((a,b) => (b.fromSheet?1:0)-(a.fromSheet?1:0)).forEach(r => {
-                if (seenIds.has(r.id)) return;
-                if (r.idSheet && seenSheetIds.has(r.idSheet)) return;
-                seenIds.add(r.id);
-                if (r.idSheet) seenSheetIds.add(r.idSheet);
-                dbDedup.push(r);
-            });
-            // Reemplazar contenido del array original con deduplicado (in-place)
-            if (dbDedup.length !== dbRef.length) {
-                dbRef.splice(0, dbRef.length, ...dbDedup);
-                console.log('[renderIngNeg] '+tipo+': deduplicados '+(dbDedup.length)+' (eran '+dbRef.length+')');
-            }
-            const db      = dbRef;
+            const db      = tipo === 'ingresosNegocio' ? _sheetIngresosNegocio : _sheetEgresosNegocio;
             const pfx     = tipo === 'ingresosNegocio' ? 'ingNeg' : 'egrNeg';
             const listaId = tipo === 'ingresosNegocio' ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
             const el = id => document.getElementById(id);
@@ -15543,7 +15525,7 @@ if (indicator) indicator.classList.remove('hidden');
 
         // ── syncIngEgrNeg global (usada en sincronizarSheets y _procesarDatosSecundarios) ──
         window.syncIngEgrNeg = function syncIngEgrNeg(rows, db, saveFn, renderTipo, supercatsRef, catsRef) {
-            if (!Array.isArray(rows)) return;
+            if (!Array.isArray(rows) || !rows.length) return;
             const supercatsSet = new Set(); const catsMap = {};
             rows.forEach(row => {
                 const sc = String(row['SUPER CATEGORIA']||row['Supercategoria']||row['Supercategoría']||'').trim().toUpperCase();
@@ -15554,49 +15536,31 @@ if (indicator) indicator.classList.remove('hidden');
             supercatsRef.length = 0; [...supercatsSet].sort().forEach(s => supercatsRef.push(s));
             Object.keys(catsMap).forEach(k => { catsRef[k] = [...catsMap[k]].sort(); });
             let ag=0, ac=0;
-            const idsSheetNN = new Set();
             rows.forEach(row => {
                 let fechaRaw = String(row['FECHA']||row['Fecha']||row['Fecha...']||'').trim();
                 let fechaDisplay = fechaRaw;
                 try { if (fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))) { const d=new Date(fechaRaw); if(!isNaN(d)) fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); } } catch(e){}
-                // idRow: ID real guardado en el sheet por la app al crear el registro
                 const idRow = String(row['IDINGRESOSNEGOCIO']||row['IDEGRESOSNEGOCIO']||row['NUMERO DE INGRESOS NEGOCIO']||row['NUMERO DE EGRESOS']||row['ID_INGRESOS']||row['Id_Gastos']||'').trim();
                 const total = parseFloat(row['PAGO TOTAL']||row['Pago Total'])||0;
-                const cliente = String(row['CLIENTE']||row['Cliente']||'').trim();
-                // Key: usar idRow si existe; si no, fecha+cliente+monto (más específico que antes)
-                const key = idRow || (fechaRaw+'|'+cliente+'|'+total);
+                const key = idRow||(fechaRaw+'|'+String(row['Supercategoria']||'').trim()+'|'+total);
                 const id = 'sheet_NN_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
-                idsSheetNN.add(id);
-                // Si el idRow coincide con el id local (fromSheet:false), unificar en lugar de duplicar
-                const idxLocal = db.findIndex(r => !r.fromSheet && (r.id === idRow || r.id === key));
-                const idxSheet = db.findIndex(r => r.id === id);
                 const reg = { id, idSheet: idRow, fecha:fechaDisplay, fechaISO:fechaRaw,
                     idCliente: String(row['IDCLIENTE']||row['IdCliente']||'').trim(),
-                    cliente,
-                    proveedor: cliente,
+                    cliente:   String(row['CLIENTE']||row['Cliente']||'').trim(),
+                    proveedor: String(row['CLIENTE']||row['Cliente']||'').trim(),
                     estado:    String(row['ESTADO']||row['Estado']||'').trim(),
                     formaPago: String(row['FORMA DE PAGO']||row['Forma de Pago']||'').trim(),
                     total, efectivo: parseFloat(row['PAGO EFECTIVO']||row['Pago Efectivo'])||0,
                     credito: parseFloat(row['PAGO CREDITO']||row['Pago Credito']||row['PAGO CRÉDITO'])||0,
                     fechaPago: String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim(),
                     fromSheet: true, items:[] };
-                if (idxSheet >= 0) {
-                    // Ya existe con id sheet_NN_... → actualizar
-                    db[idxSheet] = {...db[idxSheet], ...reg}; ac++;
-                } else if (idxLocal >= 0) {
-                    // Existe como registro local (fromSheet:false) → reemplazar con versión del sheet
-                    db[idxLocal] = {...db[idxLocal], ...reg}; ac++;
-                } else {
-                    db.push(reg); ag++;
-                }
+                const idx = db.findIndex(r=>r.id===id);
+                if (idx>=0) { db[idx]={...db[idx],...reg}; ac++; } else { db.push(reg); ag++; }
             });
-            // Eliminar registros fromSheet que el sheet ya no tiene
-            const borrados = db.filter(r => r.fromSheet && !idsSheetNN.has(r.id)).length;
-            db.splice(0, db.length, ...db.filter(r => !r.fromSheet || idsSheetNN.has(r.id)));
-            if (ag>0||ac>0||borrados>0) {
+            if (ag>0||ac>0) {
                 const vista = document.getElementById('vista'+renderTipo.charAt(0).toUpperCase()+renderTipo.slice(1));
                 if (vista&&!vista.classList.contains('hidden')) renderIngNeg(renderTipo);
-                console.log('[Sync] '+renderTipo+': +'+ag+' nuevos, ~'+ac+' actualizados, -'+borrados+' borrados');
+                console.log('✓ '+renderTipo+': '+ag+' nuevos, '+ac+' actualizados');
             }
         };
 
@@ -17310,95 +17274,148 @@ console.log("FILTRADAS:", filtradas.length);
             // ══════════════════════════════════════
             // RENDER
             // ══════════════════════════════════════
-            const enCard = (titulo, valor, color, desc) => `
-                <div class="glass-card rounded-2xl p-4 border" style="border-color:${color}33;">
-                    <p style="font-size:8px;font-weight:900;color:${color};text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px;">${titulo}</p>
-                    <p style="font-size:20px;font-weight:900;color:#f1f5f9;font-family:monospace;margin:0 0 2px;">$${Utils.fmt(valor)}</p>
-                    <p style="font-size:8px;color:#475569;margin:0;">${desc}</p>
-                </div>`;
+            // ── Helpers tabla spreadsheet ──
+            const C_ING  = '#4ade80';
+            const C_EGR  = '#ef4444';
+            const C_BAL  = '#f97316';
+            const C_HEAD = '#0d2b0d';
+            const C_HEGR = '#2b0d0d';
+            const C_HBAL = '#2b1a0d';
 
-            const enBalance = (titulo, valor, desc) => `
-                <div class="glass-card rounded-2xl p-4 border-2" style="border-color:${fmtCol(valor)}55;background:linear-gradient(135deg,#0f172a,#1e293b);">
-                    <p style="font-size:8px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px;">⚖️ ${titulo}</p>
-                    <p style="font-size:24px;font-weight:900;color:${fmtCol(valor)};font-family:monospace;margin:0 0 2px;">${fmtPre(valor)}${fmt$(valor)}</p>
-                    <p style="font-size:8px;color:#475569;margin:0;">${desc}</p>
-                </div>`;
+            const thCell = function(txt, bg, color, extra) {
+                extra = extra || '';
+                return '<th style="padding:10px 14px;background:'+bg+';color:'+color+';font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;text-align:center;'+extra+'">'+txt+'</th>';
+            };
 
-            const enSec2col = (titIng, cardsIng, titEgr, cardsEgr) => `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-                    <div>
-                        <p style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;">💚 ${titIng}</p>
-                        <div style="display:flex;flex-direction:column;gap:8px;">${cardsIng}</div>
-                    </div>
-                    <div>
-                        <p style="font-size:9px;font-weight:900;color:#ef4444;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;">🔴 ${titEgr}</p>
-                        <div style="display:flex;flex-direction:column;gap:8px;">${cardsEgr}</div>
-                    </div>
-                </div>`;
+            const fila = function(label, ing, egr, bal, labelColor) {
+                labelColor = labelColor || '#94a3b8';
+                const balColor = bal >= 0 ? '#4ade80' : '#f87171';
+                const balSign  = bal >= 0 ? '&#9650;' : '&#9660;';
+                return '<tr style="border-bottom:1px solid #1e293b;">'
+                    + '<td style="padding:9px 14px;font-size:11px;font-weight:900;color:'+labelColor+';text-transform:uppercase;background:#0f172a;">'+label+'</td>'
+                    + '<td style="padding:9px 14px;font-size:13px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#0a1a0e;">' + (ing > 0 ? '$'+Utils.fmt(ing) : '<span style="color:#1e3a24">—</span>') + '</td>'
+                    + '<td style="padding:9px 14px;font-size:13px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#1a0a0a;">' + (egr > 0 ? '$'+Utils.fmt(egr) : '<span style="color:#3a1e1e">—</span>') + '</td>'
+                    + '<td style="padding:9px 14px;font-size:13px;font-weight:900;color:'+balColor+';font-family:monospace;text-align:right;background:#1a120a;">'+balSign+' $'+Utils.fmt(Math.abs(bal))+'</td>'
+                    + '</tr>';
+            };
+
+            const filaTot = function(label, ing, egr, bal) {
+                const balColor = bal >= 0 ? '#4ade80' : '#f87171';
+                const balSign  = bal >= 0 ? '&#9650;' : '&#9660;';
+                return '<tr style="border-top:2px solid #334155;">'
+                    + '<td style="padding:11px 14px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;background:#111827;">'+label+'</td>'
+                    + '<td style="padding:11px 14px;font-size:15px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#111827;">$'+Utils.fmt(ing)+'</td>'
+                    + '<td style="padding:11px 14px;font-size:15px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#111827;">$'+Utils.fmt(egr)+'</td>'
+                    + '<td style="padding:11px 14px;font-size:15px;font-weight:900;color:'+balColor+';font-family:monospace;text-align:right;background:#111827;">'+balSign+' $'+Utils.fmt(Math.abs(bal))+'</td>'
+                    + '</tr>';
+            };
+
+            const tablaSpread = function(filas) {
+                return '<div style="overflow-x:auto;border-radius:16px;border:1.5px solid #1e293b;margin-bottom:14px;">'
+                    + '<table style="width:100%;border-collapse:collapse;min-width:340px;">'
+                    + '<thead><tr>'
+                    + thCell('CONCEPTO', '#0f172a', '#64748b', 'text-align:left;min-width:160px;')
+                    + thCell('INGRESOS', C_HEAD, C_ING, '')
+                    + thCell('EGRESOS',  C_HEGR, C_EGR, '')
+                    + thCell('BALANCE',  C_HBAL, C_BAL, '')
+                    + '</tr></thead>'
+                    + '<tbody>' + filas + '</tbody>'
+                    + '</table></div>';
+            };
+
+            // Fila de subtotal con balance solo (sin totales de columna acumulados)
+            const filaBal = function(ingLabel, ingVal, egrLabel, egrVal, bal) {
+                const balColor = bal >= 0 ? '#4ade80' : '#f87171';
+                const balSign  = bal >= 0 ? '&#9650;' : '&#9660;';
+                return '<tr style="border-top:2px solid #334155;border-bottom:2px solid #334155;">'
+                    + '<td style="padding:10px 14px;font-size:10px;font-weight:900;color:#f1f5f9;text-transform:uppercase;background:#111827;">'
+                    +   (ingLabel ? '<span style="color:#4ade80;">'+ingLabel+'</span>' : '')
+                    +   (ingLabel && egrLabel ? ' &nbsp;/&nbsp; ' : '')
+                    +   (egrLabel ? '<span style="color:#f87171;">'+egrLabel+'</span>' : '')
+                    + '</td>'
+                    + '<td style="padding:10px 14px;font-size:14px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#111827;">' + (ingVal > 0 ? '$'+Utils.fmt(ingVal) : '') + '</td>'
+                    + '<td style="padding:10px 14px;font-size:14px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#111827;">' + (egrVal > 0 ? '$'+Utils.fmt(egrVal) : '') + '</td>'
+                    + '<td style="padding:10px 14px;font-size:16px;font-weight:900;color:'+balColor+';font-family:monospace;text-align:right;background:#1f1508;">'+balSign+' $'+Utils.fmt(Math.abs(bal))+'</td>'
+                    + '</tr>';
+            };
 
             let html = '';
-            const filtroLabel = _enFiltro === 'efectivo' ? 'EFECTIVO' : _enFiltro === 'credito' ? 'CRÉDITO' : 'TOTAL';
-            html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em;">📊 NEGOCIO / ${filtroLabel}</span></div>`;
+            const filtroLabel = _enFiltro === 'efectivo' ? 'EFECTIVO' : _enFiltro === 'credito' ? 'CR\u00c9DITO' : 'TOTAL';
+            html += '<div style="margin-bottom:10px;"><span style="font-size:10px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em;">\ud83d\udcca ESTADO NEGOCIO / ' + filtroLabel + '</span></div>';
 
             if (_enFiltro === 'total') {
-                html += enSec2col(
-                    'INGRESOS',
-                    enCard('Ventas Totales',        ventasTot,  '#10b981', 'TABLA VENTAS · Suma PAGO TOTAL · excl. CASA ERAZO y ERROR VENTA') +
-                    enCard('Ventas a Casa Erazo',   casaErazo,  '#06b6d4', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = CASA ERAZO') +
-                    enCard('Error Venta',            errorVenta, '#f59e0b', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = ERROR VENTA') +
-                    enCard('Ganancias Totales',      ganTotEN,   '#fbbf24', 'Pago Total − Dinero Recuperado (excl. CASA ERAZO y ERROR VENTA)') +
-                    enCard('Ingresos Negocio Tot.',  ingNegTot,  '#34d399', 'TABLA INGRESOS NEGOCIO · Suma PAGO TOTAL'),
-                    'EGRESOS',
-                    enCard('Compras Totales',        comprasTot, '#ef4444', 'TABLA COMPRAS · Suma PAGO TOTAL') +
-                    enCard('Egresos Negocio Tot.',   egrNegTot,  '#f87171', 'TABLA EGRESOS NEGOCIO · Suma PAGO TOTAL')
+                // Filas individuales
+                const v3Tot  = ventasTot - ganTotEN;
+                // bal1 = suma de las 3 filas de ingresos - comprasTot
+                const ing1   = v3Tot + casaErazo + errorVenta;
+                const bal1   = ing1 - comprasTot;
+                // bal2 = ingNegTot - egrNegTot
+                const bal2   = ingNegTot - egrNegTot;
+                // totales finales
+                const ingTotal = ing1 + ingNegTot;
+                const egrTotal = comprasTot + egrNegTot;
+
+                html += tablaSpread(
+                    fila('Ventas a 3eros s/ganancias totales', v3Tot,      0,          0, '#86efac') +
+                    fila('Ventas a Casa Erazo',                casaErazo,  0,          0, '#67e8f9') +
+                    fila('Error Venta',                        errorVenta, 0,          0, '#fde68a') +
+                    fila('Compras Totales',                    0,          comprasTot, 0, '#fca5a5') +
+                    filaBal('', ing1, 'COMPRAS TOTALES', comprasTot, bal1) +
+                    fila('Ingresos Negocio Totales',           ingNegTot,  0,          0, '#86efac') +
+                    fila('Egresos Negocio Totales',            0,          egrNegTot,  0, '#fca5a5') +
+                    filaBal('INGRESOS NEGOCIO', ingNegTot, 'EGRESOS NEGOCIO', egrNegTot, bal2) +
+                    filaTot('INGRESOS TOTALES / EGRESOS TOTALES', ingTotal, egrTotal, ingTotal - egrTotal)
                 );
-                html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-                    ${enBalance('Balance Negocio Total',   balNegTot,  '(Ventas+CasaErazo+ErrorVenta−Ganancias) − Compras')}
-                    ${enBalance('Balance Complementario',  balCompTot, 'Ingresos Negocio − Egresos Negocio')}
-                    ${enBalance('Balance Total',           balTotEN,   'Balance Negocio + Balance Complementario')}
-                </div>`;
 
             } else if (_enFiltro === 'efectivo') {
-                html += enSec2col(
-                    'INGRESOS',
-                    enCard('Ventas Efectivo',         ventasEf,    '#10b981', 'TABLA VENTAS · Suma PAGO EFECTIVO · excl. CASA ERAZO y ERROR VENTA') +
-                    enCard('Ventas a Casa Erazo',     casaErazo,   '#06b6d4', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = CASA ERAZO') +
-                    enCard('Error Venta',              errorVenta,  '#f59e0b', 'TABLA VENTAS · DINERO RECUPERADO · Cliente = ERROR VENTA') +
-                    enCard('Ganancias Efectivo',       ganEfEN,     '#fbbf24', 'Ganancia efectivo de ventas + MONTO Pago Ventas cuando supera Dinero Recuperado') +
-                    enCard('Pago Ventas',              pagoVentEf,  '#34d399', 'TABLA PAGO VENTAS · Suma MONTO · por FECHA ORIGINAL') +
-                    enCard('Ingresos Negocio Ef.',     ingNegEf,    '#a3e635', 'TABLA INGRESOS NEGOCIO · Suma PAGO EFECTIVO') +
-                    enCard('Pago Ingresos Negocio',    pagoIngNegEf,'#86efac', 'TABLA PAGO INGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL'),
-                    'EGRESOS',
-                    enCard('Compras Efectivo',         comprasEf,   '#ef4444', 'TABLA COMPRAS · Suma PAGO EFECTIVO') +
-                    enCard('Pago Compras',             pagoCompEf,  '#f87171', 'TABLA PAGO COMPRAS · Suma MONTO · por FECHA ORIGINAL') +
-                    enCard('Egresos Negocio Ef.',      egrNegEf,    '#fb923c', 'TABLA EGRESOS NEGOCIO · Suma PAGO EFECTIVO') +
-                    enCard('Pago Egresos Negocio',     pagoEgrNegEf,'#fca5a5', 'TABLA PAGO EGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL')
-                );
-                html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-                    ${enBalance('Balance Negocio Efectivo',   balNegEf,  '(VentasEf+CasaErazo+ErrVenta−GanEf+PagoVent) − (ComprasEf+PagoComp)')}
-                    ${enBalance('Balance Complementario Ef.', balCompEf, '(IngNegEf+PagoIngNeg) − (EgrNegEf+PagoEgrNeg)')}
-                    ${enBalance('Balance Efectivo',           balEfEN,   'Balance Negocio Ef. + Balance Complementario Ef.')}
-                </div>`;
+                // Cada fila muestra su propio concepto con los pagos correspondientes
+                // Ventas 3eros efectivo + Pago Ventas (cobros de deudas de ventas)
+                const v3ef       = ventasEf - ganEfEN + pagoVentEf;
+                // Compras efectivo + Pago Compras (pagos de deudas de compras)
+                const egr1ef     = comprasEf + pagoCompEf;
+                const ing1ef     = v3ef + casaErazo + errorVenta;
+                const bal1ef     = ing1ef - egr1ef;
+                // Ingresos Negocio efectivo + Pago Ingresos Negocio
+                const ing2ef     = ingNegEf + pagoIngNegEf;
+                // Egresos Negocio efectivo + Pago Egresos Negocio
+                const egr2ef     = egrNegEf + pagoEgrNegEf;
+                const bal2ef     = ing2ef - egr2ef;
+                const ingTotEf   = ing1ef + ing2ef;
+                const egrTotEf   = egr1ef + egr2ef;
 
-            } else { // credito
-                html += enSec2col(
-                    'INGRESOS',
-                    enCard('Ventas Crédito',           ventasCr,    '#10b981', 'TABLA VENTAS · Suma PAGO CRÉDITO · excl. CASA ERAZO y ERROR VENTA') +
-                    enCard('Ganancias Crédito',         ganCrEN,     '#fbbf24', 'Ganancias Totales − Ganancias Efectivo') +
-                    enCard('Pago Ventas',               pagoVentCr,  '#34d399', 'TABLA PAGO VENTAS · Suma MONTO · por FECHA ORIGINAL') +
-                    enCard('Ingresos Negocio Cr.',      ingNegCr,    '#a3e635', 'TABLA INGRESOS NEGOCIO · Suma PAGO CRÉDITO') +
-                    enCard('Pago Ingresos Negocio',     pagoIngNegCr,'#86efac', 'TABLA PAGO INGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL'),
-                    'EGRESOS',
-                    enCard('Compras Crédito',           comprasCr,   '#ef4444', 'TABLA COMPRAS · Suma PAGO CRÉDITO') +
-                    enCard('Pago Compras',              pagoCompCr,  '#f87171', 'TABLA PAGO COMPRAS · Suma MONTO · por FECHA ORIGINAL') +
-                    enCard('Egresos Negocio Cr.',       egrNegCr,    '#fb923c', 'TABLA EGRESOS NEGOCIO · Suma PAGO CRÉDITO') +
-                    enCard('Pago Egresos Negocio',      pagoEgrNegCr,'#fca5a5', 'TABLA PAGO EGRESOS NEGOCIO · Suma MONTO · por FECHA ORIGINAL')
+                html += tablaSpread(
+                    fila('Ventas a 3eros (efectivo)',          v3ef,       0, 0, '#86efac') +
+                    fila('Ventas a Casa Erazo',                casaErazo,  0, 0, '#67e8f9') +
+                    fila('Error Venta',                        errorVenta, 0, 0, '#fde68a') +
+                    fila('Compras (efectivo)',                  0, egr1ef,     0, '#fca5a5') +
+                    filaBal('', ing1ef, 'COMPRAS EFECTIVO', egr1ef, bal1ef) +
+                    fila('Ingresos Negocio (ef.)',              ing2ef,     0,  0, '#86efac') +
+                    fila('Egresos Negocio (ef.)',               0, egr2ef,     0, '#fca5a5') +
+                    filaBal('INGRESOS NEGOCIO', ing2ef, 'EGRESOS NEGOCIO', egr2ef, bal2ef) +
+                    filaTot('INGRESOS TOTALES / EGRESOS TOTALES', ingTotEf, egrTotEf, ingTotEf - egrTotEf)
                 );
-                html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-                    ${enBalance('Balance Negocio Crédito',    balNegCr,  '(VentasCr−GanCr−PagoVent) − (ComprasCr−PagoComp)')}
-                    ${enBalance('Balance Complementario Cr.', balCompCr, '(IngNegCr−PagoIngNeg) − (EgrNegCr−PagoEgrNeg)')}
-                    ${enBalance('Balance Crédito',            balCrEN,   'Balance Negocio Cr. + Balance Complementario Cr.')}
-                </div>`;
+
+            } else {
+                // Crédito: deuda pendiente = total crédito MENOS lo que ya se cobró/pagó vía Pago Ventas/Compras
+                const ing1cr   = ventasCr - ganCrEN - pagoVentCr;
+                const egr1cr   = comprasCr - pagoCompCr;
+                const bal1cr   = ing1cr - egr1cr;
+                // Neg crédito: deuda pendiente = crédito MENOS pagos ya aplicados
+                const ing2cr   = ingNegCr - pagoIngNegCr;
+                const egr2cr   = egrNegCr - pagoEgrNegCr;
+                const bal2cr   = ing2cr - egr2cr;
+                const ingTotCr = ing1cr + ing2cr;
+                const egrTotCr = egr1cr + egr2cr;
+
+                html += tablaSpread(
+                    fila('Ventas a 3eros (cr\u00e9dito)',          ing1cr,     0, 0, '#86efac') +
+                    fila('Compras (cr\u00e9dito)',                  0, egr1cr,     0, '#fca5a5') +
+                    filaBal('', ing1cr, 'COMPRAS CR\u00c9DITO', egr1cr, bal1cr) +
+                    fila('Ingresos Negocio (cr.)',              ing2cr,     0,  0, '#86efac') +
+                    fila('Egresos Negocio (cr.)',               0, egr2cr,     0, '#fca5a5') +
+                    filaBal('INGRESOS NEGOCIO', ing2cr, 'EGRESOS NEGOCIO', egr2cr, bal2cr) +
+                    filaTot('INGRESOS TOTALES / EGRESOS TOTALES', ingTotCr, egrTotCr, ingTotCr - egrTotCr)
+                );
             }
 
             // ── LISTADOS INGRESOS / EGRESOS NEGOCIO ──────────────────────────────
