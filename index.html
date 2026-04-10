@@ -16948,7 +16948,7 @@ console.log("FILTRADAS:", filtradas.length);
                 return s + Number(r.pagoTotal||r.total||0);
             }, 0);
 
-            const egrConsumoNeg   = casaErazoTotal;
+            const egrConsumoNeg   = _epFiltro === 'credito' ? 0 : casaErazoTotal;
             const egrComidaFam    = sumConceptoEP(_sheetEgresos, 'COMIDA FAMILIAR', campoEP);
             const egrPropiosExtra = sumSCEP(_sheetEgresos, 'EGRESOS PROPIOS EXTRA', campoEP);
             const egrDiezmo       = (_sheetEgresos||[]).reduce((s,r) => {
