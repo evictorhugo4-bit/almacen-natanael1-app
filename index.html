@@ -16945,7 +16945,7 @@ console.log("FILTRADAS:", filtradas.length);
                 if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
                 const cl = (r.cliente||r.proveedor||'').toUpperCase().trim();
                 if(cl !== 'SILVIA' && cl !== 'LEO' && cl !== 'HUGO') return s;
-                return s + Number(r.pagoTotal||r.total||0);
+                return s + Number(r[campoEP]||0);
             }, 0);
 
             const egrConsumoNeg   = _epFiltro === 'credito' ? 0 : casaErazoTotal;
