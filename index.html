@@ -7083,12 +7083,27 @@ console.log("CLIENTE COMPLETO:", c);
                     totalCredito += Math.max(0, credito - (_pagosPorVenta.get(idVenta) || 0));
                 });
 
-                // Préstamos
-                const prest = (idCl ? _prestPorIdCl.get(idCl) : null) || (nomCl ? _prestPorNom.get(nomCl) : null);
-                if (!prest || prest.monto <= 0) return totalCredito;
-                let pagadoPrestamos = 0;
-                prest.ids.forEach(idS => { pagadoPrestamos += (_pagosPorIng.get(idS) || 0); });
-                return totalCredito + Math.max(0, prest.monto - pagadoPrestamos);
+                // Préstamos — misma lógica que el modal: match por idCliente OR nombre (no exclusivo)
+                const _ingNegVisto2 = new Set();
+                const ingCl = _ingTodos.filter(e => {
+                    const eIdCl = String(e.idCliente || '').trim();
+                    const eNom  = String(e.cliente   || '').trim().toUpperCase();
+                    const match = (eIdCl && idCl && eIdCl === idCl) || (eNom && nomCl && eNom === nomCl);
+                    if (!match) return false;
+                    const key = String(e.idSheet || (e.fechaISO + '|' + e.credito));
+                    if (_ingNegVisto2.has(key)) return false;
+                    _ingNegVisto2.add(key); return true;
+                });
+                if (!ingCl.length) return totalCredito;
+                const montoPrest = ingCl.reduce((s,e) => s + (parseFloat(e.credito)||0), 0);
+                if (montoPrest <= 0) return totalCredito;
+                const ingIds2 = new Set(ingCl.map(e => String(e.idSheet||'').trim()).filter(Boolean));
+                const pagadoPrest = (_sheetPagoIngNeg||[]).filter(p => {
+                    const pIdCl = String(p.IDCLIENTE || p.idCliente || '').trim();
+                    if (pIdCl) return pIdCl === idCl;
+                    return ingIds2.has(String(p.IDINGRESOSNEGOCIO||'').trim());
+                }).reduce((s,p) => s + (parseFloat(p.MONTO)||0), 0);
+                return totalCredito + Math.max(0, montoPrest - pagadoPrest);
             };
 
             // ── Calcular deuda una sola vez por cliente ──
