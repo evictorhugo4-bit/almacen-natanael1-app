@@ -3966,7 +3966,7 @@ SCAN
                             <div id="txtCambio" class="text-2xl font-black text-yellow-400 font-mono text-right">$0</div>
                         </div>
 
-                        <div id="desgloseRealtime" class="space-y-1 max-h-[160px] overflow-y-auto custom-scrollbar"></div>
+                        <div id="desgloseRealtime" class="space-y-1 max-h-[160px] overflow-y-auto custom-scrollbar" style="display:none;"></div>
                     </div>
 
                     <button onclick="confirmarVenta()" class="w-full py-3 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
@@ -10276,26 +10276,6 @@ function abrirModalPrecios(itemId){
     costoInput.value = item.costo || 0;
     ventaInput.value = item.venta || 0;
 
-    // Inicializar precio sugerido con flete al abrir el modal
-    (function() {
-        const prod = _sheetProductos.find(p => String(p.id) === String(item.id));
-        if (!prod) return;
-        const margen = parseFloat(prod.margenBruto) || 0;
-        const costoBase = parseFloat(item.costo) || 0;
-        if (!costoBase || !margen) return;
-        const cant = parseFloat(item.cantidad) || 1;
-        const fleteUnit = item._fletePorItem > 0 ? (item._fletePorItem / cant) : 0;
-        const costoTotal = costoBase + fleteUnit;
-        const sugerido = costoTotal / (1 - (margen / 100));
-        const sugeridoInput = document.getElementById('precioSugerido');
-        if (sugeridoInput) {
-            sugeridoInput.value = sugerido.toFixed(2);
-            sugeridoInput.title = fleteUnit > 0
-                ? 'Costo $' + costoBase + ' + flete $' + fleteUnit.toFixed(2) + ' = $' + costoTotal.toFixed(2) + ' | Margen ' + margen + '%'
-                : 'Costo $' + costoBase + ' | Margen ' + margen + '%';
-        }
-    })();
-
 
 const vencInput = document.getElementById('editVencimientoInput');
 
@@ -10324,18 +10304,12 @@ const margen = parseFloat(prod.margenBruto) || 0;
 
 if(costo && margen){
 
-const cant = parseFloat(item.cantidad) || 1;
-const fleteUnit = item._fletePorItem > 0 ? (item._fletePorItem / cant) : 0;
-const costoTotal = costo + fleteUnit;
-const sugerido = costoTotal / (1 - (margen / 100));
+const sugerido = costo * (1 + ((margen/100) / (1 - (margen/100))));
 
 const sugeridoInput = document.getElementById("precioSugerido");
 
 if(sugeridoInput){
 sugeridoInput.value = sugerido.toFixed(2);
-sugeridoInput.title = fleteUnit > 0
-    ? 'Costo $' + costo + ' + flete $' + fleteUnit.toFixed(2) + ' = $' + costoTotal.toFixed(2) + ' | Margen ' + margen + '%'
-    : 'Costo $' + costo + ' | Margen ' + margen + '%';
 }
 
 }
