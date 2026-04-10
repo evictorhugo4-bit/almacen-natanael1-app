@@ -13495,45 +13495,48 @@ function calcularCajaEsperada() {
                 const raw = localStorage.getItem(_CACHE_KEY);
                 if (!raw) return;
                 const c = JSON.parse(raw);
-                if (!c || !Array.isArray(c.inventario)) return;
-                const vsId = new Set(), vsNm = new Set();
-                const limpio = c.inventario.filter(p => {
-                    const ki = String(p.id||'').trim(), kn = String(p.nombre||'').trim().toUpperCase();
-                    if (ki && vsId.has(ki)) return false;
-                    if (kn && vsNm.has(kn)) return false;
-                    if (ki) vsId.add(ki); if (kn) vsNm.add(kn);
-                    return true;
-                });
-                if (limpio.length !== c.inventario.length) {
-                    console.log('[Cache] Saneado: ' + c.inventario.length + ' → ' + limpio.length + ' productos');
-                    c.inventario = limpio;
-                    localStorage.setItem(_CACHE_KEY, JSON.stringify(c));
+                if (!c) return;
+                let dirty = false;
+
+                // Limpiar inventario
+                if (Array.isArray(c.inventario)) {
+                    const vsId = new Set(), vsNm = new Set();
+                    const limpio = c.inventario.filter(p => {
+                        const ki = String(p.id||'').trim(), kn = String(p.nombre||'').trim().toUpperCase();
+                        if (ki && vsId.has(ki)) return false;
+                        if (kn && vsNm.has(kn)) return false;
+                        if (ki) vsId.add(ki); if (kn) vsNm.add(kn);
+                        return true;
+                    });
+                    if (limpio.length !== c.inventario.length) {
+                        console.log('[Cache] inventario saneado: ' + c.inventario.length + ' -> ' + limpio.length);
+                        c.inventario = limpio; dirty = true;
+                    }
                 }
+
+                // Limpiar ingresosNegocio y egresosNegocio
+                ['ingresosNegocio','egresosNegocio'].forEach(function(k) {
+                    if (!Array.isArray(c[k])) return;
+                    const vistos = new Set();
+                    const limpio = [];
+                    // Recorrer de atrás hacia adelante para quedarse con el más reciente
+                    for (let i = c[k].length - 1; i >= 0; i--) {
+                        const r = c[k][i];
+                        const uid = (r.idSheet && r.idSheet !== '') ? r.idSheet : String(r.id || '');
+                        if (uid && vistos.has(uid)) continue;
+                        if (uid) vistos.add(uid);
+                        limpio.unshift(r);
+                    }
+                    if (limpio.length !== c[k].length) {
+                        console.log('[Cache] ' + k + ' saneado: ' + c[k].length + ' -> ' + limpio.length);
+                        c[k] = limpio; dirty = true;
+                    }
+                });
+
+                if (dirty) localStorage.setItem(_CACHE_KEY, JSON.stringify(c));
             } catch(e) {}
         }
         _limpiarDuplicadosCache();
-
-        // Limpiar duplicados en ingresosNegocio / egresosNegocio del cache
-        (function _limpiarDuplicadosIngNeg() {
-            try {
-                var claves = ["natanael_ingneg_v1","natanael_egrneg_v1"];
-                claves.forEach(function(k) {
-                    var raw = localStorage.getItem(k); if (!raw) return;
-                    var arr = JSON.parse(raw); if (!Array.isArray(arr)) return;
-                    var vistos = {}; var limpio = [];
-                    for (var i = arr.length-1; i >= 0; i--) {
-                        var uid = arr[i].idSheet || arr[i].id || "";
-                        if (uid && vistos[uid]) continue;
-                        if (uid) vistos[uid] = true;
-                        limpio.unshift(arr[i]);
-                    }
-                    if (limpio.length !== arr.length) {
-                        console.log("[Cache] " + k + " saneado: " + arr.length + " -> " + limpio.length);
-                        localStorage.setItem(k, JSON.stringify(limpio));
-                    }
-                });
-            } catch(e) {}
-        })();
 
         function _cargarCache() {
             try {
@@ -15564,10 +15567,20 @@ if (indicator) indicator.classList.remove('hidden');
         // ── syncIngEgrNeg global (usada en sincronizarSheets y _procesarDatosSecundarios) ──
         window.syncIngEgrNeg = function syncIngEgrNeg(rows, db, saveFn, renderTipo, supercatsRef, catsRef) {
             if (!Array.isArray(rows) || !rows.length) return;
-            // Limpiar duplicados del array local antes de sync
+
+            // Construir set de todos los idRow que vienen del sheet
+            const sheetIds = new Set();
+            rows.forEach(row => {
+                const idRow = String(row['IDINGRESOSNEGOCIO']||row['IDEGRESOSNEGOCIO']||row['NUMERO DE INGRESOS NEGOCIO']||row['NUMERO DE EGRESOS']||row['ID_INGRESOS']||row['Id_Gastos']||'').trim();
+                if (idRow) sheetIds.add(idRow);
+            });
+
+            // Limpiar duplicados del array local antes de sync.
+            // uid canonico: idSheet si existe, o id si coincide con un registro del sheet, o id generico
             const _vistos = new Set();
             for (let i = db.length - 1; i >= 0; i--) {
-                const uid = db[i].idSheet || db[i].id || '';
+                const r = db[i];
+                const uid = r.idSheet || (sheetIds.has(String(r.id)) ? String(r.id) : r.id) || '';
                 if (uid && _vistos.has(uid)) { db.splice(i, 1); continue; }
                 if (uid) _vistos.add(uid);
             }
