@@ -15698,6 +15698,11 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.pagoEgresos))          _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoIngresosNegocio))  _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim()}));
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim()})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; }
+                // Ingresos Negocio / Egresos Negocio (fix: faltaban en _procesarDatosSecundarios)
+                if (typeof window.syncIngEgrNeg === 'function') {
+                    window.syncIngEgrNeg(data.ingresosNegocio, _sheetIngresosNegocio, saveIngresosNeg, 'ingresosNegocio', _supercatsIngNegSheet, _catsIngNegSheet);
+                    window.syncIngEgrNeg(data.egresosNegocio,  _sheetEgresosNegocio,  saveEgresosNeg,  'egresosNegocio',  _supercatsEgrNegSheet, _catsEgrNegSheet);
+                }
                 // Proveedores
                 syncProveedoresDesdeSheet(data.proveedoresNegocio, 'negocio');
                 syncProveedoresDesdeSheet(data.proveedoresGastos, 'gastos');
