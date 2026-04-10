@@ -3448,9 +3448,9 @@ CONFIRMAR PAGO
                 <button onclick="cerrarNuevaCompra()" class="text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x-circle" aria-hidden="true" class="lucide lucide-x-circle w-7 h-7"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></button>
             </div>
 
-            <div class="flex-1 overflow-y-auto md:overflow-hidden md:flex md:flex-row custom-scrollbar">
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                 <!-- Izquierda: proveedor + productos -->
-                <div class="p-5 md:flex-1 md:overflow-y-auto md:border-r border-slate-700 space-y-4 custom-scrollbar">
+                <div class="flex-1 p-5 overflow-y-auto custom-scrollbar border-r border-slate-700 space-y-4">
                     <div class="space-y-1 relative">
                         <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Proveedor</label>
                         <input type="text" id="inputCompraProveedor" placeholder="Buscar proveedor..." autocomplete="off"
@@ -3483,9 +3483,9 @@ CONFIRMAR PAGO
                 </div>
 
                 <!-- Derecha: totales y pago -->
-                <div class="w-full md:w-[260px] bg-black/20 md:flex md:flex-col md:shrink-0">
+                <div class="w-full md:w-[260px] bg-black/20 flex flex-col shrink-0" style="max-height:100%;">
                     <!-- Contenido scrolleable -->
-                    <div class="md:flex-1 md:overflow-y-auto custom-scrollbar p-4 space-y-3">
+                    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
                         <div class="bg-slate-900/80 p-3 rounded-xl border border-amber-500/30">
                             <label class="text-[9px] font-black text-amber-400 uppercase">🚚 Flete / Envío</label>
                             <input type="number" id="inputCompraFlete" oninput="calcularCompra()" placeholder="0" min="0"
@@ -16865,6 +16865,48 @@ console.log("FILTRADAS:", filtradas.length);
             const balCrGen  = balCrProp + balCrAjen;
 
             // ══════════════════════════════════════════════════════════════
+            // SUPERCATEGORÍAS PERSONALES
+            // ══════════════════════════════════════════════════════════════
+            const campoEP = _epFiltro === 'efectivo' ? 'efectivo' : _epFiltro === 'credito' ? 'credito' : 'total';
+            const ganFiltroEP = _epFiltro === 'efectivo' ? ganEf : _epFiltro === 'credito' ? ganCr : ganTotal;
+
+            const sumSCEP = (arr, sc, campo) => (arr||[]).reduce((s,r) => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                if(normSC(r.proveedor||r.supercategoria||'') !== normSC(sc)) return s;
+                return s + Number(r[campo]||0);
+            }, 0);
+
+            const sumConceptoEP = (arr, concepto, campo) => (arr||[]).reduce((s,r) => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                if((r.concepto||'').toUpperCase().trim() !== concepto.toUpperCase().trim()) return s;
+                return s + Number(r[campo]||0);
+            }, 0);
+
+            const ingPropiosExtra = sumSCEP(_sheetIngresos, 'INGRESOS PROPIOS EXTRA',                  campoEP);
+            const ingAjenosExtra  = sumSCEP(_sheetIngresos, 'INGRESOS AJENOS EXTRA',                   campoEP);
+            const ingNatanael     = sumSCEP(_sheetIngresos, 'INGRESOS PARA NATANAEL ESCUELA / IGLESIA', campoEP);
+
+            const egrConsumoNeg   = casaErazoTotal;
+            const egrComidaFam    = sumConceptoEP(_sheetEgresos, 'COMIDA FAMILIAR', campoEP);
+            const egrPropiosExtra = sumSCEP(_sheetEgresos, 'EGRESOS PROPIOS EXTRA', campoEP);
+            const egrDiezmo       = (_sheetEgresos||[]).reduce((s,r) => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                const c = (r.concepto||r.proveedor||'').toUpperCase().trim();
+                if(!c.includes('DIEZMO')) return s;
+                return s + Number(r[campoEP]||0);
+            }, 0);
+            const egrAjenosExtra  = sumSCEP(_sheetEgresos, 'EGRESOS AJENOS EXTRA',  campoEP);
+            const egrNatanael     = sumSCEP(_sheetEgresos, 'INGRESOS PARA NATANAEL ESCUELA / IGLESIA', campoEP);
+
+            const epBal1   = ganFiltroEP - (egrConsumoNeg + egrComidaFam);
+            const epBal2   = ingPropiosExtra - (egrPropiosExtra + egrDiezmo);
+            const epBal3   = ingAjenosExtra - egrAjenosExtra;
+            const epBal4   = ingNatanael - egrNatanael;
+            const epIngTot = ganFiltroEP + ingPropiosExtra + ingAjenosExtra + ingNatanael;
+            const epEgrTot = egrConsumoNeg + egrComidaFam + egrPropiosExtra + egrDiezmo + egrAjenosExtra + egrNatanael;
+            const epBalTot = epIngTot - epEgrTot;
+
+            // ══════════════════════════════════════════════════════════════
             // RENDER
             // ══════════════════════════════════════════════════════════════
             const card = (nombre, valor, colorIzq, fuente) => `
@@ -17022,70 +17064,32 @@ console.log("FILTRADAS:", filtradas.length);
             // ── ARMAR CONTENIDO SEGÚN FILTRO ──
             let html = '';
 
-            if (_epFiltro === 'total') {
-                html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 FILTRO: PERSONAL / TOTAL</span></div>`;
-                html += seccion2col(
-                    'INGRESOS',
-                    card('INGRESOS PROPIOS TOTALES',  ingPropiosTot, '#10b981', 'TABLA INGRESOS · SC=INGRESOS PROPIOS · Sumar PAGO TOTAL') +
-                    card('INGRESOS AJENOS TOTALES',   ingAjenosTot,  '#06b6d4', 'TABLA INGRESOS · SC=INGRESOS AJENOS · Sumar PAGO TOTAL') +
-                    card('GANANCIAS TOTALES',          ganTotal,      '#f59e0b', 'Pago Total − Dinero Recuperado (excluye CASA ERAZO y ERROR VENTA)'),
-                    'EGRESOS',
-                    card('EGRESOS PROPIOS TOTALES',  egrPropiosTot, '#ef4444', 'TABLA EGRESOS · SC=EGRESOS PROPIOS · Sumar PAGO TOTAL') +
-                    card('EGRESOS AJENOS TOTALES',   egrAjenosTot,  '#a855f7', 'TABLA EGRESOS · SC=EGRESOS AJENOS · Sumar PAGO TOTAL') +
-                    card('CONSUMO DEL NEGOCIO',       consumoNegocio,'#f97316', 'TABLA VENTAS · Sumar DINERO RECUPERADO · Cliente = CASA ERAZO')
-                );
-                html += balances3(
-                    balTotProp, balTotAjen, balTotGen,
-                    'Ing.Propios Totales − Egr.Propios Totales',
-                    'Ing.Ajenos Totales − Egr.Ajenos Totales',
-                    'Balance Total Propio + Balance Total Ajeno'
-                );
+            const EP_C_ING='#4ade80',EP_C_EGR='#ef4444',EP_C_BAL='#f97316',EP_C_HEAD='#0d2b0d',EP_C_HEGR='#2b0d0d',EP_C_HBAL='#2b1a0d';
+            const epThCell=(txt,bg,color,extra)=>'<th style="padding:10px 14px;background:'+bg+';color:'+color+';font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;text-align:center;'+(extra||'')+'">'+txt+'</th>';
+            const epFila=(label,ing,egr,lc)=>{lc=lc||'#94a3b8';return'<tr style="border-bottom:1px solid #1e293b;"><td style="padding:9px 14px;font-size:11px;font-weight:900;color:'+lc+';text-transform:uppercase;background:#0f172a;">'+label+'</td><td style="padding:9px 14px;font-size:13px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#0a1a0e;">'+(ing>0?'$'+Utils.fmt(ing):'<span style="color:#1e3a24">—</span>')+'</td><td style="padding:9px 14px;font-size:13px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#1a0a0a;">'+(egr>0?'$'+Utils.fmt(egr):'<span style="color:#3a1e1e">—</span>')+'</td><td style="padding:9px 14px;text-align:right;background:#1a120a;"><span style="color:#2a1e0a">—</span></td></tr>';};
+            const epFilaBal=(il,iv,el,ev,bal)=>{const bc=bal>=0?'#4ade80':'#f87171',bs=bal>=0?'&#9650;':'&#9660;';return'<tr style="border-top:2px solid #334155;border-bottom:2px solid #334155;"><td style="padding:10px 14px;font-size:10px;font-weight:900;text-transform:uppercase;background:#111827;">'+(il?'<span style="color:#4ade80;">'+il+'</span>':'')+(il&&el?' &nbsp;/&nbsp; ':'')+(el?'<span style="color:#f87171;">'+el+'</span>':'')+'</td><td style="padding:10px 14px;font-size:14px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#111827;">'+(iv>0?'$'+Utils.fmt(iv):'')+'</td><td style="padding:10px 14px;font-size:14px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#111827;">'+(ev>0?'$'+Utils.fmt(ev):'')+'</td><td style="padding:10px 14px;font-size:16px;font-weight:900;color:'+bc+';font-family:monospace;text-align:right;background:#1f1508;">'+bs+' $'+Utils.fmt(Math.abs(bal))+'</td></tr>';};
+            const epFilaTot=(label,ing,egr,bal)=>{const bc=bal>=0?'#4ade80':'#f87171',bs=bal>=0?'&#9650;':'&#9660;';return'<tr style="border-top:2px solid #334155;"><td style="padding:11px 14px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;background:#111827;">'+label+'</td><td style="padding:11px 14px;font-size:15px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#111827;">$'+Utils.fmt(ing)+'</td><td style="padding:11px 14px;font-size:15px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#111827;">$'+Utils.fmt(egr)+'</td><td style="padding:11px 14px;font-size:15px;font-weight:900;color:'+bc+';font-family:monospace;text-align:right;background:#111827;">'+bs+' $'+Utils.fmt(Math.abs(bal))+'</td></tr>';};
+            const epTabla=filas=>'<div style="overflow-x:auto;border-radius:16px;border:1.5px solid #1e293b;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;min-width:340px;"><thead><tr>'+epThCell('CONCEPTO','#0f172a','#64748b','text-align:left;min-width:160px;')+epThCell('INGRESOS',EP_C_HEAD,EP_C_ING,'')+epThCell('EGRESOS',EP_C_HEGR,EP_C_EGR,'')+epThCell('BALANCE',EP_C_HBAL,EP_C_BAL,'')+'</tr></thead><tbody>'+filas+'</tbody></table></div>';
 
-            } else if (_epFiltro === 'efectivo') {
-                html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 FILTRO: PERSONAL / EFECTIVO</span></div>`;
-                html += seccion2col(
-                    'INGRESOS',
-                    card('INGRESOS PROPIOS EFECTIVO',       ingPropiosEf,  '#10b981', 'TABLA INGRESOS · SC=INGRESOS PROPIOS · Sumar PAGO EFECTIVO') +
-                    card('PAGO INGRESOS PROPIOS EFECTIVO',  pagoIngPropEf, '#34d399', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS PROPIOS') +
-                    card('INGRESOS AJENOS EFECTIVO',        ingAjenosEf,   '#06b6d4', 'TABLA INGRESOS · SC=INGRESOS AJENOS · Sumar PAGO EFECTIVO') +
-                    card('PAGO INGRESOS AJENOS EFECTIVO',   pagoIngAjenEf, '#67e8f9', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS AJENOS') +
-                    card('GANANCIAS EFECTIVO PROPIO',        ganEfectivo,   '#f59e0b', 'Pago Efectivo Ventas + MONTO Pago Ventas − cuando supera Dinero Recuperado'),
-                    'EGRESOS',
-                    card('EGRESOS PROPIOS EFECTIVO',        egrPropiosEf,  '#ef4444', 'TABLA EGRESOS · SC=EGRESOS PROPIOS · Sumar PAGO EFECTIVO') +
-                    card('PAGO EGRESOS PROPIOS EFECTIVO',   pagoEgrPropEf, '#f87171', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS PROPIOS') +
-                    card('EGRESOS AJENOS EFECTIVO',         egrAjenosEf,   '#a855f7', 'TABLA EGRESOS · SC=EGRESOS AJENOS · Sumar PAGO EFECTIVO') +
-                    card('PAGO EGRESOS AJENOS EFECTIVO',    pagoEgrAjenEf, '#c084fc', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS AJENOS') +
-                    card('CONSUMO DEL NEGOCIO PROPIO',       consumoNegocio,'#f97316', 'TABLA VENTAS · Sumar DINERO RECUPERADO · Cliente = CASA ERAZO')
-                );
-                html += balances3(
-                    balEfProp, balEfAjen, balEfGen,
-                    '(IngPropEf + PagoIngPropEf + GanEf) − (EgrPropEf + PagoEgrPropEf + Consumo)',
-                    '(IngAjenEf + PagoIngAjenEf) − (EgrAjenEf + PagoEgrAjenEf)',
-                    'Balance Efectivo Propio + Balance Efectivo Ajeno'
-                );
-
-            } else { // credito
-                html += `<div style="margin-bottom:6px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 FILTRO: PERSONAL / CRÉDITO</span></div>`;
-                html += seccion2col(
-                    'INGRESOS',
-                    card('INGRESOS PROPIOS CRÉDITO',       ingPropiosCr,  '#10b981', 'TABLA INGRESOS · SC=INGRESOS PROPIOS · Sumar PAGO CRÉDITO') +
-                    card('PAGO INGRESOS PROPIOS CRÉDITO',  pagoIngPropCr, '#34d399', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS PROPIOS') +
-                    card('INGRESOS AJENOS CRÉDITO',        ingAjenosCr,   '#06b6d4', 'TABLA INGRESOS · SC=INGRESOS AJENOS · Sumar PAGO CRÉDITO') +
-                    card('PAGO INGRESOS AJENOS CRÉDITO',   pagoIngAjenCr, '#67e8f9', 'TABLA PAGO INGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=INGRESOS AJENOS') +
-                    card('GANANCIAS CRÉDITO PROPIOS',       ganCredito,    '#f59e0b', 'Ganancias Totales − Ganancias Efectivo'),
-                    'EGRESOS',
-                    card('EGRESOS PROPIOS CRÉDITO',        egrPropiosCr,  '#ef4444', 'TABLA EGRESOS · SC=EGRESOS PROPIOS · Sumar PAGO CRÉDITO') +
-                    card('PAGO EGRESOS PROPIOS CRÉDITO',   pagoEgrPropCr, '#f87171', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS PROPIOS') +
-                    card('EGRESOS AJENOS CRÉDITO',         egrAjenosCr,   '#a855f7', 'TABLA EGRESOS · SC=EGRESOS AJENOS · Sumar PAGO CRÉDITO') +
-                    card('PAGO EGRESOS AJENOS CRÉDITO',    pagoEgrAjenCr, '#c084fc', 'TABLA PAGO EGRESOS · Sumar MONTO · FECHA ORIGINAL en rango · SC=EGRESOS AJENOS')
-                );
-                html += balances3(
-                    balCrProp, balCrAjen, balCrGen,
-                    '(IngPropCr + GanCr − PagoIngPropCr) − (EgrPropCr − PagoEgrPropCr)',
-                    '(IngAjenCr − PagoIngAjenCr) − (EgrAjenCr − PagoEgrAjenCr)',
-                    'Balance Crédito Propio + Balance Crédito Ajeno'
-                );
-            }
+            const filtroLabelEP=_epFiltro==='efectivo'?'EFECTIVO':_epFiltro==='credito'?'CRÉDITO':'TOTAL';
+            html+='<div style="margin-bottom:10px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">📊 ESTADO PERSONAL / '+filtroLabelEP+'</span></div>';
+            html+=epTabla(
+                epFila('GANANCIAS TOTALES',ganFiltroEP,0,'#fbbf24')+
+                epFila('CONSUMO DEL NEGOCIO',0,egrConsumoNeg,'#fb923c')+
+                epFila('COMIDA FAMILIAR',0,egrComidaFam,'#f87171')+
+                epFilaBal('GANANCIAS TOTALES',ganFiltroEP,'CONSUMO + COMIDA',egrConsumoNeg+egrComidaFam,epBal1)+
+                epFila('INGRESOS PROPIOS EXTRA',ingPropiosExtra,0,'#86efac')+
+                epFila('EGRESOS PROPIOS EXTRA',0,egrPropiosExtra,'#fca5a5')+
+                epFila('DIEZMO MARIA JESUS',0,egrDiezmo,'#fda4af')+
+                epFilaBal('INGRESOS PROPIOS EXTRA',ingPropiosExtra,'EGRESOS PROPIOS + DIEZMO',egrPropiosExtra+egrDiezmo,epBal2)+
+                epFila('INGRESOS AJENOS EXTRA',ingAjenosExtra,0,'#67e8f9')+
+                epFila('EGRESOS AJENOS EXTRA',0,egrAjenosExtra,'#fca5a5')+
+                epFilaBal('INGRESOS AJENOS EXTRA',ingAjenosExtra,'EGRESOS AJENOS EXTRA',egrAjenosExtra,epBal3)+
+                epFila('INGRESOS PARA NATANAEL ESCUELA / IGLESIA',ingNatanael,0,'#c4b5fd')+
+                epFila('INGRESOS PARA NATANAEL ESCUELA / IGLESIA',0,egrNatanael,'#fca5a5')+
+                epFilaBal('NATANAEL ESCUELA / IGLESIA',ingNatanael,'NATANAEL ESCUELA / IGLESIA',egrNatanael,epBal4)+
+                epFilaTot('INGRESOS TOTALES / EGRESOS TOTALES',epIngTot,epEgrTot,epBalTot)
+            );
 
             html += tablaIng + tablaEgr;
 
