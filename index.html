@@ -7086,7 +7086,7 @@ console.log("CLIENTE COMPLETO:", c);
                 // Préstamos
                 const prest = (idCl ? _prestPorIdCl.get(idCl) : null) || (nomCl ? _prestPorNom.get(nomCl) : null);
                 if (!prest || prest.monto <= 0) return totalCredito;
-                let pagadoPrestamos = _pagosSinId;
+                let pagadoPrestamos = 0;
                 prest.ids.forEach(idS => { pagadoPrestamos += (_pagosPorIng.get(idS) || 0); });
                 return totalCredito + Math.max(0, prest.monto - pagadoPrestamos);
             };
