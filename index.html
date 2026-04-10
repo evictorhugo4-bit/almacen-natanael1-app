@@ -16884,7 +16884,12 @@ console.log("FILTRADAS:", filtradas.length);
 
             const ingPropiosExtra = sumSCEP(_sheetIngresos, 'INGRESOS PROPIOS EXTRA',                  campoEP);
             const ingAjenosExtra  = sumSCEP(_sheetIngresos, 'INGRESOS AJENOS EXTRA',                   campoEP);
-            const ingNatanael     = sumSCEP(_sheetIngresos, 'INGRESOS PARA NATANAEL ESCUELA / IGLESIA', campoEP);
+            const ingNatanael     = (_sheetIngresosNegocio||[]).reduce((s,r) => {
+                if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                const cl = (r.cliente||r.proveedor||'').toUpperCase().trim();
+                if(cl !== 'SILVIA' && cl !== 'LEO') return s;
+                return s + Number(r.pagoTotal||r.total||0);
+            }, 0);
 
             const egrConsumoNeg   = casaErazoTotal;
             const egrComidaFam    = sumConceptoEP(_sheetEgresos, 'COMIDA FAMILIAR', campoEP);
@@ -16896,7 +16901,7 @@ console.log("FILTRADAS:", filtradas.length);
                 return s + Number(r[campoEP]||0);
             }, 0);
             const egrAjenosExtra  = sumSCEP(_sheetEgresos, 'EGRESOS AJENOS EXTRA',  campoEP);
-            const egrNatanael     = sumSCEP(_sheetEgresos, 'INGRESOS PARA NATANAEL ESCUELA / IGLESIA', campoEP);
+            const egrNatanael     = sumSCEP(_sheetEgresos, 'EGRESOS PARA NATANAEL ESCUELA/IGLESIA', campoEP);
 
             const epBal1   = ganFiltroEP - (egrConsumoNeg + egrComidaFam);
             const epBal2   = ingPropiosExtra - (egrPropiosExtra + egrDiezmo);
@@ -17085,8 +17090,8 @@ console.log("FILTRADAS:", filtradas.length);
                 epFila('INGRESOS AJENOS EXTRA',ingAjenosExtra,0,'#67e8f9')+
                 epFila('EGRESOS AJENOS EXTRA',0,egrAjenosExtra,'#fca5a5')+
                 epFilaBal('INGRESOS AJENOS EXTRA',ingAjenosExtra,'EGRESOS AJENOS EXTRA',egrAjenosExtra,epBal3)+
-                epFila('INGRESOS PARA NATANAEL ESCUELA / IGLESIA',ingNatanael,0,'#c4b5fd')+
-                epFila('INGRESOS PARA NATANAEL ESCUELA / IGLESIA',0,egrNatanael,'#fca5a5')+
+                epFila('INGRESOS PARA NATANAEL ESCUELA/IGLESIA',ingNatanael,0,'#c4b5fd')+
+                epFila('EGRESOS PARA NATANAEL ESCUELA/IGLESIA',0,egrNatanael,'#fca5a5')+
                 epFilaBal('NATANAEL ESCUELA / IGLESIA',ingNatanael,'NATANAEL ESCUELA / IGLESIA',egrNatanael,epBal4)+
                 epFilaTot('INGRESOS TOTALES / EGRESOS TOTALES',epIngTot,epEgrTot,epBalTot)
             );
