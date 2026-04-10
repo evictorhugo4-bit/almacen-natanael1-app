@@ -10276,6 +10276,26 @@ function abrirModalPrecios(itemId){
     costoInput.value = item.costo || 0;
     ventaInput.value = item.venta || 0;
 
+    // Inicializar precio sugerido con flete al abrir el modal
+    (function() {
+        const prod = _sheetProductos.find(p => String(p.id) === String(item.id));
+        if (!prod) return;
+        const margen = parseFloat(prod.margenBruto) || 0;
+        const costoBase = parseFloat(item.costo) || 0;
+        if (!costoBase || !margen) return;
+        const cant = parseFloat(item.cantidad) || 1;
+        const fleteUnit = item._fletePorItem > 0 ? (item._fletePorItem / cant) : 0;
+        const costoTotal = costoBase + fleteUnit;
+        const sugerido = costoTotal / (1 - (margen / 100));
+        const sugeridoInput = document.getElementById('precioSugerido');
+        if (sugeridoInput) {
+            sugeridoInput.value = sugerido.toFixed(2);
+            sugeridoInput.title = fleteUnit > 0
+                ? 'Costo $' + costoBase + ' + flete $' + fleteUnit.toFixed(2) + ' = $' + costoTotal.toFixed(2) + ' | Margen ' + margen + '%'
+                : 'Costo $' + costoBase + ' | Margen ' + margen + '%';
+        }
+    })();
+
 
 const vencInput = document.getElementById('editVencimientoInput');
 
@@ -10304,12 +10324,18 @@ const margen = parseFloat(prod.margenBruto) || 0;
 
 if(costo && margen){
 
-const sugerido = costo * (1 + ((margen/100) / (1 - (margen/100))));
+const cant = parseFloat(item.cantidad) || 1;
+const fleteUnit = item._fletePorItem > 0 ? (item._fletePorItem / cant) : 0;
+const costoTotal = costo + fleteUnit;
+const sugerido = costoTotal / (1 - (margen / 100));
 
 const sugeridoInput = document.getElementById("precioSugerido");
 
 if(sugeridoInput){
 sugeridoInput.value = sugerido.toFixed(2);
+sugeridoInput.title = fleteUnit > 0
+    ? 'Costo $' + costo + ' + flete $' + fleteUnit.toFixed(2) + ' = $' + costoTotal.toFixed(2) + ' | Margen ' + margen + '%'
+    : 'Costo $' + costo + ' | Margen ' + margen + '%';
 }
 
 }
@@ -17689,6 +17715,14 @@ console.log("FILTRADAS:", filtradas.length);
             const filasPagoIN   = pagoIngNegRango.map(p=> _enCardPago(p,  '#34d399','#10b981','💰', p=>p.cliente||p.IDINGRESOSNEGOCIO||'—', p=>Number(p.MONTO||p.monto||0))).join('');
             const filasPagoEN   = pagoEgrNegRango.map(p=> _enCardPago(p,  '#f87171','#ef4444','💸', p=>p.cliente||p.idEgresoNeg||'—',       p=>Number(p.monto||p.MONTO||0))).join('');
 
+            html += _enTabla('Listado Ventas',              '#10b981', ventasRango.length,    filasVentas,  filasVentas.length>0);
+            html += _enTabla('Listado Compras',             '#ef4444', comprasRango.length,   filasCompras, filasCompras.length>0);
+            html += _enTabla('Pago Ventas',                 '#34d399', pagoVentRango.length,  filasPagoV,   filasPagoV.length>0);
+            html += _enTabla('Pago Compras',                '#f87171', pagoCompRango.length,  filasPagoC,   filasPagoC.length>0);
+            html += tablaIngNeg + tablaEgrNeg;
+            html += _enTabla('Pago Ingresos Negocio',       '#a3e635', pagoIngNegRango.length,filasPagoIN,  filasPagoIN.length>0);
+            html += _enTabla('Pago Egresos Negocio',        '#fb923c', pagoEgrNegRango.length,filasPagoEN,  filasPagoEN.length>0);
+
             // ── EFECTIVO A ENTREGAR POR PROVEEDOR ──────────────────────────────
             (function() {
                 // Recopilar todos los proveedores — ventas normales Y ventas especiales (CASA ERAZO/ERROR VENTA)
@@ -17808,15 +17842,6 @@ console.log("FILTRADAS:", filtradas.length);
                     + '<div id="' + uid2 + '" style="display:block;padding:10px;">' + tablaHTML + '</div>'
                     + '</div>';
             })();
-
-            html += _enTabla('Listado Ventas',              '#10b981', ventasRango.length,    filasVentas,  filasVentas.length>0);
-            html += _enTabla('Listado Compras',             '#ef4444', comprasRango.length,   filasCompras, filasCompras.length>0);
-            html += _enTabla('Pago Ventas',                 '#34d399', pagoVentRango.length,  filasPagoV,   filasPagoV.length>0);
-            html += _enTabla('Pago Compras',                '#f87171', pagoCompRango.length,  filasPagoC,   filasPagoC.length>0);
-            html += tablaIngNeg + tablaEgrNeg;
-            html += _enTabla('Pago Ingresos Negocio',       '#a3e635', pagoIngNegRango.length,filasPagoIN,  filasPagoIN.length>0);
-            html += _enTabla('Pago Egresos Negocio',        '#fb923c', pagoEgrNegRango.length,filasPagoEN,  filasPagoEN.length>0);
-
 
             container.innerHTML = html;
         }
