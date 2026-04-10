@@ -15576,7 +15576,8 @@ if (indicator) indicator.classList.remove('hidden');
                     credito: parseFloat(row['PAGO CREDITO']||row['Pago Credito']||row['PAGO CRÉDITO'])||0,
                     fechaPago: String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim(),
                     fromSheet: true, items:[] };
-                const idx = db.findIndex(r=>r.id===id);
+                // Buscar por id generado O por idSheet para evitar duplicar registros locales + sheet
+                const idx = db.findIndex(r => r.id === id || (idRow && (r.idSheet === idRow || r.id === idRow)));
                 if (idx>=0) { db[idx]={...db[idx],...reg}; ac++; } else { db.push(reg); ag++; }
             });
             if (ag>0||ac>0) {
