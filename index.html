@@ -16557,7 +16557,26 @@ console.log("FILTRADAS:", filtradas.length);
                 if (!catMap.has(cat)) catMap.set(cat, []);
                 catMap.get(cat).push(p);
             });
-            const catKeys = [...catMap.keys()].sort();
+            // Ordenar categorías: las que tienen diferencia más negativa primero
+            const catKeys = [...catMap.keys()].sort((catA, catB) => {
+                const diffCat = cat => {
+                    let minDiff = Infinity;
+                    catMap.get(cat).forEach(p => {
+                        const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
+                        if (stockVerif === null || isNaN(stockVerif)) return;
+                        const r = calcKardexProd(p);
+                        const d = stockVerif - r.stockEsperado;
+                        if (d < minDiff) minDiff = d;
+                    });
+                    return minDiff;
+                };
+                const dA = diffCat(catA), dB = diffCat(catB);
+                // Categorías sin ninguna diferencia verificada van al final (alfabético entre ellas)
+                if (dA === Infinity && dB === Infinity) return catA.localeCompare(catB);
+                if (dA === Infinity) return 1;
+                if (dB === Infinity) return -1;
+                return dA - dB;
+            });
 
             // Estado de acordeones persistido en objeto
             if (!window._stockProvCatOpen) window._stockProvCatOpen = {};
@@ -16566,12 +16585,26 @@ console.log("FILTRADAS:", filtradas.length);
             catKeys.forEach(cat => {
                 const prods = catMap.get(cat);
                 let catSI=0, catC=0, catV=0, catSA=0, catSE=0;
-                const prodRows = prods.map(p => {
+
+                // Pre-calcular kardex para poder ordenar por diferencia (negativos primero)
+                const prodsConKardex = prods.map(p => {
                     const r = calcKardexProd(p);
+                    const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
+                    const diff = (stockVerif !== null && !isNaN(stockVerif)) ? (stockVerif - r.stockEsperado) : Infinity;
+                    return { p, r, stockVerif, diff };
+                });
+                // Ordenar: diferencias negativas primero, luego positivas, luego sin diferencia (Infinity)
+                prodsConKardex.sort((a, b) => {
+                    if (a.diff === Infinity && b.diff === Infinity) return 0;
+                    if (a.diff === Infinity) return 1;
+                    if (b.diff === Infinity) return -1;
+                    return a.diff - b.diff;
+                });
+
+                const prodRows = prodsConKardex.map(({ p, r, stockVerif }) => {
                     totSI += r.stockInicial; totC += r.compras; totV += r.ventas; totSA += r.stockActual;
                     catSI += r.stockInicial; catC += r.compras; catV += r.ventas; catSA += r.stockActual; catSE += r.stockEsperado;
                     const saColor = r.stockEsperado <= 0 ? '#f87171' : r.stockEsperado < 5 ? '#fbbf24' : '#34d399';
-                    const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
                     const fechaVerif = p.fechaStockFisico ? String(p.fechaStockFisico).substring(0,10) : '';
                     let verifHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">—</td>';
                     if (stockVerif !== null && !isNaN(stockVerif)) {
