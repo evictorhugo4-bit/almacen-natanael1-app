@@ -16557,25 +16557,32 @@ console.log("FILTRADAS:", filtradas.length);
                 if (!catMap.has(cat)) catMap.set(cat, []);
                 catMap.get(cat).push(p);
             });
-            // Ordenar categorías: las que tienen diferencia más negativa primero
+            // Ordenar categorías: cualquier diff != 0 primero (neg antes pos), luego cero, luego sin verificar
+            const _catPriority = d => {
+                if (d === Infinity) return 2; // sin verificar → último
+                if (d === 0)        return 1; // exacto → penúltimo
+                return 0;                      // cualquier diff != 0 → primero
+            };
             const catKeys = [...catMap.keys()].sort((catA, catB) => {
                 const diffCat = cat => {
-                    let minDiff = Infinity;
+                    let bestDiff = Infinity;
                     catMap.get(cat).forEach(p => {
                         const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
                         if (stockVerif === null || isNaN(stockVerif)) return;
                         const r = calcKardexProd(p);
                         const d = stockVerif - r.stockEsperado;
-                        if (d < minDiff) minDiff = d;
+                        // Priorizar cualquier diff != 0; entre ellos el más negativo
+                        if (d !== 0 && (bestDiff === Infinity || bestDiff === 0 || d < bestDiff)) bestDiff = d;
+                        else if (bestDiff === Infinity && d === 0) bestDiff = 0;
                     });
-                    return minDiff;
+                    return bestDiff;
                 };
                 const dA = diffCat(catA), dB = diffCat(catB);
-                // Categorías sin ninguna diferencia verificada van al final (alfabético entre ellas)
-                if (dA === Infinity && dB === Infinity) return catA.localeCompare(catB);
-                if (dA === Infinity) return 1;
-                if (dB === Infinity) return -1;
-                return dA - dB;
+                const pA = _catPriority(dA), pB = _catPriority(dB);
+                if (pA !== pB) return pA - pB;
+                if (dA === Infinity) return catA.localeCompare(catB);
+                if (dA === 0 && dB === 0) return catA.localeCompare(catB);
+                return dA - dB; // negativos antes positivos
             });
 
             // Estado de acordeones persistido en objeto
@@ -16593,12 +16600,17 @@ console.log("FILTRADAS:", filtradas.length);
                     const diff = (stockVerif !== null && !isNaN(stockVerif)) ? (stockVerif - r.stockEsperado) : Infinity;
                     return { p, r, stockVerif, diff };
                 });
-                // Ordenar: diferencias negativas primero, luego positivas, luego sin diferencia (Infinity)
+                // Ordenar: cualquier diferencia != 0 primero (negativas antes positivas), luego cero (✅), luego sin verificar
+                const diffPriority = d => {
+                    if (d === Infinity) return 2; // sin verificar → último
+                    if (d === 0)        return 1; // exacto (✅) → penúltimo
+                    return 0;                      // cualquier diff != 0 → primero
+                };
                 prodsConKardex.sort((a, b) => {
-                    if (a.diff === Infinity && b.diff === Infinity) return 0;
-                    if (a.diff === Infinity) return 1;
-                    if (b.diff === Infinity) return -1;
-                    return a.diff - b.diff;
+                    const pa = diffPriority(a.diff), pb = diffPriority(b.diff);
+                    if (pa !== pb) return pa - pb;
+                    if (a.diff === Infinity || a.diff === 0) return 0;
+                    return a.diff - b.diff; // negativos antes que positivos
                 });
 
                 const prodRows = prodsConKardex.map(({ p, r, stockVerif }) => {
