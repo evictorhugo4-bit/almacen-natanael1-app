@@ -681,6 +681,26 @@ z-index:999999999;
             <!-- WIDGET VENCIMIENTOS -->
             <div id="widgetVencimientos" class="hidden"></div>
 
+            <!-- KPIs del día — solo mobile -->
+            <div class="grid grid-cols-2 gap-3 lg:hidden">
+                <div class="glass-card p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-800 to-slate-900">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span style="font-size:18px;">🛒</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ventas del Día</span>
+                    </div>
+                    <div id="kpiVentasDiaMobile" class="text-2xl font-black text-white font-mono">$0</div>
+                    <div id="kpiVentasDiaInfoMobile" class="text-[9px] text-slate-600 font-bold mt-1">0 transacciones</div>
+                </div>
+                <div class="glass-card p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-800 to-slate-900">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span style="font-size:18px;">💵</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ganancias del Día</span>
+                    </div>
+                    <div id="kpiGananciasDiaMobile" class="text-2xl font-black text-emerald-400 font-mono">$0</div>
+                    <div class="text-[9px] text-slate-600 font-bold mt-1">precio − costo</div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
@@ -15897,6 +15917,13 @@ if (indicator) indicator.classList.remove('hidden');
             if (elV)  elV.textContent  = '$' + Utils.fmt(totalVentas);
             if (elVi) elVi.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
             if (elG)  elG.textContent  = '$' + Utils.fmt(totalGanancias);
+            // Paneles mobile
+            const elVm = document.getElementById('kpiVentasDiaMobile');
+            const elVim = document.getElementById('kpiVentasDiaInfoMobile');
+            const elGm = document.getElementById('kpiGananciasDiaMobile');
+            if (elVm)  elVm.textContent  = '$' + Utils.fmt(totalVentas);
+            if (elVim) elVim.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
+            if (elGm)  elGm.textContent  = '$' + Utils.fmt(totalGanancias);
         }
 
 
