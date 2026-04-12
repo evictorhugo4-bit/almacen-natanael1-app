@@ -10015,6 +10015,7 @@ function calcularCompra() {
         i._fletePorItem   = flete > 0 ? Math.round(pct * flete * 100) / 100 : 0;
         const cant = parseFloat(i.cantidad) || 1;
         i._costoConFlete  = parseFloat(i.costo||0) + (i._fletePorItem / cant);
+        console.log('[FLETE] item:', i.nombre, '| _fletePorItem:', i._fletePorItem, '| costo:', i.costo, '| itemEnEdicion:', itemEnEdicion, '| itemId:', i.itemId);
     });
 
     const efectivo = parseFloat(document.getElementById('inputCompraEfectivo')?.value) || 0;
@@ -10039,18 +10040,32 @@ function calcularCompra() {
         else contenedor.classList.add('hidden');
     }
 
-    if (flete > 0) _renderCarritoCompraSinCalc();
+    _renderCarritoCompraSinCalc();
+
+    // Actualizar precio sugerido de todos los items visibles en el DOM
+    carritoCompra.forEach(i => {
+        const campo = document.getElementById('precioSugerido_' + i.itemId);
+        if (!campo) return;
+        const prod = _sheetProductos.find(p => String(p.id) === String(i.id));
+        if (!prod || !i.costo) return;
+        const margen = parseFloat(String(prod.margenBruto || 0).replace('%','')) || 0;
+        if (margen >= 100) return;
+        const costoU = parseFloat(i.costo) || 0;
+        const cant   = parseFloat(i.cantidad) || 1;
+        const fleteU = (i._fletePorItem || 0) / cant;
+        const costoT = costoU + fleteU;
+        campo.value = (costoT / (1 - (margen / 100))).toFixed(2);
+        campo.style.borderColor = fleteU > 0 ? '#f59e0b44' : '';
+        campo.title = fleteU > 0
+            ? `Costo $${costoU} + flete $${fleteU.toFixed(2)} = $${costoT.toFixed(2)} | Margen ${margen}%`
+            : `Costo $${costoU} | Margen ${margen}%`;
+    });
 }
 
 
 function activarEdicionCompra(itemId){
     itemEnEdicion = itemId;
     renderCarritoCompra();
-    // Calcular precio sugerido automáticamente con flete incluido
-    setTimeout(() => {
-        const item = carritoCompra.find(i => String(i.itemId) === String(itemId));
-        if (item && item.costo) calcularPrecioSugerido(itemId, item.costo);
-    }, 50);
 }
 
 
@@ -10169,8 +10184,8 @@ function eliminarDeCarritoCompra(itemId) {
         }
 
         function renderCarritoCompra() {
-            _renderCarritoCompraSinCalc();
             calcularCompra();
+            _renderCarritoCompraSinCalc();
         }
 
         function _renderCarritoCompraSinCalc() {
@@ -10244,6 +10259,7 @@ ${editando ? `
             Precio sugerido ${item._fletePorItem > 0 ? '(margen + flete)' : '(margen bruto)'}
         </div>
         <input id="precioSugerido_${item.itemId}" readonly
+            value="${(()=>{ const _p=_sheetProductos.find(p=>String(p.id)===String(item.id)); if(!_p||!item.costo) return ''; const _m=parseFloat(String(_p.margenBruto||0).replace('%',''))||0; if(_m>=100) return ''; const _cu=parseFloat(item.costo)||0; const _fu=(item._fletePorItem||0)/(parseFloat(item.cantidad)||1); console.log('[SUGERIDO]',item.nombre,'fleteItem:',item._fletePorItem,'fu:',_fu,'cu:',_cu,'m:',_m); return (_cu+_fu>0?((_cu+_fu)/(1-(_m/100))).toFixed(2):''); })()}"
             style="width:100%;background:transparent;border:none;color:#22c55e;font-weight:900;font-size:16px;outline:none;box-sizing:border-box;">
     </div>
     <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;">
@@ -10291,8 +10307,26 @@ function abrirModalPrecios(itemId){
         return;
     }
 
+    // Capturar _fletePorItem ANTES de cualquier recalculo
+    console.log('[MODAL ABRE] _fletePorItem:', item._fletePorItem, '| cantidad:', item.cantidad, '| costo:', item.costo, '| flete input:', document.getElementById('inputCompraFlete')?.value);
+    const _fleteSnap = item._fletePorItem || 0;
+    const _cantSnap  = parseFloat(item.cantidad) || 1;
+    const _fleteUSnap = _fleteSnap / _cantSnap;
+
     costoInput.value = item.costo || 0;
     ventaInput.value = item.venta || 0;
+
+    // Mostrar precio sugerido con flete al abrir el modal
+    const prod2 = _sheetProductos.find(p => String(p.id) === String(item.id));
+    const sugeridoInput = document.getElementById('precioSugerido');
+    if (prod2 && sugeridoInput && item.costo) {
+        const margen2 = parseFloat(prod2.margenBruto) || 0;
+        const costoT2 = (parseFloat(item.costo) || 0) + _fleteUSnap;
+        if (margen2 < 100 && costoT2 > 0) {
+            sugeridoInput.value = (costoT2 / (1 - (margen2 / 100))).toFixed(2);
+            sugeridoInput.title = _fleteUSnap > 0 ? `Incluye flete $${_fleteUSnap.toFixed(2)} c/u` : '';
+        }
+    }
 
 
 const vencInput = document.getElementById('editVencimientoInput');
@@ -10322,12 +10356,14 @@ const margen = parseFloat(prod.margenBruto) || 0;
 
 if(costo && margen){
 
-const sugerido = costo * (1 + ((margen/100) / (1 - (margen/100))));
+const costoConFlete = costo + _fleteUSnap;
+const sugerido = margen < 100 ? costoConFlete / (1 - (margen / 100)) : costoConFlete;
 
 const sugeridoInput = document.getElementById("precioSugerido");
 
 if(sugeridoInput){
 sugeridoInput.value = sugerido.toFixed(2);
+sugeridoInput.title = _fleteUSnap > 0 ? `Costo $${costo} + flete $${_fleteUSnap.toFixed(2)} = $${costoConFlete.toFixed(2)} | Margen ${margen}%` : '';
 }
 
 }
