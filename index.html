@@ -393,6 +393,14 @@ img, video { max-width: 100%; height: auto; }
             #mainSidebar nav { flex-direction: column !important; gap: 0.5rem !important; flex: none !important; }
             #mainSidebar .nav-link { flex-direction: row !important; width: 100% !important; }
         }
+        /* KPIs arriba en mobile, lateral en desktop */
+        @media (max-width: 1023px) {
+            #colKpisDia { order: -1; }
+        }
+        @media (min-width: 1024px) {
+            #colKpisDia { order: 0; }
+            #colVentasRecientes { order: 0; }
+        }
     </style>
     <!-- CDN como fallback adicional cuando hay internet -->
     <script>
@@ -681,15 +689,15 @@ z-index:999999999;
             <!-- WIDGET VENCIMIENTOS -->
             <div id="widgetVencimientos" class="hidden"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="ventasMainGrid">
+                <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500" id="colVentasRecientes">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
                         <h3 class="text-xs font-black uppercase text-emerald-500 tracking-widest italic">Ventas Recientes</h3>
                         <input type="text" placeholder="Buscar cliente o producto..." oninput="filtroHistorial=this.value; renderHistorial()" class="text-[10px] px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500 w-44">
                     </div>
                     <div id="listaHistorial" class="space-y-1"><p style="font-size:10px;color:#475569;font-weight:700;text-align:center;padding:1.5rem;text-transform:uppercase;">Sin ventas registradas</p></div>
                 </div>
-                <div class="space-y-4">
+                <div class="space-y-4" id="colKpisDia">
                     <!-- KPIs del día -->
                     <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
                         <div class="flex items-center gap-2 mb-1">
