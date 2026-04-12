@@ -681,26 +681,6 @@ z-index:999999999;
             <!-- WIDGET VENCIMIENTOS -->
             <div id="widgetVencimientos" class="hidden"></div>
 
-            <!-- KPIs del día — solo mobile -->
-            <div class="grid grid-cols-2 gap-3 lg:hidden">
-                <div class="glass-card p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span style="font-size:18px;">🛒</span>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ventas del Día</span>
-                    </div>
-                    <div id="kpiVentasDiaMobile" class="text-2xl font-black text-white font-mono">$0</div>
-                    <div id="kpiVentasDiaInfoMobile" class="text-[9px] text-slate-600 font-bold mt-1">0 transacciones</div>
-                </div>
-                <div class="glass-card p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span style="font-size:18px;">💵</span>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ganancias del Día</span>
-                    </div>
-                    <div id="kpiGananciasDiaMobile" class="text-2xl font-black text-emerald-400 font-mono">$0</div>
-                    <div class="text-[9px] text-slate-600 font-bold mt-1">precio − costo</div>
-                </div>
-            </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
@@ -4873,15 +4853,12 @@ _sheetProductos.forEach(p => {
         }
 
         window.buscarProductoPorCodigoEdit = function(codigo) {
-            codigo = (codigo || '').trim();
+            codigo = (codigo || '').replace(/[\r\n\t]/g, '').trim();
             if (!codigo) return;
             // Poner el código en el input siempre
             const inputEl = document.getElementById('editCodigoInput');
             if (inputEl) inputEl.value = codigo;
-            const prod = prodPorCodigo.get(codigo) || _sheetProductos.find(p =>
-                String(p.codigo||'').trim() === codigo ||
-                String(p.codigos||'').split(',').map(c=>c.trim()).includes(codigo)
-            );
+            const prod = _buscarProdPorCodigo(codigo);
             const infoEl = document.getElementById('editCodigoNombre');
             if (prod) {
                 // Código encontrado → cargar precios
@@ -6448,6 +6425,11 @@ container.innerHTML = productosVisibles.map((p) => {
 
 
 
+// Normaliza un código: quita espacios, saltos de línea y ceros a la izquierda
+function _normCod(c) {
+    return String(c || '').replace(/[\r\n\t]/g, '').trim().replace(/^0+(?=\d)/, '');
+}
+
 function indexarProductos(){
 
     prodPorId.clear();
@@ -6464,27 +6446,52 @@ function indexarProductos(){
             prodPorNombre.set(p.nombre.toUpperCase(), p);
         }
 
-        // Indexar por 'codigos' (múltiples separados por coma)
+        // Indexa un código crudo y también su versión normalizada (sin ceros iniciales)
+        const _idx = (raw) => {
+            const cod = String(raw || '').replace(/[\r\n\t]/g, '').trim();
+            if (!cod) return;
+            prodPorCodigo.set(cod, p);
+            productosPorCodigo[cod] = p;
+            const norm = cod.replace(/^0+(?=\d)/, '');
+            if (norm !== cod) { prodPorCodigo.set(norm, p); productosPorCodigo[norm] = p; }
+        };
+
+        // Indexar por 'codigos' (múltiples separados por coma o punto y coma)
         if(p.codigos){
-            p.codigos.split(',').forEach(c=>{
-                const codigo = c.trim();
-                if(codigo){
-                    prodPorCodigo.set(codigo, p);
-                    productosPorCodigo[codigo] = p; // compatibilidad
-                }
-            });
+            p.codigos.split(/[,;]/).forEach(c => _idx(c));
         }
-        // Indexar también por 'codigo' singular
+        // Indexar también por 'codigo' singular (puede tener múltiples con coma)
         if(p.codigo){
-            const c = String(p.codigo).trim();
-            if(c){
-                prodPorCodigo.set(c, p);
-                productosPorCodigo[c] = p;
-            }
+            String(p.codigo).split(/[,;]/).forEach(c => _idx(c));
         }
 
     });
 
+}
+
+// Busca un producto por código con fallback robusto
+function _buscarProdPorCodigo(codigoRaw) {
+    const codigo = String(codigoRaw || '').replace(/[\r\n\t]/g, '').trim();
+    if (!codigo) return null;
+    // 1. Exacto en índice
+    let prod = prodPorCodigo.get(codigo);
+    if (prod) return prod;
+    // 2. Sin ceros iniciales
+    const sinCeros = codigo.replace(/^0+(?=\d)/, '');
+    if (sinCeros !== codigo) { prod = prodPorCodigo.get(sinCeros); if (prod) return prod; }
+    // 3. Búsqueda exhaustiva normalizando cada código del producto
+    const codigoNorm = _normCod(codigo);
+    prod = _sheetProductos.find(p => {
+        const todos = [
+            ...String(p.codigos || '').split(/[,;]/),
+            ...String(p.codigo  || '').split(/[,;]/)
+        ];
+        return todos.some(c => {
+            const cn = _normCod(c);
+            return cn && (cn === codigoNorm || c.trim() === codigo);
+        });
+    });
+    return prod || null;
 }
 
 
@@ -15917,13 +15924,6 @@ if (indicator) indicator.classList.remove('hidden');
             if (elV)  elV.textContent  = '$' + Utils.fmt(totalVentas);
             if (elVi) elVi.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
             if (elG)  elG.textContent  = '$' + Utils.fmt(totalGanancias);
-            // Paneles mobile
-            const elVm = document.getElementById('kpiVentasDiaMobile');
-            const elVim = document.getElementById('kpiVentasDiaInfoMobile');
-            const elGm = document.getElementById('kpiGananciasDiaMobile');
-            if (elVm)  elVm.textContent  = '$' + Utils.fmt(totalVentas);
-            if (elVim) elVim.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
-            if (elGm)  elGm.textContent  = '$' + Utils.fmt(totalGanancias);
         }
 
 
@@ -20610,21 +20610,14 @@ console.log("FILTRADAS:", filtradas.length);
         }
 
         function procesarCodigo(codigo) {
-            codigo = (codigo || '').trim();
+            codigo = (codigo || '').replace(/[\r\n\t]/g, '').trim();
             if (!codigo) return;
             document.getElementById('scanInputManual').value = codigo;
             document.getElementById('scanResultado').style.display    = 'none';
             document.getElementById('scanNoEncontrado').style.display = 'none';
 
-            // Buscar por código exacto en el índice (Map)
-            let prod = prodPorCodigo.get(codigo);
-            // Si no encontró, buscar también en campo 'codigo' singular
-            if (!prod) {
-                prod = _sheetProductos.find(p =>
-                    String(p.codigo || '').trim() === codigo ||
-                    String(p.codigos || '').split(',').map(c=>c.trim()).includes(codigo)
-                );
-            }
+            // Buscar usando función robusta (exacto → sin ceros → exhaustivo)
+            let prod = _buscarProdPorCodigo(codigo);
            
 
 
