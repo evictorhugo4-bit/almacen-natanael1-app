@@ -698,6 +698,29 @@ z-index:999999999;
                     <div id="listaHistorial" class="space-y-1"><p style="font-size:10px;color:#475569;font-weight:700;text-align:center;padding:1.5rem;text-transform:uppercase;">Sin ventas registradas</p></div>
                 </div>
                 <div class="space-y-4" id="colKpisDia">
+                    <!-- EFECTIVO EN CAJA MINI -->
+                    <div id="kpiCajaCard" class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-emerald-900/40 to-slate-900 border border-emerald-500/20" style="cursor:pointer;" onclick="document.getElementById('kpiCajaInputWrap').classList.toggle('hidden')">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-2">
+                                <span style="font-size:20px;">💵</span>
+                                <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Efectivo en Caja</span>
+                            </div>
+                            <span id="kpiCajaDesde" class="text-[8px] font-bold text-slate-500"></span>
+                        </div>
+                        <div id="kpiCajaMonto" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
+                        <div id="kpiCajaInfo" class="text-[9px] text-slate-500 font-bold mt-1">Entradas − Salidas</div>
+                        <!-- Input monto inicial colapsable -->
+                        <div id="kpiCajaInputWrap" class="hidden mt-3 pt-3 border-t border-slate-700">
+                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Monto inicial en caja</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="kpiCajaInputMonto" placeholder="0"
+                                    class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-black text-sm outline-none focus:border-emerald-500 text-right"
+                                    onclick="event.stopPropagation()">
+                                <button onclick="event.stopPropagation(); kpiCajaGuardar()"
+                                    class="bg-emerald-500 text-black font-black text-xs px-3 rounded-xl">OK</button>
+                            </div>
+                        </div>
+                    </div>
                     <!-- KPIs del día -->
                     <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
                         <div class="flex items-center gap-2 mb-1">
@@ -5502,6 +5525,7 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
             const deudas = historial.reduce(function(s,v){ return s + (v.deuda||0); }, 0);
             const cajaEsperada = (typeof calcularCajaEsperada === 'function') ? calcularCajaEsperada() : 0;
             document.getElementById('totalCaja').textContent   = '$' + Utils.fmt(cajaEsperada);
+            if (typeof kpiCajaActualizar === 'function') kpiCajaActualizar();
             document.getElementById('totalDeudas').textContent = '$' + Utils.fmt(deudas);
             // Mostrar "Desde..." si hay horaInicio en cajaControl
             const infoEl = document.getElementById('cajaSinceInfo');
@@ -5513,6 +5537,38 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
                     infoEl.classList.add('hidden');
                 }
             }
+        }
+
+        // ── KPI CAJA MINI (Panel de Control) ──────────────────────────
+        function kpiCajaGuardar() {
+            var v = parseFloat(document.getElementById('kpiCajaInputMonto').value) || 0;
+            cajaControl.montoInicial = v;
+            cajaControl.horaInicio   = new Date().toISOString();
+            localStorage.setItem('natanael_caja_control', JSON.stringify(cajaControl));
+            document.getElementById('kpiCajaInputWrap').classList.add('hidden');
+            kpiCajaActualizar();
+            mostrarToast('✓ Caja iniciada con $' + Utils.fmt(v));
+        }
+
+        function kpiCajaActualizar() {
+            var cajaEl  = document.getElementById('kpiCajaMonto');
+            var desdeEl = document.getElementById('kpiCajaDesde');
+            var infoEl  = document.getElementById('kpiCajaInfo');
+            var inputEl = document.getElementById('kpiCajaInputMonto');
+            if (!cajaEl) return;
+            var total = (typeof calcularCajaEsperada === 'function') ? calcularCajaEsperada() : 0;
+            cajaEl.textContent = '$' + Utils.fmt(total);
+            cajaEl.style.color = total >= 0 ? '#34d399' : '#f87171';
+            if (inputEl && !inputEl.value) inputEl.value = cajaControl.montoInicial || '';
+            if (desdeEl) {
+                if (cajaControl && cajaControl.horaInicio) {
+                    var d = new Date(cajaControl.horaInicio);
+                    desdeEl.textContent = 'desde ' + d.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+                } else {
+                    desdeEl.textContent = 'tocá para configurar';
+                }
+            }
+            if (infoEl) infoEl.textContent = 'inicial $' + Utils.fmt(cajaControl.montoInicial || 0) + ' + entradas − salidas';
         }
 
         // Acción directa por índice — sin modales, sin data-attributes
