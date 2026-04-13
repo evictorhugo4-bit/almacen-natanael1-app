@@ -5542,12 +5542,45 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
         // ── KPI CAJA MINI (Panel de Control) ──────────────────────────
         function kpiCajaGuardar() {
             var v = parseFloat(document.getElementById('kpiCajaInputMonto').value) || 0;
+            var ahora = new Date();
             cajaControl.montoInicial = v;
-            cajaControl.horaInicio   = new Date().toISOString();
+            cajaControl.horaInicio   = ahora.toISOString();
             localStorage.setItem('natanael_caja_control', JSON.stringify(cajaControl));
             document.getElementById('kpiCajaInputWrap').classList.add('hidden');
             kpiCajaActualizar();
+            // Escribir al sheet EFECTIVOENCAJA
+            var fechaFmt = String(ahora.getDate()).padStart(2,'0') + '/' +
+                           String(ahora.getMonth()+1).padStart(2,'0') + '/' +
+                           ahora.getFullYear() + ' ' +
+                           String(ahora.getHours()).padStart(2,'0') + ':' +
+                           String(ahora.getMinutes()).padStart(2,'0') + ':' +
+                           String(ahora.getSeconds()).padStart(2,'0');
+            fetchSheets({ method: 'POST', body: JSON.stringify({
+                tipo:  'efectivo_en_caja',
+                id:    'kpi_' + ahora.getTime(),
+                fecha: fechaFmt,
+                monto: v
+            })});
             mostrarToast('✓ Caja iniciada con $' + Utils.fmt(v));
+        }
+
+        function kpiCajaCargarDesdeSheet() {
+            // Leer el registro más reciente de EFECTIVOENCAJA via GET
+            fetch(SHEETS_URL + '?modo=efectivo_en_caja')
+                .then(function(r){ return r.json(); })
+                .then(function(res) {
+                    if (!res || !res.ok || res.monto === undefined) return;
+                    var monto = parseFloat(res.monto) || 0;
+                    // Solo aplicar si difiere del local para no pisar una sesión activa
+                    if (monto !== cajaControl.montoInicial) {
+                        cajaControl.montoInicial = monto;
+                        cajaControl.horaInicio   = res.fecha || cajaControl.horaInicio;
+                        localStorage.setItem('natanael_caja_control', JSON.stringify(cajaControl));
+                        var inputEl = document.getElementById('kpiCajaInputMonto');
+                        if (inputEl) inputEl.value = monto;
+                        kpiCajaActualizar();
+                    }
+                }).catch(function(){});
         }
 
         function kpiCajaActualizar() {
@@ -13718,6 +13751,8 @@ function calcularCajaEsperada() {
 
             lucide.createIcons();
             window.dispatchEvent(new Event('natanael-ready'));
+            // Cargar monto inicial de caja desde sheet
+            setTimeout(function(){ if (typeof kpiCajaCargarDesdeSheet === 'function') kpiCajaCargarDesdeSheet(); }, 2000);
 
             // 2) Sincronizar con sheet en segundo plano
             const syncPromise = iniciarSyncSheets();
@@ -14609,8 +14644,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbw9NC1uqIL34t4Fa7n61f27BDN2tb1B6KyxqF7agcuZTZhlGshhPxAtoGxZqL3GG2LB/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbw9NC1uqIL34t4Fa7n61f27BDN2tb1B6KyxqF7agcuZTZhlGshhPxAtoGxZqL3GG2LB/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyw3LibKfbOneKns6ph9SYUPh26ltnxrpxvY1ClKpEP_zQkFbdgVX0ijm5X8tj9bW-u/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbyw3LibKfbOneKns6ph9SYUPh26ltnxrpxvY1ClKpEP_zQkFbdgVX0ijm5X8tj9bW-u/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
