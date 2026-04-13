@@ -2488,19 +2488,18 @@ GUARDAR PRODUCTO
                 <p style="font-size:9px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">🏪 NEGOCIO — Efectivo a Entregar por Proveedor</p>
                 <p style="font-size:9px;color:#475569;font-weight:700;margin-bottom:12px;">Del efectivo total, cuánto corresponde entregar a cada proveedor según ventas del período</p>
                 <div id="efCardProveedorWrap">
-                    <div style="font-size:9px;color:#334155;font-weight:700;text-align:center;padding:12px;">Elegí un proveedor en la sección Proveedor para ver el detalle, o usá el selector:</div>
-                    <div class="flex gap-2 items-center flex-wrap mb-3">
-                        <select id="efProvSelect" onchange="renderEfectivo()" style="background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;flex:1;min-width:160px;">
-                            <option value="">— Elegir proveedor —</option>
-                        </select>
-                    </div>
                     <div id="efProvDetalle"></div>
                 </div>
             </div>
 
-            <!-- PERSONAL: Efectivo (replica filtro efectivo de estado personal) -->
+
+
+            <!-- PERSONAL — Estado Personal completo -->
             <div class="glass-card rounded-2xl p-4 border border-amber-500/30">
-                <p style="font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">👤 PERSONAL — Estado en Efectivo</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                    <p style="font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:.1em;margin:0;">👤 PERSONAL — Estado Personal</p>
+
+                </div>
                 <div id="efPersonalDetalle"></div>
             </div>
 
@@ -16605,11 +16604,16 @@ console.log("FILTRADAS:", filtradas.length);
                     saldo += it.cantidad; totalCompras += it.cantidad;
                 });
 
-                // Stock esperado = stockInicio + compras - ventas (mismos valores que se muestran en pantalla)
+                // Stock esperado (sin filtro de UI, solo desde FECHA INICIAL)
                 const _siEsperado = (prod.stockInicio !== null && prod.stockInicio !== undefined)
                     ? (parseFloat(prod.stockInicio) || 0)
                     : (parseFloat(prod.stock) || 0);
-                const stockEsperado = Math.round((_siEsperado + totalCompras - totalVentas) * 100) / 100;
+                const _siRefRaw = prod.fechaStockInicio || prod.fechaInicio || '';
+                const _siRefTs = _siRefRaw ? new Date(_siRefRaw).getTime() : null;
+                let _totCE = 0, _totVE = 0;
+                vItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totVE += it.cantidad; });
+                cItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totCE += it.cantidad; });
+                const stockEsperado = Math.round((_siEsperado + _totCE - _totVE) * 100) / 100;
 
                 return { stockInicial: _siEsperado, compras: totalCompras, ventas: totalVentas, stockActual: Math.round(saldo*100)/100, stockEsperado };
             }
@@ -19026,133 +19030,118 @@ console.log("FILTRADAS:", filtradas.length);
                     ? 'Entradas − Salidas: superávit de efectivo'
                     : 'Atención: déficit de efectivo';
 
-                // ── PROVEEDOR (replica renderCardEfectivoProveedor) ───────
-                const selEf = document.getElementById('efProvSelect');
-                if (selEf && selEf.options.length <= 1) {
-                    const provs = [...new Set((_sheetProductos||[]).map(p=>String(p.proveedor||'').trim()).filter(Boolean))].sort();
-                    provs.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value = p; opt.textContent = p;
-                        selEf.appendChild(opt);
-                    });
-                    // Preseleccionar el proveedor del tab proveedor si está elegido
-                    const provStatSel = document.getElementById('provStatSelect');
-                    if (provStatSel && provStatSel.value) selEf.value = provStatSel.value;
-                }
-
-                const provNombre = (selEf?.value || '').trim().toUpperCase();
+                // ── PROVEEDOR — tabla con TODOS los proveedores ───────
                 const efProvDiv = document.getElementById('efProvDetalle');
                 if (efProvDiv) {
-                    if (!provNombre) {
-                        efProvDiv.innerHTML = '<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:12px;text-transform:uppercase;">Elegí un proveedor para ver el detalle</p>';
-                    } else {
-                        // Reutiliza la lógica de renderCardEfectivoProveedor pero con rango efDesde/efHasta
-                        const dEl = document.getElementById('efDesde');
-                        const hEl = document.getElementById('efHasta');
-                        const dNum = dEl?.value ? parseFechaNum(dEl.value + 'T00:00:00') : null;
-                        const hNum = hEl?.value ? parseFechaNum(hEl.value + 'T23:59:59') : null;
-                        const enR = fn => { if(!fn) return false; if(dNum&&fn<dNum) return false; if(hNum&&fn>hNum) return false; return true; };
+                    const dEl2 = document.getElementById('efDesde');
+                    const hEl2 = document.getElementById('efHasta');
+                    const dNum2 = dEl2?.value ? parseFechaNum(dEl2.value + 'T00:00:00') : null;
+                    const hNum2 = hEl2?.value ? parseFechaNum(hEl2.value + 'T23:59:59') : null;
+                    const enR2 = fn => { if(!fn) return false; if(dNum2&&fn<dNum2) return false; if(hNum2&&fn>hNum2) return false; return true; };
 
-                        const cobrosPorVenta = {};
-                        [...(_sheetPagoVentas||[]),...(_pagoVentasSheet||[])].forEach(p => {
-                            const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                            if (!idV) return;
-                            cobrosPorVenta[idV] = (cobrosPorVenta[idV]||0) + Number(p.monto||p.MONTO||0);
-                        });
+                    const cobrosPorVenta2 = {};
+                    [...(_sheetPagoVentas||[]),...(_pagoVentasSheet||[])].forEach(p => {
+                        const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                        if (!idV) return;
+                        cobrosPorVenta2[idV] = (cobrosPorVenta2[idV]||0) + Number(p.monto||p.MONTO||0);
+                    });
 
-                        let totalParaProv = 0, totalGan = 0, cantV = 0;
-                        const vistas = new Set();
-                        todasV.forEach(v => {
-                            const fn = parseFechaNum(v.fechaISO||v.fecha||'');
-                            if (!enR(fn)||vistas.has(v.id)) return;
-                            vistas.add(v.id);
-                            const itemsProv = (v.items||[]).filter(i=>(i.proveedor||'').trim().toUpperCase()===provNombre);
-                            if (!itemsProv.length) return;
-                            const totalVenta = Number(v.total||0)||1;
-                            const ef = Number(v.efectivo||0);
-                            const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
-                            const dinRecItemsProv = itemsProv.reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-                            const cli = String(v.cliente||'').toUpperCase().trim();
-                            const esEsp = ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
-                            let paraProv, ganItem;
+                    const provMapEf = {};
+                    const vistasEf = new Set();
+                    todasV.forEach(v => {
+                        const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                        if (!enR2(fn)||vistasEf.has(v.id)) return;
+                        vistasEf.add(v.id);
+                        const totalVenta = Number(v.total||0)||1;
+                        const ef = Number(v.efectivo||0);
+                        const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
+                        const cli = String(v.cliente||'').toUpperCase().trim();
+                        const esEsp = ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
+                        (v.items||[]).forEach(i => {
+                            const pn = (i.proveedor||'').trim().toUpperCase();
+                            if (!pn) return;
+                            if (!provMapEf[pn]) provMapEf[pn] = { totalParaProv:0, totalGan:0, totalDR:0 };
+                            const dr = Number(i.dineroRecuperado||0);
+                            provMapEf[pn].totalDR += dr;
                             if (esEsp) {
-                                paraProv = dinRecItemsProv; ganItem = 0;
+                                provMapEf[pn].totalParaProv += dr;
                             } else {
-                                const cobrosExtra = (cobrosPorVenta[idVSheet]||0)+(cobrosPorVenta[String(v.id||'')]||0);
+                                const cobrosExtra = (cobrosPorVenta2[idVSheet]||0)+(cobrosPorVenta2[String(v.id||'')]||0);
                                 const totalCobrado = ef + cobrosExtra;
-                                const precioItemsProv = itemsProv.reduce((s,i)=>s+(Number(i.precio||0)*(Number(i.cantidad)||1)),0);
-                                const prop = totalVenta>0 ? precioItemsProv/totalVenta : 0;
+                                const precioItem = Number(i.precio||0)*(Number(i.cantidad)||1);
+                                const prop = totalVenta>0 ? precioItem/totalVenta : 0;
                                 const cobradoProp = totalCobrado * prop;
-                                paraProv = Math.min(cobradoProp, dinRecItemsProv);
-                                ganItem  = Math.max(0, cobradoProp - dinRecItemsProv);
+                                provMapEf[pn].totalParaProv += Math.min(cobradoProp, dr);
+                                provMapEf[pn].totalGan += Math.max(0, cobradoProp - dr);
                             }
-                            totalParaProv += paraProv;
-                            totalGan      += ganItem;
-                            cantV++;
                         });
+                    });
 
-                        if (!cantV) {
-                            efProvDiv.innerHTML = '<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:12px;text-transform:uppercase;">Sin ventas de ' + provNombre + ' en el período</p>';
-                        } else {
-                            efProvDiv.innerHTML =
-                                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-                                '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center;">' +
-                                    '<p style="font-size:8px;font-weight:900;color:#22d3ee;text-transform:uppercase;margin-bottom:4px;">💰 A Entregar a ' + provNombre + '</p>' +
-                                    '<p style="font-size:22px;font-weight:900;color:#22d3ee;font-family:monospace;">' + fmt$(totalParaProv) + '</p>' +
-                                '</div>' +
-                                '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center;">' +
-                                    '<p style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;margin-bottom:4px;">📈 Ganancia Restante</p>' +
-                                    '<p style="font-size:22px;font-weight:900;color:#34d399;font-family:monospace;">' + fmt$(totalGan) + '</p>' +
-                                '</div>' +
-                                '</div>' +
-                                '<p style="font-size:9px;color:#475569;font-weight:700;margin-top:8px;text-align:center;">' + cantV + ' venta' + (cantV!==1?'s':'') + ' con productos de ' + provNombre + ' en el período</p>';
-                        }
+                    const filasProv = Object.entries(provMapEf)
+                        .filter(([,r]) => r.totalDR > 0)
+                        .sort((a,b) => b[1].totalParaProv - a[1].totalParaProv);
+
+                    if (!filasProv.length) {
+                        efProvDiv.innerHTML = '<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:12px;text-transform:uppercase;">Sin ventas en el período</p>';
+                    } else {
+                        const granTotalEf = filasProv.reduce((s,[,r])=>s+r.totalParaProv, 0);
+                        let tbl = '<div style="overflow-x:auto;border-radius:12px;border:1px solid #10b98133;">'
+                            + '<table style="width:100%;border-collapse:collapse;min-width:360px;">'
+                            + '<thead><tr style="background:#0a1a0e;">'
+                            + '<th style="padding:8px 12px;text-align:left;font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">Proveedor</th>'
+                            + '<th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Din. Rec.</th>'
+                            + '<th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;">Ganancia</th>'
+                            + '<th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">💵 Para Prov.</th>'
+                            + '</tr></thead><tbody>';
+                        filasProv.forEach(([pn, r], i) => {
+                            tbl += '<tr style="background:' + (i%2===0?'#0f172a':'#0a1120') + ';border-bottom:1px solid #1e293b;">'
+                                + '<td style="padding:7px 12px;font-size:10px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">' + Utils.escHtml(pn) + '</td>'
+                                + '<td style="padding:7px 12px;text-align:right;font-family:monospace;font-size:11px;color:#64748b;">' + fmt$(r.totalDR) + '</td>'
+                                + '<td style="padding:7px 12px;text-align:right;font-family:monospace;font-size:11px;color:#fbbf24;">' + (r.totalGan>0?fmt$(r.totalGan):'—') + '</td>'
+                                + '<td style="padding:7px 12px;text-align:right;font-family:monospace;font-size:12px;font-weight:900;color:#34d399;">' + fmt$(r.totalParaProv) + '</td>'
+                                + '</tr>';
+                        });
+                        tbl += '<tr style="background:#111827;border-top:2px solid #334155;">'
+                            + '<td style="padding:8px 12px;font-size:10px;font-weight:900;color:#f1f5f9;text-transform:uppercase;" colspan="3">TOTAL</td>'
+                            + '<td style="padding:8px 12px;text-align:right;font-family:monospace;font-size:13px;font-weight:900;color:#34d399;">' + fmt$(granTotalEf) + '</td>'
+                            + '</tr></tbody></table></div>';
+                        efProvDiv.innerHTML = tbl;
                     }
                 }
 
-                // ── PERSONAL EFECTIVO (replica _epFiltro='efectivo') ──────
+                // ── PERSONAL — replica Estado Personal (solo efectivo, con fechas de CAJA) ──────
                 const persDiv = document.getElementById('efPersonalDetalle');
-                if (persDiv) {
-                    const ingEf = _efSumaEfectivo(window._sheetIngresos || []);
-                    const ingCr = (window._sheetIngresos||[]).reduce(function(s,r){ return _efEnRango(r)?s+(parseFloat(r.credito||r.deuda||0)||0):s; }, 0);
-                    const egrEf = _efSumaEfectivo(window._sheetEgresos || []);
-                    const egrCr = (window._sheetEgresos||[]).reduce(function(s,r){ return _efEnRango(r)?s+(parseFloat(r.credito||r.deuda||0)||0):s; }, 0);
-
-                    const netoEf = ingEf - egrEf;
-                    const netoCr = ingCr - egrCr;
-
-                    persDiv.innerHTML =
-                        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px;">' +
-                        '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center;">' +
-                            '<p style="font-size:8px;font-weight:900;color:#fbbf24;text-transform:uppercase;margin-bottom:3px;">Ingresos Efectivo</p>' +
-                            '<p style="font-size:18px;font-weight:900;color:#34d399;font-family:monospace;">' + fmt$(ingEf) + '</p>' +
-                        '</div>' +
-                        '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center;">' +
-                            '<p style="font-size:8px;font-weight:900;color:#fbbf24;text-transform:uppercase;margin-bottom:3px;">Egresos Efectivo</p>' +
-                            '<p style="font-size:18px;font-weight:900;color:#f87171;font-family:monospace;">' + fmt$(egrEf) + '</p>' +
-                        '</div>' +
-                        '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center;">' +
-                            '<p style="font-size:8px;font-weight:900;color:#fbbf24;text-transform:uppercase;margin-bottom:3px;">Ingresos Crédito</p>' +
-                            '<p style="font-size:18px;font-weight:900;color:#60a5fa;font-family:monospace;">' + fmt$(ingCr) + '</p>' +
-                        '</div>' +
-                        '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center;">' +
-                            '<p style="font-size:8px;font-weight:900;color:#fbbf24;text-transform:uppercase;margin-bottom:3px;">Egresos Crédito</p>' +
-                            '<p style="font-size:18px;font-weight:900;color:#a78bfa;font-family:monospace;">' + fmt$(egrCr) + '</p>' +
-                        '</div>' +
-                        '</div>' +
-                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-                        '<div style="background:linear-gradient(135deg,#042f1e,#064e3b);border:1px solid #34d39944;border-radius:12px;padding:12px;text-align:center;">' +
-                            '<p style="font-size:8px;font-weight:900;color:#6ee7b7;text-transform:uppercase;margin-bottom:3px;">💵 Neto Efectivo Personal</p>' +
-                            '<p style="font-size:22px;font-weight:900;font-family:monospace;color:' + (netoEf>=0?'#34d399':'#f87171') + ';">' + fmt$(netoEf) + '</p>' +
-                        '</div>' +
-                        '<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border:1px solid #818cf844;border-radius:12px;padding:12px;text-align:center;">' +
-                            '<p style="font-size:8px;font-weight:900;color:#a5b4fc;text-transform:uppercase;margin-bottom:3px;">💳 Neto Crédito Personal</p>' +
-                            '<p style="font-size:22px;font-weight:900;font-family:monospace;color:' + (netoCr>=0?'#818cf8':'#f87171') + ';">' + fmt$(netoCr) + '</p>' +
-                        '</div>' +
-                        '</div>';
+                if (persDiv && typeof renderResumen === 'function') {
+                    // Copiar fechas de efDesde/efHasta a resumenDesde/resumenHasta temporalmente
+                    const _rD = document.getElementById('resumenDesde');
+                    const _rH = document.getElementById('resumenHasta');
+                    const _eD = document.getElementById('efDesde');
+                    const _eH = document.getElementById('efHasta');
+                    const _prevD = _rD ? _rD.value : '';
+                    const _prevH = _rH ? _rH.value : '';
+                    // efDesde/efHasta es tipo date (YYYY-MM-DD), resumenDesde es datetime-local
+                    if (_rD && _eD && _eD.value) _rD.value = _eD.value + 'T00:00';
+                    if (_rH && _eH && _eH.value) _rH.value = _eH.value + 'T23:59';
+                    _epFiltro = 'efectivo';
+                    renderResumen();
+                    const src = document.getElementById('epContenido');
+                    if (src) persDiv.innerHTML = src.innerHTML;
+                    // Restaurar valores originales
+                    if (_rD) _rD.value = _prevD;
+                    if (_rH) _rH.value = _prevH;
                 }
 
             } catch(e) { console.error('[renderEfectivo]', e); }
+        }
+
+        function cajaBtnActivo(filtro) {
+            const btns = { total:'cajaBtnTotal', efectivo:'cajaBtnEfectivo', credito:'cajaBtnCredito' };
+            Object.entries(btns).forEach(([k,id]) => {
+                const b = document.getElementById(id);
+                if (!b) return;
+                b.style.background = k === filtro ? '#f59e0b' : '#334155';
+                b.style.color      = k === filtro ? '#000'    : '#cbd5e1';
+            });
         }
         // ══════════════════════════════════════════════
 
