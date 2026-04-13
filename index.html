@@ -16605,16 +16605,11 @@ console.log("FILTRADAS:", filtradas.length);
                     saldo += it.cantidad; totalCompras += it.cantidad;
                 });
 
-                // Stock esperado (sin filtro de UI, solo desde FECHA INICIAL)
+                // Stock esperado = stockInicio + compras - ventas (mismos valores que se muestran en pantalla)
                 const _siEsperado = (prod.stockInicio !== null && prod.stockInicio !== undefined)
                     ? (parseFloat(prod.stockInicio) || 0)
                     : (parseFloat(prod.stock) || 0);
-                const _siRefRaw = prod.fechaStockInicio || prod.fechaInicio || '';
-                const _siRefTs = _siRefRaw ? new Date(_siRefRaw).getTime() : null;
-                let _totCE = 0, _totVE = 0;
-                vItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totVE += it.cantidad; });
-                cItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totCE += it.cantidad; });
-                const stockEsperado = Math.round((_siEsperado + _totCE - _totVE) * 100) / 100;
+                const stockEsperado = Math.round((_siEsperado + totalCompras - totalVentas) * 100) / 100;
 
                 return { stockInicial: _siEsperado, compras: totalCompras, ventas: totalVentas, stockActual: Math.round(saldo*100)/100, stockEsperado };
             }
