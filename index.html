@@ -5608,10 +5608,27 @@ totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
         function accionVenta(idx, tipo) {
             if (idx < 0 || idx >= historial.length) return;
             if (tipo === 'eliminar') {
+                const ventaElim = historial[idx];
+                // 1. Eliminar visualmente al instante
                 historial.splice(idx, 1);
-               
+                if (ventaElim && window._sheetVentas) {
+                    const idx2 = window._sheetVentas.findIndex(function(v){ return String(v.id) === String(ventaElim.id); });
+                    if (idx2 !== -1) window._sheetVentas.splice(idx2, 1);
+                }
                 renderHistorial();
                 mostrarToast('✓ Venta eliminada');
+                // 2. Enviar al Sheet en segundo plano (sin esperar respuesta)
+                if (ventaElim) {
+                    const idSheet = ventaElim.idSheet
+                        ? String(ventaElim.idSheet).trim()
+                        : String(ventaElim.id || '').replace('sheet_V_', '').trim();
+                    if (idSheet) {
+                        fetchSheets({ method: 'POST', body: JSON.stringify({
+                            tipo: 'eliminar_venta',
+                            IDVENTAS: idSheet
+                        })});
+                    }
+                }
             } else if (tipo === 'editar') {
                 ventaAccionId = historial[idx] ? historial[idx].id : null;
                 if (!ventaAccionId) return;
