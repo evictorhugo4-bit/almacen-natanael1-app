@@ -17175,7 +17175,8 @@ console.log("FILTRADAS:", filtradas.length);
             }, 0);
 
             const egrConsumoNeg   = _epFiltro === 'credito' ? 0 : casaErazoTotal;
-            const egrComidaFam    = sumConceptoEP(_sheetEgresos, 'COMIDA FAMILIAR', campoEP);
+            // COMIDA FAMILIAR es SUPER CATEGORIA (r.proveedor), no CATEGORIA (r.concepto)
+            const egrComidaFam    = sumSCEP(_sheetEgresos, 'COMIDA FAMILIAR', campoEP);
             const egrPropiosExtra = sumSCEP(_sheetEgresos, 'EGRESOS PROPIOS EXTRA', campoEP);
             const egrDiezmo       = (_sheetEgresos||[]).reduce((s,r) => {
                 if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
