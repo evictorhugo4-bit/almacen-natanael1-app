@@ -17179,8 +17179,8 @@ console.log("FILTRADAS:", filtradas.length);
             const egrPropiosExtra = sumSCEP(_sheetEgresos, 'EGRESOS PROPIOS EXTRA', campoEP);
             const egrDiezmo       = (_sheetEgresos||[]).reduce((s,r) => {
                 if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
-                const c = (r.concepto||r.proveedor||'').toUpperCase().trim();
-                if(!c.includes('DIEZMO')) return s;
+                const sc = (r.proveedor||'').toUpperCase().trim(); // SUPER CATEGORIA
+                if(!sc.includes('DIEZMO')) return s;
                 return s + Number(r[campoEP]||0);
             }, 0);
             const egrAjenosExtra  = sumSCEP(_sheetEgresos, 'EGRESOS AJENOS EXTRA',  campoEP);
@@ -19352,7 +19352,7 @@ console.log("FILTRADAS:", filtradas.length);
                         return s+(v.items||[]).reduce((si,i)=>si+Number(i.dineroRecuperado||0),0);
                     },0);
                     const consumoFam=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase().trim()==='COMIDA FAMILIAR').reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
-                    const diezmo=egresos.filter(r=>(r.concepto||r.categoria||r.supercat||r.cat||r.detalle||r.descripcion||'').toLowerCase().includes('diezmo')).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
+                    const diezmo=egresos.filter(r=>(r.proveedor||r.supercat||'').toUpperCase().includes('DIEZMO')).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
                     const otrosEgr=egresos.filter(r=>{const c=(r.concepto||r.categoria||r.supercat||r.cat||'').toUpperCase(),d=(r.detalle||r.descripcion||'').toUpperCase();return c!=='COMIDA FAMILIAR'&&!c.includes('DIEZMO')&&!d.includes('DIEZMO');}).reduce((s,r)=>s+(pago==='efectivo'?parseFloat(r.efectivo||0):pago==='credito'?parseFloat(r.credito||0):parseFloat(r.total||0)),0);
                     const egRows=[{label:'Consumo del Negocio',val:consumoNeg},{label:'Consumo Familiar',val:consumoFam},{label:'Diezmo Maria Jesus',val:diezmo}];
                     if(otrosEgr>0)egRows.push({label:'Otros Egresos',val:otrosEgr});
