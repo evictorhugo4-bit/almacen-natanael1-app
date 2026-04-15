@@ -17595,8 +17595,8 @@ console.log("FILTRADAS:", filtradas.length);
 
             // BALANCE NEGOCIO CRÉDITO = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr)
             const balNegCr     = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr);
-            // BALANCE COMPLEMENTARIO CRÉDITO = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr)
-            const balCompCr    = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr);
+            // BALANCE COMPLEMENTARIO CRÉDITO = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr) — mínimo 0 por componente
+            const balCompCr    = Math.max(0, ingNegCr - pagoIngNegCr) - Math.max(0, egrNegCr - pagoEgrNegCr);
             // BALANCE CRÉDITO = balNegCr + balCompCr
             const balCrEN      = balNegCr + balCompCr;
 
@@ -17732,9 +17732,9 @@ console.log("FILTRADAS:", filtradas.length);
                 const ing1cr   = ventasCr - ganCrEN - pagoVentCr;
                 const egr1cr   = comprasCr - pagoCompCr;
                 const bal1cr   = ing1cr - egr1cr;
-                // Neg crédito: deuda pendiente = crédito MENOS pagos ya aplicados
-                const ing2cr   = ingNegCr - pagoIngNegCr;
-                const egr2cr   = egrNegCr - pagoEgrNegCr;
+                // Neg crédito: deuda pendiente = crédito MENOS pagos ya aplicados (mínimo 0)
+                const ing2cr   = Math.max(0, ingNegCr - pagoIngNegCr);
+                const egr2cr   = Math.max(0, egrNegCr - pagoEgrNegCr);
                 const bal2cr   = ing2cr - egr2cr;
                 const ingTotCr = ing1cr + ing2cr;
                 const egrTotCr = egr1cr + egr2cr;
