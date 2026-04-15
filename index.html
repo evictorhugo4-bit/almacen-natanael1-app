@@ -20433,13 +20433,35 @@ console.log("FILTRADAS:", filtradas.length);
 
             const rows = [];
 
+            // ── Pre-calcular PAGO VENTAS por IDVENTAS ──
+            const _pagoVtaMap = {};
+            (_pagoVentasSheet||[]).forEach(p => {
+                const id = String(p.idVenta||p.IDVENTAS||'').trim();
+                if (!id) return;
+                _pagoVtaMap[id] = (_pagoVtaMap[id]||0) + (Number(p.monto||p.MONTO)||0);
+            });
+            const CLIENTES_ESP = ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'];
+
             // ── VENTAS — una fila por ítem ──
             const todasV = ventasParaCalculo();
             const vVistas = new Set();
             todasV.forEach(v => {
                 if (!enRango(v.fechaISO||v.fecha) || vVistas.has(v.id)) return;
                 vVistas.add(v.id);
-                const ef = Number(v.efectivo||0), cr = Number(v.deuda||0);
+                const cli = String(v.cliente||'').toUpperCase().trim();
+                const esEsp = CLIENTES_ESP.includes(cli);
+                const pagado = Number(_pagoVtaMap[String(v.idSheet||v.id||'').trim()]||0);
+                let ef, cr;
+                if (esEsp) {
+                    // Casa Erazo / Error Venta: efectivo = dinero recuperado (costo)
+                    const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                    ef = dinRec + pagado;
+                    cr = 0;
+                } else {
+                    ef = Number(v.efectivo||0) + pagado;
+                    const tot = Number(v.total||0);
+                    cr = Math.max(0, tot - ef);
+                }
                 const items = v.items||[];
                 if (items.length === 0) {
                     rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'—', fecha: v.fechaISO||v.fecha, detalle:'—', prodFotoKey:'', ef, cr, tot: Number(v.total||0), ts: new Date(v.fechaISO||v.fecha).getTime(), esEgreso: false });
@@ -20450,13 +20472,24 @@ console.log("FILTRADAS:", filtradas.length);
                 }
             });
 
+            // ── Pre-calcular PAGO COMPRAS por IDCOMPRAS ──
+            const _pagoCmpMap = {};
+            (_sheetPagoCompras||[]).forEach(p => {
+                const id = String(p.IDCOMPRAS||p.idCompra||'').trim();
+                if (!id) return;
+                _pagoCmpMap[id] = (_pagoCmpMap[id]||0) + (Number(p.monto||p.MONTO)||0);
+            });
+
             // ── COMPRAS — una fila por ítem ──
             (_sheetCompras||[]).forEach(c => {
                 if (!enRango(c.fechaISO||c.fecha)) return;
-                const ef = Number(c.efectivo||0), cr = Number(c.credito||0);
+                const pagado = Number(_pagoCmpMap[String(c.idSheet||c.id||'').trim()]||0);
+                const ef = Number(c.efectivo||0) + pagado;
+                const tot = Number(c.total||0)||Number(c.efectivo||0)+Number(c.credito||0);
+                const cr = Math.max(0, tot - ef);
                 const items = c.items||[];
                 if (items.length === 0) {
-                    rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'—', fecha: c.fechaISO||c.fecha, detalle:'—', prodFotoKey:'', ef, cr, tot: Number(c.total||0)||ef+cr, ts: new Date(c.fechaISO||c.fecha).getTime(), esEgreso: true });
+                    rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'—', fecha: c.fechaISO||c.fecha, detalle:'—', prodFotoKey:'', ef, cr, tot, ts: new Date(c.fechaISO||c.fecha).getTime(), esEgreso: true });
                 } else {
                     items.forEach((it, i) => {
                         rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'—', fecha: c.fechaISO||c.fecha, detalle: it.nombre||'—', prodFotoKey: String(it.nombre||'').trim().toUpperCase(), ef: i===0?ef:0, cr: i===0?cr:0, tot: Number(it.subtotal||it.costo||0)*Number(it.cantidad||1), ts: new Date(c.fechaISO||c.fecha).getTime(), esEgreso: true });
@@ -20464,33 +20497,81 @@ console.log("FILTRADAS:", filtradas.length);
                 }
             });
 
+            // ── Pre-calcular PAGO INGRESOS por IDINGRESOS ──
+            const _pagoIngMap = {};
+            (_sheetPagoIngresos||[]).forEach(p => {
+                const id = String(p.IDINGRESOS||p.idIngreso||'').trim();
+                if (!id) return;
+                _pagoIngMap[id] = (_pagoIngMap[id]||0) + (Number(p.monto||p.MONTO)||0);
+            });
+
             // ── INGRESOS ──
             (_sheetIngresos||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
-                const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
+                const id = String(r.idSheet||r.id||'').trim();
+                const pagado = Number(_pagoIngMap[id]||0);
+                const ef = Number(r.efectivo||0) + pagado;
+                const tot = Number(r.total||0);
+                const cr = Math.max(0, tot - ef);
                 const supercat = String(r.proveedor||r.supercategoria||'').trim() || '—';
                 rows.push({ tipo:'INGRESO', color:'#3b82f6', quien: supercat, fecha: r.fechaISO||r.fecha, detalle: r.concepto||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: false, esSinCliente: true });
+            });
+
+            // ── Pre-calcular PAGO EGRESOS por IDEGRESOS ──
+            const _pagoEgrMap = {};
+            (_sheetPagoEgresos||[]).forEach(p => {
+                const id = String(p.IDEGRESOS||p.idEgreso||'').trim();
+                if (!id) return;
+                _pagoEgrMap[id] = (_pagoEgrMap[id]||0) + (Number(p.monto||p.MONTO)||0);
             });
 
             // ── EGRESOS ──
             (_sheetEgresos||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
-                const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
+                const id = String(r.idSheet||r.id||'').trim();
+                const pagado = Number(_pagoEgrMap[id]||0);
+                const ef = Number(r.efectivo||0) + pagado;
+                const tot = Number(r.total||0);
+                const cr = Math.max(0, tot - ef);
                 const supercat = String(r.proveedor||r.supercategoria||'').trim() || '—';
                 rows.push({ tipo:'EGRESO', color:'#ef4444', quien: supercat, fecha: r.fechaISO||r.fecha, detalle: r.concepto||'—', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: true, esSinCliente: true });
+            });
+
+            // ── Pre-calcular PAGO ING NEGOCIO ──
+            const _pagoIngNegMap = {};
+            (_sheetPagoIngNeg||[]).forEach(p => {
+                const id = String(p.IDINGRESOSNEGOCIO||p.idIngNeg||'').trim();
+                if (!id) return;
+                _pagoIngNegMap[id] = (_pagoIngNegMap[id]||0) + (Number(p.monto||p.MONTO)||0);
             });
 
             // ── INGRESOS NEGOCIO ──
             (_sheetIngresosNegocio||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
-                const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
+                const id = String(r.idSheet||r.id||'').trim();
+                const pagado = Number(_pagoIngNegMap[id]||0);
+                const ef = Number(r.efectivo||r.pagoEfectivo||0) + pagado;
+                const tot = Number(r.total||r.pagoTotal||0);
+                const cr = Math.max(0, tot - ef);
                 rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'—', fecha: r.fechaISO||r.fecha, detalle: 'PRÉSTAMO', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: false });
+            });
+
+            // ── Pre-calcular PAGO EGR NEGOCIO ──
+            const _pagoEgrNegMap = {};
+            (_pagoEgrNegSheet||[]).forEach(p => {
+                const id = String(p.idEgresoNeg||p.IDEGRESOSNEGOCIO||'').trim();
+                if (!id) return;
+                _pagoEgrNegMap[id] = (_pagoEgrNegMap[id]||0) + (Number(p.monto)||0);
             });
 
             // ── EGRESOS NEGOCIO ──
             (_sheetEgresosNegocio||[]).forEach(r => {
                 if (!enRango(r.fechaISO||r.fecha)) return;
-                const ef = Number(r.efectivo||0), cr = Number(r.credito||0), tot = Number(r.total||0);
+                const id = String(r.idSheet||r.id||'').trim();
+                const pagado = Number(_pagoEgrNegMap[id]||0);
+                const ef = Number(r.efectivo||r.pagoEfectivo||0) + pagado;
+                const tot = Number(r.total||r.pagoTotal||0);
+                const cr = Math.max(0, tot - ef);
                 rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'—', fecha: r.fechaISO||r.fecha, detalle: 'PRÉSTAMO', prodFotoKey:'', ef, cr, tot, ts: new Date(r.fechaISO||r.fecha).getTime(), esEgreso: true });
             });
 
