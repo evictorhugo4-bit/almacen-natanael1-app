@@ -2746,11 +2746,28 @@ GUARDAR PRODUCTO
                         <option value="">Todas</option>
                     </select>
                 </div>
-                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
+                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;position:relative;" id="regFiltroQuiWrap">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cliente/Proveedor</label>
-                    <select id="regFiltroQui" onchange="renderRegistros()" class="text-xs px-3 py-2 rounded-xl w-full" style="background:#0f172a;border:1px solid #334155;color:white;outline:none;cursor:pointer;">
-                        <option value="">Todos</option>
-                    </select>
+                    <!-- Botón que muestra la selección actual -->
+                    <div id="regFiltroQuiBtn" onclick="toggleMultiSelectQui()" class="text-xs px-3 py-2 rounded-xl w-full flex items-center justify-between" style="background:#0f172a;border:1px solid #334155;color:white;cursor:pointer;min-height:34px;user-select:none;">
+                        <span id="regFiltroQuiLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">Todos</span>
+                        <span style="margin-left:6px;color:#64748b;font-size:10px;">▼</span>
+                    </div>
+                    <!-- Dropdown con checkboxes -->
+                    <div id="regFiltroQuiDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#0f172a;border:1px solid #334155;border-radius:12px;max-height:220px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+                        <div style="padding:8px 10px;border-bottom:1px solid #1e293b;">
+                            <input type="text" id="regFiltroQuiSearch" placeholder="Buscar..." oninput="filtrarOpcionesQui()" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;color:white;font-size:11px;outline:none;">
+                        </div>
+                        <div style="padding:4px 0;" id="regFiltroQuiOpciones">
+                            <!-- Las opciones se generan dinámicamente -->
+                        </div>
+                        <div style="padding:6px 10px;border-top:1px solid #1e293b;display:flex;gap:6px;">
+                            <button onclick="regFiltroQuiSelAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#10b981;font-size:10px;font-weight:900;cursor:pointer;">✓ Todos</button>
+                            <button onclick="regFiltroQuiClearAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#ef4444;font-size:10px;font-weight:900;cursor:pointer;">✕ Ninguno</button>
+                        </div>
+                    </div>
+                    <!-- Input oculto para mantener compatibilidad -->
+                    <input type="hidden" id="regFiltroQui" value="">
                 </div>
                 <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto/Categoría</label>
@@ -20335,6 +20352,112 @@ console.log("FILTRADAS:", filtradas.length);
             cont.innerHTML = comprasHtml + resumenHtml + stockHtml + deudaHtml;
         }
 
+        // ── MULTI-SELECT Cliente/Proveedor ──
+        window._regFiltroQuiSelected = new Set(); // Set vacío = "Todos"
+        window._regFiltroQuiAllOpts  = [];        // Lista completa de opciones
+
+        function _poblarMultiSelectQui(values) {
+            const opts = [...new Set(values.map(v => String(v||'').trim()).filter(v => v && v !== '—'))].sort();
+            // Solo actualiza si las opciones cambiaron (evita resetear al re-render)
+            const optsStr = opts.join('|');
+            if (window._regFiltroQuiAllOpts.join('|') === optsStr) return;
+            window._regFiltroQuiAllOpts = opts;
+            // Mantener selección válida
+            const sel = window._regFiltroQuiSelected;
+            const newSel = new Set([...sel].filter(v => opts.includes(v)));
+            window._regFiltroQuiSelected = newSel;
+            _renderMultiSelectQui('');
+            _actualizarLabelQui();
+        }
+
+        function _renderMultiSelectQui(busqueda) {
+            const contenedor = document.getElementById('regFiltroQuiOpciones');
+            if (!contenedor) return;
+            const opts = window._regFiltroQuiAllOpts;
+            const sel  = window._regFiltroQuiSelected;
+            const q    = busqueda.toLowerCase().trim();
+            const filtrados = q ? opts.filter(o => o.toLowerCase().includes(q)) : opts;
+            contenedor.innerHTML = filtrados.map(o => {
+                const checked = sel.has(o);
+                return `<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:11px;color:#e2e8f0;font-weight:700;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">
+                    <input type="checkbox" value="${o.replace(/"/g,'&quot;')}" ${checked?'checked':''} onchange="toggleOpcionQui(this)" style="accent-color:#10b981;width:14px;height:14px;cursor:pointer;">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o}</span>
+                </label>`;
+            }).join('') || '<p style="padding:10px 12px;color:#475569;font-size:11px;font-weight:700;">Sin resultados</p>';
+        }
+
+        function filtrarOpcionesQui() {
+            const q = (document.getElementById('regFiltroQuiSearch')?.value||'');
+            _renderMultiSelectQui(q);
+        }
+
+        function toggleOpcionQui(checkbox) {
+            const val = checkbox.value;
+            if (checkbox.checked) {
+                window._regFiltroQuiSelected.add(val);
+            } else {
+                window._regFiltroQuiSelected.delete(val);
+            }
+            _actualizarLabelQui();
+            renderRegistros();
+        }
+
+        function regFiltroQuiSelAll() {
+            window._regFiltroQuiAllOpts.forEach(o => window._regFiltroQuiSelected.add(o));
+            const q = (document.getElementById('regFiltroQuiSearch')?.value||'');
+            _renderMultiSelectQui(q);
+            _actualizarLabelQui();
+            renderRegistros();
+        }
+
+        function regFiltroQuiClearAll() {
+            window._regFiltroQuiSelected.clear();
+            const q = (document.getElementById('regFiltroQuiSearch')?.value||'');
+            _renderMultiSelectQui(q);
+            _actualizarLabelQui();
+            renderRegistros();
+        }
+
+        function _actualizarLabelQui() {
+            const label = document.getElementById('regFiltroQuiLabel');
+            if (!label) return;
+            const sel = window._regFiltroQuiSelected;
+            const btn = document.getElementById('regFiltroQuiBtn');
+            if (sel.size === 0) {
+                label.textContent = 'Todos';
+                if (btn) btn.style.borderColor = '#334155';
+            } else if (sel.size === 1) {
+                label.textContent = [...sel][0];
+                if (btn) btn.style.borderColor = '#10b981';
+            } else {
+                label.textContent = sel.size + ' seleccionados';
+                if (btn) btn.style.borderColor = '#10b981';
+            }
+        }
+
+        function toggleMultiSelectQui() {
+            const dd = document.getElementById('regFiltroQuiDropdown');
+            if (!dd) return;
+            const visible = dd.style.display !== 'none';
+            dd.style.display = visible ? 'none' : 'block';
+            if (!visible) {
+                // Foco en búsqueda al abrir
+                setTimeout(() => {
+                    const s = document.getElementById('regFiltroQuiSearch');
+                    if (s) { s.value = ''; s.focus(); _renderMultiSelectQui(''); }
+                }, 50);
+            }
+        }
+
+        // Cerrar dropdown al hacer click fuera
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('regFiltroQuiWrap');
+            const dd   = document.getElementById('regFiltroQuiDropdown');
+            if (dd && wrap && !wrap.contains(e.target)) {
+                dd.style.display = 'none';
+            }
+        });
+
         function regSetPeriodo(dias) {
             const desde = new Date(); desde.setHours(0,0,0,0);
             const hasta = new Date();
@@ -20354,11 +20477,14 @@ console.log("FILTRADAS:", filtradas.length);
             document.getElementById('regDesde').value = '';
             document.getElementById('regHasta').value = '';
             var op  = document.getElementById('regFiltroOp');
-            var qui = document.getElementById('regFiltroQui');
             var det = document.getElementById('regFiltroDet');
             if (op)  { op.innerHTML  = '<option value="">Todos</option>'; op.value  = ''; }
-            if (qui) { qui.innerHTML = '<option value="">Todos</option>'; qui.value = ''; }
             if (det) { det.innerHTML = '<option value="">Todos</option>'; det.value = ''; }
+            // Limpiar multi-select de cliente
+            window._regFiltroQuiSelected = new Set();
+            _actualizarLabelQui();
+            var dd = document.getElementById('regFiltroQuiDropdown');
+            if (dd) dd.style.display = 'none';
             renderRegistros();
         }
 
@@ -20629,16 +20755,17 @@ console.log("FILTRADAS:", filtradas.length);
                 sel.innerHTML = '<option value="">Todos</option>' + opts.map(o => `<option value="${o}"${prev===o?' selected':''}>${o}</option>`).join('');
             };
             _poblarSelect('regFiltroOp',  rows.map(r => r.tipo));
-            _poblarSelect('regFiltroQui', rows.map(r => r.quien));
+            // Multi-select para Cliente/Proveedor
+            _poblarMultiSelectQui(rows.map(r => r.quien));
             _poblarSelect('regFiltroDet', rows.map(r => r.detalle));
 
             // ── Filtros por columna ──
             const fOp  = (document.getElementById('regFiltroOp') ?.value||'').trim();
-            const fQui = (document.getElementById('regFiltroQui')?.value||'').trim();
+            const fQuiSet = window._regFiltroQuiSelected || new Set();
             const fDet = (document.getElementById('regFiltroDet')?.value||'').trim();
             const rowsFiltradas = rows.filter(r => {
                 if (fOp  && r.tipo    !== fOp)  return false;
-                if (fQui && r.quien   !== fQui) return false;
+                if (fQuiSet.size > 0 && !fQuiSet.has(String(r.quien||'').trim())) return false;
                 if (fDet && r.detalle !== fDet) return false;
                 return true;
             });
