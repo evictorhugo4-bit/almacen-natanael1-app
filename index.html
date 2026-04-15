@@ -5365,35 +5365,29 @@ function calcularResumenGeneral() {
 
     // ============================
     // INGRESOS NEGOCIO
+    // (excluye clientes LEO, SILVIA, HUGO)
     // ============================
+    const _clientesExcluidosNeg = ['LEO','SILVIA','HUGO'];
     _sheetIngresosNegocio.forEach(n => {
         if (cumpleFiltro(n.fechaISO, n.estado)) {
-            totales.ingresosNegocio += parseFloat(n.pagoTotal) || 0;
+            const _cliIng = String(n.cliente || n.proveedor || '').trim().toUpperCase();
+            if (_clientesExcluidosNeg.includes(_cliIng)) return;
+            totales.ingresosNegocio += parseFloat(n.pagoTotal || n.total) || 0;
         }
     });
 
     // ============================
     // EGRESOS NEGOCIO
+    // (suma pagoTotal, excluye clientes LEO, SILVIA, HUGO)
     // ============================
-    
-
-let totalPrestamos = 0;
-let totalPagosPrestamos = 0;
 
 _sheetEgresosNegocio.forEach(e => {
     if (cumpleFiltro(e.fechaISO, e.estado)) {
-        totalPrestamos += parseFloat(e.pagoTotal || e.monto || 0);
+        const _cliEgr = String(e.cliente || e.proveedor || '').trim().toUpperCase();
+        if (_clientesExcluidosNeg.includes(_cliEgr)) return;
+        totales.egresosNegocio += parseFloat(e.pagoTotal || e.total || e.monto || 0);
     }
 });
-
-const _pagoEgrNegTodos = [...(typeof _sheetPagoEgrNeg !== 'undefined' ? _sheetPagoEgrNeg : []), ...(typeof _pagoEgrNegSheet !== 'undefined' ? _pagoEgrNegSheet : [])];
-_pagoEgrNegTodos.forEach(p => {
-    if (cumpleFiltro(p.fechaISO || p.FECHA, p.estado || p.ESTADO)) {
-        totalPagosPrestamos += parseFloat(p.monto || p.MONTO || p['PAGO TOTAL'] || 0);
-    }
-});
-
-totales.egresosNegocio = totalPrestamos - totalPagosPrestamos;
 
 
     const neto =
@@ -8860,9 +8854,11 @@ clienteDetalleId = null;
             const pfx     = tipo === 'ingresosNegocio' ? 'ingNeg' : 'egrNeg';
             const listaId = tipo === 'ingresosNegocio' ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
             const el = id => document.getElementById(id);
-            if(el(pfx+'TotalGasto'))    el(pfx+'TotalGasto').textContent    = '$'+Utils.fmt(db.reduce((s,r)=>s+(r.total||0),0));
-            if(el(pfx+'TotalEfectivo')) el(pfx+'TotalEfectivo').textContent = '$'+Utils.fmt(db.reduce((s,r)=>s+(r.efectivo||0),0));
-            if(el(pfx+'TotalCredito'))  el(pfx+'TotalCredito').textContent  = '$'+Utils.fmt(db.reduce((s,r)=>s+(r.credito||0),0));
+            const _excluirNeg = ['LEO','SILVIA','HUGO'];
+            const _dbFiltrado = db.filter(r => !_excluirNeg.includes(String(r.cliente||r.proveedor||'').trim().toUpperCase()));
+            if(el(pfx+'TotalGasto'))    el(pfx+'TotalGasto').textContent    = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.total||0),0));
+            if(el(pfx+'TotalEfectivo')) el(pfx+'TotalEfectivo').textContent = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.efectivo||0),0));
+            if(el(pfx+'TotalCredito'))  el(pfx+'TotalCredito').textContent  = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.credito||0),0));
             const container = el(listaId);
             if (!container) return;
             if (db.length === 0) { container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin registros</div>`; return; }
@@ -17471,10 +17467,14 @@ console.log("FILTRADAS:", filtradas.length);
             }, 0);
 
             // ── Helper: suma campo de tabla ingresos/egresos negocio en rango ──
+            // Excluye clientes LEO, SILVIA, HUGO
+            const _negExcluidos = ['LEO','SILVIA','HUGO'];
             const sumNeg = (arr, campo) => {
                 const vistos = new Set();
                 return (arr||[]).reduce((s,r) => {
                     if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                    const _cliN = String(r.cliente||r.proveedor||'').trim().toUpperCase();
+                    if (_negExcluidos.includes(_cliN)) return s;
                     const uid = r.idSheet || r.id || '';
                     if (uid && vistos.has(uid)) return s;
                     if (uid) vistos.add(uid);
