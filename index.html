@@ -2740,11 +2740,20 @@ GUARDAR PRODUCTO
             </div>
             <!-- Filtros por columna (selects dinámicos) -->
             <div class="glass-card rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3 items-end">
-                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
+                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;position:relative;" id="regFiltroOpWrap">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Operación</label>
-                    <select id="regFiltroOp" onchange="renderRegistros()" class="text-xs px-3 py-2 rounded-xl w-full" style="background:#0f172a;border:1px solid #334155;color:white;outline:none;cursor:pointer;">
-                        <option value="">Todas</option>
-                    </select>
+                    <div id="regFiltroOpBtn" onclick="toggleMultiSelectOp()" class="text-xs px-3 py-2 rounded-xl w-full flex items-center justify-between" style="background:#0f172a;border:1px solid #334155;color:white;cursor:pointer;min-height:34px;user-select:none;">
+                        <span id="regFiltroOpLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">Todos</span>
+                        <span style="margin-left:6px;color:#64748b;font-size:10px;">▼</span>
+                    </div>
+                    <div id="regFiltroOpDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#0f172a;border:1px solid #334155;border-radius:12px;max-height:220px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+                        <div style="padding:4px 0;" id="regFiltroOpOpciones"></div>
+                        <div style="padding:6px 10px;border-top:1px solid #1e293b;display:flex;gap:6px;">
+                            <button onclick="regFiltroOpSelAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#10b981;font-size:10px;font-weight:900;cursor:pointer;">✓ Todos</button>
+                            <button onclick="regFiltroOpClearAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#ef4444;font-size:10px;font-weight:900;cursor:pointer;">✕ Ninguno</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="regFiltroOp" value="">
                 </div>
                 <div class="flex flex-col gap-1 flex-1" style="min-width:160px;position:relative;" id="regFiltroQuiWrap">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cliente/Proveedor</label>
@@ -20352,6 +20361,88 @@ console.log("FILTRADAS:", filtradas.length);
             cont.innerHTML = comprasHtml + resumenHtml + stockHtml + deudaHtml;
         }
 
+        // ── MULTI-SELECT Operación ──
+        window._regFiltroOpSelected = new Set();
+        window._regFiltroOpAllOpts  = [];
+
+        function _poblarMultiSelectOp(values) {
+            const opts = [...new Set(values.map(v => String(v||'').trim()).filter(v => v && v !== '—'))].sort();
+            const optsStr = opts.join('|');
+            if (window._regFiltroOpAllOpts.join('|') === optsStr) return;
+            window._regFiltroOpAllOpts = opts;
+            const sel = window._regFiltroOpSelected;
+            window._regFiltroOpSelected = new Set([...sel].filter(v => opts.includes(v)));
+            _renderMultiSelectOp();
+            _actualizarLabelOp();
+        }
+
+        function _renderMultiSelectOp() {
+            const contenedor = document.getElementById('regFiltroOpOpciones');
+            if (!contenedor) return;
+            const opts = window._regFiltroOpAllOpts;
+            const sel  = window._regFiltroOpSelected;
+            contenedor.innerHTML = opts.map(o => {
+                const checked = sel.has(o);
+                return `<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:11px;color:#e2e8f0;font-weight:700;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">
+                    <input type="checkbox" value="${o.replace(/"/g,'&quot;')}" ${checked?'checked':''} onchange="toggleOpcionOp(this)" style="accent-color:#10b981;width:14px;height:14px;cursor:pointer;">
+                    <span>${o}</span>
+                </label>`;
+            }).join('') || '<p style="padding:10px 12px;color:#475569;font-size:11px;">Sin opciones</p>';
+        }
+
+        function toggleOpcionOp(checkbox) {
+            if (checkbox.checked) window._regFiltroOpSelected.add(checkbox.value);
+            else window._regFiltroOpSelected.delete(checkbox.value);
+            _actualizarLabelOp();
+            renderRegistros();
+        }
+
+        function regFiltroOpSelAll() {
+            window._regFiltroOpAllOpts.forEach(o => window._regFiltroOpSelected.add(o));
+            _renderMultiSelectOp();
+            _actualizarLabelOp();
+            renderRegistros();
+        }
+
+        function regFiltroOpClearAll() {
+            window._regFiltroOpSelected.clear();
+            _renderMultiSelectOp();
+            _actualizarLabelOp();
+            renderRegistros();
+        }
+
+        function _actualizarLabelOp() {
+            const label = document.getElementById('regFiltroOpLabel');
+            if (!label) return;
+            const sel = window._regFiltroOpSelected;
+            const btn = document.getElementById('regFiltroOpBtn');
+            if (sel.size === 0) {
+                label.textContent = 'Todos';
+                if (btn) btn.style.borderColor = '#334155';
+            } else if (sel.size === 1) {
+                label.textContent = [...sel][0];
+                if (btn) btn.style.borderColor = '#10b981';
+            } else {
+                label.textContent = sel.size + ' seleccionados';
+                if (btn) btn.style.borderColor = '#10b981';
+            }
+        }
+
+        function toggleMultiSelectOp() {
+            const dd = document.getElementById('regFiltroOpDropdown');
+            if (!dd) return;
+            const visible = dd.style.display !== 'none';
+            dd.style.display = visible ? 'none' : 'block';
+            if (!visible) _renderMultiSelectOp();
+        }
+
+        // Cerrar dropdown Op al click fuera
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('regFiltroOpWrap');
+            const dd   = document.getElementById('regFiltroOpDropdown');
+            if (dd && wrap && !wrap.contains(e.target)) dd.style.display = 'none';
+        });
+
         // ── MULTI-SELECT Cliente/Proveedor ──
         window._regFiltroQuiSelected = new Set(); // Set vacío = "Todos"
         window._regFiltroQuiAllOpts  = [];        // Lista completa de opciones
@@ -20769,17 +20860,17 @@ console.log("FILTRADAS:", filtradas.length);
                 const opts = [...new Set(values.map(v => String(v||'').trim()).filter(v => v && v !== '—'))].sort();
                 sel.innerHTML = '<option value="">Todos</option>' + opts.map(o => `<option value="${o}"${prev===o?' selected':''}>${o}</option>`).join('');
             };
-            _poblarSelect('regFiltroOp',  rows.map(r => r.tipo));
+            _poblarMultiSelectOp(rows.map(r => r.tipo));
             // Multi-select para Cliente/Proveedor
             _poblarMultiSelectQui(rows.map(r => r.quien));
             _poblarSelect('regFiltroDet', rows.map(r => r.detalle));
 
             // ── Filtros por columna ──
-            const fOp  = (document.getElementById('regFiltroOp') ?.value||'').trim();
+            const fOpSet  = window._regFiltroOpSelected || new Set();
             const fQuiSet = window._regFiltroQuiSelected || new Set();
             const fDet = (document.getElementById('regFiltroDet')?.value||'').trim();
             const rowsFiltradas = rows.filter(r => {
-                if (fOp  && r.tipo    !== fOp)  return false;
+                if (fOpSet.size > 0 && !fOpSet.has(String(r.tipo||'').trim())) return false;
                 if (fQuiSet.size > 0 && !fQuiSet.has(String(r.quien||'').trim())) return false;
                 if (fDet && r.detalle !== fDet) return false;
                 return true;
