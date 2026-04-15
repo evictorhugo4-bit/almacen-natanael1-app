@@ -2028,6 +2028,7 @@ GUARDAR PRODUCTO
                     <button id="tabBtnRegistros" onclick="switchStatsTab('registros')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Registros</button>
                     <button id="tabBtnTarjeta" onclick="switchStatsTab('tarjeta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💳 Tarjeta</button>
                     <button id="tabBtnNegocio" onclick="switchStatsTab('negocio')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🏪 Negocio</button>
+                    <button id="tabBtnControl" onclick="switchStatsTab('control')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">📋 Control</button>
                 </div>
             </div>
             <!-- Filtros fecha (solo ventas) -->
@@ -2048,7 +2049,7 @@ GUARDAR PRODUCTO
         </div>
 
         <!-- KPIs -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="statsKpis">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="statsKpis">
             <div class="glass-card rounded-2xl p-4 border border-emerald-500/20">
                 <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Total Ventas</p>
                 <p id="kpiTotalVentas" class="text-2xl font-black text-white mt-1">$0</p>
@@ -2061,9 +2062,20 @@ GUARDAR PRODUCTO
                 <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Cant. Transacciones</p>
                 <p id="kpiTransacciones" class="text-2xl font-black text-white mt-1">0</p>
             </div>
+            <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
+                <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Pago Efectivo</p>
+                <p id="kpiPagoEfectivo" class="text-2xl font-black text-emerald-400 mt-1">$0</p>
+                <p class="text-[8px] text-slate-500 font-bold mt-1">Ef. directo + Cobros Pago Ventas</p>
+            </div>
+            <div class="glass-card rounded-2xl p-4 border border-emerald-900/40">
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Cobros Pago Ventas</p>
+                <p id="kpiPagoVentas" class="text-2xl font-black text-emerald-500 mt-1">+$0</p>
+                <p class="text-[8px] text-slate-500 font-bold mt-1">Pagos de deudas cobrados</p>
+            </div>
             <div class="glass-card rounded-2xl p-4 border border-red-500/40">
-                <p class="text-[9px] font-black text-red-400 uppercase tracking-widest">Créditos</p>
+                <p class="text-[9px] font-black text-red-400 uppercase tracking-widest">Crédito Pendiente</p>
                 <p id="kpiCreditos" class="text-2xl font-black text-red-400 mt-1">$0</p>
+                <p class="text-[8px] text-slate-500 font-bold mt-1">Deuda real (descontando cobros)</p>
             </div>
         </div>
 
@@ -2769,6 +2781,55 @@ GUARDAR PRODUCTO
                 </table>
             </div>
             <div id="tablaRegistrosTotales" class="grid grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- TAB CONTROL DE TABLAS -->
+        <div id="tabControl" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-2xl border border-slate-700 space-y-3">
+                <h3 class="text-sm font-black text-white uppercase italic">📋 Control de Tablas</h3>
+                <div class="flex flex-wrap gap-2 items-end">
+                    <!-- Selector de tabla -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Tabla</label>
+                        <select id="ctrlTabla" onchange="renderControlTablas()" class="text-xs px-3 py-2 rounded-xl font-black" style="background:#0f172a;border:1px solid #334155;color:white;">
+                            <option value="ventas">Ventas</option>
+                            <option value="ingresos">Ingresos</option>
+                            <option value="ingresos_neg">Ingresos Negocio</option>
+                            <option value="compras">Compras</option>
+                            <option value="egresos">Egresos</option>
+                            <option value="egresos_neg">Egresos Negocio</option>
+                        </select>
+                    </div>
+                    <!-- Desde -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label>
+                        <input type="date" id="ctrlDesde" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                    </div>
+                    <!-- Hasta -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label>
+                        <input type="date" id="ctrlHasta" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                    </div>
+                    <button onclick="renderControlTablas()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl">FILTRAR</button>
+                    <button onclick="ctrlSetHoy()" class="px-3 py-2 bg-slate-700 text-slate-300 font-black text-[10px] rounded-xl">HOY</button>
+                    <!-- Búsqueda -->
+                    <div class="flex flex-col gap-1 flex-1 min-w-[150px]">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Buscar</label>
+                        <input type="text" id="ctrlBuscar" oninput="renderControlTablas()" placeholder="Cliente, producto..." class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
+                    </div>
+                </div>
+                <!-- Totales -->
+                <div id="ctrlTotales" class="flex gap-3 flex-wrap"></div>
+            </div>
+            <!-- Tabla -->
+            <div class="glass-card rounded-2xl border border-slate-700 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table id="ctrlTablaEl" class="w-full text-[11px]">
+                        <thead id="ctrlThead"></thead>
+                        <tbody id="ctrlTbody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
     </div><!-- /vistaEstadisticas -->
@@ -5529,6 +5590,357 @@ _sheetEgresosNegocio.forEach(e => {
                     infoEl.classList.remove('hidden');
                 } else {
                     infoEl.classList.add('hidden');
+                }
+            }
+        }
+
+
+        // ═══════════════════════════════════════════════
+        // CONTROL DE TABLAS
+        // ═══════════════════════════════════════════════
+        function ctrlSetHoy() {
+            var hoy = new Date().toISOString().split('T')[0];
+            var d = document.getElementById('ctrlDesde');
+            var h = document.getElementById('ctrlHasta');
+            if (d) d.value = hoy;
+            if (h) h.value = hoy;
+        }
+
+        function _ctrlEnRango(fechaStr) {
+            var d = document.getElementById('ctrlDesde');
+            var h = document.getElementById('ctrlHasta');
+            if (!d || !h || !d.value || !h.value) return true;
+            var fn = parseFechaNum(fechaStr);
+            if (!fn) return false;
+            var fd = parseFechaNum(d.value + 'T00:00:00');
+            var fh = parseFechaNum(h.value + 'T23:59:59');
+            return fn >= fd && fn <= fh;
+        }
+
+        function renderControlTablas() {
+            var tabla  = (document.getElementById('ctrlTabla')  || {}).value || 'ventas';
+            var buscar = ((document.getElementById('ctrlBuscar') || {}).value || '').trim().toUpperCase();
+            var thead  = document.getElementById('ctrlThead');
+            var tbody  = document.getElementById('ctrlTbody');
+            var totDiv = document.getElementById('ctrlTotales');
+            if (!thead || !tbody) return;
+
+            var thStyle = 'padding:8px 12px;background:#0f172a;color:#94a3b8;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;text-align:left;white-space:nowrap;border-bottom:1px solid #1e293b;';
+            var tdStyle = 'padding:7px 12px;font-size:10px;font-weight:700;color:#e2e8f0;border-bottom:1px solid #1e293b;white-space:nowrap;';
+            var tdMon   = 'padding:7px 12px;font-size:10px;font-weight:900;font-family:monospace;border-bottom:1px solid #1e293b;white-space:nowrap;text-align:right;';
+
+            var fmt$ = function(v) { return v === 0 ? '<span style="color:#475569">$0</span>' : '<span style="color:' + (v > 0 ? '#34d399' : '#f87171') + '">$' + Utils.fmt(Math.abs(v)) + '</span>'; };
+
+            // ── Pre-calcular pagos cruzados ──────────────────────────────
+            // PAGO VENTAS por IDVENTAS
+            var pagoVentasPorId = {};
+            (_pagoVentasSheet || []).forEach(function(p) {
+                var id = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!id) return;
+                pagoVentasPorId[id] = (pagoVentasPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+            // PAGO COMPRAS por IDCOMPRAS
+            var pagoComprasPorId = {};
+            (_sheetPagoCompras || []).forEach(function(p) {
+                var id = String(p.IDCOMPRAS || p.idCompra || '').trim();
+                if (!id) return;
+                pagoComprasPorId[id] = (pagoComprasPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+            // PAGO INGRESOS por IDINGRESOS
+            var pagoIngresosPorId = {};
+            (_sheetPagoIngresos || []).forEach(function(p) {
+                var id = String(p.IDINGRESOS || p.idIngreso || '').trim();
+                if (!id) return;
+                pagoIngresosPorId[id] = (pagoIngresosPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+            // PAGO EGRESOS por IDEGRESOS
+            var pagoEgresosPorId = {};
+            (_sheetPagoEgresos || []).forEach(function(p) {
+                var id = String(p.IDEGRESOS || p.idEgreso || '').trim();
+                if (!id) return;
+                pagoEgresosPorId[id] = (pagoEgresosPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+            // PAGO INGRESOS NEGOCIO por IDINGRESOSNEGOCIO
+            var pagoIngNegPorId = {};
+            (_sheetPagoIngNeg || []).forEach(function(p) {
+                var id = String(p.IDINGRESOSNEGOCIO || p.idIngNeg || '').trim();
+                if (!id) return;
+                pagoIngNegPorId[id] = (pagoIngNegPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+            // PAGO EGRESOS NEGOCIO por IDEGRESOSNEGOCIO
+            var pagoEgrNegPorId = {};
+            (_pagoEgrNegSheet || []).forEach(function(p) {
+                var id = String(p.idEgresoNeg || p.IDEGRESOSNEGOCIO || '').trim();
+                if (!id) return;
+                pagoEgrNegPorId[id] = (pagoEgrNegPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+
+            var rows = [], headers = [], totEf = 0, totCr = 0, totTot = 0, totPagado = 0;
+
+            if (tabla === 'ventas') {
+                headers = ['FECHA','CLIENTE','PRODUCTO','EF. VENTA','CRÉDITO','TOTAL'];
+                var vistos = new Set();
+                var todasV = ventasParaCalculo ? ventasParaCalculo() : (_sheetVentas || []);
+                todasV.forEach(function(v) {
+                    if (!_ctrlEnRango(v.fechaISO || v.fecha || '')) return;
+                    var id = String(v.idSheet || v.id || '').trim();
+                    if (id && vistos.has(id)) return;
+                    if (id) vistos.add(id);
+                    var cli = (v.cliente || '').toUpperCase().trim();
+                    var prods = (v.items || []).map(function(i) { return i.nombre || ''; }).join(', ');
+                    if (buscar && !cli.includes(buscar) && !prods.toUpperCase().includes(buscar)) return;
+
+                    var esEsp = ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
+
+                    // Pago Ventas cobrado para esta venta
+                    var pagado = parseFloat(pagoVentasPorId[id] || 0);
+
+                    if (esEsp) {
+                        // CASA ERAZO / ERROR VENTA: EF.VENTA = dineroRecuperado, CRÉDITO = 0, TOTAL = dineroRecuperado
+                        var dinRec = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.dineroRecuperado) || 0); }, 0);
+                        if (!dinRec) dinRec = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.costo) || 0) * (parseFloat(i.cantidad) || 1); }, 0);
+                        totEf  += dinRec;
+                        totTot += dinRec;
+                        var fecha = v.fecha || v.fechaISO || '';
+                        rows.push('<tr style="border-bottom:1px solid #1e293b;background:rgba(245,158,11,0.04);">' +
+                            '<td style="' + tdStyle + 'color:#94a3b8;">' + fecha + '</td>' +
+                            '<td style="' + tdStyle + 'color:#fbbf24;">' + (v.cliente || '—') + '</td>' +
+                            '<td style="' + tdStyle + 'max-width:180px;overflow:hidden;text-overflow:ellipsis;">' + (prods || '—') + '</td>' +
+                            '<td style="' + tdMon + 'color:#fbbf24;">$' + Utils.fmt(dinRec) + '</td>' +
+                            '<td style="' + tdMon + 'color:#475569;">$0</td>' +
+                            '<td style="' + tdMon + 'color:#fbbf24;">$' + Utils.fmt(dinRec) + '</td>' +
+                        '</tr>');
+                        return;
+                    }
+
+                    // Ventas normales
+                    // Sumas de pagoEfectivo y pagoCredito de ítems
+                    var sumItemEf = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.pagoEfectivo) || 0); }, 0);
+                    var sumItemCr = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.pagoCredito)  || 0); }, 0);
+                    // Fallback: si los items no tienen pagoEfectivo/pagoCredito, usar efectivo/deuda de la venta
+                    if (sumItemEf === 0 && sumItemCr === 0) {
+                        sumItemEf = parseFloat(v.efectivo || 0);
+                        sumItemCr = parseFloat(v.deuda    || 0);
+                    }
+                    var sumItemTot = sumItemEf + sumItemCr;
+
+                    // Ganancia bruta de la venta
+                    var costoV  = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.costo) || 0) * (parseFloat(i.cantidad) || 1); }, 0);
+                    var dinRecV = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.dineroRecuperado) || 0); }, 0) || costoV;
+                    var ganBruta = Math.max(0, sumItemTot - dinRecV);
+
+                    // Cobrado total en efectivo (ítems + pagoVentas)
+                    var cobEf  = sumItemEf + pagado;
+
+                    // Ganancia en efectivo y crédito (misma lógica que renderResumen/renderEstadoNegocio)
+                    var ganEfV = cobEf > dinRecV ? Math.min(cobEf - dinRecV, ganBruta) : 0;
+                    var ganCrV = Math.max(0, ganBruta - ganEfV);
+
+                    // Columnas finales (descontando ganancia = costo real para el proveedor)
+                    var efVenta  = cobEf    - ganEfV;           // pagoEf items + pagoVentas − ganEf
+                    var crVenta  = Math.max(0, sumItemCr - ganCrV); // pagoCredito items − ganCr
+                    var totVenta = efVenta + crVenta;
+
+                    totEf  += efVenta;
+                    totCr  += crVenta;
+                    totTot += totVenta;
+
+                    var fecha = v.fecha || v.fechaISO || '';
+                    var crColor = crVenta > 0 ? '#f87171' : '#475569';
+                    rows.push('<tr style="border-bottom:1px solid #1e293b;">' +
+                        '<td style="' + tdStyle + 'color:#94a3b8;">' + fecha + '</td>' +
+                        '<td style="' + tdStyle + '">' + (v.cliente || '—') + '</td>' +
+                        '<td style="' + tdStyle + 'max-width:180px;overflow:hidden;text-overflow:ellipsis;">' + (prods || '—') + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">$' + Utils.fmt(efVenta) + '</td>' +
+                        '<td style="' + tdMon + 'color:' + crColor + ';">$' + Utils.fmt(crVenta) + '</td>' +
+                        '<td style="' + tdMon + 'color:#f1f5f9;">$' + Utils.fmt(totVenta) + '</td>' +
+                    '</tr>');
+                });
+
+            } else if (tabla === 'compras') {
+                headers = ['FECHA','PROVEEDOR','PRODUCTOS','EF. COMPRA','PAGO COMPRAS','EFECTIVO TOTAL','CRÉDITO','TOTAL'];
+                var vistos = new Set();
+                (_sheetCompras || []).forEach(function(c) {
+                    if (!_ctrlEnRango(c.fechaISO || c.fecha || '')) return;
+                    var id = String(c.idSheet || c.id || '').trim();
+                    if (id && vistos.has(id)) return;
+                    if (id) vistos.add(id);
+                    var prov = (c.proveedor || '').toUpperCase();
+                    var prods = (c.items || []).map(function(i) { return i.nombre || ''; }).join(', ');
+                    if (buscar && !prov.includes(buscar) && !prods.toUpperCase().includes(buscar)) return;
+                    var ef    = parseFloat(c.efectivo || 0);
+                    var tot   = parseFloat(c.total || 0);
+                    var pagado = parseFloat(pagoComprasPorId[id] || 0);
+                    var efTot = ef + pagado;
+                    var cr    = Math.max(0, tot - efTot);
+                    totEf += ef; totPagado += pagado; totCr += cr; totTot += tot;
+                    rows.push('<tr style="border-bottom:1px solid #1e293b;">' +
+                        '<td style="' + tdStyle + 'color:#94a3b8;">' + (c.fecha || c.fechaISO || '') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (c.proveedor || '—') + '</td>' +
+                        '<td style="' + tdStyle + 'max-width:180px;overflow:hidden;text-overflow:ellipsis;">' + (prods || '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(ef) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">' + (pagado > 0 ? '+$' + Utils.fmt(pagado) : '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(efTot) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(-cr) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(tot) + '</td>' +
+                    '</tr>');
+                });
+
+            } else if (tabla === 'ingresos') {
+                headers = ['FECHA','PROVEEDOR','CATEGORÍA','EF. INGRESO','PAGO INGRESOS','EFECTIVO TOTAL','CRÉDITO','TOTAL'];
+                (_sheetIngresos || []).forEach(function(r) {
+                    if (!_ctrlEnRango(r.fechaISO || r.fecha || '')) return;
+                    var prov = (r.proveedor || '').toUpperCase();
+                    var conc = (r.concepto || '').toUpperCase();
+                    if (buscar && !prov.includes(buscar) && !conc.includes(buscar)) return;
+                    var ef    = parseFloat(r.efectivo || 0);
+                    var tot   = parseFloat(r.total || 0);
+                    var id    = String(r.idSheet || r.id || '').trim();
+                    var pagado = parseFloat(pagoIngresosPorId[id] || 0);
+                    var efTot = ef + pagado;
+                    var cr    = Math.max(0, tot - efTot);
+                    totEf += ef; totPagado += pagado; totCr += cr; totTot += tot;
+                    rows.push('<tr style="border-bottom:1px solid #1e293b;">' +
+                        '<td style="' + tdStyle + 'color:#94a3b8;">' + (r.fecha || r.fechaISO || '') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (r.proveedor || '—') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (r.concepto || '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(ef) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">' + (pagado > 0 ? '+$' + Utils.fmt(pagado) : '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(efTot) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(-cr) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(tot) + '</td>' +
+                    '</tr>');
+                });
+
+            } else if (tabla === 'egresos') {
+                headers = ['FECHA','PROVEEDOR','CATEGORÍA','EF. EGRESO','PAGO EGRESOS','EFECTIVO TOTAL','CRÉDITO','TOTAL'];
+                (_sheetEgresos || []).forEach(function(r) {
+                    if (!_ctrlEnRango(r.fechaISO || r.fecha || '')) return;
+                    var prov = (r.proveedor || '').toUpperCase();
+                    var conc = (r.concepto || '').toUpperCase();
+                    if (buscar && !prov.includes(buscar) && !conc.includes(buscar)) return;
+                    var ef    = parseFloat(r.efectivo || 0);
+                    var tot   = parseFloat(r.total || 0);
+                    var id    = String(r.idSheet || r.id || '').trim();
+                    var pagado = parseFloat(pagoEgresosPorId[id] || 0);
+                    var efTot = ef + pagado;
+                    var cr    = Math.max(0, tot - efTot);
+                    totEf += ef; totPagado += pagado; totCr += cr; totTot += tot;
+                    rows.push('<tr style="border-bottom:1px solid #1e293b;">' +
+                        '<td style="' + tdStyle + 'color:#94a3b8;">' + (r.fecha || r.fechaISO || '') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (r.proveedor || '—') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (r.concepto || '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(ef) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">' + (pagado > 0 ? '+$' + Utils.fmt(pagado) : '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(efTot) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(-cr) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(tot) + '</td>' +
+                    '</tr>');
+                });
+
+            } else if (tabla === 'ingresos_neg') {
+                headers = ['FECHA','CLIENTE','EF. INGRESO','PAGO ING. NEG.','EFECTIVO TOTAL','CRÉDITO','TOTAL'];
+                (_sheetIngresosNegocio || []).forEach(function(r) {
+                    if (!_ctrlEnRango(r.fechaISO || r.fecha || '')) return;
+                    var cli = (r.cliente || '').toUpperCase();
+                    if (buscar && !cli.includes(buscar)) return;
+                    var ef    = parseFloat(r.efectivo || r.pagoEfectivo || 0);
+                    var tot   = parseFloat(r.total || r.pagoTotal || 0);
+                    var id    = String(r.idSheet || r.id || '').trim();
+                    var pagado = parseFloat(pagoIngNegPorId[id] || 0);
+                    var efTot = ef + pagado;
+                    var cr    = Math.max(0, tot - efTot);
+                    totEf += ef; totPagado += pagado; totCr += cr; totTot += tot;
+                    rows.push('<tr style="border-bottom:1px solid #1e293b;">' +
+                        '<td style="' + tdStyle + 'color:#94a3b8;">' + (r.fecha || r.fechaISO || '') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (r.cliente || '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(ef) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">' + (pagado > 0 ? '+$' + Utils.fmt(pagado) : '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(efTot) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(-cr) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(tot) + '</td>' +
+                    '</tr>');
+                });
+
+            } else if (tabla === 'egresos_neg') {
+                headers = ['FECHA','CLIENTE','EF. EGRESO','PAGO EGR. NEG.','EFECTIVO TOTAL','CRÉDITO','TOTAL'];
+                (_sheetEgresosNegocio || []).forEach(function(r) {
+                    if (!_ctrlEnRango(r.fechaISO || r.fecha || '')) return;
+                    var cli = (r.cliente || '').toUpperCase();
+                    if (buscar && !cli.includes(buscar)) return;
+                    var ef    = parseFloat(r.efectivo || r.pagoEfectivo || 0);
+                    var tot   = parseFloat(r.total || r.pagoTotal || 0);
+                    var id    = String(r.idSheet || r.id || '').trim();
+                    var pagado = parseFloat(pagoEgrNegPorId[id] || 0);
+                    var efTot = ef + pagado;
+                    var cr    = Math.max(0, tot - efTot);
+                    totEf += ef; totPagado += pagado; totCr += cr; totTot += tot;
+                    rows.push('<tr style="border-bottom:1px solid #1e293b;">' +
+                        '<td style="' + tdStyle + 'color:#94a3b8;">' + (r.fecha || r.fechaISO || '') + '</td>' +
+                        '<td style="' + tdStyle + '">' + (r.cliente || '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(ef) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">' + (pagado > 0 ? '+$' + Utils.fmt(pagado) : '—') + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(efTot) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(-cr) + '</td>' +
+                        '<td style="' + tdMon + '">' + fmt$(tot) + '</td>' +
+                    '</tr>');
+                });
+            }
+
+            // Render thead
+            thead.innerHTML = '<tr>' + headers.map(function(h) {
+                return '<th style="' + thStyle + '">' + h + '</th>';
+            }).join('') + '</tr>';
+
+            // Render tbody
+            if (rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="' + headers.length + '" style="padding:24px;text-align:center;color:#475569;font-size:11px;font-weight:700;">Sin registros para el filtro seleccionado</td></tr>';
+            } else {
+                // Ordenar por fecha desc
+                tbody.innerHTML = rows.join('');
+                // Fila totales — dinámica según tabla
+                var totRow;
+                if (tabla === 'ventas') {
+                    // 6 headers: FECHA, CLIENTE, PRODUCTO, EF.VENTA, CRÉDITO, TOTAL
+                    totRow = '<tr style="background:#0f172a;border-top:2px solid #334155;">' +
+                        '<td colspan="3" style="' + tdStyle + 'color:#64748b;font-weight:900;">TOTALES (' + rows.length + ' registros)</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">$' + Utils.fmt(totEf) + '</td>' +
+                        '<td style="' + tdMon + 'color:#f87171;">$' + Utils.fmt(totCr) + '</td>' +
+                        '<td style="' + tdMon + 'color:#f1f5f9;">$' + Utils.fmt(totTot) + '</td>' +
+                    '</tr>';
+                } else {
+                    totRow = '<tr style="background:#0f172a;border-top:2px solid #334155;">' +
+                        '<td colspan="' + (headers.length - 5) + '" style="' + tdStyle + 'color:#64748b;font-weight:900;">TOTALES (' + rows.length + ' registros)</td>' +
+                        '<td style="' + tdMon + 'color:#94a3b8;">$' + Utils.fmt(totEf) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">+$' + Utils.fmt(totPagado) + '</td>' +
+                        '<td style="' + tdMon + 'color:#34d399;">$' + Utils.fmt(totEf + totPagado) + '</td>' +
+                        '<td style="' + tdMon + 'color:#f87171;">$' + Utils.fmt(totCr) + '</td>' +
+                        '<td style="' + tdMon + 'color:#f1f5f9;">$' + Utils.fmt(totTot) + '</td>' +
+                    '</tr>';
+                }
+                tbody.innerHTML += totRow;
+            }
+
+            // Totales resumen
+            if (totDiv) {
+                var pill = function(label, val, color) {
+                    return '<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:6px 12px;display:flex;flex-direction:column;gap:2px;">' +
+                        '<span style="font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;">' + label + '</span>' +
+                        '<span style="font-size:14px;font-weight:900;font-family:monospace;color:' + color + ';">$' + Utils.fmt(Math.abs(val)) + '</span>' +
+                    '</div>';
+                };
+                if (tabla === 'ventas') {
+                    totDiv.innerHTML =
+                        pill('Ef. Venta (s/ganancia)', totEf, '#34d399') +
+                        pill('Crédito (s/ganancia)',   totCr, '#f87171') +
+                        pill('Total (s/ganancia)',     totTot, '#f1f5f9');
+                } else {
+                    totDiv.innerHTML =
+                        pill('Efectivo directo', totEf, '#94a3b8') +
+                        pill('Cobros/Pagos', totPagado, '#34d399') +
+                        pill('Efectivo total', totEf + totPagado, '#34d399') +
+                        pill('Crédito pendiente', totCr, '#f87171') +
+                        pill('Total', totTot, '#f1f5f9');
                 }
             }
         }
@@ -16382,10 +16794,22 @@ console.log("FILTRADAS:", filtradas.length);
 
             noData.classList.add('hidden');
 
+            // ── Pre-calcular Pago Ventas por ID (para sumar a efectivo y restar de crédito) ──
+            var _statsPagoVentasPorId = {};
+            (_pagoVentasSheet || []).forEach(function(p) {
+                var id = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!id) return;
+                _statsPagoVentasPorId[id] = (_statsPagoVentasPorId[id] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+
             // ── KPIs ──
             const totalVentas = filtradas.reduce((s, r) => s + (parseFloat(r.precio) * parseFloat(r.cantidad) || 0), 0);
             const ganancias   = filtradas.reduce((s, r) => s + (parseFloat(r.ganancia) || ((parseFloat(r.precio) - parseFloat(r.costo)) * parseFloat(r.cantidad)) || 0), 0);
-            const creditos    = _sheetVentas
+
+            // Calcular efectivo, pagoVentas y crédito real por venta (sin duplicados por ID)
+            var _statsVistos = new Set();
+            var _statsTotEf = 0, _statsTotPagoV = 0, _statsTotCr = 0;
+            _sheetVentas
                 .filter(v => {
                     if (!v.fechaISO) return true;
                     const dStr = new Date(v.fechaISO).toISOString().split('T')[0];
@@ -16393,7 +16817,20 @@ console.log("FILTRADAS:", filtradas.length);
                     if (hastaVal && dStr > hastaVal) return false;
                     return true;
                 })
-                .reduce((s, v) => s + (v.deuda || 0), 0);
+                .forEach(function(v) {
+                    var id = String(v.idSheet || v.id || '').trim();
+                    if (id && _statsVistos.has(id)) return;
+                    if (id) _statsVistos.add(id);
+                    var ef     = parseFloat(v.efectivo || 0);
+                    var tot    = parseFloat(v.total || 0);
+                    var pagado = parseFloat(_statsPagoVentasPorId[id] || 0);
+                    var efTot  = ef + pagado;
+                    var cr     = Math.max(0, tot - efTot);
+                    _statsTotEf    += ef;
+                    _statsTotPagoV += pagado;
+                    _statsTotCr    += cr;
+                });
+            const creditos = _statsTotCr;
 
             // Transacciones únicas (ventas, no filas de productos)
             const ventasUnicas = new Set(filtradas.map(r => r.fechaISO + '|' + r.cliente)).size;
@@ -16402,6 +16839,11 @@ console.log("FILTRADAS:", filtradas.length);
             document.getElementById('kpiGanancias').textContent       = '$' + Utils.fmt(ganancias);
             document.getElementById('kpiTransacciones').textContent   = ventasUnicas;
             document.getElementById('kpiCreditos').textContent        = '$' + Utils.fmt(creditos);
+            // KPIs de Pago Efectivo y Pago Ventas
+            var _elStatsPagoEf = document.getElementById('kpiPagoEfectivo');
+            var _elStatsPagoV  = document.getElementById('kpiPagoVentas');
+            if (_elStatsPagoEf) _elStatsPagoEf.textContent = '$' + Utils.fmt(_statsTotEf + _statsTotPagoV);
+            if (_elStatsPagoV)  _elStatsPagoV.textContent  = '+$' + Utils.fmt(_statsTotPagoV);
 
             // ── Chart 1: Ventas por día ──
             const porDia = {};
@@ -19471,6 +19913,7 @@ console.log("FILTRADAS:", filtradas.length);
             const isCaja      = tab === 'caja';
             const isHojaRuta  = tab === 'hojaRuta';
             const isNegocio   = tab === 'negocio';
+            const isControl   = tab === 'control';
 
             const _sb = id => { const el = document.getElementById(id); if(el) return el; };
             if(_sb('tabBtnVentas'))    _sb('tabBtnVentas').className    = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isVentas    ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
@@ -19482,6 +19925,7 @@ console.log("FILTRADAS:", filtradas.length);
             if(_sb('tabBtnHojaRuta'))  _sb('tabBtnHojaRuta').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isHojaRuta  ? 'bg-orange-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnCaja'))      _sb('tabBtnCaja').className      = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCaja      ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnNegocio'))   _sb('tabBtnNegocio').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isNegocio   ? 'bg-cyan-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            if(_sb('tabBtnControl'))   _sb('tabBtnControl').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isControl   ? 'bg-indigo-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
 
             const filtros = document.getElementById('statsFiltrosFecha');
             if (filtros) filtros.classList.toggle('hidden', !isVentas);
@@ -19505,10 +19949,13 @@ console.log("FILTRADAS:", filtradas.length);
             if (tabCaja)      tabCaja.classList.toggle('hidden', !isCaja);
             const tabNegocio  = document.getElementById('tabNegocio');
             if (tabNegocio)   tabNegocio.classList.toggle('hidden', !isNegocio);
+            const tabControl  = document.getElementById('tabControl');
+            if (tabControl)   tabControl.classList.toggle('hidden', !isControl);
 
             if (isProductos) renderEstadisticasProductos();
             if (isResumen)   renderResumen();
             if (isNegocio)  { enSetPeriodoDefault(); renderEstadoNegocio(); }
+            if (isControl) { ctrlSetHoy(); renderControlTablas(); }
             if (isRegistros) {
                 const regDesde = document.getElementById('regDesde');
                 const regHasta = document.getElementById('regHasta');
