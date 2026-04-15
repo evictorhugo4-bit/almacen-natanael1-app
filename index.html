@@ -5725,20 +5725,10 @@ _sheetEgresosNegocio.forEach(e => {
                     var sumItemTot = sumItemEf + sumItemCr;
 
                     // Ganancia bruta de la venta
-                    var costoV  = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.costo) || 0) * (parseFloat(i.cantidad) || 1); }, 0);
-                    var dinRecV = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.dineroRecuperado) || 0); }, 0) || costoV;
-                    var ganBruta = Math.max(0, sumItemTot - dinRecV);
-
-                    // Cobrado total en efectivo (ítems + pagoVentas)
-                    var cobEf  = sumItemEf + pagado;
-
-                    // Ganancia en efectivo y crédito (misma lógica que renderResumen/renderEstadoNegocio)
-                    var ganEfV = cobEf > dinRecV ? Math.min(cobEf - dinRecV, ganBruta) : 0;
-                    var ganCrV = Math.max(0, ganBruta - ganEfV);
-
-                    // Columnas finales (descontando ganancia = costo real para el proveedor)
-                    var efVenta  = cobEf    - ganEfV;           // pagoEf items + pagoVentas − ganEf
-                    var crVenta  = Math.max(0, sumItemCr - ganCrV); // pagoCredito items − ganCr
+                    // EF. VENTA = efectivo de items + pago ventas cobrado
+                    var efVenta  = sumItemEf + pagado;
+                    // CREDITO = credito de items menos lo ya cobrado via pago ventas (no negativo)
+                    var crVenta  = Math.max(0, sumItemCr - pagado);
                     var totVenta = efVenta + crVenta;
 
                     totEf  += efVenta;
