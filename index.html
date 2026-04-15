@@ -20577,23 +20577,38 @@ console.log("FILTRADAS:", filtradas.length);
                 const cli = String(v.cliente||'').toUpperCase().trim();
                 const esEsp = CLIENTES_ESP.includes(cli);
                 const pagado = Number(_pagoVtaMap[String(v.idSheet||v.id||'').trim()]||0);
-                let ef, cr;
+                let ef, cr, tot;
                 if (esEsp) {
                     // Casa Erazo / Error Venta: efectivo = dinero recuperado (costo)
                     const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
                     ef = dinRec + pagado;
                     cr = 0;
+                    tot = ef;
                 } else {
-                    ef = Number(v.efectivo||0) + pagado;
-                    const tot = Number(v.total||0);
-                    cr = Math.max(0, tot - ef);
+                    // Calcular ganancia bruta y su distribución ef/cr
+                    const sumItemEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const sumItemCr = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
+                    const sumItemTot = sumItemEf + sumItemCr;
+                    const costoV  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                    const dinRecV = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoV;
+                    const ganBruta = Math.max(0, sumItemTot - dinRecV);
+                    // Ganancia efectivo: proporción cobrada en ef
+                    const cobEf = sumItemEf + pagado;
+                    const ganEfV = cobEf > dinRecV ? Math.min(cobEf - dinRecV, ganBruta) : 0;
+                    const ganCrV = Math.max(0, ganBruta - ganEfV);
+                    // EF $ = pagoEf items + pagoVentas - ganEf
+                    ef  = Math.max(0, cobEf - ganEfV);
+                    // CR $ = pagoCredito items - pagoVentas - ganCr
+                    cr  = Math.max(0, sumItemCr - pagado - ganCrV);
+                    // TOTAL $ = tot - ganancia total
+                    tot = Math.max(0, sumItemTot - ganBruta);
                 }
                 const items = v.items||[];
                 if (items.length === 0) {
-                    rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'—', fecha: v.fechaISO||v.fecha, detalle:'—', prodFotoKey:'', ef, cr, tot: Number(v.total||0), ts: new Date(v.fechaISO||v.fecha).getTime(), esEgreso: false });
+                    rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'—', fecha: v.fechaISO||v.fecha, detalle:'—', prodFotoKey:'', ef, cr, tot, ts: new Date(v.fechaISO||v.fecha).getTime(), esEgreso: false });
                 } else {
                     items.forEach((it, i) => {
-                        rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'—', fecha: v.fechaISO||v.fecha, detalle: it.nombre||'—', prodFotoKey: String(it.nombre||'').trim().toUpperCase(), ef: i===0?ef:0, cr: i===0?cr:0, tot: Number(it.precio||0)*Number(it.cantidad||1), ts: new Date(v.fechaISO||v.fecha).getTime(), esEgreso: false });
+                        rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'—', fecha: v.fechaISO||v.fecha, detalle: it.nombre||'—', prodFotoKey: String(it.nombre||'').trim().toUpperCase(), ef: i===0?ef:0, cr: i===0?cr:0, tot: i===0?tot:0, ts: new Date(v.fechaISO||v.fecha).getTime(), esEgreso: false });
                     });
                 }
             });
