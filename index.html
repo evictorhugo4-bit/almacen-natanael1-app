@@ -20704,6 +20704,54 @@ console.log("FILTRADAS:", filtradas.length);
                 }
             });
 
+            // ── GANANCIAS (fila sintética para filtro INGRESO) ──
+            // Acumula gananciaEf, gananciaCr, gananciaTotal de todas las ventas en rango
+            // excluyendo CASA ERAZO / ERROR VENTA. Se agrega como tipo INGRESO, quien=GANANCIAS.
+            {
+                let _ganEfAcum = 0, _ganCrAcum = 0;
+                const _vGanVistas = new Set();
+                const _todasVGan = ventasParaCalculo ? ventasParaCalculo() : (_sheetVentas||[]);
+                // Recalcular _pagoVtaMap para el rango
+                _todasVGan.forEach(v => {
+                    if (!enRango(v.fechaISO||v.fecha)) return;
+                    const vid = String(v.idSheet||v.id||'').trim();
+                    if (_vGanVistas.has(vid)) return;
+                    _vGanVistas.add(vid);
+                    const cliG = String(v.cliente||'').toUpperCase().trim();
+                    if (CLIENTES_ESP.includes(cliG)) return; // excluir especiales
+                    const sumEfG  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const sumCrG  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
+                    const costoG  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                    const dinRecG = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoG;
+                    const ganBG   = Math.max(0, sumEfG + sumCrG - dinRecG);
+                    const pagadoG = Number(_pagoVtaMap[vid]||0);
+                    const cobEfG  = sumEfG + pagadoG;
+                    const ganEfG  = cobEfG > dinRecG ? Math.min(cobEfG - dinRecG, ganBG) : 0;
+                    _ganEfAcum += ganEfG;
+                    _ganCrAcum += Math.max(0, ganBG - ganEfG);
+                });
+                const _ganTotAcum = _ganEfAcum + _ganCrAcum;
+                // Solo agregar la fila si hay ganancia
+                if (_ganTotAcum > 0 || _ganEfAcum > 0 || _ganCrAcum > 0) {
+                    // Usar la fecha de hoy como referencia (para ordenamiento correcto)
+                    const _ganFecha = new Date().toISOString();
+                    rows.push({
+                        tipo: 'INGRESO', color: '#f59e0b',
+                        quien: 'GANANCIAS',
+                        fecha: _ganFecha,
+                        detalle: 'Ganancia de ventas del período',
+                        prodFotoKey: '',
+                        ef:  _ganEfAcum,
+                        cr:  _ganCrAcum,
+                        tot: _ganTotAcum,
+                        ts: new Date(_ganFecha).getTime(),
+                        esEgreso: false,
+                        esSinCliente: true,
+                        esGanancias: true
+                    });
+                }
+            }
+
             // ── Pre-calcular PAGO COMPRAS por IDCOMPRAS ──
             const _pagoCmpMap = {};
             (_sheetPagoCompras||[]).forEach(p => {
@@ -20911,7 +20959,9 @@ console.log("FILTRADAS:", filtradas.length);
 
             tbody.innerHTML = rowsFiltradas.map((r, idx) => {
                 const cliObj = r.esSinCliente ? null : _cliMap[String(r.quien||'').trim().toUpperCase()];
-                const cliFoto = r.esSinCliente
+                const cliFoto = r.esGanancias
+                    ? `<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f59e0b44,#1e293b);border:2px solid #f59e0b88;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">💰</span>`
+                    : r.esSinCliente
                     ? `<span style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,${r.color}33,#1e293b);border:2px solid ${r.color}55;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">${r.tipo==='INGRESO'?'📥':'📤'}</span>`
                     : cliObj?.foto
                         ? `<img src="${driveUrl(cliObj.foto)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid ${r.color}33;" onerror="this.style.display='none'">`
@@ -20934,7 +20984,26 @@ console.log("FILTRADAS:", filtradas.length);
                 const ckIcon  = ckEstado==='ok' ? '✓' : ckEstado==='err' ? '✗' : '';
                 const ckColor = ckEstado==='ok' ? '#000' : '#fff';
 
-                return `<tr style="border-bottom:1px solid #1e293b;${rowBg}transition:background .1s;" onmouseover="this.style.background='rgba(30,41,59,0.6)'" onmouseout="this.style.background='${idx%2===0?'rgba(15,23,42,0.4)':'transparent'}'" id="reg-row-${idx}">
+                // Fila especial GANANCIAS: fondo dorado destacado
+                const _rowStyle = r.esGanancias
+                    ? 'border-bottom:2px solid #f59e0b55;background:linear-gradient(90deg,rgba(245,158,11,0.10),rgba(245,158,11,0.04));'
+                    : 'border-bottom:1px solid #1e293b;' + rowBg;
+                const _rowHover = r.esGanancias
+                    ? 'rgba(245,158,11,0.15)'
+                    : 'rgba(30,41,59,0.6)';
+                const _rowOut   = r.esGanancias
+                    ? 'linear-gradient(90deg,rgba(245,158,11,0.10),rgba(245,158,11,0.04))'
+                    : (idx%2===0?'rgba(15,23,42,0.4)':'transparent');
+                const _quienColor = r.esGanancias ? '#f59e0b' : '#f1f5f9';
+                const _quienStyle = r.esGanancias
+                    ? 'font-size:11px;font-weight:900;color:#f59e0b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;text-shadow:0 0 8px #f59e0b55;'
+                    : 'font-size:11px;font-weight:800;color:#f1f5f9;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.01em;';
+                // Icono de producto para GANANCIAS
+                const _prodFotoFinal = r.esGanancias
+                    ? `<span style="width:26px;height:26px;border-radius:6px;background:#f59e0b22;border:1px solid #f59e0b55;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📈</span>`
+                    : prodFoto;
+
+                return `<tr style="${_rowStyle}transition:background .1s;" onmouseover="this.style.background='${_rowHover}'" onmouseout="this.style.background='${_rowOut}'" id="reg-row-${idx}">
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             <button onclick="toggleRegCheck(${idx})" id="reg-check-${idx}"
@@ -20948,21 +21017,21 @@ console.log("FILTRADAS:", filtradas.length);
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             ${cliFoto}
-                            <span style="font-size:11px;font-weight:800;color:#f1f5f9;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.01em;">${r.quien}</span>
+                            <span style="${_quienStyle}">${r.quien}</span>
                         </div>
                     </td>
-                    <td style="padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;letter-spacing:.01em;">${fmtFecha(r.fecha)}</td>
+                    <td style="padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;letter-spacing:.01em;">${r.esGanancias ? '<span style="color:#f59e0b55;font-style:italic;font-size:9px;">período filtrado</span>' : fmtFecha(r.fecha)}</td>
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
-                            ${prodFoto}
-                            <span style="font-size:11px;font-weight:700;color:#cbd5e1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.detalle}</span>
+                            ${_prodFotoFinal}
+                            <span style="font-size:11px;font-weight:700;color:${r.esGanancias?'#fcd34d':'#cbd5e1'};max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.detalle}</span>
                         </div>
                     </td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#34d399;font-family:monospace;letter-spacing:.02em;">${r.ef>0?'$'+Utils.fmt(r.ef):'<span style="color:#334155;">—</span>'}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#f87171;font-family:monospace;letter-spacing:.02em;">${r.cr>0?'$'+Utils.fmt(r.cr):'<span style="color:#334155;">—</span>'}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#e2e8f0;font-family:monospace;letter-spacing:.02em;">$${Utils.fmt(r.tot)}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sEfColor};letter-spacing:.02em;text-shadow:0 0 6px ${sEfColor}44;">$${Utils.fmt(r.saldoEf)}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sCrColor};letter-spacing:.02em;text-shadow:0 0 6px ${sCrColor}44;">$${Utils.fmt(r.saldoCr)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sEfColor};letter-spacing:.02em;text-shadow:0 0 6px ${sEfColor}44;">${r.esGanancias ? '<span style="color:#475569;font-size:9px;">—</span>' : '$'+Utils.fmt(r.saldoEf)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sCrColor};letter-spacing:.02em;text-shadow:0 0 6px ${sCrColor}44;">${r.esGanancias ? '<span style="color:#475569;font-size:9px;">—</span>' : '$'+Utils.fmt(r.saldoCr)}</td>
                 </tr>`;
             }).join('');
 
