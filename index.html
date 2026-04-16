@@ -20735,11 +20735,15 @@ console.log("FILTRADAS:", filtradas.length);
                 if (_ganTotAcum > 0 || _ganEfAcum > 0 || _ganCrAcum > 0) {
                     // Usar la fecha de hoy como referencia (para ordenamiento correcto)
                     const _ganFecha = new Date().toISOString();
+                    // Construir label del filtro aplicado
+                    const _fmtD = v => { if(!v) return null; const d=new Date(v); if(isNaN(d)) return null; return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); };
+                    const _dLabel = _fmtD(desde), _hLabel = _fmtD(hasta);
+                    const _ganDetalle = _dLabel && _hLabel ? (_dLabel===_hLabel ? _dLabel : _dLabel+' → '+_hLabel) : (_dLabel ? 'Desde '+_dLabel : (_hLabel ? 'Hasta '+_hLabel : 'GANANCIAS'));
                     rows.push({
                         tipo: 'INGRESO', color: '#f59e0b',
                         quien: 'GANANCIAS',
                         fecha: _ganFecha,
-                        detalle: 'Ganancia de ventas del período',
+                        detalle: _ganDetalle,
                         prodFotoKey: '',
                         ef:  _ganEfAcum,
                         cr:  _ganCrAcum,
@@ -20897,6 +20901,44 @@ console.log("FILTRADAS:", filtradas.length);
                 rows.push({ tipo:'PAGO EGR.NEG', color:'#f472b6', quien: '—', fecha: p.fecha, detalle: 'PRÉSTAMO', prodFotoKey:'', ef: m, cr: 0, tot: m, ts: new Date(p.fecha).getTime(), esEgreso: true });
             });
 
+            // ── CONSUMO DEL NEGOCIO (fila sintética para filtro EGRESO) ──
+            // Suma dineroRecuperado de ventas con cliente CASA ERAZO en el rango de fechas
+            {
+                let _consumoEfAcum = 0;
+                const _vConsumoVistas = new Set();
+                const _todasVConsumo = ventasParaCalculo ? ventasParaCalculo() : (_sheetVentas||[]);
+                _todasVConsumo.forEach(v => {
+                    if (!enRango(v.fechaISO||v.fecha)) return;
+                    const vid = String(v.idSheet||v.id||'').trim();
+                    if (_vConsumoVistas.has(vid)) return;
+                    _vConsumoVistas.add(vid);
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    if (cli !== 'CASA ERAZO') return;
+                    const dr = (v.items||[]).reduce((s,i) => s + Number(i.dineroRecuperado||0), 0);
+                    _consumoEfAcum += dr;
+                });
+                if (_consumoEfAcum > 0) {
+                    const _consFecha = new Date().toISOString();
+                    const _fmtDc = v => { if(!v) return null; const d=new Date(v); if(isNaN(d)) return null; return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); };
+                    const _dLabelC = _fmtDc(desde), _hLabelC = _fmtDc(hasta);
+                    const _consDetalle = _dLabelC && _hLabelC ? (_dLabelC===_hLabelC ? _dLabelC : _dLabelC+' → '+_hLabelC) : (_dLabelC ? 'Desde '+_dLabelC : (_hLabelC ? 'Hasta '+_hLabelC : 'CONSUMO DEL NEGOCIO'));
+                    rows.push({
+                        tipo: 'EGRESO', color: '#f97316',
+                        quien: 'CONSUMO DEL NEGOCIO',
+                        fecha: _consFecha,
+                        detalle: _consDetalle,
+                        prodFotoKey: '',
+                        ef: _consumoEfAcum,
+                        cr: 0,
+                        tot: _consumoEfAcum,
+                        ts: new Date(_consFecha).getTime(),
+                        esEgreso: true,
+                        esSinCliente: true,
+                        esConsumoNegocio: true
+                    });
+                }
+            }
+
             // Ordenar por fecha desc
             rows.sort((a,b) => (b.ts||0) - (a.ts||0));
 
@@ -20985,22 +21027,33 @@ console.log("FILTRADAS:", filtradas.length);
                 const ckColor = ckEstado==='ok' ? '#000' : '#fff';
 
                 // Fila especial GANANCIAS: fondo dorado destacado
+                // Fila especial CONSUMO DEL NEGOCIO: fondo naranja destacado
                 const _rowStyle = r.esGanancias
                     ? 'border-bottom:2px solid #f59e0b55;background:linear-gradient(90deg,rgba(245,158,11,0.10),rgba(245,158,11,0.04));'
+                    : r.esConsumoNegocio
+                    ? 'border-bottom:2px solid #f9731655;background:linear-gradient(90deg,rgba(249,115,22,0.10),rgba(249,115,22,0.04));'
                     : 'border-bottom:1px solid #1e293b;' + rowBg;
                 const _rowHover = r.esGanancias
                     ? 'rgba(245,158,11,0.15)'
+                    : r.esConsumoNegocio
+                    ? 'rgba(249,115,22,0.15)'
                     : 'rgba(30,41,59,0.6)';
                 const _rowOut   = r.esGanancias
                     ? 'linear-gradient(90deg,rgba(245,158,11,0.10),rgba(245,158,11,0.04))'
+                    : r.esConsumoNegocio
+                    ? 'linear-gradient(90deg,rgba(249,115,22,0.10),rgba(249,115,22,0.04))'
                     : (idx%2===0?'rgba(15,23,42,0.4)':'transparent');
-                const _quienColor = r.esGanancias ? '#f59e0b' : '#f1f5f9';
+                const _quienColor = r.esGanancias ? '#f59e0b' : r.esConsumoNegocio ? '#fb923c' : '#f1f5f9';
                 const _quienStyle = r.esGanancias
                     ? 'font-size:11px;font-weight:900;color:#f59e0b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;text-shadow:0 0 8px #f59e0b55;'
+                    : r.esConsumoNegocio
+                    ? 'font-size:11px;font-weight:900;color:#fb923c;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;text-shadow:0 0 8px #f9731655;'
                     : 'font-size:11px;font-weight:800;color:#f1f5f9;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.01em;';
-                // Icono de producto para GANANCIAS
+                // Icono de producto para GANANCIAS / CONSUMO DEL NEGOCIO
                 const _prodFotoFinal = r.esGanancias
                     ? `<span style="width:26px;height:26px;border-radius:6px;background:#f59e0b22;border:1px solid #f59e0b55;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📈</span>`
+                    : r.esConsumoNegocio
+                    ? `<span style="width:26px;height:26px;border-radius:6px;background:#f9731622;border:1px solid #f9731655;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🏪</span>`
                     : prodFoto;
 
                 return `<tr style="${_rowStyle}transition:background .1s;" onmouseover="this.style.background='${_rowHover}'" onmouseout="this.style.background='${_rowOut}'" id="reg-row-${idx}">
@@ -21020,18 +21073,18 @@ console.log("FILTRADAS:", filtradas.length);
                             <span style="${_quienStyle}">${r.quien}</span>
                         </div>
                     </td>
-                    <td style="padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;letter-spacing:.01em;">${r.esGanancias ? '<span style="color:#f59e0b55;font-style:italic;font-size:9px;">período filtrado</span>' : fmtFecha(r.fecha)}</td>
+                    <td style="padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;letter-spacing:.01em;">${r.esGanancias ? '<span style="color:#f59e0b99;font-style:italic;font-size:9px;">' + r.detalle + '</span>' : r.esConsumoNegocio ? '<span style="color:#fb923c99;font-style:italic;font-size:9px;">' + r.detalle + '</span>' : fmtFecha(r.fecha)}</td>
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             ${_prodFotoFinal}
-                            <span style="font-size:11px;font-weight:700;color:${r.esGanancias?'#fcd34d':'#cbd5e1'};max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.detalle}</span>
+                            <span style="font-size:11px;font-weight:700;color:${r.esGanancias?'#fcd34d':r.esConsumoNegocio?'#fdba74':'#cbd5e1'};max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.esGanancias ? 'GANANCIAS' : r.esConsumoNegocio ? 'CONSUMO DEL NEGOCIO' : r.detalle}</span>
                         </div>
                     </td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#34d399;font-family:monospace;letter-spacing:.02em;">${r.ef>0?'$'+Utils.fmt(r.ef):'<span style="color:#334155;">—</span>'}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#f87171;font-family:monospace;letter-spacing:.02em;">${r.cr>0?'$'+Utils.fmt(r.cr):'<span style="color:#334155;">—</span>'}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#e2e8f0;font-family:monospace;letter-spacing:.02em;">$${Utils.fmt(r.tot)}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sEfColor};letter-spacing:.02em;text-shadow:0 0 6px ${sEfColor}44;">${r.esGanancias ? '<span style="color:#475569;font-size:9px;">—</span>' : '$'+Utils.fmt(r.saldoEf)}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sCrColor};letter-spacing:.02em;text-shadow:0 0 6px ${sCrColor}44;">${r.esGanancias ? '<span style="color:#475569;font-size:9px;">—</span>' : '$'+Utils.fmt(r.saldoCr)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sEfColor};letter-spacing:.02em;text-shadow:0 0 6px ${sEfColor}44;">${(r.esGanancias||r.esConsumoNegocio) ? '<span style="color:#475569;font-size:9px;">—</span>' : '$'+Utils.fmt(r.saldoEf)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sCrColor};letter-spacing:.02em;text-shadow:0 0 6px ${sCrColor}44;">${(r.esGanancias||r.esConsumoNegocio) ? '<span style="color:#475569;font-size:9px;">—</span>' : '$'+Utils.fmt(r.saldoCr)}</td>
                 </tr>`;
             }).join('');
 
