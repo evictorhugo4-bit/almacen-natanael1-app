@@ -17836,6 +17836,141 @@ console.log("FILTRADAS:", filtradas.length);
 
             html += tablaIng + tablaEgr;
 
+            // ── ESTADO NEGOCIO / EFECTIVO (solo cuando filtro = efectivo) ──
+            if (_epFiltro === 'efectivo') {
+                const sumVentasEP = (campo, excluir) => {
+                    let tot = 0;
+                    const todasV = ventasParaCalculo();
+                    todasV.forEach(v => {
+                        const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                        if (!enRango(fn)) return;
+                        const cli = String(v.cliente||'').toUpperCase().trim();
+                        if (excluir && excluir.includes(cli)) return;
+                        tot += campo === 'efectivo' ? Number(v.efectivo||v.pagoEfectivo||0) : Number(v[campo]||0);
+                    });
+                    return tot;
+                };
+                const sumComprasEP = campo => (_sheetCompras||[]).reduce((s,c) => {
+                    if (!enRango(parseFechaNum(c.fechaISO||c.fecha||''))) return s;
+                    return s + Number(c[campo]||0);
+                }, 0);
+                const _negExclEP = ['LEO','SILVIA','HUGO'];
+                const sumNegEP = (arr, campo) => {
+                    const vis = new Set();
+                    return (arr||[]).reduce((s,r) => {
+                        if (!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return s;
+                        const cl = String(r.cliente||r.proveedor||'').trim().toUpperCase();
+                        if (_negExclEP.includes(cl)) return s;
+                        const uid = r.idSheet||r.id||'';
+                        if (uid && vis.has(uid)) return s;
+                        if (uid) vis.add(uid);
+                        return s + Number(r[campo]||0);
+                    }, 0);
+                };
+                const sumPagoFOEP = arr => {
+                    const vis = new Set();
+                    return (arr||[]).reduce((s,p) => {
+                        const pid = String(p.id||p.IDPAGODEVENTAS||p.IDPAGOCOMPRAS||p.IDPAGOSINGRESOSNEGOCIO||p.IDPAGOEGRESOSNEGOCIO||'').trim();
+                        if (pid && vis.has(pid)) return s;
+                        if (pid) vis.add(pid);
+                        const fOrig = parseFechaNum(p.fechaOrig||p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+                        if (!enRango(fOrig)) return s;
+                        return s + Number(p.MONTO||p.monto||0);
+                    }, 0);
+                };
+
+                // Ganancias efectivo negocio (mismo rango que Estado Personal)
+                let _ganEfNeg = 0, _casaErazoEfNeg = 0;
+                const _ppvNeg = {}, _ppvNegVis = new Set();
+                (_pagoVentasSheet||[]).forEach(p => {
+                    const pid = String(p.id||p.IDPAGODEVENTAS||'').trim();
+                    if (pid && _ppvNegVis.has(pid)) return;
+                    if (pid) _ppvNegVis.add(pid);
+                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!idV) return;
+                    const fOrig = parseFechaNum(p.fechaOrig||p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+                    if (!enRango(fOrig)) return;
+                    _ppvNeg[idV] = (_ppvNeg[idV]||0) + Number(p.monto||p.MONTO||0);
+                });
+                const _vVisNeg = new Set();
+                (ventasParaCalculo()).forEach(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn) || _vVisNeg.has(v.id)) return;
+                    _vVisNeg.add(v.id);
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
+                    if (cli === 'CASA ERAZO') _casaErazoEfNeg += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                    if (esEsp) return;
+                    const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                    const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+                    const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+                    const ganBruta = Math.max(0, total - dinRec);
+                    const cobEf = ef + (_ppvNeg[String(v.id)]||0);
+                    const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
+                    _ganEfNeg += ganEfV;
+                });
+                let _errorVentaEfNeg = 0;
+                (ventasParaCalculo()).forEach(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn)) return;
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    if (!['ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
+                    _errorVentaEfNeg += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                });
+
+                const ventasEfNeg    = sumVentasEP('efectivo', ['CASA ERAZO','ERROR VENTA','ERROR VENTAS']);
+                const comprasEfNeg   = sumComprasEP('efectivo');
+                const pagoCompEfNeg  = sumPagoFOEP(_sheetPagoCompras||[]);
+                const pagoVentEfNeg  = sumPagoFOEP(_pagoVentasSheet||[]);
+                const egrNegEfNeg    = sumNegEP(_sheetEgresosNegocio, 'efectivo');
+                const ingNegEfNeg    = sumNegEP(_sheetIngresosNegocio, 'efectivo');
+                const _pagoEgrVis = new Set();
+                const _pagoEgrArr = (_pagoEgrNegSheet||[]).filter(p => {
+                    const uid = p.id||p.idEgresoNeg||p.IDPAGOEGRESOSNEGOCIO||'';
+                    if (uid && _pagoEgrVis.has(uid)) return false;
+                    if (uid) _pagoEgrVis.add(uid);
+                    return true;
+                }).map(p => ({ ...p, fechaOrig: p.fechaOrig||p['FECHA ORIGINAL']||p.fechaOriginal||p.fecha||p.FECHA||'' }));
+                const _pagoIngArr = (_sheetPagoIngNeg||[]).map(p => ({ ...p, fechaOrig: p.fechaOrig||p['FECHA ORIGINAL']||p.fechaOriginal||p.fecha||p.FECHA||'' }));
+                const pagoEgrNegEfNeg = sumPagoFOEP(_pagoEgrArr);
+                const pagoIngNegEfNeg = sumPagoFOEP(_pagoIngArr);
+
+                const v3efNeg   = ventasEfNeg - _ganEfNeg;
+                const ing1efNeg = v3efNeg + _casaErazoEfNeg + _errorVentaEfNeg + pagoVentEfNeg;
+                const egr1efNeg = comprasEfNeg + pagoCompEfNeg;
+                const bal1efNeg = ing1efNeg - egr1efNeg;
+                const ing2efNeg = ingNegEfNeg + pagoIngNegEfNeg;
+                const egr2efNeg = egrNegEfNeg + pagoEgrNegEfNeg;
+                const bal2efNeg = ing2efNeg - egr2efNeg;
+                const ingTotNeg = ing1efNeg + ing2efNeg;
+                const egrTotNeg = egr1efNeg + egr2efNeg;
+
+                const thN = (txt,bg,cl,ex) => '<th style="padding:10px 14px;background:'+bg+';color:'+cl+';font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;text-align:center;'+(ex||'')+'">'+txt+'</th>';
+                const filaN = (label,ing,egr,lc) => { lc=lc||'#94a3b8'; return '<tr style="border-bottom:1px solid #1e293b;"><td style="padding:9px 14px;font-size:11px;font-weight:900;color:'+lc+';text-transform:uppercase;background:#0f172a;">'+label+'</td><td style="padding:9px 14px;font-size:13px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#0a1a0e;">'+(ing>0?'$'+Utils.fmt(ing):'<span style="color:#1e3a24">&#8212;</span>')+'</td><td style="padding:9px 14px;font-size:13px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#1a0a0a;">'+(egr>0?'$'+Utils.fmt(egr):'<span style="color:#3a1e1e">&#8212;</span>')+'</td><td style="padding:9px 14px;background:#1a120a;"><span style="color:#334155">&#8212;</span></td></tr>'; };
+                const filaBalN = (il,iv,el,ev,bal) => { const bc=bal>=0?'#4ade80':'#f87171',bs=bal>=0?'&#9650;':'&#9660;'; return '<tr style="border-top:2px solid #334155;border-bottom:2px solid #334155;"><td style="padding:10px 14px;font-size:10px;font-weight:900;color:#f1f5f9;text-transform:uppercase;background:#111827;">'+(il?'<span style="color:#4ade80;">'+il+'</span>':'')+(il&&el?' &nbsp;/&nbsp; ':'')+(el?'<span style="color:#f87171;">'+el+'</span>':'')+'</td><td style="padding:10px 14px;font-size:14px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#111827;">'+(iv>0?'$'+Utils.fmt(iv):'')+'</td><td style="padding:10px 14px;font-size:14px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#111827;">'+(ev>0?'$'+Utils.fmt(ev):'')+'</td><td style="padding:10px 14px;font-size:16px;font-weight:900;color:'+bc+';font-family:monospace;text-align:right;background:#1f1508;">'+bs+' $'+Utils.fmt(Math.abs(bal))+'</td></tr>'; };
+                const filaTotN = (label,ing,egr,bal) => { const bc=bal>=0?'#4ade80':'#f87171',bs=bal>=0?'&#9650;':'&#9660;'; return '<tr style="border-top:2px solid #334155;"><td style="padding:11px 14px;font-size:12px;font-weight:900;color:#f1f5f9;text-transform:uppercase;background:#111827;">'+label+'</td><td style="padding:11px 14px;font-size:15px;font-weight:900;color:#4ade80;font-family:monospace;text-align:right;background:#111827;">$'+Utils.fmt(ing)+'</td><td style="padding:11px 14px;font-size:15px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;background:#111827;">$'+Utils.fmt(egr)+'</td><td style="padding:11px 14px;font-size:15px;font-weight:900;color:'+bc+';font-family:monospace;text-align:right;background:#111827;">'+bs+' $'+Utils.fmt(Math.abs(bal))+'</td></tr>'; };
+                const tablaSpreadN = filas => '<div style="overflow-x:auto;border-radius:16px;border:1.5px solid #1e293b;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;min-width:340px;"><thead><tr>'+thN('CONCEPTO','#0f172a','#64748b','text-align:left;min-width:160px;')+thN('INGRESOS','#0d2b0d','#4ade80','')+thN('EGRESOS','#2b0d0d','#ef4444','')+thN('BALANCE','#2b1a0d','#f97316','')+'</tr></thead><tbody>'+filas+'</tbody></table></div>';
+
+                html += '<div style="margin-top:24px;padding-top:18px;border-top:2px solid #1e293b;">';
+                html += '<div style="margin-bottom:10px;"><span style="font-size:10px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em;">&#128202; ESTADO NEGOCIO / EFECTIVO</span></div>';
+                html += tablaSpreadN(
+                    filaN('Ventas a 3eros (efectivo)',        v3efNeg,          0,               '#86efac') +
+                    filaN('Pago Ventas (cobros deudas)',      pagoVentEfNeg,    0,               '#34d399') +
+                    filaN('Ventas a Casa Erazo',              _casaErazoEfNeg,  0,               '#67e8f9') +
+                    filaN('Error Venta',                      _errorVentaEfNeg, 0,               '#fde68a') +
+                    filaN('Compras (efectivo)',                0,                comprasEfNeg,    '#fca5a5') +
+                    filaN('Pago Compras (pagos deudas)',       0,                pagoCompEfNeg,   '#f87171') +
+                    filaBalN('', ing1efNeg, 'BALANCE PARCIAL', egr1efNeg, bal1efNeg) +
+                    filaN('Ingresos Negocio (ef.)',           ingNegEfNeg,      0,               '#86efac') +
+                    filaN('Pago Ingresos Negocio',            pagoIngNegEfNeg,  0,               '#34d399') +
+                    filaN('Egresos Negocio (ef.)',             0,                egrNegEfNeg,     '#fca5a5') +
+                    filaN('Pago Egresos Negocio',              0,                pagoEgrNegEfNeg, '#f87171') +
+                    filaBalN('BALANCE PARCIAL', ing2efNeg, 'EGRESOS NEGOCIO', egr2efNeg, bal2efNeg) +
+                    filaTotN('INGRESOS TOTALES / EGRESOS TOTALES', ingTotNeg, egrTotNeg, ingTotNeg - egrTotNeg)
+                );
+                html += '</div>';
+            }
+
             document.getElementById('epContenido').innerHTML = html;
         }
 
