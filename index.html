@@ -11939,7 +11939,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         window._editCompraTickets = []; // array de { data, nombre }
         let _streamEditCompra = null;
 
-        function renderEditCompraTicketsGrid() {
+        window.renderEditCompraTicketsGrid = function renderEditCompraTicketsGrid() {
             const grid = document.getElementById('editCompraTicketsGrid');
             if (!grid) return;
             if (window._editCompraTickets.length === 0) {
@@ -12009,13 +12009,23 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         window.capturarFotoEditCompra = function() {
             const video  = document.getElementById('videoEditCompra');
             const canvas = document.getElementById('canvasEditCompra');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            if (!video || !video.videoWidth || !video.videoHeight) {
+                mostrarToast('⚠ Cámara no lista, esperá un segundo', 'error');
+                return;
+            }
+            canvas.width  = video.videoWidth;
+            canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            if (!dataUrl || dataUrl === 'data:,') {
+                mostrarToast('⚠ Error al capturar imagen', 'error');
+                return;
+            }
             cerrarCamaraEditCompra();
             const n = window._editCompraTickets.length + 1;
             window._editCompraTickets.push({ data: dataUrl, nombre: `foto_${n}.jpg` });
             renderEditCompraTicketsGrid();
+            mostrarToast('📷 Foto agregada (' + n + ')');
         };
 
         // Mantener compatibilidad con código viejo que usa _editCompraTicketData
