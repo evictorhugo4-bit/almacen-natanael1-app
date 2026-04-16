@@ -17641,8 +17641,8 @@ console.log("FILTRADAS:", filtradas.length);
             const egrAjenosExtra  = sumSCEP(_sheetEgresos, 'EGRESOS AJENOS EXTRA',  campoEP);
             const egrNatanael     = sumSCEP(_sheetEgresos, 'EGRESOS PARA NATANAEL ESCUELA/IGLESIA', campoEP);
 
-            const epBal1   = ganFiltroEP - (egrConsumoNeg + egrComidaFam);
-            const epBal2   = ingPropiosExtra - (egrPropiosExtra + egrDiezmo);
+            const epBal1   = ganFiltroEP - (egrConsumoNeg + egrComidaFam + egrDiezmo);
+            const epBal2   = ingPropiosExtra - egrPropiosExtra;
             const epBal3   = ingAjenosExtra - egrAjenosExtra;
             const epBal4   = ingNatanael - egrNatanael;
             const epIngTot = ganFiltroEP + ingPropiosExtra + ingAjenosExtra + ingNatanael;
@@ -17821,10 +17821,10 @@ console.log("FILTRADAS:", filtradas.length);
                 epFila('CONSUMO DEL NEGOCIO',0,egrConsumoNeg,'#fb923c')+
                 epFila('COMIDA FAMILIAR',0,egrComidaFam,'#f87171')+
                 epFila('DIEZMO Y OFRENDA MARIA JESUS',0,egrDiezmo,'#fda4af')+
-                epFilaBal('GANANCIAS TOTALES',ganFiltroEP,'CONSUMO + COMIDA',egrConsumoNeg+egrComidaFam,epBal1)+
+                epFilaBal('GANANCIAS TOTALES',ganFiltroEP,'CONSUMO + COMIDA + DIEZMO',egrConsumoNeg+egrComidaFam+egrDiezmo,epBal1)+
                 epFila('INGRESOS PROPIOS EXTRA',ingPropiosExtra,0,'#86efac')+
                 epFila('EGRESOS PROPIOS EXTRA',0,egrPropiosExtra,'#fca5a5')+
-                epFilaBal('INGRESOS PROPIOS EXTRA',ingPropiosExtra,'EGRESOS PROPIOS + DIEZMO',egrPropiosExtra+egrDiezmo,epBal2)+
+                epFilaBal('INGRESOS PROPIOS EXTRA',ingPropiosExtra,'EGRESOS PROPIOS EXTRA',egrPropiosExtra,epBal2)+
                 epFila('INGRESOS AJENOS EXTRA',ingAjenosExtra,0,'#67e8f9')+
                 epFila('EGRESOS AJENOS EXTRA',0,egrAjenosExtra,'#fca5a5')+
                 epFilaBal('INGRESOS AJENOS EXTRA',ingAjenosExtra,'EGRESOS AJENOS EXTRA',egrAjenosExtra,epBal3)+
