@@ -14867,6 +14867,9 @@ window.verDetalleProveedor = function(tipo, id) {
                     <span style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">${Utils.escHtml(fecha||'')}</span>
                     <div style="display:flex;align-items:center;gap:4px;">
                         ${ticketBtns}
+                        ${saldoTotal > 0 ? `<button onclick="abrirPagoCompra('${idPago}',${saldoTotal})"
+                            style="padding:3px 8px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;line-height:1;"
+                            title="Pagar compra">💳 Pagar</button>` : ''}
                         <span style="font-size:13px;font-weight:900;color:#f87171;font-family:monospace;">$${Utils.fmt(saldoTotal)}</span>
                     </div>
                 </div>
