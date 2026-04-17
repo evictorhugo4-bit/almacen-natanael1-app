@@ -13472,6 +13472,7 @@ renderIngresos();
         let _pagoCompraId  = null;
         let _pagoCompraNombre = null;
         let _pagoCompraFP  = 'EFECTIVO';
+        let _pagoCompraDetalleItems = null;
         let _sheetPagoCompras = []; window._sheetPagoCompras = _sheetPagoCompras;
        
        function _getIdSheetCompra(r) {
@@ -13502,9 +13503,10 @@ renderIngresos();
         return;
     }
 
-    _pagoCompraId = id;
-    _pagoCompraFP = 'EFECTIVO';
-    _pagoCompraNombre = nombreProducto || null;
+_pagoCompraId = id;
+_pagoCompraFP = 'EFECTIVO';
+_pagoCompraNombre = nombreProducto || null;
+    if (nombreProducto) _pagoCompraDetalleItems = null;
 
     const idSheet = _getIdSheetCompra(r);
 
@@ -13566,39 +13568,44 @@ if(monto<=0){
 
 const idSheet = _getIdSheetCompra(r);
 const ahora = new Date();
-const id = Utils.genId();
+const detalles = Array.isArray(_pagoCompraDetalleItems) && _pagoCompraDetalleItems.length
+    ? _pagoCompraDetalleItems
+    : [{ nombre: _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '), saldo: monto }];
+let restantePagoCompra = monto;
+detalles.forEach(function(det) {
+    if (restantePagoCompra <= 0) return;
+    const pagoDet = Math.min(restantePagoCompra, Number(det.saldo || 0) || 0);
+    if (pagoDet <= 0) return;
+    restantePagoCompra -= pagoDet;
+    const id = Utils.genId();
+    _sheetPagoCompras.push({
+        IDPAGOCOMPRAS:id,
+        IDCOMPRAS:idSheet,
+        FECHA:fechaSheet(ahora),
+        PRODUCTO: det.nombre || _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '),
+        'FORMA DE PAGO':_pagoCompraFP,
+        MONTO:pagoDet,
+        monto:pagoDet,
+        proveedor: (r.proveedor||'').toUpperCase(),
+        'FECHA ORIGINAL':r.fecha||''
+    });
 
-_sheetPagoCompras.push({
-    IDPAGOCOMPRAS:id,
-    IDCOMPRAS:idSheet,
-    FECHA:fechaSheet(ahora),
-    PRODUCTO: _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '),
-    'FORMA DE PAGO':_pagoCompraFP,
-    MONTO:monto,
-    monto:monto,
-    proveedor: (r.proveedor||'').toUpperCase(),
-    'FECHA ORIGINAL':r.fecha||''
-});
-
-
-
-console.log("FETCH ENVIANDO...");
-
-fetchSheets({
-  method:'POST',
-  body: JSON.stringify({
-    tipo:'pago_compra',
-    id,
-    IDPAGOCOMPRAS:id,
-    IDCOMPRAS:idSheet,
-    fecha:fechaSheet(ahora),
-    fechaISO:ahora.toISOString(),
-    producto: _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '),
-    proveedor: r.proveedor || '',
-    formaPago:_pagoCompraFP,
-    monto,
-    fechaOriginal:r.fecha||''
-  })
+    fetchSheets({
+      method:'POST',
+      body: JSON.stringify({
+        tipo:'pago_compra',
+        id,
+        IDPAGOCOMPRAS:id,
+        IDCOMPRAS:idSheet,
+        fecha:fechaSheet(ahora),
+        fechaISO:ahora.toISOString(),
+        producto: det.nombre || _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '),
+        proveedor: r.proveedor || '',
+        formaPago:_pagoCompraFP,
+        monto:pagoDet,
+        fechaOriginal:r.fecha||''
+      })
+    });
 });
 
 console.log("FETCH ENVIADO");
@@ -13606,6 +13613,7 @@ console.log("FETCH ENVIADO");
 toggleModal('modalPagoCompra', false);
 _liberarPago('btnConfPagoCompra');
 mostrarToast(`✓ Pago de $${Utils.fmt(monto)} registrado`);
+_pagoCompraDetalleItems = null;
 
 renderCompras();
 
@@ -14727,6 +14735,19 @@ window.pagarItemProv = function(esGasto, id, monto, nombreProducto) {
     else abrirPagoCompra(id, monto, nombre);
 };
 
+window.pagarCompraProv = function(idCompra, montoTotal) {
+    const key = String(idCompra || '').trim();
+    const detalle = (window._detalleCompraProvCache && window._detalleCompraProvCache[key]) || [];
+    _pagoCompraDetalleItems = detalle.map(function(item) {
+        return {
+            nombre: item.nombre || '',
+            saldo: Number(item._saldoItem || item.saldo || 0) || 0
+        };
+    }).filter(function(item) { return item.saldo > 0; });
+    _pagoCompraNombre = null;
+    abrirPagoCompra(key, montoTotal || 0, null);
+};
+
 window.verDetalleProveedor = function(tipo, id) {
     console.log("CLICK OK", tipo, id);
     window._provDetalleActivo = { tipo, id };
@@ -14856,6 +14877,8 @@ window.verDetalleProveedor = function(tipo, id) {
             // Guardar en cache para acceso sin pasar URLs en onclick
             if (!window._ticketsProvCache) window._ticketsProvCache = {};
             window._ticketsProvCache[idPago] = tks;
+            if (!window._detalleCompraProvCache) window._detalleCompraProvCache = {};
+            window._detalleCompraProvCache[idPago] = items;
             const ticketBtns = tks.length > 0
                 ? tks.map((t,ti) => `<button onclick="verTicketProvIdx('${idPago}',${ti})"
                         style="padding:3px 8px;background:#1e3a5f;color:#60a5fa;border:1px solid #1e40af;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;line-height:1;"
@@ -14867,7 +14890,7 @@ window.verDetalleProveedor = function(tipo, id) {
                     <span style="font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">${Utils.escHtml(fecha||'')}</span>
                     <div style="display:flex;align-items:center;gap:4px;">
                         ${ticketBtns}
-                        ${saldoTotal > 0 ? `<button onclick="abrirPagoCompra('${idPago}',${saldoTotal})"
+                        ${saldoTotal > 0 ? `<button onclick="pagarCompraProv('${idPago}',${saldoTotal})"
                             style="padding:3px 8px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;line-height:1;"
                             title="Pagar compra">💳 Pagar</button>` : ''}
                         <span style="font-size:13px;font-weight:900;color:#f87171;font-family:monospace;">$${Utils.fmt(saldoTotal)}</span>
