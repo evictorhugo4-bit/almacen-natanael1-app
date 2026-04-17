@@ -4008,7 +4008,7 @@ CONFIRMAR PAGO
                 <button onclick="toggleModal('modalEditarVenta',false)" class="py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-xs rounded-xl uppercase transition-colors">
                     Cancelar
                 </button>
-                <button onclick="confirmarEditarVenta()" class="py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl uppercase transition-colors flex items-center justify-center gap-2">
+                <button id="btnGuardarEditarVenta" onclick="confirmarEditarVenta()" class="py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl uppercase transition-colors flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check" aria-hidden="true" class="lucide lucide-check w-4 h-4"><path d="M20 6 9 17l-5-5"></path></svg> Guardar
                 </button>
             </div>
@@ -5527,12 +5527,23 @@ _sheetEgresosNegocio.forEach(e => {
             let rows = '';
             slice.forEach(function(v) {
                 const realIdx = historial.indexOf(v);
-                const credito = Math.max(0, v.deuda || 0);
+                const clienteNombreUpper = (v.cliente||'').trim().toUpperCase();
+                const esClienteEspecialHist = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(clienteNombreUpper);
                 const itemsVenta = v.items || [];
+                const totalEspecialHist = esClienteEspecialHist
+                    ? itemsVenta.reduce(function(s, i) {
+                        const cant = Number(i.cantidad || 1) || 1;
+                        const costoUnit = Number(i.costo || 0) || 0;
+                        const dinRecItem = Number(i.dineroRecuperado || 0) || 0;
+                        return s + (dinRecItem || (costoUnit * cant));
+                    }, 0)
+                    : 0;
+                const credito = esClienteEspecialHist ? 0 : Math.max(0, v.deuda || 0);
+                const efectivoHist = esClienteEspecialHist ? totalEspecialHist : Number(v.efectivo || 0);
+                const totalHist = esClienteEspecialHist ? totalEspecialHist : Number(v.total || 0);
 
                 rows += '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:8px;margin-bottom:4px;">';
                 // Line 1: fecha + cliente
-                const clienteNombreUpper = (v.cliente||'').trim().toUpperCase();
                 const clienteObj = (clientesDB||[]).find(function(c){ return (c.nombre||'').trim().toUpperCase() === clienteNombreUpper; });
                 const clienteInitials = (v.cliente||'-').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
                 const clienteThumb = (clienteObj && clienteObj.foto)
@@ -5546,10 +5557,15 @@ _sheetEgresosNegocio.forEach(e => {
                 if (itemsVenta.length > 0) {
                     rows += '<div style="margin-bottom:5px;border-top:1px solid #1e293b;padding-top:6px;">';
                     itemsVenta.forEach(function(i, ii) {
-                        const precioItem = (i.precio||0) * (i.cantidad||1);
+                        const cantItem = Number(i.cantidad || 1) || 1;
                         const initials = (i.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
                         const prodObj = (_sheetProductos||[]).find(function(p){ return (p.nombre||'').trim().toUpperCase() === (i.nombre||'').trim().toUpperCase(); });
                         const fotoItem = i.foto || (prodObj && prodObj.foto) || (prodObj && prodObj.imagen) || '';
+                        const costoUnit = Number(i.costo || (prodObj && prodObj.costo) || 0) || 0;
+                        const dineroRecuperadoItem = Number(i.dineroRecuperado || 0) || 0;
+                        const precioItem = esClienteEspecialHist
+                            ? (dineroRecuperadoItem || (costoUnit * cantItem))
+                            : ((Number(i.precio || 0) || 0) * cantItem);
                         const fotoHtml = fotoItem
                             ? '<img src="' + driveUrl(fotoItem) + '" style="width:44px;height:44px;object-fit:contain;border-radius:10px;background:#0f172a;border:1.5px solid #334155;flex-shrink:0;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" alt=""><div style="display:none;width:44px;height:44px;border-radius:10px;background:#1e293b;border:1.5px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">🛒</div>'
                             : '<div style="width:44px;height:44px;border-radius:10px;background:#1e293b;border:1.5px solid #334155;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">🛒</div>';
@@ -5563,7 +5579,7 @@ _sheetEgresosNegocio.forEach(e => {
                         rows += '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">' + cantBadge + '<span style="font-size:11px;color:#e2e8f0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + Utils.escHtml(i.nombre||'') + '</span></div>';
                         if (precioCosto) rows += precioCosto;
                         rows += '</div>';
-                        if (precioItem > 0) rows += '<span style="font-size:12px;font-weight:900;color:#f8fafc;font-family:monospace;background:#1e293b;padding:4px 8px;border-radius:8px;flex-shrink:0;">$' + Utils.fmt(precioItem) + '</span>';
+                        if (precioItem > 0) rows += '<span style="font-size:12px;font-weight:900;color:#f8fafc;font-family:monospace;background:#1e293b;padding:4px 8px;border-radius:8px;flex-shrink:0;">$' + Utils.fmt(precioItem) + (esClienteEspecialHist ? '<span style="display:block;font-size:8px;color:#94a3b8;font-family:inherit;font-weight:700;margin-top:1px;">Din. rec.</span>' : '') + '</span>';
                         rows += '</div>';
                     });
                     rows += '</div>';
@@ -5580,9 +5596,9 @@ _sheetEgresosNegocio.forEach(e => {
                 // Line 3: montos + botones
                 rows += '<div style="display:flex;justify-content:space-between;align-items:center;">';
                 rows += '<div style="display:flex;gap:8px;">';
-                rows += '<span style="font-size:10px;font-weight:900;color:#34d399;font-family:monospace;">Ef:$' + Utils.fmt(v.efectivo||0) + '</span>';
+                rows += '<span style="font-size:10px;font-weight:900;color:#34d399;font-family:monospace;">Ef:$' + Utils.fmt(efectivoHist) + '</span>';
                 if (credito > 0) rows += '<span style="font-size:10px;font-weight:900;color:#f87171;font-family:monospace;">Cr:$' + Utils.fmt(credito) + '</span>';
-                rows += '<span style="font-size:10px;font-weight:900;color:#fff;font-family:monospace;">Tot:$' + Utils.fmt(v.total||0) + '</span>';
+                rows += '<span style="font-size:10px;font-weight:900;color:#fff;font-family:monospace;">Tot:$' + Utils.fmt(totalHist) + '</span>';
                 rows += '</div>';
                 rows += '<div style="display:flex;gap:4px;">';
                 rows += '<button onclick="accionVenta(' + realIdx + ',&quot;editar&quot;)" style="padding:6px 10px;background:#334155;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;">&#9999;</button>';
@@ -6272,6 +6288,78 @@ _sheetEgresosNegocio.forEach(e => {
         // Items temporales de la venta en edición
         var _editVentaItems = [];
 
+        function _recalcularItemsEditVenta() {
+            const clienteActual = (document.getElementById('editarVentaCliente')?.value || '').trim();
+            const clienteUpper = clienteActual.toUpperCase();
+            const esClienteEspecial = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(clienteUpper);
+            const esPublicoGeneral = clienteUpper === 'PUBLICO GENERAL';
+
+            let itemsCalc = JSON.parse(JSON.stringify(_editVentaItems || []));
+            let totalVenta = itemsCalc.reduce(function(s, item) {
+                const cant = Number(item.cantidad || 1) || 1;
+                const costoUnit = Number(item.costo || item.precioCosto || 0) || 0;
+                const precioUnit = Number(item.precio || item.precioVenta || 0) || 0;
+                const drUnit = Number(item._drUnit || 0) || 0;
+                const dineroRecUnit = drUnit > 0 ? drUnit : costoUnit;
+                return s + (esClienteEspecial ? (dineroRecUnit * cant) : (precioUnit * cant));
+            }, 0);
+
+            let efectivoIngresado = parseFloat(document.getElementById('editarVentaEfectivo')?.value) || 0;
+            if (esClienteEspecial || esPublicoGeneral) {
+                efectivoIngresado = totalVenta;
+                const efEl = document.getElementById('editarVentaEfectivo');
+                if (efEl) efEl.value = totalVenta > 0 ? String(totalVenta) : '';
+            }
+
+            let efRest = efectivoIngresado;
+            itemsCalc = itemsCalc.map(function(item) {
+                const cant = Number(item.cantidad || 1) || 1;
+                const costoUnit = Number(item.costo || item.precioCosto || 0) || 0;
+                const precioUnit = Number(item.precio || item.precioVenta || 0) || 0;
+                const drUnitBase = Number(item._drUnit || 0) || 0;
+                const ganUnitBase = item._ganUnit;
+                const dineroRecUnit = drUnitBase > 0 ? drUnitBase : costoUnit;
+                const costoTotal = costoUnit * cant;
+                const importeVenta = esClienteEspecial ? (dineroRecUnit * cant) : (precioUnit * cant);
+                const efPaga = esClienteEspecial ? 0 : (esPublicoGeneral ? importeVenta : Math.min(efRest, importeVenta));
+                if (!esClienteEspecial && !esPublicoGeneral) efRest = Math.max(0, efRest - efPaga);
+                const ganancia = esClienteEspecial
+                    ? 0
+                    : (typeof ganUnitBase === 'number' && !isNaN(ganUnitBase) ? ganUnitBase * cant : (importeVenta - costoTotal));
+
+                return {
+                    ...item,
+                    cantidad: cant,
+                    cliente: clienteActual || item.cliente || '',
+                    precioCosto: costoUnit,
+                    costoTotal: costoTotal,
+                    precioVenta: esClienteEspecial ? costoTotal : precioUnit,
+                    dineroRecuperado: dineroRecUnit * cant,
+                    formaPago: esClienteEspecial ? 'Efectivo' : esPublicoGeneral ? 'Efectivo' : (efPaga <= 0 ? 'Crédito' : (efPaga >= importeVenta ? 'Efectivo' : 'Mixto')),
+                    pagoEfectivo: esClienteEspecial ? 0 : esPublicoGeneral ? importeVenta : efPaga,
+                    pagoCredito: (esClienteEspecial || esPublicoGeneral) ? 0 : Math.max(0, importeVenta - efPaga),
+                    pagoTotal: esClienteEspecial ? 0 : importeVenta,
+                    ganancia: ganancia
+                };
+            });
+
+            totalVenta = itemsCalc.reduce(function(s, item) {
+                const cant = Number(item.cantidad || 1) || 1;
+                const precioUnit = Number(item.precio || item.precioVenta || 0) || 0;
+                return s + (esClienteEspecial ? Number(item.dineroRecuperado || 0) : (precioUnit * cant));
+            }, 0);
+
+            return {
+                cliente: clienteActual,
+                esClienteEspecial: esClienteEspecial,
+                esPublicoGeneral: esPublicoGeneral,
+                items: itemsCalc,
+                total: totalVenta,
+                efectivo: esClienteEspecial || esPublicoGeneral ? totalVenta : efectivoIngresado,
+                deuda: (esClienteEspecial || esPublicoGeneral) ? 0 : Math.max(0, totalVenta - efectivoIngresado)
+            };
+        }
+
         function editarVenta(id) {
             const v = historial.find(function(v){ return String(v.id) === String(id); });
             if (!v) return;
@@ -6283,7 +6371,17 @@ _sheetEgresosNegocio.forEach(e => {
             const fEl = document.getElementById('editarVentaFecha');
             if (fEl && fISO) { try { fEl.value = new Date(new Date(fISO) - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16); } catch(e){} }
             // Cargar copia de items para edición
-            _editVentaItems = JSON.parse(JSON.stringify(v.items || []));
+            _editVentaItems = JSON.parse(JSON.stringify(v.items || [])).map(function(item) {
+                const cant = Number(item.cantidad || 1) || 1;
+                const costoUnit = Number(item.costo || item.precioCosto || 0) || 0;
+                const drTotal = Number(item.dineroRecuperado || 0) || 0;
+                const ganTotal = Number(item.ganancia || 0);
+                return {
+                    ...item,
+                    _drUnit: drTotal > 0 ? (drTotal / cant) : costoUnit,
+                    _ganUnit: Number.isFinite(ganTotal) ? (ganTotal / cant) : ((Number(item.precio || item.precioVenta || 0) || 0) - costoUnit)
+                };
+            });
             renderItemsEditVenta();
             // Limpiar buscador
             var bp = document.getElementById('editarVentaBuscarProd');
@@ -6294,11 +6392,13 @@ _sheetEgresosNegocio.forEach(e => {
         function renderItemsEditVenta() {
             var cont = document.getElementById('editarVentaItems');
             if (!cont) return;
-            if (_editVentaItems.length === 0) {
+            const calc = _recalcularItemsEditVenta();
+            if (calc.items.length === 0) {
                 cont.innerHTML = '<p style="font-size:11px;color:#64748b;text-align:center;padding:8px 0;">Sin productos</p>';
+                document.getElementById('editarVentaTotal').textContent = '$0';
                 return;
             }
-            cont.innerHTML = _editVentaItems.map(function(item, idx) {
+            cont.innerHTML = calc.items.map(function(item, idx) {
                 var foto = item.foto || item.imagen || '';
                 var thumb = foto
                     ? '<img src="' + foto + '" style="width:32px;height:32px;object-fit:cover;border-radius:8px;flex-shrink:0;">'
@@ -6311,15 +6411,14 @@ _sheetEgresosNegocio.forEach(e => {
                             '<button onmousedown="evItemEditVenta(' + idx + ',-1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">−</button>' +
                             '<span style="font-size:12px;font-weight:900;color:#10b981;min-width:20px;text-align:center;">' + (item.cantidad || 1) + '</span>' +
                             '<button onmousedown="evItemEditVenta(' + idx + ',1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>' +
-                            '<span style="font-size:11px;color:#64748b;font-weight:700;">$' + Utils.fmt(item.precio || 0) + ' c/u</span>' +
+                            '<span style="font-size:11px;color:#64748b;font-weight:700;">$' + Utils.fmt(item.precio || item.precioVenta || 0) + ' c/u</span>' +
                         '</div>' +
                     '</div>' +
                     '<button onmousedown="quitarItemEditVenta(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'#450a0a\';this.style.color=\'#f87171\';" onmouseout="this.style.background=\'#1e293b\';this.style.color=\'#64748b\';">✕</button>' +
                 '</div>';
             }).join('');
-            // Recalcular total
-            var nuevoTotal = _editVentaItems.reduce(function(s, i){ return s + (parseFloat(i.precio)||0) * (parseFloat(i.cantidad)||1); }, 0);
-            document.getElementById('editarVentaTotal').textContent = '$' + Utils.fmt(nuevoTotal);
+            _editVentaItems = calc.items;
+            document.getElementById('editarVentaTotal').textContent = '$' + Utils.fmt(calc.total);
         }
 
         function evItemEditVenta(idx, delta) {
@@ -6334,6 +6433,13 @@ _sheetEgresosNegocio.forEach(e => {
             _editVentaItems.splice(idx, 1);
             renderItemsEditVenta();
         }
+
+        document.getElementById('editarVentaCliente')?.addEventListener('input', function() {
+            renderItemsEditVenta();
+        });
+        document.getElementById('editarVentaEfectivo')?.addEventListener('input', function() {
+            renderItemsEditVenta();
+        });
 
         function filtrarProdsEditVenta(query) {
             var drop = document.getElementById('dropdownProdsEdit');
@@ -6369,7 +6475,7 @@ _sheetEgresosNegocio.forEach(e => {
             if (existente) {
                 existente.cantidad = (parseFloat(existente.cantidad)||1) + 1;
             } else {
-                _editVentaItems.push({ nombre: nombre, cantidad: 1, precio: precio, costo: costo, id: id });
+                _editVentaItems.push({ nombre: nombre, cantidad: 1, precio: precio, costo: costo, id: id, _drUnit: costo, _ganUnit: (precio - costo) });
             }
             // Limpiar buscador y cerrar dropdown
             var bp = document.getElementById('editarVentaBuscarProd');
@@ -6379,7 +6485,15 @@ _sheetEgresosNegocio.forEach(e => {
             renderItemsEditVenta();
         }
 
-        function confirmarEditarVenta() {
+        async function confirmarEditarVenta() {
+            const btnGuardar = document.getElementById('btnGuardarEditarVenta');
+            if (btnGuardar && btnGuardar.disabled) return;
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.dataset.prevHtml = btnGuardar.innerHTML;
+                btnGuardar.innerHTML = 'Guardando...';
+                btnGuardar.style.opacity = '0.7';
+            }
             // Buscar en historial local primero, luego en sheetVentas
             let v = historial.find(function(v){ return String(v.id) === String(ventaAccionId); });
             let esDeSheet = false;
@@ -6394,15 +6508,53 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
             if (!v) return;
-            const nuevoCliente = document.getElementById('editarVentaCliente').value.trim();
-            const nuevoEfectivo = parseFloat(document.getElementById('editarVentaEfectivo').value) || 0;
+            const calc = _recalcularItemsEditVenta();
+            const nuevoCliente = calc.cliente;
             const nuevaFecha = document.getElementById('editarVentaFecha')?.value || '';
+            const _clienteObjEdit = (clientesDB || []).find(function(c) {
+                return (c.nombre || '').trim().toUpperCase() === (nuevoCliente || '').trim().toUpperCase();
+            });
+            const idClienteEdit = _clienteObjEdit ? String(_clienteObjEdit.idSheet || _clienteObjEdit.id || '') : '';
+            const productosPayloadEdit = (calc.items || []).map(function(item) {
+                const prodRef = (_sheetProductos || []).find(function(p) {
+                    return (item.id && String(p.id || '') === String(item.id || '')) ||
+                           ((p.nombre || '').trim().toUpperCase() === (item.nombre || '').trim().toUpperCase());
+                }) || {};
+                return {
+                    id:             item.id || '',
+                    nombre:         item.nombre || '',
+                    tipoVenta:      item.tipoVenta || '',
+                    cantidad:       Number(item.cantidad || 1) || 1,
+                    cliente:        nuevoCliente || '',
+                    proveedor:      item.proveedor || prodRef.proveedor || '',
+                    categoria:      item.categoria || prodRef.categoria || '',
+                    depto:          item.depto || item.departamento || prodRef.depto || '',
+                    departamento:   item.departamento || item.depto || prodRef.depto || '',
+                    precioCosto:    Number(item.precioCosto || item.costo || prodRef.costo || 0) || 0,
+                    costoTotal:     Number(item.costoTotal || 0) || 0,
+                    precioVenta:    Number(item.precioVenta || item.precio || 0) || 0,
+                    precio:         Number(item.precio || item.precioVenta || 0) || 0,
+                    dineroRecuperado:Number(item.dineroRecuperado || 0) || 0,
+                    formaPago:      item.formaPago || '',
+                    pagoEfectivo:   Number(item.pagoEfectivo || 0) || 0,
+                    pagoCredito:    Number(item.pagoCredito || 0) || 0,
+                    pagoTotal:      Number(item.pagoTotal || 0) || 0,
+                    ganancia:       Number(item.ganancia || 0) || 0
+                };
+            });
             if (nuevoCliente) v.cliente = nuevoCliente;
-            v.efectivo = nuevoEfectivo;
+            v.idCliente = idClienteEdit;
+            v.efectivo = calc.efectivo;
             // Aplicar items editados — siempre, aunque no se hayan tocado
-            v.items = JSON.parse(JSON.stringify(_editVentaItems));
-            v.total = _editVentaItems.reduce(function(s,i){ return s + (parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1); }, 0);
-            v.deuda = Math.max(0, v.total - v.efectivo);
+            v.items = JSON.parse(JSON.stringify(calc.items)).map(function(item) {
+                var copia = { ...item };
+                delete copia._drUnit;
+                delete copia._ganUnit;
+                return copia;
+            });
+            _editVentaItems = JSON.parse(JSON.stringify(calc.items));
+            v.total = calc.total;
+            v.deuda = calc.deuda;
             // Helper: formatea cualquier fecha a "dd/MM/yyyy HH:mm:ss" en hora local
             function fmtFechaSheet(fechaStr) {
                 if (!fechaStr) return '';
@@ -6425,44 +6577,46 @@ _sheetEgresosNegocio.forEach(e => {
                 if (!isNaN(d)) {
                     v.fechaISO = d.toISOString();
                     v.fecha = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':00';
-                    editarEnSheet({
-                        tipo: 'actualizar_venta',
-                        idVenta: String(v.id || v.IDVENTAS || ''),
-                        fecha: v.fecha,
-                        cliente: v.cliente,
-                        efectivo: v.efectivo,
-                        credito: v.deuda,
-                        total: v.total
-                    });
                 }
-            } else {
-                // Sin cambio de fecha, enviar la fecha ya en formato dd/MM/yyyy
-                editarEnSheet({
-                    tipo: 'actualizar_venta',
-                    idVenta: String(v.id || v.IDVENTAS || ''),
-                    fecha: fmtFechaSheet(v.fecha || v.fechaISO || ''),
-                    cliente: v.cliente,
-                    efectivo: v.efectivo,
-                    credito: v.deuda,
-                    total: v.total
-                });
             }
-            // Enviar items actualizados al sheet (una sola llamada con total recalculado)
-            editarEnSheet({
-                tipo: 'actualizar_venta',
-                idVenta: String(v.id || v.IDVENTAS || ''),
-                fecha: fmtFechaSheet(v.fecha || v.fechaISO || ''),
-                cliente: v.cliente,
-                efectivo: v.efectivo,
-                credito: v.deuda,
-                total: v.total,
-                items: JSON.stringify(_editVentaItems)
-            });
+            const idVentaSheet = String(v.idSheet || v.IDVENTAS || v.id || '').replace('sheet_V_', '').trim();
+            const fechaVentaSheet = fmtFechaSheet(v.fecha || v.fechaISO || '');
+            const formaPagoEdit = (calc.esClienteEspecial || calc.esPublicoGeneral)
+                ? 'Efectivo'
+                : (calc.deuda <= 0 ? 'Efectivo' : (calc.efectivo > 0 ? 'Mixto' : 'Crédito'));
+            const ventaPayloadEdit = {
+                tipo:        'venta',
+                numeroVenta: idVentaSheet || String(v.id || ''),
+                fecha:       fechaVentaSheet,
+                fechaISO:    fechaVentaSheet,
+                cliente:     v.cliente,
+                idCliente:   idClienteEdit,
+                efectivo:    calc.esClienteEspecial ? 0 : (calc.esPublicoGeneral ? calc.total : calc.efectivo),
+                credito:     (calc.esClienteEspecial || calc.esPublicoGeneral) ? 0 : calc.deuda,
+                total:       calc.esClienteEspecial ? 0 : calc.total,
+                formaPago:   formaPagoEdit,
+                estado:      (calc.esClienteEspecial || calc.esPublicoGeneral || calc.deuda <= 0) ? 'FINALIZADO' : 'PENDIENTE',
+                productos:   productosPayloadEdit
+            };
             toggleModal('modalEditarVenta', false);
             DB.saveHistorial();
-            if (typeof sincronizarSheetsSilencioso === 'function') sincronizarSheetsSilencioso();
             renderHistorial();
-            mostrarToast('✓ Venta actualizada');
+            mostrarToast('✓ Venta actualizada localmente');
+            (async function() {
+                try {
+                    if (idVentaSheet) {
+                        await fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'eliminar_venta', IDVENTAS: idVentaSheet }) });
+                    }
+                    await editarEnSheet(ventaPayloadEdit);
+                    if (typeof sincronizarSheetsSilencioso === 'function') setTimeout(() => sincronizarSheetsSilencioso(), 800);
+                } finally {
+                    if (btnGuardar) {
+                        btnGuardar.disabled = false;
+                        if (btnGuardar.dataset.prevHtml) btnGuardar.innerHTML = btnGuardar.dataset.prevHtml;
+                        btnGuardar.style.opacity = '';
+                    }
+                }
+            })();
         }
 
         function filtrarClientesEditVenta(query) {
@@ -15170,14 +15324,13 @@ function verDetalleProveedor(tipo, id){
 
         function fetchSheets(options) {
             if (!options || options.method !== 'POST') {
-                fetch(SHEETS_URL2).catch(()=>{});
-                return;
+                return fetch(SHEETS_URL2).catch(()=>{});
             }
             try {
                 const payload = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
                 console.log('[Sheet] POST → body length:', payload.length);
                 console.log('[Sheet] POST → body preview:', payload.substring(0, 300));
-                fetch(SHEETS_URL2, {
+                return fetch(SHEETS_URL2, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
                     body: payload
@@ -15206,6 +15359,7 @@ function verDetalleProveedor(tipo, id){
             } catch(e) {
                 console.error('[Sheet error]', e);
                 mostrarToast('⚠ Error al enviar al Sheet: ' + e.message, 'error');
+                return Promise.reject(e);
             }
         }
 
