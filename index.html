@@ -1104,8 +1104,11 @@ GUARDAR PRODUCTO
 <div>
   <h3 onclick="toggleSeccion('secComprasPagadas')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
-      Compras Pagadas
-      <span id="icon-secComprasPagadas">&#9660;</span>
+      <span>Compras Pagadas</span>
+      <span class="flex items-center gap-2">
+          <button id="btnPdfComprasPagadasCliente" onclick="event.stopPropagation();generarPDFComprasPagadasCliente();" class="hidden px-2 py-1 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-colors flex items-center justify-center" title="Descargar PDF de compras pagadas"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h2"/><path d="M9 19h6"/></svg></button>
+          <span id="icon-secComprasPagadas">&#9660;</span>
+      </span>
   </h3>
 
   <div id="secComprasPagadas" class="space-y-2 hidden">
@@ -1119,8 +1122,8 @@ GUARDAR PRODUCTO
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
       <span>Historial de Pagos de Compras</span>
       <span class="flex items-center gap-2">
-          <button type="button" onclick="event.stopPropagation();generarPDFPagosClienteDetalle();" id="btnPdfPagosCliente" class="hidden px-2 py-1 rounded-md border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-colors" title="Descargar PDF de pagos" style="font-size:9px;line-height:1;font-weight:900;">
-              &#128196; PDF
+          <button type="button" onclick="event.stopPropagation();generarPDFPagosClienteDetalle();" id="btnPdfPagosCliente" class="hidden px-2 py-1 rounded-md border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-colors flex items-center justify-center" title="Descargar PDF de pagos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h2"/><path d="M9 19h6"/></svg>
           </button>
           <span id="icon-secPagosCompras">&#9660;</span>
       </span>
@@ -1134,8 +1137,13 @@ GUARDAR PRODUCTO
 <div>
   <h3 onclick="toggleSeccion('secPagosPrestamos')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
-      Historial de Pagos de Prestamos
-      <span id="icon-secPagosPrestamos">&#9660;</span>
+      <span>Historial de Pagos de Prestamos</span>
+      <span class="flex items-center gap-2">
+          <button type="button" onclick="event.stopPropagation();generarPDFPagosPrestamosCliente();" id="btnPdfPagosPrestamosCliente" class="hidden px-2 py-1 rounded-md border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-colors flex items-center justify-center" title="Descargar PDF de pagos de prestamos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h2"/><path d="M9 19h6"/></svg>
+          </button>
+          <span id="icon-secPagosPrestamos">&#9660;</span>
+      </span>
   </h3>
   <div id="secPagosPrestamos" class="space-y-2 hidden">
       <div id="detallePagosPrestamos"></div>
@@ -6576,6 +6584,242 @@ _sheetEgresosNegocio.forEach(e => {
             window._detallePagosClienteActual = original;
         }
 
+        async function generarPDFComprasPagadasCliente() {
+            const compras = Array.isArray(window._detalleComprasPagadasActual) ? window._detalleComprasPagadasActual : [];
+            const clienteNombre = String(window._detallePagosClienteNombre || 'CLIENTE').trim() || 'CLIENTE';
+            if (compras.length === 0) {
+                mostrarToast('No hay compras pagadas para exportar', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
+            let y = 0;
+
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, W, 38, 'F');
+
+            const logoPDF = obtenerLogoPDFNatanael();
+            if (logoPDF) {
+                try { doc.addImage(logoPDF, 'JPEG', W - 40, 5, 24, 24, '', 'FAST'); } catch(e) {}
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(17);
+            doc.setTextColor(52, 211, 153);
+            doc.text('ALMACEN NATANAEL', 10, 16);
+            doc.setFontSize(9);
+            doc.setTextColor(148, 163, 184);
+            doc.text('COMPRAS PAGADAS DEL CLIENTE', 10, 24);
+
+            y = 46;
+            doc.setFillColor(15, 23, 42);
+            doc.roundedRect(8, y - 3, W - 16, 18, 2, 2, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text('CLIENTE', 14, y + 2);
+            doc.text('TOTAL', W - 14, y + 2, { align: 'right' });
+            doc.setFontSize(10);
+            doc.setTextColor(226, 232, 240);
+            doc.text(clienteNombre.toUpperCase(), 14, y + 9);
+            doc.setTextColor(52, 211, 153);
+            doc.text('$' + Utils.fmt(compras.reduce(function(s, c) { return s + (Number(c.total) || 0); }, 0)), W - 14, y + 9, { align: 'right' });
+
+            y += 24;
+
+            for (let idx = 0; idx < compras.length; idx++) {
+                const comp = compras[idx];
+                const fechaCab = String(comp.fecha || '').trim();
+                if (y > 262) {
+                    doc.addPage();
+                    y = 15;
+                }
+
+                doc.setFillColor(16, 185, 129);
+                doc.roundedRect(8, y - 2, W - 16, 8, 2, 2, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0);
+                doc.text('FECHA', 12, y + 3);
+                doc.text(String(fechaCab || '-'), 28, y + 3);
+                doc.text('$' + Utils.fmt(Number(comp.total) || 0), W - 12, y + 3, { align: 'right' });
+                y += 10;
+
+                const items = Array.isArray(comp.items) && comp.items.length > 0
+                    ? comp.items
+                    : [{ nombre: comp.producto || 'SIN PRODUCTO', cantidad: 1, precio: comp.total || 0, foto: comp.fotoProducto || '' }];
+
+                for (let j = 0; j < items.length; j++) {
+                    const item = items[j];
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 15;
+                    }
+                    const qty = Number(item.cantidad) || 1;
+                    const precio = Number(item.precio) || 0;
+                    const subtotal = qty * precio;
+                    const fotoProducto = item.foto || item.imagen || obtenerFotoProductoPorNombre(item.nombre || comp.producto || '');
+                    const imgPdf = await cargarImagenParaPDF(fotoProducto);
+
+                    doc.setFillColor(j % 2 === 0 ? 15 : 2, 23, 42);
+                    doc.roundedRect(8, y - 3, W - 16, 16, 2, 2, 'F');
+
+                    if (imgPdf && imgPdf.dataUrl) {
+                        try {
+                            doc.addImage(imgPdf.dataUrl, imgPdf.format || 'JPEG', 12, y - 1, 7, 7, '', 'FAST');
+                        } catch(e) {
+                            doc.setFillColor(30, 41, 59);
+                            doc.roundedRect(12, y - 1, 7, 7, 1, 1, 'F');
+                        }
+                    } else {
+                        doc.setFillColor(30, 41, 59);
+                        doc.roundedRect(12, y - 1, 7, 7, 1, 1, 'F');
+                    }
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(226, 232, 240);
+                    doc.text(`${qty}x ${String(item.nombre || 'SIN PRODUCTO').substring(0, 48)}`, 22, y + 2);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`Unitario: $${Utils.fmt(precio)}`, 22, y + 6.8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(52, 211, 153);
+                    doc.text(`$${Utils.fmt(subtotal)}`, W - 12, y + 4.5, { align: 'right' });
+                    y += 17;
+                }
+            }
+
+            doc.save('compras_pagadas_' + clienteNombre.replace(/\s+/g, '_') + '.pdf');
+            mostrarToast('PDF de compras pagadas descargado');
+        }
+
+        function generarPDFPagosPrestamosCliente() {
+            const pagos = Array.isArray(window._detallePagosPrestamosActual) ? window._detallePagosPrestamosActual : [];
+            const clienteNombre = String(window._detallePagosClienteNombre || 'CLIENTE').trim() || 'CLIENTE';
+            if (pagos.length === 0) {
+                mostrarToast('No hay pagos de prestamos para exportar', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
+            let y = 0;
+
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, W, 38, 'F');
+
+            const logoPDF = obtenerLogoPDFNatanael();
+            if (logoPDF) {
+                try { doc.addImage(logoPDF, 'JPEG', W - 40, 5, 24, 24, '', 'FAST'); } catch(e) {}
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(17);
+            doc.setTextColor(52, 211, 153);
+            doc.text('ALMACEN NATANAEL', 10, 16);
+            doc.setFontSize(9);
+            doc.setTextColor(148, 163, 184);
+            doc.text('PAGOS DE PRESTAMOS DEL CLIENTE', 10, 24);
+
+            y = 46;
+            doc.setFillColor(15, 23, 42);
+            doc.roundedRect(8, y - 3, W - 16, 18, 2, 2, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text('CLIENTE', 14, y + 2);
+            doc.text('TOTAL COBRADO', W - 14, y + 2, { align: 'right' });
+            doc.setFontSize(10);
+            doc.setTextColor(226, 232, 240);
+            doc.text(clienteNombre.toUpperCase(), 14, y + 9);
+            doc.setTextColor(52, 211, 153);
+            doc.text('$' + Utils.fmt(pagos.reduce(function(s, p) { return s + (Number(p.monto) || 0); }, 0)), W - 14, y + 9, { align: 'right' });
+
+            y += 24;
+
+            const grupos = new Map();
+            pagos.forEach(function(p) {
+                const claveFecha = fechaSoloDia(p.fecha || p.fechaAgrupacion || '');
+                if (!grupos.has(claveFecha)) grupos.set(claveFecha, []);
+                grupos.get(claveFecha).push(p);
+            });
+
+            const gruposOrdenados = Array.from(grupos.entries()).sort(function(a, b) {
+                return (parseFechaNum(b[0] || '') || 0) - (parseFechaNum(a[0] || '') || 0);
+            });
+
+            for (let g = 0; g < gruposOrdenados.length; g++) {
+                const fechaGrupo = gruposOrdenados[g][0];
+                const pagosGrupo = gruposOrdenados[g][1];
+                const totalGrupo = pagosGrupo.reduce(function(s, p) { return s + (Number(p.monto) || 0); }, 0);
+
+                if (y > 262) {
+                    doc.addPage();
+                    y = 15;
+                }
+
+                doc.setFillColor(16, 185, 129);
+                doc.roundedRect(8, y - 2, W - 16, 8, 2, 2, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.setTextColor(0, 0, 0);
+                doc.text('FECHA', 12, y + 3);
+                doc.text(String(fechaGrupo || '-'), 28, y + 3);
+                doc.text('+$' + Utils.fmt(totalGrupo), W - 12, y + 3, { align: 'right' });
+                y += 10;
+
+                for (let idx = 0; idx < pagosGrupo.length; idx++) {
+                    const p = pagosGrupo[idx];
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 15;
+                    }
+
+                    const rowBg = idx % 2 === 0 ? [15, 23, 42] : [2, 6, 23];
+                    doc.setFillColor(rowBg[0], rowBg[1], rowBg[2]);
+                    doc.roundedRect(8, y - 3, W - 16, 16, 2, 2, 'F');
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(String(fmtFecha(p.fecha) || p.fecha || '-'), 12, y + 2);
+
+                    doc.setTextColor(226, 232, 240);
+                    doc.setFontSize(8.5);
+                    doc.text('PAGO PRESTAMO', 40, y + 1.5);
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(52, 211, 153);
+                    doc.text(String(p.detalle || p.cliente || 'SIN DETALLE').substring(0, 58), 40, y + 6.8);
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(52, 211, 153);
+                    doc.text('+$' + Utils.fmt(Number(p.monto) || 0), W - 12, y + 4.5, { align: 'right' });
+                    y += 17;
+                }
+            }
+
+            doc.save('pagos_prestamos_' + clienteNombre.replace(/\s+/g, '_') + '.pdf');
+            mostrarToast('PDF de pagos de prestamos descargado');
+        }
+
+        function generarPDFGrupoPagosPrestamosCliente(idxGrupo) {
+            const grupos = Array.isArray(window._detallePagosPrestamosGrupos) ? window._detallePagosPrestamosGrupos : [];
+            if (idxGrupo < 0 || idxGrupo >= grupos.length) return;
+            const grupo = grupos[idxGrupo];
+            if (!grupo || !Array.isArray(grupo.pagos) || grupo.pagos.length === 0) return;
+            const original = Array.isArray(window._detallePagosPrestamosActual) ? window._detallePagosPrestamosActual : [];
+            window._detallePagosPrestamosActual = grupo.pagos;
+            generarPDFPagosPrestamosCliente();
+            window._detallePagosPrestamosActual = original;
+        }
+
         function generarPDFVenta(idx) {
             if (idx < 0 || idx >= historial.length) return;
             const v = historial[idx];
@@ -7420,6 +7664,27 @@ function poblarSelectsInv() {
             if (m) return m[3]+'/'+m[2]+'/'+m[1]+' '+m[4]+':'+m[5];
             const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
             if (m2) return m2[3]+'/'+m2[2]+'/'+m2[1];
+            return s;
+        }
+
+        function fechaSoloDia(val) {
+            if (!val) return 'Sin fecha';
+            const s = String(val).trim();
+            if (!s) return 'Sin fecha';
+
+            let m = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+            if (m) return m[1].padStart(2, '0') + '/' + m[2].padStart(2, '0') + '/' + m[3];
+
+            m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (m) return m[3] + '/' + m[2] + '/' + m[1];
+
+            const d = new Date(s);
+            if (!isNaN(d.getTime())) {
+                return String(d.getDate()).padStart(2, '0') + '/' +
+                       String(d.getMonth() + 1).padStart(2, '0') + '/' +
+                       d.getFullYear();
+            }
+
             return s;
         }
 
@@ -8602,6 +8867,7 @@ function resetSeccionesDetalleCliente() {
         if (icon) icon.innerHTML = '&#9660;';
     });
     window._detalleClienteGruposAbiertos = {};
+    window._detalleClienteGruposPrestamosAbiertos = {};
 }
 
 function toggleGrupoPagosCliente(idGrupo) {
@@ -8617,6 +8883,22 @@ function toggleGrupoPagosCliente(idGrupo) {
         cont.classList.add('hidden');
         icon.innerHTML = '&#9660;';
         delete window._detalleClienteGruposAbiertos[idGrupo];
+    }
+}
+
+function toggleGrupoPagosPrestamosCliente(idGrupo) {
+    const cont = document.getElementById(idGrupo);
+    const icon = document.getElementById('icon-' + idGrupo);
+    if (!cont || !icon) return;
+    window._detalleClienteGruposPrestamosAbiertos = window._detalleClienteGruposPrestamosAbiertos || {};
+    if (cont.classList.contains('hidden')) {
+        cont.classList.remove('hidden');
+        icon.innerHTML = '&#9650;';
+        window._detalleClienteGruposPrestamosAbiertos[idGrupo] = true;
+    } else {
+        cont.classList.add('hidden');
+        icon.innerHTML = '&#9660;';
+        delete window._detalleClienteGruposPrestamosAbiertos[idGrupo];
     }
 }
 
@@ -8964,6 +9246,7 @@ resetSeccionesDetalleCliente();
                                 <span class="block text-[11px] font-bold text-orange-300 uppercase truncate">${Utils.escHtml(p.concepto || p.cliente || '')}</span>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="abrirPagoIngNeg('${String(p.id || '').replace(/'/g, "\\'")}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>
                                 <div class="text-right">
                                     <span class="text-sm font-black text-orange-400 font-mono">$${Utils.fmt(p.saldoPend)}</span>
                                 </div>
@@ -8974,18 +9257,61 @@ resetSeccionesDetalleCliente();
             // â”€â”€ Compras pagadas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const contCompPag = document.getElementById('detalleComprasPagadas');
             if (contCompPag) {
+                const btnPdfComprasPagadasCliente = document.getElementById('btnPdfComprasPagadasCliente');
+                window._detalleComprasPagadasActual = comprasPag.slice();
+                if (btnPdfComprasPagadasCliente) btnPdfComprasPagadasCliente.classList.toggle('hidden', comprasPag.length === 0);
                 contCompPag.innerHTML = comprasPag.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin compras pagadas</p>'
-                    : comprasPag.map(v => {
-                        const prods = (v.items||[]).map(i=>(i.cantidad?i.cantidad+'x ':'')+i.nombre).filter(Boolean).join(', ') || v.producto || '';
-                        return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
-                            <div class="flex-1 min-w-0">
-                                <span class="block text-[9px] font-black text-slate-400 uppercase">${Utils.escHtml(v.fecha || '')}</span>
-                                ${prods ? `<span class="block text-[9px] font-bold text-slate-300 truncate">ðŸ“¦ ${Utils.escHtml(prods)}</span>` : ''}
-                            </div>
-                            <span class="text-sm font-black text-emerald-400 font-mono shrink-0">$${Utils.fmt(v.total||0)}</span>
-                        </div>`;
-                    }).join('');
+                    : (() => {
+                        const gruposComprasPag = new Map();
+                        comprasPag.forEach(v => {
+                            const claveFecha = fechaSoloDia(v.fecha || v.fechaISO || '');
+                            if (!gruposComprasPag.has(claveFecha)) gruposComprasPag.set(claveFecha, []);
+                            gruposComprasPag.get(claveFecha).push(v);
+                        });
+                        const gruposOrdenadosComprasPag = Array.from(gruposComprasPag.entries())
+                            .sort((a, b) => (parseFechaNum(b[0] || '') || 0) - (parseFechaNum(a[0] || '') || 0));
+                        return gruposOrdenadosComprasPag.map(([fechaGrupo, ventasGrupo]) => {
+                            const totalGrupo = ventasGrupo.reduce((s, v) => s + (parseFloat(v.total) || 0), 0);
+                            const filasGrupo = ventasGrupo.map(v => {
+                                const items = (v.items && v.items.length > 0)
+                                    ? v.items
+                                    : [{ nombre: v.producto || 'Sin producto', cantidad: 1, precio: v.total || 0, foto: obtenerFotoProductoPorNombre(v.producto || '') }];
+                                return items.map(item => {
+                                    const qty = parseFloat(item.cantidad) || 1;
+                                    const precio = parseFloat(item.precio) || 0;
+                                    const subtotal = qty * precio;
+                                    const nombreProd = `${qty}x ${item.nombre || 'Sin producto'}`;
+                                    const fotoProd = item.foto || item.imagen || obtenerFotoProductoPorNombre(item.nombre || v.producto || '');
+                                    const thumbProd = fotoProd
+                                        ? `<img src="${driveUrl(fotoProd)}" style="width:28px;height:28px;object-fit:cover;border-radius:7px;background:#0f172a;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt=""><span style="display:none;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">&#128230;</span>`
+                                        : `<span style="display:flex;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">&#128230;</span>`;
+                                    return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
+                                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                                            ${thumbProd}
+                                            <div class="flex-1 min-w-0">
+                                                <span class="block text-[9px] font-black text-slate-400 uppercase">${Utils.escHtml(v.fecha || '')}</span>
+                                                <span class="block text-[10px] font-bold text-slate-200 truncate">${Utils.escHtml(nombreProd)}</span>
+                                            </div>
+                                        </div>
+                                        <span class="text-sm font-black text-emerald-400 font-mono shrink-0">$${Utils.fmt(subtotal)}</span>
+                                    </div>`;
+                                }).join('');
+                            }).join('');
+                            return `<div class="space-y-2 mb-3">
+                                <div class="px-3 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <span class="block text-[9px] font-black text-emerald-400 uppercase tracking-widest">Fecha</span>
+                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fmtFecha(fechaGrupo) || fechaGrupo)}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span class="text-sm font-black text-emerald-400 font-mono">$${Utils.fmt(totalGrupo)}</span>
+                                    </div>
+                                </div>
+                                ${filasGrupo}
+                            </div>`;
+                        }).join('');
+                    })();
             }
 
             // â”€â”€ Historial pagos de compras â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -9103,21 +9429,92 @@ resetSeccionesDetalleCliente();
             // Historial pagos de prestamos
             const contPagosPrest = document.getElementById('detallePagosPrestamos');
             if (contPagosPrest) {
-                const pagsPrest = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])].filter(p => {
-                    const pIdCl  = String(p.idCliente || p.IDCLIENTE || '').trim();
-                    const pNomCl = String(p.cliente   || p.CLIENTE   || '').trim().toUpperCase();
-                    return (idCl && pIdCl && pIdCl === idCl) || pNomCl === nomCl;
-                });
-                contPagosPrest.innerHTML = pagsPrest.length === 0
+                const btnPdfPagosPrestamosCliente = document.getElementById('btnPdfPagosPrestamosCliente');
+                const idsPrestamosCliente = new Set(ingresosNegCliente.map(function(e) {
+                    return String(e.idSheet || e.id || '').trim();
+                }).filter(Boolean));
+                const pagosPrestSheet = [...(_sheetPagoIngNeg||[]), ...(_pagoIngNegSheet||[])]
+                    .filter(function(p) {
+                        const pIdIng = String(p.IDINGRESOSNEGOCIO || p.idIngNeg || '').trim();
+                        const pIdCl  = String(p.IDCLIENTE || p.idCliente || '').trim();
+                        const pNomCl = String(p.CLIENTE || p.cliente || '').trim().toUpperCase();
+                        return idsPrestamosCliente.has(pIdIng) || (idCl && pIdCl && pIdCl === idCl) || (pNomCl && pNomCl === nomCl);
+                    })
+                    .map(function(p) {
+                        const idIng = String(p.IDINGRESOSNEGOCIO || p.idIngNeg || '').trim();
+                        const prestamo = ingresosNegCliente.find(function(e) {
+                            return String(e.idSheet || e.id || '').trim() === idIng;
+                        });
+                        return {
+                            idIngNeg: idIng,
+                            fecha: String(p.fecha || p.FECHA || '').trim(),
+                            fechaAgrupacion: fechaSoloDia(p.fecha || p.FECHA || ''),
+                            monto: parseFloat(p.monto || p.MONTO || p['PAGO TOTAL'] || 0) || 0,
+                            cliente: String(p.CLIENTE || p.cliente || c.nombre || '').trim(),
+                            detalle: String((prestamo && (prestamo.concepto || prestamo.cliente)) || p.CLIENTE || p.cliente || 'Prestamo').trim()
+                        };
+                    })
+                    .filter(function(p) { return p.monto > 0; })
+                    .sort(function(a, b) {
+                        const fa = parseFechaNum(a.fecha || a.fechaAgrupacion || '') || 0;
+                        const fb = parseFechaNum(b.fecha || b.fechaAgrupacion || '') || 0;
+                        return fb - fa;
+                    });
+                window._detallePagosPrestamosActual = pagosPrestSheet;
+                if (btnPdfPagosPrestamosCliente) btnPdfPagosPrestamosCliente.classList.toggle('hidden', pagosPrestSheet.length === 0);
+                contPagosPrest.innerHTML = pagosPrestSheet.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin pagos de prestamos</p>'
-                    : pagsPrest.map(p => {
-                        const montoP = parseFloat(p.monto || p.MONTO || p['PAGO TOTAL'] || 0);
-                        const fechaP = p.fecha || p.FECHA || '';
-                        return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
-                            <span class="text-[10px] font-black text-slate-400 uppercase">${fmtFecha(fechaP)||fechaP||''}</span>
-                            <span class="text-sm font-black text-emerald-400 font-mono">+$${Utils.fmt(montoP)}</span>
-                        </div>`;
-                    }).join('');
+                    : (() => {
+                        const gruposPrest = new Map();
+                        pagosPrestSheet.forEach(function(p) {
+                            const claveFecha = p.fechaAgrupacion || 'Sin fecha';
+                            if (!gruposPrest.has(claveFecha)) gruposPrest.set(claveFecha, []);
+                            gruposPrest.get(claveFecha).push(p);
+                        });
+                        const gruposPrestOrdenados = Array.from(gruposPrest.entries())
+                            .sort(function(a, b) {
+                                const fa = parseFechaNum(a[0] || '') || 0;
+                                const fb = parseFechaNum(b[0] || '') || 0;
+                                return fb - fa;
+                            });
+                        window._detallePagosPrestamosGrupos = gruposPrestOrdenados.map(function(entry) {
+                            return { fecha: entry[0], pagos: entry[1] };
+                        });
+                        return gruposPrestOrdenados.map(function(entry, idxGrupoPrest) {
+                            const fechaGrupo = entry[0];
+                            const pagosGrupo = entry[1];
+                            const idGrupoPrest = `grupoPagoPrestamoCliente_${String(fechaGrupo || 'sin_fecha').replace(/[^0-9A-Za-z]/g, '_')}`;
+                            const grupoPrestAbierto = !!(window._detalleClienteGruposPrestamosAbiertos && window._detalleClienteGruposPrestamosAbiertos[idGrupoPrest]);
+                            const totalGrupo = pagosGrupo.reduce(function(s, p) { return s + (p.monto || 0); }, 0);
+                            const filas = pagosGrupo.map(function(p) {
+                                return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <span class="block text-[9px] font-black text-slate-400 uppercase">${Utils.escHtml(fmtFecha(p.fecha) || p.fecha || '')}</span>
+                                        <span class="block text-[10px] font-bold text-emerald-300 truncate">${Utils.escHtml(p.detalle || 'Prestamo')}</span>
+                                    </div>
+                                    <span class="text-sm font-black text-emerald-400 font-mono shrink-0">+$${Utils.fmt(p.monto || 0)}</span>
+                                </div>`;
+                            }).join('');
+                            return `<div class="space-y-2 mb-3">
+                                <div class="px-3 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <span class="block text-[9px] font-black text-emerald-400 uppercase tracking-widest">Fecha</span>
+                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fechaGrupo)}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span class="text-sm font-black text-emerald-400 font-mono">+$${Utils.fmt(totalGrupo)}</span>
+                                        <button onclick="event.stopPropagation();generarPDFGrupoPagosPrestamosCliente(${idxGrupoPrest})" style="padding:5px;background:#082f49;border-radius:6px;border:none;cursor:pointer;color:#7dd3fc;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Descargar PDF de esta fecha">&#128196;</button>
+                                        <button onclick="event.stopPropagation();toggleGrupoPagosPrestamosCliente('${idGrupoPrest}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#34d399;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Desplegar u ocultar">
+                                            <span id="icon-${idGrupoPrest}">${grupoPrestAbierto ? '&#9650;' : '&#9660;'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="${idGrupoPrest}" class="space-y-2 ${grupoPrestAbierto ? '' : 'hidden'}">
+                                    ${filas}
+                                </div>
+                            </div>`;
+                        }).join('');
+                    })();
             }
 
             // â”€â”€ Input de pago â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
