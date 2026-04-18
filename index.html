@@ -9730,8 +9730,20 @@ clienteDetalleId = null;
 
         // ══ INGRESOS NEGOCIO / EGRESOS NEGOCIO (Créditos) ══
         let ingNegTipo = 'ingresosNegocio';
-        let _sheetIngresosNegocio = []; window._sheetIngresosNegocio = _sheetIngresosNegocio;
-        let _sheetEgresosNegocio  = []; window._sheetEgresosNegocio  = _sheetEgresosNegocio;
+        let _sheetIngresosNegocio = []; 
+        let _sheetEgresosNegocio  = [];
+        try {
+            const _rawIngNegInit = localStorage.getItem('natanael_ingneg_v1');
+            const _arrIngNegInit = _rawIngNegInit ? JSON.parse(_rawIngNegInit) : [];
+            if (Array.isArray(_arrIngNegInit) && _arrIngNegInit.length) _sheetIngresosNegocio = _arrIngNegInit;
+        } catch(e) {}
+        try {
+            const _rawEgrNegInit = localStorage.getItem('natanael_egrneg_v1');
+            const _arrEgrNegInit = _rawEgrNegInit ? JSON.parse(_rawEgrNegInit) : [];
+            if (Array.isArray(_arrEgrNegInit) && _arrEgrNegInit.length) _sheetEgresosNegocio = _arrEgrNegInit;
+        } catch(e) {}
+        window._sheetIngresosNegocio = _sheetIngresosNegocio;
+        window._sheetEgresosNegocio  = _sheetEgresosNegocio;
         let _listaIngresos = []; window._listaIngresos = _listaIngresos;
         let _listaEgresos  = []; window._listaEgresos  = _listaEgresos;
         let _supercatsIngNegSheet = [];
@@ -14339,6 +14351,10 @@ mostrarToast('✓ Pago registrado');
         return id.replace('sheet_EN_', '');
     }
 
+    if (id.startsWith('sheet_NN_')) {
+        return id.replace('sheet_NN_', '');
+    }
+
     return id;
 }
         function abrirPagoEgrNeg(id) {
@@ -14898,7 +14914,17 @@ function calcularCajaEsperada() {
                 if (Array.isArray(c.ingresos)         && c.ingresos.length)         { _sheetIngresos  = c.ingresos;  window._sheetIngresos = _sheetIngresos; }
                 if (Array.isArray(c.egresos)          && c.egresos.length)          { _sheetEgresos   = c.egresos;   window._sheetEgresos = _sheetEgresos; }
                 if (Array.isArray(c.ingresosNegocio)  && c.ingresosNegocio.length)  { _sheetIngresosNegocio = c.ingresosNegocio; window._sheetIngresosNegocio = _sheetIngresosNegocio; }
+                else {
+                    const rawIngNeg = localStorage.getItem('natanael_ingneg_v1');
+                    const arrIngNeg = rawIngNeg ? JSON.parse(rawIngNeg) : [];
+                    if (Array.isArray(arrIngNeg) && arrIngNeg.length) { _sheetIngresosNegocio = arrIngNeg; window._sheetIngresosNegocio = _sheetIngresosNegocio; }
+                }
                 if (Array.isArray(c.egresosNegocio)   && c.egresosNegocio.length)   { _sheetEgresosNegocio  = c.egresosNegocio;  window._sheetEgresosNegocio  = _sheetEgresosNegocio;  }
+                else {
+                    const rawEgrNeg = localStorage.getItem('natanael_egrneg_v1');
+                    const arrEgrNeg = rawEgrNeg ? JSON.parse(rawEgrNeg) : [];
+                    if (Array.isArray(arrEgrNeg) && arrEgrNeg.length) { _sheetEgresosNegocio = arrEgrNeg; window._sheetEgresosNegocio = _sheetEgresosNegocio; }
+                }
                 if (Array.isArray(c.pagoVentas))      { _pagoVentasSheet   = c.pagoVentas;    window._pagoVentasSheet   = _pagoVentasSheet;   }
                 if (Array.isArray(c.pagoIngresos))    { _sheetPagoIngresos = c.pagoIngresos;  window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(c.pagoEgresos))     { _sheetPagoEgresos  = c.pagoEgresos;   window._sheetPagoEgresos  = _sheetPagoEgresos;  }
@@ -17043,9 +17069,10 @@ if (indicator) indicator.classList.remove('hidden');
                 const idx = db.findIndex(r => r.id === id || (idRow && (r.idSheet === idRow || r.id === idRow)));
                 if (idx>=0) { db[idx]={...db[idx],...reg}; ac++; } else { db.push(reg); ag++; }
             });
+            try { if (typeof saveFn === 'function') saveFn(); } catch(e) {}
+            const vista = document.getElementById('vista'+renderTipo.charAt(0).toUpperCase()+renderTipo.slice(1));
+            if (vista && !vista.classList.contains('hidden')) renderIngNeg(renderTipo);
             if (ag>0||ac>0) {
-                const vista = document.getElementById('vista'+renderTipo.charAt(0).toUpperCase()+renderTipo.slice(1));
-                if (vista&&!vista.classList.contains('hidden')) renderIngNeg(renderTipo);
                 console.log('✓ '+renderTipo+': '+ag+' nuevos, '+ac+' actualizados');
             }
         };
@@ -23174,10 +23201,59 @@ function _estadoRealPorPagos(totalBase, pagado) {
     };
 }
 
+function _aliasIdsNegocioEgreso(r) {
+    var ids = [];
+    var pushId = function(v) {
+        var s = String(v || '').trim();
+        if (!s) return;
+        if (ids.indexOf(s) === -1) ids.push(s);
+    };
+    pushId(r && r.idSheet);
+    pushId(r && r.id);
+    var id = String((r && r.id) || '').trim();
+    if (id.indexOf('sheet_EN_') === 0) pushId(id.replace('sheet_EN_', ''));
+    if (id.indexOf('sheet_NN_') === 0) pushId(id.replace('sheet_NN_', ''));
+    return ids;
+}
+
 renderIngNeg = function(tipo) {
     const esIngreso = tipo === 'ingresosNegocio';
-    const db = esIngreso ? (_sheetIngresosNegocio || []) : (_sheetEgresosNegocio || []);
+    let db = esIngreso ? (_sheetIngresosNegocio || []) : (_sheetEgresosNegocio || []);
+    if ((!db || !db.length) && typeof localStorage !== 'undefined') {
+        try {
+            const raw = localStorage.getItem(esIngreso ? 'natanael_ingneg_v1' : 'natanael_egrneg_v1');
+            const parsed = raw ? JSON.parse(raw) : [];
+            if (Array.isArray(parsed) && parsed.length) {
+                db = parsed;
+                if (esIngreso) {
+                    _sheetIngresosNegocio = parsed;
+                    window._sheetIngresosNegocio = parsed;
+                } else {
+                    _sheetEgresosNegocio = parsed;
+                    window._sheetEgresosNegocio = parsed;
+                }
+            }
+        } catch (e) {}
+    }
+    if ((!db || !db.length) && typeof localStorage !== 'undefined') {
+        try {
+            const rawCache = localStorage.getItem('natanael_sheet_cache_v1');
+            const cache = rawCache ? JSON.parse(rawCache) : null;
+            const arr = cache ? (esIngreso ? cache.ingresosNegocio : cache.egresosNegocio) : [];
+            if (Array.isArray(arr) && arr.length) {
+                db = arr;
+                if (esIngreso) {
+                    _sheetIngresosNegocio = arr;
+                    window._sheetIngresosNegocio = arr;
+                } else {
+                    _sheetEgresosNegocio = arr;
+                    window._sheetEgresosNegocio = arr;
+                }
+            }
+        } catch (e) {}
+    }
     const listaId = esIngreso ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
+    const pfx = esIngreso ? 'ingNeg' : 'egrNeg';
     const container = document.getElementById(listaId);
     if (!container) return;
     const filtro = esIngreso ? (_filtroIngNeg || 'todos') : (_filtroEgrNeg || 'todos');
@@ -23193,17 +23269,36 @@ renderIngNeg = function(tipo) {
         if (!idRef) return;
         pagosMap[idRef] = (pagosMap[idRef] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
     });
-    const getIdRef = function(r) {
-        return String(esIngreso ? (_getIdSheetNN(r) || r.id || '') : (_getIdSheetEN(r) || r.id || '')).trim();
-    };
     const calcEstado = function(r) {
-        return _estadoRealPorPagos(parseFloat(r.credito || r.total || 0) || 0, pagosMap[getIdRef(r)] || 0);
+        const creditoPendiente = parseFloat(r.credito || 0) || 0;
+        if (creditoPendiente <= 0.009) {
+            return { saldo: 0, estado: 'FINALIZADO' };
+        }
+        const aliases = esIngreso
+            ? [String(_getIdSheetNN(r) || r.id || '').trim(), String(r.idSheet || '').trim(), String(r.id || '').trim()].filter(Boolean)
+            : _aliasIdsNegocioEgreso(r);
+        const pagado = aliases.reduce(function(sum, alias) {
+            return sum + (pagosMap[alias] || 0);
+        }, 0);
+        return _estadoRealPorPagos(creditoPendiente, pagado);
     };
     const dbFiltrado = db.filter(function(r) {
         const estadoReal = calcEstado(r).estado;
         if (filtro !== 'todos' && estadoReal !== filtro.toUpperCase()) return false;
         return true;
     });
+    const dbTotales = db.filter(function(r) {
+        return !['LEO', 'SILVIA', 'HUGO'].includes(String(r.cliente || r.proveedor || '').trim().toUpperCase());
+    });
+    if (document.getElementById(pfx + 'TotalGasto')) {
+        document.getElementById(pfx + 'TotalGasto').textContent = '$' + Utils.fmt(dbTotales.reduce(function(s, r) { return s + (Number(r.total) || 0); }, 0));
+    }
+    if (document.getElementById(pfx + 'TotalEfectivo')) {
+        document.getElementById(pfx + 'TotalEfectivo').textContent = '$' + Utils.fmt(dbTotales.reduce(function(s, r) { return s + (Number(r.efectivo) || 0); }, 0));
+    }
+    if (document.getElementById(pfx + 'TotalCredito')) {
+        document.getElementById(pfx + 'TotalCredito').textContent = '$' + Utils.fmt(dbTotales.reduce(function(s, r) { return s + (Number(r.credito) || 0); }, 0));
+    }
     if (!dbFiltrado.length) {
         container.innerHTML = '<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin registros</div>';
         return;
@@ -23213,9 +23308,17 @@ renderIngNeg = function(tipo) {
     container.innerHTML = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0)).map(function(r) {
         const infoEstado = calcEstado(r);
         const colorEstado = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
+        const clienteNombreUpper = String(r.cliente || r.proveedor || '').trim().toUpperCase();
+        const clienteObj = (clientesDB || []).find(function(c) {
+            return String(c.nombre || '').trim().toUpperCase() === clienteNombreUpper;
+        });
+        const fotoCliente = clienteObj && clienteObj.foto ? clienteObj.foto : '';
         return `
         <div class="glass-card p-4 rounded-2xl border border-slate-800">
             <div class="flex justify-between items-start gap-3">
+                <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${(esIngreso ? '#10b981' : '#f87171')}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                    ${fotoCliente ? `<img src="${fotoCliente}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">👤</span>` : `<span style="font-size:20px;line-height:1;">👤</span>`}
+                </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(r.fecha||'')}</p>
                     <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(r.cliente||r.proveedor||'-')}</p>
