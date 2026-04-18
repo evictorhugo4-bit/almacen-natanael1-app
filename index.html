@@ -1248,7 +1248,7 @@ GUARDAR PRODUCTO
                     <span id="comprasTotalEfectivo" class="text-2xl font-black text-emerald-400 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-5 rounded-2xl text-center">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A CrÃ©dito</span>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A Credito</span>
                     <span id="comprasTotalCredito" class="text-2xl font-black text-red-400 font-mono">$0</span>
               
             </div>
@@ -1379,7 +1379,7 @@ GUARDAR PRODUCTO
                     <span id="ingresosTotalEfectivo" class="text-2xl font-black text-emerald-400 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-5 rounded-2xl text-center">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A CrÃ©dito</span>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A Credito</span>
                     <span id="ingresosTotalCredito" class="text-2xl font-black text-red-400 font-mono">$0</span>
                 </div>
             </div>
@@ -1492,7 +1492,7 @@ GUARDAR PRODUCTO
                     <span id="egresosTotalEfectivo" class="text-2xl font-black text-emerald-400 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-5 rounded-2xl text-center">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A CrÃ©dito</span>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A Credito</span>
                     <span id="egresosTotalCredito" class="text-2xl font-black text-red-400 font-mono">$0</span>
                 </div>
             </div>
@@ -1600,7 +1600,7 @@ GUARDAR PRODUCTO
                     <span id="ingNegTotalEfectivo" class="text-2xl font-black text-emerald-400 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-5 rounded-2xl text-center">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A CrÃ©dito</span>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A Credito</span>
                     <span id="ingNegTotalCredito" class="text-2xl font-black text-red-400 font-mono">$0</span>
                 </div>
             </div>
@@ -1690,7 +1690,7 @@ GUARDAR PRODUCTO
                     <span id="egrNegTotalEfectivo" class="text-2xl font-black text-emerald-400 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-5 rounded-2xl text-center">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A CrÃ©dito</span>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">A Credito</span>
                     <span id="egrNegTotalCredito" class="text-2xl font-black text-red-400 font-mono">$0</span>
                 </div>
             </div>
@@ -15246,7 +15246,16 @@ const idSheet = _getIdSheetCompra(r);
 const ahora = new Date();
 const detalles = Array.isArray(_pagoCompraDetalleItems) && _pagoCompraDetalleItems.length
     ? _pagoCompraDetalleItems
-    : [{ nombre: _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '), saldo: monto }];
+    : (Array.isArray(r.items) && r.items.length
+        ? r.items.map(function(item) {
+            return {
+                nombre: item.nombre || '',
+                saldo: (parseFloat(item.costo || 0) || 0) * (parseFloat(item.cantidad || 0) || 0)
+            };
+        }).filter(function(item) {
+            return item.nombre && item.saldo > 0;
+        })
+        : [{ nombre: _pagoCompraNombre || 'COMPRA', saldo: monto }]);
 let restantePagoCompra = monto;
 detalles.forEach(function(det) {
     if (restantePagoCompra <= 0) return;
