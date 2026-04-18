@@ -3661,8 +3661,8 @@ CONFIRMAR PAGO
     <div id="modalEditarCompra" class="modal-overlay" style="z-index:350;">
         <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4 border border-blue-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div class="flex justify-between items-center">
-                <h3 class="text-sm font-black text-blue-400 uppercase">âœï¸ Editar Compra</h3>
-                <button onclick="toggleModal('modalEditarCompra',false)" class="text-slate-500 hover:text-white text-lg font-black">âœ•</button>
+                <h3 class="text-sm font-black text-blue-400 uppercase">Editar Compra</h3>
+                <button onclick="toggleModal('modalEditarCompra',false)" class="text-slate-500 hover:text-white text-lg font-black">&times;</button>
             </div>
             <input type="hidden" id="editCompraId">
             <div class="space-y-3">
@@ -3676,12 +3676,12 @@ CONFIRMAR PAGO
                         <input id="editCompraEfectivo" type="number" class="w-full mt-1 px-3 py-2 rounded-xl text-sm font-bold" style="background:#0f172a;border:1px solid #334155;color:white;">
                     </div>
                     <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">CrÃ©dito $</label>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Credito $</label>
                         <input id="editCompraCredito" type="number" class="w-full mt-1 px-3 py-2 rounded-xl text-sm font-bold" style="background:#0f172a;border:1px solid #334155;color:white;">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Productos (uno por lÃ­nea: NOMBRE:CANTIDAD)</label>
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Productos (uno por linea: NOMBRE:CANTIDAD)</label>
                     <textarea id="editCompraItems" rows="5" class="w-full mt-1 px-3 py-2 rounded-xl text-xs font-mono" style="background:#0f172a;border:1px solid #334155;color:white;resize:vertical;"></textarea>
                     <p class="text-[8px] text-slate-500 mt-1">Ej: ARROZ X1KG:5</p>
                 </div>
@@ -3690,7 +3690,7 @@ CONFIRMAR PAGO
                     <p id="editCompraTicketStatus" style="margin-top:4px;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Sin capturas pendientes</p>
                     <div id="editCompraTicketsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;"></div>
                     <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:9px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
-                        ðŸ“Ž Agregar imagen / PDF
+                        Agregar imagen / PDF
                         <input type="file" id="editCompraTicketInput" accept="image/*,application/pdf" multiple style="display:none;" onchange="agregarTicketsEditCompra(this)">
                     </label>
                     <button onclick="document.getElementById('editCompraTicketInput').click();abrirCamaraEditCompra()" style="display:none"></button>
@@ -3698,15 +3698,15 @@ CONFIRMAR PAGO
                         Revisar ticket
                     </button>
                     <button onclick="abrirCamaraEditCompra()" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:7px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
-                        ðŸ“· Usar cÃ¡mara
+                        Usar camara
                     </button>
                     <!-- CÃ¡mara -->
                     <div id="camaraEditCompra" class="hidden" style="margin-top:6px;">
                         <video id="videoEditCompra" autoplay playsinline style="width:100%;border-radius:8px;max-height:180px;object-fit:cover;"></video>
                         <p style="margin-top:6px;font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Espera a que enfoque y acerca el ticket antes de capturar.</p>
                         <div style="display:flex;gap:4px;margin-top:4px;">
-                            <button onclick="capturarFotoEditCompra()" style="flex:1;padding:7px;background:#10b981;color:black;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">ðŸ“¸ Capturar</button>
-                            <button onclick="cerrarCamaraEditCompra()" style="padding:7px 10px;background:#334155;color:#94a3b8;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">âœ•</button>
+                            <button onclick="capturarFotoEditCompra()" style="flex:1;padding:7px;background:#10b981;color:black;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">Capturar</button>
+                            <button onclick="cerrarCamaraEditCompra()" style="padding:7px 10px;background:#334155;color:#94a3b8;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">Cerrar</button>
                         </div>
                         <canvas id="canvasEditCompra" style="display:none;"></canvas>
                     </div>
