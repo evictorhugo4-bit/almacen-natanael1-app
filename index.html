@@ -7154,13 +7154,13 @@ _sheetEgresosNegocio.forEach(e => {
                     '<div style="flex:1;min-width:0;">' +
                         '<p style="font-size:11px;font-weight:900;color:#f1f5f9;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;">' + Utils.escHtml(item.nombre || '') + '</p>' +
                         '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
-                            '<button onmousedown="evItemEditVenta(' + idx + ',-1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">âˆ’</button>' +
+                            '<button onmousedown="evItemEditVenta(' + idx + ',-1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">-</button>' +
                             '<span style="font-size:12px;font-weight:900;color:#10b981;min-width:20px;text-align:center;">' + (item.cantidad || 1) + '</span>' +
                             '<button onmousedown="evItemEditVenta(' + idx + ',1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>' +
                             '<span style="font-size:11px;color:#64748b;font-weight:700;">$' + Utils.fmt(item.precio || item.precioVenta || 0) + ' c/u</span>' +
                         '</div>' +
                     '</div>' +
-                    '<button onmousedown="quitarItemEditVenta(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'#450a0a\';this.style.color=\'#f87171\';" onmouseout="this.style.background=\'#1e293b\';this.style.color=\'#64748b\';">âœ•</button>' +
+                    '<button onmousedown="quitarItemEditVenta(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'#450a0a\';this.style.color=\'#f87171\';" onmouseout="this.style.background=\'#1e293b\';this.style.color=\'#64748b\';">&times;</button>' +
                 '</div>';
             }).join('');
             _editVentaItems = calc.items;
