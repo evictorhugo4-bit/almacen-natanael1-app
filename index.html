@@ -3693,7 +3693,7 @@ CONFIRMAR PAGO
                         Agregar imagen / PDF
                         <input type="file" id="editCompraTicketInput" accept="image/*,application/pdf" multiple style="display:none;" onchange="agregarTicketsEditCompra(this)">
                     </label>
-                    <input type="file" id="editCompraCamaraInput" accept="image/*" capture="environment" style="display:none;" onchange="agregarTicketsEditCompra(this)">
+                    <input type="file" id="editCompraCamaraInput" accept="image/*" capture="environment" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;" onchange="agregarTicketsEditCompra(this)">
                     <button onclick="document.getElementById('editCompraTicketInput').click();abrirCamaraEditCompra()" style="display:none"></button>
                     <button onclick="revisarTicketEditCompra()" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:7px;background:#132238;border:1px solid #1d4ed8;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#93c5fd;text-transform:uppercase;">
                         Revisar ticket
@@ -13476,11 +13476,21 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const camaraNativa = document.getElementById('editCompraCamaraInput');
             const wrap = document.getElementById('camaraEditCompra');
             const video = document.getElementById('videoEditCompra');
-            const esMovil = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') || window.matchMedia('(pointer: coarse)').matches;
+            const ua = navigator.userAgent || '';
+            const esMovil = /Android|iPhone|iPad|iPod|Mobile|SamsungBrowser|CriOS|FxiOS/i.test(ua)
+                || (navigator.maxTouchPoints || 0) > 1
+                || window.innerWidth <= 900
+                || window.matchMedia('(pointer: coarse)').matches;
             if (esMovil && camaraNativa) {
                 cerrarPreviewCapturaEditCompra();
                 setEstadoTicketEditCompra('Abriendo camara del telefono...', '#34d399');
                 camaraNativa.value = '';
+                if (typeof camaraNativa.showPicker === 'function') {
+                    try {
+                        camaraNativa.showPicker();
+                        return;
+                    } catch (e) {}
+                }
                 camaraNativa.click();
                 return;
             }
