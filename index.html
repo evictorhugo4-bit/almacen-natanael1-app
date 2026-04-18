@@ -3674,29 +3674,42 @@ CONFIRMAR PAGO
                 </div>
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase">Tickets / Fotos</label>
+                    <p id="editCompraTicketStatus" style="margin-top:4px;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;">Sin capturas pendientes</p>
                     <div id="editCompraTicketsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;"></div>
                     <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:9px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
                         📎 Agregar imagen / PDF
                         <input type="file" id="editCompraTicketInput" accept="image/*,application/pdf" multiple style="display:none;" onchange="agregarTicketsEditCompra(this)">
                     </label>
                     <button onclick="document.getElementById('editCompraTicketInput').click();abrirCamaraEditCompra()" style="display:none"></button>
+                    <button onclick="revisarTicketEditCompra()" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:7px;background:#132238;border:1px solid #1d4ed8;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#93c5fd;text-transform:uppercase;">
+                        Revisar ticket
+                    </button>
                     <button onclick="abrirCamaraEditCompra()" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:7px;background:#0f172a;border:1px dashed #334155;border-radius:10px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
                         📷 Usar cámara
                     </button>
                     <!-- Cámara -->
                     <div id="camaraEditCompra" class="hidden" style="margin-top:6px;">
                         <video id="videoEditCompra" autoplay playsinline style="width:100%;border-radius:8px;max-height:180px;object-fit:cover;"></video>
+                        <p style="margin-top:6px;font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Espera a que enfoque y acerca el ticket antes de capturar.</p>
                         <div style="display:flex;gap:4px;margin-top:4px;">
                             <button onclick="capturarFotoEditCompra()" style="flex:1;padding:7px;background:#10b981;color:black;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">📸 Capturar</button>
                             <button onclick="cerrarCamaraEditCompra()" style="padding:7px 10px;background:#334155;color:#94a3b8;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;">✕</button>
                         </div>
                         <canvas id="canvasEditCompra" style="display:none;"></canvas>
                     </div>
+                    <div id="previewCapturaEditCompra" class="hidden" style="margin-top:6px;padding:8px;background:#0b1220;border:1px solid #1e293b;border-radius:10px;">
+                        <p style="font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;">Revisa la foto antes de agregarla</p>
+                        <img id="previewCapturaEditCompraImg" src="" alt="Vista previa ticket" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;margin-top:6px;background:#020617;">
+                        <div style="display:flex;gap:6px;margin-top:8px;">
+                            <button onclick="descartarCapturaEditCompra()" style="flex:1;padding:8px;background:#1e293b;color:#cbd5e1;border:none;border-radius:8px;font-size:10px;font-weight:900;cursor:pointer;text-transform:uppercase;">Repetir</button>
+                            <button onclick="confirmarCapturaEditCompra()" style="flex:1;padding:8px;background:#10b981;color:#04130d;border:none;border-radius:8px;font-size:10px;font-weight:900;cursor:pointer;text-transform:uppercase;">Usar foto</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2">
                 <button onclick="toggleModal('modalEditarCompra',false)" class="flex-1 py-2 rounded-xl text-xs font-black uppercase" style="background:#1e293b;color:#94a3b8;">Cancelar</button>
-                <button onclick="guardarEditarCompra()" class="flex-1 py-2 rounded-xl text-xs font-black uppercase" style="background:#1d4ed8;color:white;">Guardar</button>
+                <button id="btnGuardarEditarCompra" onclick="guardarEditarCompra()" class="flex-1 py-2 rounded-xl text-xs font-black uppercase" style="background:#1d4ed8;color:white;">Guardar</button>
             </div>
         </div>
     </div>
@@ -4937,6 +4950,53 @@ _sheetProductos.forEach(p => {
             });
         }
 
+        function comprimirTicketParaGuardar(dataUrl, callback) {
+            try {
+                if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+                    callback(dataUrl);
+                    return;
+                }
+                const img = new Image();
+                img.onload = function() {
+                    let w = img.width || 0;
+                    let h = img.height || 0;
+                    if (!w || !h) {
+                        callback(dataUrl);
+                        return { ok: true, data, payload: payloadObj };
+                    }
+                    const scale = Math.min(1, 1800 / w, 1800 / h);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(w * scale));
+                    canvas.height = Math.max(1, Math.round(h * scale));
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    callback(canvas.toDataURL('image/jpeg', 0.82));
+                };
+                img.onerror = function() { callback(dataUrl); };
+                img.src = dataUrl;
+            } catch(e) {
+                callback(dataUrl);
+            }
+        }
+
+        function subirTicketConReintentos(dataUrl, intentos = 2) {
+            return new Promise(resolve => {
+                const intentar = (restantes) => {
+                    subirTicketImgBB(dataUrl, url => {
+                        const fallo = !url || url === dataUrl;
+                        if (fallo && restantes > 0) {
+                            setTimeout(() => intentar(restantes - 1), 900);
+                            return;
+                        }
+                        resolve(url || dataUrl);
+                    });
+                };
+                intentar(intentos);
+            });
+        }
+
         function comprimirFotoParaSheet(dataUrl, callback) {
             try {
                 const img = new Image();
@@ -5637,6 +5697,151 @@ _sheetEgresosNegocio.forEach(e => {
         }
 
 
+        function _calcEstadoPorPagos(totalBase, pagado) {
+            const saldo = Math.max(0, (parseFloat(totalBase || 0) || 0) - (parseFloat(pagado || 0) || 0));
+            return { saldo, estado: saldo > 0 ? 'Pendiente' : 'Finalizada' };
+        }
+
+        function renderIngNeg(tipo) {
+            const db      = tipo === 'ingresosNegocio' ? _sheetIngresosNegocio : _sheetEgresosNegocio;
+            const pfx     = tipo === 'ingresosNegocio' ? 'ingNeg' : 'egrNeg';
+            const listaId = tipo === 'ingresosNegocio' ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
+            const el = id => document.getElementById(id);
+            const pagosMap = {};
+            const pagosSrc = tipo === 'ingresosNegocio'
+                ? [...(_sheetPagoIngNeg || []), ...(_pagoIngNegSheet || [])]
+                : [...(_sheetPagoEgrNeg || []), ...(_pagoEgrNegSheet || [])];
+            pagosSrc.forEach(p => {
+                const idRef = String(tipo === 'ingresosNegocio'
+                    ? (p.IDINGRESOSNEGOCIO || p.idIngresoNeg || '')
+                    : (p.IDEGRESOSNEGOCIO || p.idEgresoNeg || '')
+                ).trim();
+                if (!idRef) return;
+                pagosMap[idRef] = (pagosMap[idRef] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+            });
+            const getIdRef = r => String(tipo === 'ingresosNegocio' ? (_getIdSheetNN(r) || r.id || '') : (_getIdSheetEN(r) || r.id || '')).trim();
+            const calcEstado = r => _calcEstadoPorPagos(parseFloat(r.credito || r.total || 0) || 0, pagosMap[getIdRef(r)] || 0);
+            const _excluirNeg = ['LEO','SILVIA','HUGO'];
+            const _dbFiltrado = db.filter(r => !_excluirNeg.includes(String(r.cliente||r.proveedor||'').trim().toUpperCase()));
+            if(el(pfx+'TotalGasto'))    el(pfx+'TotalGasto').textContent    = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.total||0),0));
+            if(el(pfx+'TotalEfectivo')) el(pfx+'TotalEfectivo').textContent = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.efectivo||0),0));
+            if(el(pfx+'TotalCredito'))  el(pfx+'TotalCredito').textContent  = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.credito||0),0));
+            const container = el(listaId);
+            if (!container) return;
+            if (db.length === 0) { container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin registros</div>`; return; }
+            const dbOrdenado = [...db].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
+            const isIng = tipo === 'ingresosNegocio';
+            const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+            const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+            container.innerHTML = dbOrdenado.map(r => {
+                const estadoCalc = calcEstado(r);
+                const estadoBg = estadoCalc.estado === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400';
+                return `<div class="glass-card p-4 rounded-2xl border border-slate-800">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(r.fecha||'')}</p>
+                            <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(r.cliente||r.proveedor||'-')}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${estadoBg}">${estadoCalc.estado}</span>
+                                ${r.formaPago?`<span class="text-[9px] text-slate-500">${r.formaPago}</span>`:''}
+                            </div>
+                            ${r.fechaPago?`<p class="text-[9px] text-slate-600 mt-0.5">Fecha pago: ${r.fechaPago}</p>`:''}
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="block text-sm font-black ${isIng?'text-emerald-400':'text-red-400'} font-mono">$${Utils.fmt(r.total||0)}</span>
+                            ${estadoCalc.saldo>0?`<span class="block text-[9px] font-black text-red-400">Saldo: $${Utils.fmt(estadoCalc.saldo)}</span>`:''}
+                            ${r.efectivo>0?`<span class="block text-[9px] font-black text-emerald-400">Ef: $${Utils.fmt(r.efectivo)}</span>`:''}
+                            ${r.credito>0?`<span class="block text-[9px] font-black text-red-400">Cr: $${Utils.fmt(r.credito)}</span>`:''}
+                        </div>
+                        <div class="flex flex-col gap-1 shrink-0">
+                            <button onclick="${isIng ? `abrirPagoIngNeg('${r.id}')` : `abrirPagoEgrNeg('${r.id}')`}" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='${isIng ? '#10b981' : '#f97316'}'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>
+                            <button onclick="editarIngNeg('${tipo}','${r.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#64748b'">${SVG_EDIT}</button>
+                            <button onclick="eliminarIngNeg('${tipo}','${r.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">${SVG_DEL}</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderIngEgr(tipo) {
+            const dbFull = tipo === 'ingreso' ? _sheetIngresos : _sheetEgresos;
+            const filtro  = tipo === 'ingreso' ? _filtroIngreso : _filtroEgreso;
+            const pagosMap = {};
+            const pagosSrc = tipo === 'ingreso' ? (_sheetPagoIngresos || []) : (_sheetPagoEgresos || []);
+            pagosSrc.forEach(p => {
+                const idRef = String(tipo === 'ingreso' ? (p.IDINGRESOS || p.idIngreso || '') : (p.IDEGRESOS || p.idEgreso || '')).trim();
+                if (!idRef) return;
+                pagosMap[idRef] = (pagosMap[idRef] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+            });
+            const getIdRef = c => String(tipo === 'ingreso' ? (_getIdSheet(c) || c.id || '') : (_getIdSheetEgr(c) || c.id || '')).trim();
+            const calcEstado = c => _calcEstadoPorPagos(parseFloat(c.credito || c.total || 0) || 0, pagosMap[getIdRef(c)] || 0);
+            const db = filtro === 'todos' ? dbFull : dbFull.filter(c => calcEstado(c).estado.toLowerCase() === filtro);
+            const prefix = tipo === 'ingreso' ? 'ingresos' : 'egresos';
+            const lista  = tipo === 'ingreso' ? 'listaIngresos' : 'listaEgresos';
+            document.getElementById(prefix+'TotalGasto').textContent    = '$' + Utils.fmt(dbFull.reduce((s,c)=>s+c.total,0));
+            document.getElementById(prefix+'TotalEfectivo').textContent = '$' + Utils.fmt(dbFull.reduce((s,c)=>s+c.efectivo,0));
+            document.getElementById(prefix+'TotalCredito').textContent  = '$' + Utils.fmt(dbFull.reduce((s,c)=>s+c.credito,0));
+            const container = document.getElementById(lista);
+            const _searchInput = document.getElementById(tipo === 'ingreso' ? 'ingresosSearchInput' : 'egresosSearchInput');
+            const _searchTxt = (_searchInput ? _searchInput.value : '').toLowerCase().trim();
+            const dbFiltrado = _searchTxt ? db.filter(c => {
+                const haystack = [c.proveedor||'', c.concepto||'', c.genero||'', c.formaPago||'', c.fecha||''].join(' ').toLowerCase();
+                return haystack.includes(_searchTxt);
+            }) : db;
+            if (dbFiltrado.length === 0) { container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">${_searchTxt ? 'Sin resultados para "'+_searchTxt+'"' : ('Sin '+(tipo==='ingreso'?'ingresos':'egresos')+' registrados')}</div>`; return; }
+            const dbOrdenado = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
+            const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+            const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+            const _listaActual = tipo === 'ingreso' ? (window._listaIngresos||[]) : (window._listaEgresos||[]);
+            const _imgMapLista = {};
+            _listaActual.forEach(function(it){ if(it.nombre && it.imagen) _imgMapLista[it.nombre.toUpperCase().trim()] = it.imagen; });
+
+            container.innerHTML = dbOrdenado.map(c => {
+                const estadoCalc = calcEstado(c);
+                const _provKey = (c.proveedor||'').toUpperCase().trim();
+                const _concKey = (c.concepto||'').toUpperCase().trim();
+                const _imgSC = c.imagen || _imgMapLista[_provKey] || _imgMapLista[_concKey]
+                    || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null);
+                const _imgGN = (typeof window._getCatImg==='function') ? window._getCatImg('genero', c.genero) : null;
+                const _accentColor = tipo === 'ingreso' ? '#10b981' : '#f87171';
+                const estadoBg = estadoCalc.estado === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400';
+                return `
+                <div class="glass-card p-4 rounded-2xl border border-slate-800">
+                    <div class="flex justify-between items-start gap-3">
+                        <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${_accentColor}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                            ${_imgSC
+                                ? `<img src="${_imgSC}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">${tipo==='ingreso'?'ðŸ“ˆ':'ðŸ“‰'}</span>`
+                                : `<span style="font-size:22px;line-height:1;">${tipo==='ingreso'?'ðŸ“ˆ':'ðŸ“‰'}</span>`
+                            }
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
+                            <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
+                            ${c.genero?`<div style="display:flex;align-items:center;gap:4px;">${_imgGN ? `<img src="${_imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>`:''}
+                            ${c.concepto?`<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>`:''}
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${estadoBg}">${estadoCalc.estado}</span>
+                                ${c.formaPago?`<span class="text-[9px] text-slate-500">${Utils.escHtml(c.formaPago)}</span>`:''}
+                            </div>
+                            ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">ðŸ¦ ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
+                            ${(c.items||[]).length>0?`<p class="text-[9px] text-slate-500">${c.items.map(i=>i.nombre).join(', ').substring(0,60)}</p>`:''}
+                            ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">ðŸ§¾ Ver ticket</button>`:''}
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="block text-sm font-black text-white font-mono">$${c.total}</span>
+                            ${estadoCalc.saldo>0?`<span class="block text-[9px] font-black text-red-400">Saldo: $${Utils.fmt(estadoCalc.saldo)}</span>`:''}
+                            ${c.credito>0?`<span class="block text-[9px] font-black text-red-400">Crédito: $${Utils.fmt(c.credito)}</span>`:''}
+                            ${c.efectivo>0?`<span class="block text-[9px] font-black text-emerald-400">Efectivo: $${Utils.fmt(c.efectivo)}</span>`:''}
+                        </div>
+                        <div class="flex flex-col gap-1 shrink-0">
+                            ${tipo === 'ingreso' ? `<button onclick="abrirPagoIngreso('${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>` : `<button onclick="abrirPagoEgreso('${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>`}
+                            <button onclick="editarIngEgr('${tipo}','${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#64748b'">${SVG_EDIT}</button>
+                            <button onclick="eliminarIngEgr('${tipo}','${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">${SVG_DEL}</button>
+                        </div>
+                    </div>
+                </div>`; }).join('');
+        }
+
         // ═══════════════════════════════════════════════
         // CONTROL DE TABLAS
         // ═══════════════════════════════════════════════
@@ -5752,7 +5957,7 @@ _sheetEgresosNegocio.forEach(e => {
                             '<td style="' + tdMon + 'color:#475569;">$0</td>' +
                             '<td style="' + tdMon + 'color:#fbbf24;">$' + Utils.fmt(dinRec) + '</td>' +
                         '</tr>');
-                        return;
+                        return { ok: true, data, payload: payloadObj };
                     }
 
                     // Ventas normales
@@ -6926,6 +7131,31 @@ function recalcularTodosLosStocks() {
     const mapaRefNum  = {};
     const mapaEsFisico = {}; // true = base viene de stockFisico (REGLA 1), false = stockInicio (REGLA 2)
 
+    function claveProdStock(val) {
+        return String(val || '')
+            .trim()
+            .toUpperCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^A-Z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ');
+    }
+
+    function parseFechaStockNum(val) {
+        if (!val) return null;
+        const s = String(val).trim();
+        if (!s) return null;
+        let m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) return parseInt(m[1] + m[2] + m[3] + m[4] + m[5] + (m[6] || '00'));
+        m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return parseInt(m[1] + m[2] + m[3] + '000000');
+        m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (m) return parseInt(m[3] + m[2].padStart(2,'0') + m[1].padStart(2,'0') + m[4].padStart(2,'0') + m[5] + (m[6] || '00'));
+        m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (m) return parseInt(m[3] + m[2].padStart(2,'0') + m[1].padStart(2,'0') + '000000');
+        return parseFechaNum(s);
+    }
+
     // Trunca un número de fecha YYYYMMDDHHmmss al día: YYYYMMDD000000
     // Usado para comparar REGLA 2 (stockInicio mensual) solo por fecha, sin importar la hora
     // Esto evita que un offset de timezone en el sheet (ej: 2026-02-20T03:00:01) ignore
@@ -6935,12 +7165,12 @@ function recalcularTodosLosStocks() {
 
     _sheetProductos.forEach(p => {
 
-        const nombre = p.nombre.trim().toUpperCase();
+        const nombre = claveProdStock(p.nombre);
 
         // ── REGLA 1: STOCK INICIAL MENSUAL ──
         // stockFisico NO se usa aquí — el stock del inventario siempre es stockInicio + compras - ventas
         if (p.stockInicio !== null && p.stockInicio !== undefined && (p.fechaStockInicio || p.fechaInicio)) {
-            const refNum = parseFechaNum(p.fechaStockInicio || p.fechaInicio);
+            const refNum = parseFechaStockNum(p.fechaStockInicio || p.fechaInicio);
             if (refNum) {
                 mapaBase[nombre]    = parseFloat(p.stockInicio);
                 mapaRefNum[nombre]  = refNum;
@@ -6956,41 +7186,122 @@ function recalcularTodosLosStocks() {
     });
 
     // Restar ventas posteriores a la fecha base
-    const todasVentas = [
-        ...historial,
-        ...(_sheetVentas || []).filter(v => !historial.some(h => h.id === v.id))
-    ];
+    const todasVentas = (typeof ventasParaCalculo === 'function')
+        ? ventasParaCalculo()
+        : [
+            ...historial,
+            ...(_sheetVentas || []).filter(v => !historial.some(h => h.id === v.id))
+        ];
     todasVentas.forEach(v => {
-        const fnum = parseFechaNum(v.fechaISO || v.fecha || '');
+        const fnum = parseFechaStockNum(v.fechaISO || v.fecha || '');
         (v.items || []).forEach(it => {
-            const nombre = String(it.nombre || '').trim().toUpperCase();
+            const nombre = claveProdStock(it.nombre);
             if (mapaBase[nombre] == null) return;
             const ref = mapaRefNum[nombre];
-            if (ref && fnum && soloFecha(fnum) < soloFecha(ref)) return;
+            if (ref && fnum && fnum < ref) return;
             mapaBase[nombre] -= parseFloat(it.cantidad) || 0;
         });
     });
 
     // Sumar compras posteriores a la fecha base
     (_sheetCompras || []).forEach(cp => {
-        const fnum = parseFechaNum(cp.fechaISO || cp.fecha || '');
+        const fnum = parseFechaStockNum(cp.fechaISO || cp.fecha || '');
         (cp.items || []).forEach(it => {
-            const nombre = String(it.nombre || '').trim().toUpperCase();
+            const nombre = claveProdStock(it.nombre);
             if (mapaBase[nombre] == null) return;
             const ref = mapaRefNum[nombre];
-            if (ref && fnum && soloFecha(fnum) < soloFecha(ref)) return;
+            if (ref && fnum && fnum < ref) return;
             mapaBase[nombre] += parseFloat(it.cantidad) || 0;
         });
     });
 
     // Guardar resultado
     _sheetProductos.forEach(p => {
-        const nombre = p.nombre.trim().toUpperCase();
+        const nombre = claveProdStock(p.nombre);
         p.stockCalculado = mapaBase[nombre] ?? 0;
     });
 
     // DEBUG AVENA
     const pAvena = _sheetProductos.find(p => p.nombre && p.nombre.toUpperCase().includes('AVENA') && p.nombre.toUpperCase().includes('X300'));
+}
+
+window.debugStockProducto = function(nombreBuscado) {
+    const clave = String(nombreBuscado || '')
+        .trim()
+        .toUpperCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ');
+    const prod = (_sheetProductos || []).find(p => {
+        const nom = String(p.nombre || '')
+            .trim()
+            .toUpperCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^A-Z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ');
+        return nom === clave;
+    });
+    const ref = parseFechaStockNum(prod?.fechaStockInicio || prod?.fechaInicio || '');
+    const ventas = [];
+    const compras = [];
+    const todasV = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : (_sheetVentas || []);
+
+    todasV.forEach(v => {
+        const fnum = parseFechaStockNum(v.fechaISO || v.fecha || '');
+        (v.items || []).forEach(it => {
+            const nom = String(it.nombre || '')
+                .trim()
+                .toUpperCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ');
+            if (nom !== clave) return;
+            if (ref && fnum && fnum < ref) return;
+            ventas.push({
+                fecha: v.fechaISO || v.fecha || '',
+                cantidad: parseFloat(it.cantidad) || 0,
+                nombreRaw: it.nombre || '',
+                id: v.id || ''
+            });
+        });
+    });
+
+    (_sheetCompras || []).forEach(c => {
+        const fnum = parseFechaStockNum(c.fechaISO || c.fecha || '');
+        (c.items || []).forEach(it => {
+            const nom = String(it.nombre || '')
+                .trim()
+                .toUpperCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ');
+            if (nom !== clave) return;
+            if (ref && fnum && fnum < ref) return;
+            compras.push({
+                fecha: c.fechaISO || c.fecha || '',
+                cantidad: parseFloat(it.cantidad) || 0,
+                nombreRaw: it.nombre || '',
+                id: c.id || c.idSheet || ''
+            });
+        });
+    });
+
+    console.log('[DEBUG STOCK PROD]', {
+        producto: prod?.nombre || nombreBuscado,
+        clave,
+        stockInicio: prod?.stockInicio,
+        fechaInicio: prod?.fechaStockInicio || prod?.fechaInicio || '',
+        totalCompras: compras.reduce((s, x) => s + x.cantidad, 0),
+        totalVentas: ventas.reduce((s, x) => s + x.cantidad, 0),
+        stockCalculado: prod?.stockCalculado
+    });
+    console.table(compras);
+    console.table(ventas);
+    return { prod, compras, ventas };
 }
 
 
@@ -9436,6 +9747,25 @@ clienteDetalleId = null;
             const pfx     = tipo === 'ingresosNegocio' ? 'ingNeg' : 'egrNeg';
             const listaId = tipo === 'ingresosNegocio' ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
             const el = id => document.getElementById(id);
+            const pagosMap = {};
+            const pagosSrc = tipo === 'ingresosNegocio'
+                ? [...(_sheetPagoIngNeg || []), ...(_pagoIngNegSheet || [])]
+                : [...(_sheetPagoEgrNeg || []), ...(_pagoEgrNegSheet || [])];
+            pagosSrc.forEach(p => {
+                const idRef = String(tipo === 'ingresosNegocio'
+                    ? (p.IDINGRESOSNEGOCIO || p.idIngresoNeg || '')
+                    : (p.IDEGRESOSNEGOCIO || p.idEgresoNeg || '')
+                ).trim();
+                if (!idRef) return;
+                pagosMap[idRef] = (pagosMap[idRef] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+            });
+            const getIdRef = r => String(tipo === 'ingresosNegocio' ? (_getIdSheetNN(r) || r.id || '') : (_getIdSheetEN(r) || r.id || '')).trim();
+            const calcEstado = r => {
+                const totalBase = Math.max(0, parseFloat(r.credito || r.total || 0) || 0);
+                const pagado = pagosMap[getIdRef(r)] || 0;
+                const saldo = Math.max(0, totalBase - pagado);
+                return { pagado, saldo, estado: saldo > 0 ? 'Pendiente' : 'Finalizada' };
+            };
             const _excluirNeg = ['LEO','SILVIA','HUGO'];
             const _dbFiltrado = db.filter(r => !_excluirNeg.includes(String(r.cliente||r.proveedor||'').trim().toUpperCase()));
             if(el(pfx+'TotalGasto'))    el(pfx+'TotalGasto').textContent    = '$'+Utils.fmt(_dbFiltrado.reduce((s,r)=>s+(r.total||0),0));
@@ -11797,14 +12127,45 @@ function renderCompras() {
             document.getElementById('comprasTotalGasto').textContent    = '$' + Utils.fmt(_sheetCompras.reduce((s,c)=>s+c.total,0));
             document.getElementById('comprasTotalEfectivo').textContent = '$' + Utils.fmt(_sheetCompras.reduce((s,c)=>s+c.efectivo,0));
             document.getElementById('comprasTotalCredito').textContent  = '$' + Utils.fmt(_sheetCompras.reduce((s,c)=>s+c.credito,0));
+            const pagosCompraMap = {};
+            (_sheetPagoCompras || []).forEach(p => {
+                const idCompra = String(p.IDCOMPRAS || p.idCompra || '').trim();
+                if (!idCompra) return;
+                pagosCompraMap[idCompra] = (pagosCompraMap[idCompra] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+            });
+            const calcularEstadoCompra = c => {
+                const idCompra = String(c?.id || '').trim();
+                const creditoOriginal = Math.max(0, parseFloat(c?.credito || 0) || 0);
+                const pagado = idCompra ? (pagosCompraMap[idCompra] || 0) : 0;
+                const saldo = Math.max(0, creditoOriginal - pagado);
+                return { pagado, saldo, estado: saldo > 0 ? 'pendiente' : 'finalizado' };
+            };
+
+            const compraKey = c => {
+                const id = String(c?.idSheet || c?.id || '').trim();
+                if (id) return 'ID:' + id;
+                return [
+                    String(c?.fechaISO || c?.fecha || '').trim(),
+                    String(c?.proveedor || '').trim().toUpperCase(),
+                    Number(c?.total || 0).toFixed(2)
+                ].join('|');
+            };
+            const keysSheet = new Set((_sheetCompras || []).map(compraKey));
+            const comprasInvalidas = (window._comprasFirebase || [])
+                .filter(c => !keysSheet.has(compraKey(c)))
+                .map((c, idx) => ({ ...c, fromSheet: false, estadoSync: 'incorrecta', _realIdxSheet: -1, _realIdxLocal: idx }));
+            const comprasVista = [
+                ...(_sheetCompras || []).map((c, idx) => ({ ...c, fromSheet: true, estadoSync: 'correcta', _realIdxSheet: idx })),
+                ...comprasInvalidas
+            ];
 
             const txt    = (_filtroCompraTexto||'').toLowerCase().trim();
             const desde  = document.getElementById('filtroCompraDesde')?.value || '';
             const hasta  = document.getElementById('filtroCompraHasta')?.value || '';
 
-            const filtradas = _sheetCompras.filter(c => {
+            const filtradas = comprasVista.filter(c => {
 
-                if (_filtroCompra !== 'todos' && (c.estado || '').toLowerCase() !== _filtroCompra) return false;
+                if (_filtroCompra !== 'todos' && calcularEstadoCompra(c).estado !== _filtroCompra) return false;
                 if (txt) {
                     const hayProv = (c.proveedor||'').toLowerCase().includes(txt);
                     const hayProd = (c.items||[]).some(i => (i.nombre||'').toLowerCase().includes(txt));
@@ -11829,7 +12190,7 @@ const gruposMap = new Map();
 filtradas.forEach((c, realIdx) => {
     const key = String(c.id||'').trim() || String(c.fechaISO||c.fecha||'').trim();
     // Usar el índice real en _sheetCompras, no en filtradas
-    const idxEnSheet = _sheetCompras.indexOf(c);
+    const idxEnSheet = Number.isInteger(c._realIdxSheet) ? c._realIdxSheet : _sheetCompras.indexOf(c);
     if (!gruposMap.has(key)) {
         gruposMap.set(key, { c, realIdx: idxEnSheet, extraItems: [] });
     } else {
@@ -11897,28 +12258,36 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
 
     const compraUid = 'cpra_' + (c.id || idx);
     const itemCount = todosItems.length;
+    const esCorrecta = c.estadoSync !== 'incorrecta';
+    const estadoCompra = calcularEstadoCompra(c);
+    const statusHtml = estadoCompra.estado === 'finalizado'
+        ? `<span style="font-size:8px;font-weight:900;color:#86efac;background:#052e1f;border:1px solid #14532d;border-radius:999px;padding:2px 8px;text-transform:uppercase;">Finalizada</span>`
+        : `<span style="font-size:8px;font-weight:900;color:#fca5a5;background:#450a0a;border:1px solid #7f1d1d;border-radius:999px;padding:2px 8px;text-transform:uppercase;">Pendiente</span>`;
     return `
-        <div class="glass-card w-full max-w-none p-4 rounded-2xl border border-slate-800 space-y-2">
+        <div class="glass-card w-full max-w-none p-4 rounded-2xl border ${esCorrecta ? 'border-slate-800' : 'border-red-900'} space-y-2">
             <div class="flex justify-between items-start gap-2">
                 <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
                     ${_provAvatar}
                     <div style="flex:1;min-width:0;">
                         <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(c.fecha)}</p>
                         <p class="font-black text-white uppercase text-sm">${Utils.escHtml(c.proveedor)}</p>
+                        <div style="margin-top:3px;">${statusHtml}</div>
                         ${ticketBtn}
                     </div>
                 </div>
                 <div class="text-right flex flex-col items-end gap-1 flex-shrink-0">
                     <span class="block text-sm font-black text-white font-mono">$${Utils.fmt(c.total)}</span>
+                    ${estadoCompra.saldo > 0 ? `<span class="block text-[9px] font-black text-red-400">Saldo: $${Utils.fmt(estadoCompra.saldo)}</span>` : ''}
                     ${creditoSpan}${efectivoSpan}
                     <div class="flex gap-1 mt-1">
-                        <button onclick="abrirPagoCompra('${c.id}')"
+                        ${!esCorrecta ? `<span style="padding:5px 9px;background:#3f0d12;color:#fda4af;border:1px solid #7f1d1d;border-radius:6px;font-size:10px;font-weight:900;text-transform:uppercase;">No válida</span>` : ''}
+                        <button onclick="${esCorrecta ? `abrirPagoCompra('${c.id}')` : `mostrarToast('Compra no validada por sheet','error')`}"
                             style="padding:5px 9px;background:#1e3a5f;color:#60a5fa;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;"
                             title="Registrar pago">💳</button>
-                        <button onclick="abrirEditarCompra(${idx})"
+                        <button onclick="${esCorrecta ? `abrirEditarCompra(${idx})` : `mostrarToast('Compra no validada por sheet','error')`}"
                             style="padding:5px 9px;background:#1e3a5f;color:#60a5fa;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;"
                             title="Editar">✏️</button>
-                        <button onclick="confirmarEliminarCompra('${c.id}')"
+                        <button onclick="${esCorrecta ? `confirmarEliminarCompra('${c.id}')` : `mostrarToast('Compra no validada por sheet','error')`}"
                             style="padding:5px 9px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;"
                             title="Eliminar">🗑️</button>
                     </div>
@@ -12045,20 +12414,21 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             document.getElementById('ticketViewerInner').innerHTML = '';
         }
 
-        function confirmarEliminarCompra(id) {
+        async function confirmarEliminarCompra(id) {
             if (!confirm('¿Eliminar esta compra? También se eliminará del Sheet.')) return;
             const idx = _sheetCompras.findIndex(c => String(c.id) === String(id));
             if (idx === -1) return;
-            // Revertir stock
             const compra = _sheetCompras[idx];
+            const resultado = await eliminarEnSheet('compra', id);
+            if (!resultado || !resultado.ok) return;
+            // Revertir stock solo despuÃ©s de que Sheet confirme la eliminaciÃ³n.
             (compra.items || []).forEach(item => {
                 const prod = _sheetProductos.find(p => p.nombre === item.nombre);
                 if (prod) prod.stock = Math.max(0, (prod.stock || 0) - (item.cantidad || 0));
             });
-           
+
             _sheetCompras.splice(idx, 1);
-          
-            eliminarEnSheet('compra', id);
+
             const prodsAfectadosC = [...new Set((compra.items||[]).map(i=>i.nombre))]
                 .map(nom => _sheetProductos.find(p=>p.nombre===nom)).filter(Boolean);
             syncStockSheet(prodsAfectadosC);
@@ -12085,6 +12455,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             } else if (c.ticket) {
                 window._editCompraTickets.push({ data: c.ticket, nombre: 'Ticket 1' });
             }
+            cerrarPreviewCapturaEditCompra();
+            setEstadoTicketEditCompra('Cargando tickets...', '#fbbf24');
             renderEditCompraTicketsGrid();
             toggleModal('modalEditarCompra', true);
         }
@@ -12092,12 +12464,53 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         // ── TICKETS MÚLTIPLES EN EDITAR COMPRA ─────────────────────────────
         window._editCompraTickets = []; // array de { data, nombre }
         let _streamEditCompra = null;
+        window._editCompraPreviewCaptura = null;
+
+        function setEstadoTicketEditCompra(msg, color = '#64748b') {
+            const el = document.getElementById('editCompraTicketStatus');
+            if (!el) return;
+            el.textContent = msg;
+            el.style.color = color;
+        }
+
+        function cerrarPreviewCapturaEditCompra() {
+            window._editCompraPreviewCaptura = null;
+            const wrap = document.getElementById('previewCapturaEditCompra');
+            const img = document.getElementById('previewCapturaEditCompraImg');
+            if (img) img.src = '';
+            if (wrap) wrap.classList.add('hidden');
+        }
+
+        function actualizarMetaTicketEditCompra(ticket, done) {
+            if (!ticket || !ticket.data || !String(ticket.data).startsWith('data:image/')) {
+                done && done(ticket);
+                return;
+            }
+            const img = new Image();
+            img.onload = function() {
+                ticket.ancho = img.width || 0;
+                ticket.alto = img.height || 0;
+                done && done(ticket);
+            };
+            img.onerror = function() { done && done(ticket); };
+            img.src = ticket.data;
+        }
+
+        function obtenerItemsEditCompraActuales() {
+            const raw = (document.getElementById('editCompraItems')?.value || '').trim();
+            if (!raw) return [];
+            return raw.split('\n').map(line => {
+                const parts = line.split(':');
+                return { nombre: (parts[0] || '').trim(), cantidad: parseFloat(parts[1]) || 0 };
+            }).filter(i => i.nombre);
+        }
 
         window.renderEditCompraTicketsGrid = function renderEditCompraTicketsGrid() {
             const grid = document.getElementById('editCompraTicketsGrid');
             if (!grid) return;
             if (window._editCompraTickets.length === 0) {
                 grid.innerHTML = '<p style="grid-column:1/-1;font-size:9px;color:#475569;text-align:center;padding:8px;">Sin tickets adjuntos</p>';
+                setEstadoTicketEditCompra('Sin capturas pendientes');
                 return;
             }
             grid.innerHTML = window._editCompraTickets.map((t, i) => {
@@ -12115,15 +12528,21 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     <p style="font-size:7px;color:#475569;padding:2px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.nombre||'Ticket '+(i+1)}</p>
                 </div>`;
             }).join('');
+            setEstadoTicketEditCompra(window._editCompraTickets.length + ' ticket(s) listos para guardar', '#34d399');
         }
 
         window.agregarTicketsEditCompra = function(input) {
-            const files = Array.from(input.files);
+            const files = Array.from(input.files || []);
+            if (!files.length) return;
+            setEstadoTicketEditCompra('Procesando archivo(s)...', '#fbbf24');
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = e => {
-                    window._editCompraTickets.push({ data: e.target.result, nombre: file.name });
-                    renderEditCompraTicketsGrid();
+                    const ticket = { data: e.target.result, nombre: file.name };
+                    actualizarMetaTicketEditCompra(ticket, () => {
+                        window._editCompraTickets.push(ticket);
+                        renderEditCompraTicketsGrid();
+                    });
                 };
                 reader.readAsDataURL(file);
             });
@@ -12183,11 +12602,150 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         };
 
         // Mantener compatibilidad con código viejo que usa _editCompraTicketData
+        window.revisarTicketEditCompra = function() {
+            const ticket = window._editCompraPreviewCaptura || window._editCompraTickets.find(t => String(t.data || '').startsWith('data:image/')) || window._editCompraTickets[0];
+            if (!ticket) {
+                mostrarToast('Primero agrega o captura un ticket', 'error');
+                return;
+            }
+            const items = obtenerItemsEditCompraActuales();
+            const calidad = ticket.ancho && ticket.alto
+                ? (ticket.ancho >= 1200 && ticket.alto >= 1200 ? 'Buena' : 'Baja para lectura precisa')
+                : 'Desconocida';
+            const checklist = items.length
+                ? items.map(i => `<li style="margin:4px 0;">${i.nombre} x ${i.cantidad}</li>`).join('')
+                : '<li style="margin:4px 0;">No hay productos escritos en la compra.</li>';
+            const overlay = document.getElementById('modalTicketViewer');
+            const inner   = document.getElementById('ticketViewerInner');
+            document.getElementById('ticketViewerTitulo').textContent = 'REVISION GUIADA DEL TICKET';
+            inner.innerHTML = `
+                <div style="display:grid;gap:12px;grid-template-columns:minmax(0,1.2fr) minmax(220px,0.8fr);align-items:start;">
+                    <div style="background:#020617;border:1px solid #1e293b;border-radius:12px;padding:10px;">
+                        <img src="${ticket.data}" style="width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">
+                    </div>
+                    <div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;color:#e2e8f0;">
+                        <p style="font-size:11px;font-weight:900;color:#93c5fd;text-transform:uppercase;">Lectura automatica</p>
+                        <p style="font-size:12px;line-height:1.5;margin-top:6px;color:#cbd5e1;">Esta revision no confirma el ticket de forma exacta. Sirve para ampliar la imagen y comparar manualmente.</p>
+                        <p style="font-size:11px;font-weight:900;color:${calidad === 'Buena' ? '#34d399' : '#fbbf24'};text-transform:uppercase;margin-top:10px;">Calidad estimada: ${calidad}</p>
+                        <p style="font-size:11px;color:#94a3b8;margin-top:4px;">Resolucion: ${ticket.ancho || '?'} x ${ticket.alto || '?'}</p>
+                        <p style="font-size:11px;font-weight:900;color:#f8fafc;text-transform:uppercase;margin-top:12px;">Productos ingresados</p>
+                        <ul style="font-size:12px;line-height:1.4;margin:6px 0 0 16px;padding:0;color:#cbd5e1;">${checklist}</ul>
+                        <p style="font-size:11px;line-height:1.5;color:#94a3b8;margin-top:12px;">Para que una comparacion futura sea mas precisa, el ticket debe estar recto, ocupar casi toda la foto y verse nitido.</p>
+                    </div>
+                </div>`;
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'flex';
+        };
+
+        window.abrirCamaraEditCompra = async function() {
+            const wrap = document.getElementById('camaraEditCompra');
+            const video = document.getElementById('videoEditCompra');
+            if (!wrap || !video || !navigator.mediaDevices?.getUserMedia) {
+                mostrarToast('La camara no esta disponible en este equipo', 'error');
+                return;
+            }
+            cerrarPreviewCapturaEditCompra();
+            wrap.classList.remove('hidden');
+            setEstadoTicketEditCompra('Abriendo camara...', '#fbbf24');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                });
+                _streamEditCompra = stream;
+                video.srcObject = stream;
+                await new Promise(resolve => {
+                    const done = () => resolve();
+                    video.onloadedmetadata = done;
+                    setTimeout(done, 700);
+                });
+                try { await video.play(); } catch (e) {}
+                setEstadoTicketEditCompra('Camara lista. Captura cuando el texto se vea nitido.', '#34d399');
+            } catch (e) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    _streamEditCompra = stream;
+                    video.srcObject = stream;
+                    setEstadoTicketEditCompra('Camara lista en modo basico.', '#34d399');
+                } catch (err) {
+                    mostrarToast('No se pudo acceder a la camara', 'error');
+                    setEstadoTicketEditCompra('No se pudo abrir la camara', '#f87171');
+                    cerrarCamaraEditCompra();
+                }
+            }
+        };
+
+        window.cerrarCamaraEditCompra = function() {
+            if (_streamEditCompra) { _streamEditCompra.getTracks().forEach(t => t.stop()); _streamEditCompra = null; }
+            document.getElementById('camaraEditCompra').classList.add('hidden');
+        };
+
+        window.capturarFotoEditCompra = function() {
+            const video  = document.getElementById('videoEditCompra');
+            const canvas = document.getElementById('canvasEditCompra');
+            if (!video || !video.videoWidth || !video.videoHeight) {
+                mostrarToast('Camara no lista, espera un segundo', 'error');
+                return;
+            }
+            setEstadoTicketEditCompra('Procesando captura...', '#fbbf24');
+            canvas.width  = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            if (!dataUrl || dataUrl === 'data:,') {
+                mostrarToast('Error al capturar imagen', 'error');
+                setEstadoTicketEditCompra('La captura fallo', '#f87171');
+                return;
+            }
+            comprimirTicketParaGuardar(dataUrl, comprimida => {
+                window._editCompraPreviewCaptura = {
+                    data: comprimida,
+                    nombre: `foto_${window._editCompraTickets.length + 1}.jpg`,
+                    ancho: canvas.width,
+                    alto: canvas.height
+                };
+                const img = document.getElementById('previewCapturaEditCompraImg');
+                const wrap = document.getElementById('previewCapturaEditCompra');
+                if (img) img.src = comprimida;
+                if (wrap) wrap.classList.remove('hidden');
+                cerrarCamaraEditCompra();
+                setEstadoTicketEditCompra('Revisa la foto y confirma si se ve bien', '#fbbf24');
+            });
+        };
+
+        window.descartarCapturaEditCompra = function() {
+            cerrarPreviewCapturaEditCompra();
+            setEstadoTicketEditCompra('Captura descartada. Puedes intentarlo de nuevo.', '#94a3b8');
+            abrirCamaraEditCompra();
+        };
+
+        window.confirmarCapturaEditCompra = function() {
+            const ticket = window._editCompraPreviewCaptura;
+            if (!ticket) return;
+            actualizarMetaTicketEditCompra(ticket, () => {
+                window._editCompraTickets.push(ticket);
+                cerrarPreviewCapturaEditCompra();
+                renderEditCompraTicketsGrid();
+                mostrarToast('Foto agregada al ticket');
+            });
+        };
+
         window.previewEditCompraTicket = function(input) {
             agregarTicketsEditCompra(input);
         };
         window.verTicketEditCompra    = function() { if (window._editCompraTickets.length) verTicketEditCompraIdx(0); };
-        window.quitarTicketEditCompra = function() { window._editCompraTickets = []; renderEditCompraTicketsGrid(); };
+        window.quitarTicketEditCompra = function() {
+            window._editCompraTickets = [];
+            cerrarPreviewCapturaEditCompra();
+            renderEditCompraTicketsGrid();
+        };
         // ── FIN TICKETS MÚLTIPLES ────────────────────────────────────────────
 
         window.previewEditIngEgrTicket = function(input) {
@@ -12228,12 +12786,18 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             label.style.color = '#475569';
         };
 
-        function guardarEditarCompra() {
+        async function guardarEditarCompra() {
             if (_editandoCompraIdx === -1) return;
+            if (window._editCompraPreviewCaptura) {
+                mostrarToast('Confirma o repite la foto antes de guardar', 'error');
+                setEstadoTicketEditCompra('Hay una captura pendiente por confirmar', '#f87171');
+                return;
+            }
             const compra  = _sheetCompras[_editandoCompraIdx];
             const prov    = document.getElementById('editCompraProveedor').value.trim() || compra.proveedor;
             const efect   = parseFloat(document.getElementById('editCompraEfectivo').value) || 0;
             const cred    = parseFloat(document.getElementById('editCompraCredito').value)  || 0;
+            const btnGuardar = document.getElementById('btnGuardarEditarCompra');
             const itemsRaw = document.getElementById('editCompraItems').value.trim().split('\n');
             const items   = itemsRaw.map(line => {
                 const parts = line.split(':');
@@ -12264,33 +12828,45 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const ticketsUrl    = ticketsNuevos.filter(t => t.data.startsWith('http')).map(t => t.data);
             const ticketsBase64 = ticketsNuevos.filter(t => t.data.startsWith('data:'));
 
-            mostrarToast('⏳ Guardando tickets...');
+            try {
+                if (btnGuardar) {
+                    btnGuardar.disabled = true;
+                    btnGuardar.textContent = 'Guardando...';
+                    btnGuardar.style.opacity = '0.7';
+                }
+                mostrarToast('Guardando tickets...');
+                setEstadoTicketEditCompra('Subiendo ticket(s)...', '#fbbf24');
 
-            // Subir todos los base64 a ImgBB en paralelo
-            const subirPromesas = ticketsBase64.map(t => new Promise(resolve => {
-                subirTicketImgBB(t.data, url => resolve(url || t.data));
-            }));
+                const urlsSubidas = await Promise.all(
+                    ticketsBase64.map(t => subirTicketConReintentos(t.data, 2))
+                );
 
-            Promise.all(subirPromesas).then(urlsSubidas => {
                 const todosUrls = [...ticketsUrl, ...urlsSubidas];
                 compra.tickets = todosUrls;
                 compra.ticket  = todosUrls[0] || null;
 
-                editarEnSheet({
+                await Promise.resolve(editarEnSheet({
                     tipo: 'actualizar_compra',
                     idCompra: _idParaSheet,
                     fecha: compra.fechaISO || compra.fecha || '',
                     proveedor: prov,
                     ticket: todosUrls.join('|') || null,
                     tickets: todosUrls
-                });
+                }));
 
                 toggleModal('modalEditarCompra', false);
                 _editandoCompraIdx = -1;
                 if (window._vistaActual === 'compras')    renderCompras();
                 if (window._vistaActual === 'inventario') renderInventario();
-                mostrarToast('✓ Compra actualizada');
-            });
+                setEstadoTicketEditCompra('Tickets guardados correctamente', '#34d399');
+                mostrarToast('Compra actualizada');
+            } finally {
+                if (btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = 'Guardar';
+                    btnGuardar.style.opacity = '1';
+                }
+            }
         }
 
         // ============================================================
@@ -14510,7 +15086,14 @@ function calcularCajaEsperada() {
                     console.groupEnd();
                 }
 
-                // ── 3. CLIENTES DEBEN: PAGO CREDITO pendiente de ventas con items del proveedor
+                const cobrosPorVentaProv = {};
+                (_pagoVentasSheet || []).forEach(p => {
+                    const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                    if (!idV) return;
+                    cobrosPorVentaProv[idV] = (cobrosPorVentaProv[idV] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+                });
+
+                // ── 3. CLIENTES DEBEN: solo capital pendiente de ventas con items del proveedor
                 const todasVentas = [
                     ...(typeof historial !== 'undefined' ? historial : []),
                     ...(_sheetVentas||[]).filter(v =>
@@ -14518,22 +15101,10 @@ function calcularCajaEsperada() {
                 ];
                 let deudaClientesProv = 0;
                 todasVentas.forEach(v => {
-                    const deudaBruta = parseFloat(v.deuda || 0);
-                    if (deudaBruta <= 0) return;
-                    // Solo ventas con items de este proveedor
-                    const itemsProv = (v.items||[]).filter(i => (i.proveedor||'').toUpperCase() === nombre.toUpperCase());
-                    if (itemsProv.length === 0) return;
-                    // Restar pagos ya cobrados
-                    const idV = String(v.id || v.IDVENTAS || '').trim();
-                    const pagadoV = idV
-                        ? (_pagoVentasSheet||[])
-                            .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === idV)
-                            .reduce((s, p) => s + (parseFloat(p.monto||p.MONTO)||0), 0)
-                        : 0;
-                    const saldoPendiente = Math.max(0, deudaBruta - pagadoV);
-                    if (saldoPendiente <= 0) return;
-                    // Sumar directamente el saldo pendiente de esta venta
-                    deudaClientesProv += saldoPendiente;
+                    const resumenProv = calcularResumenProveedorVenta(v, nombre, cobrosPorVentaProv);
+                    if (!resumenProv || resumenProv.esClienteEspecial) return;
+                    if (resumenProv.capitalComprometidoProv <= 0) return;
+                    deudaClientesProv += resumenProv.capitalComprometidoProv;
                 });
 
                 if (nombre.toUpperCase() === 'GUAPITO') {
@@ -14541,17 +15112,18 @@ function calcularCajaEsperada() {
                     console.log('Total clientes deben $:', deudaClientesProv);
                     const detalleCli = [];
                     todasVentas.forEach(v => {
-                        const deudaBruta = parseFloat(v.deuda||0);
-                        if (deudaBruta <= 0) return;
-                        const itemsProv = (v.items||[]).filter(i=>(i.proveedor||'').toUpperCase()==='GUAPITO');
-                        if (!itemsProv.length) return;
-                        const idV = String(v.id||'').trim();
-                        const pagadoV = idV ? (_pagoVentasSheet||[]).filter(p=>String(p.idVenta||p.IDVENTAS||'').trim()===idV).reduce((s,p)=>s+(parseFloat(p.monto||p.MONTO)||0),0) : 0;
-                        const saldo = Math.max(0, deudaBruta - pagadoV);
-                        if (saldo <= 0) return;
-                        const totalV = parseFloat(v.total)||0;
-                        const valProv = itemsProv.reduce((s,i)=>s+(parseFloat(i.precio)||0)*(parseFloat(i.cantidad)||1),0);
-                        detalleCli.push({cliente: v.cliente, deudaBruta, pagadoV, saldo, totalV, valProv, proporcion: totalV>0?valProv/totalV:0, aporte: saldo*(totalV>0?valProv/totalV:0)});
+                        const resumenProv = calcularResumenProveedorVenta(v, 'GUAPITO', cobrosPorVentaProv);
+                        if (!resumenProv || resumenProv.esClienteEspecial || resumenProv.capitalComprometidoProv <= 0) return;
+                        detalleCli.push({
+                            cliente: v.cliente,
+                            totalVenta: resumenProv.totalVentaBase,
+                            cobradoVenta: resumenProv.totalCobradoVenta,
+                            capitalProv: resumenProv.capitalProv,
+                            capitalCobrado: resumenProv.capitalCobradoProv,
+                            capitalPendiente: resumenProv.capitalPendienteProv,
+                            capitalComprometido: resumenProv.capitalComprometidoProv,
+                            gananciaCobradaEf: resumenProv.gananciaCobradaProv
+                        });
                     });
                     console.table(detalleCli);
                     console.groupEnd();
@@ -15275,8 +15847,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbwumTQjCfaYBXLbeAfzwWWPDooHCYaOlzMYHJCEUiqCWnTfRmaum7W7VtpZuqqUhNeM/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbwumTQjCfaYBXLbeAfzwWWPDooHCYaOlzMYHJCEUiqCWnTfRmaum7W7VtpZuqqUhNeM/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxMPX0svx5lkmqdlejPb0bCBOZ1jnFglFXR723iUY8QInny-Cbm9WmPwq6i74Q07dw3/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxMPX0svx5lkmqdlejPb0bCBOZ1jnFglFXR723iUY8QInny-Cbm9WmPwq6i74Q07dw3/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -15434,7 +16006,10 @@ function verDetalleProveedor(tipo, id){
         }
         let _syncInterval    = null;
         let _sheetVentas     = []; // ventas traídas del sheet (no locales)
-        let _sheetCompras    = []; // compras traídas del sheet (no locales)
+        let _sheetCompras    = []; // compras traídas del sheet (fuente de verdad)
+        let _comprasFirebase = []; // compras vistas en app/Firebase pero no confirmadas por sheet
+        window._comprasFirebase = _comprasFirebase;
+        window._comprasSheetCargadas = false;
         let _pagoVentasSheet = []; // pagos de PAGO VENTAS del sheet
         window._pagoVentasSheet = _pagoVentasSheet;
         // Exponer al scope global para debug
@@ -15673,11 +16248,71 @@ function verDetalleProveedor(tipo, id){
         }
 
         // Helper: enviar eliminación al Sheet
-        function eliminarEnSheet(tipo, id) {
-            fetchSheets({
-                method: 'POST',
-                body: JSON.stringify({ tipo: 'eliminar', entidad: tipo, id: String(id) })
-            });
+        async function eliminarEnSheet(tipo, id) {
+            const entidadBase = ({
+                compra: 'compra',
+                compras: 'compra',
+                venta: 'venta',
+                ventas: 'venta',
+                ingreso: 'ingreso',
+                ingresos: 'ingreso',
+                egreso: 'egreso',
+                egresos: 'egreso',
+                ingreso_negocio: 'ingreso_negocio',
+                ingresos_negocio: 'ingreso_negocio',
+                egreso_negocio: 'egreso_negocio',
+                egresos_negocio: 'egreso_negocio',
+                lista_ingreso: 'lista_ingreso',
+                lista_egreso: 'lista_egreso'
+            })[String(tipo || '').trim().toLowerCase()] || tipo;
+            const intentosPayload = entidadBase === 'compra'
+                ? [
+                    { tipo: 'eliminar_compra', idCompra: String(id), IDCOMPRAS: String(id), id: String(id) },
+                    { tipo: 'eliminar', entidad: 'compra', id: String(id) },
+                    { tipo: 'eliminar', entidad: 'compras', id: String(id) },
+                    { tipo: 'eliminar', hoja: 'compras', id: String(id), idCompra: String(id), IDCOMPRAS: String(id) }
+                ]
+                : [
+                    { tipo: 'eliminar', entidad: entidadBase, id: String(id) }
+                ];
+
+            const intentar = async (idx = 0) => {
+                const payloadObj = intentosPayload[idx];
+                const payload = JSON.stringify(payloadObj);
+                try {
+                    const r = await fetch(SHEETS_URL2, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: payload
+                    });
+                    const txt = await r.text();
+                    let data = null;
+                    try { data = JSON.parse(txt); } catch (e) {}
+
+                    if (data && data.ok) {
+                        mostrarToast('✓ Eliminado en Sheet', 'success');
+                        return;
+                    }
+
+                    const msg = (data && (data.error || data.message)) ? String(data.error || data.message) : txt;
+                    const reintentable = /entidad no reconocida|tipo no reconocido|accion no reconocida|hoja no reconocida/i.test(msg || '');
+                    if (reintentable && idx + 1 < intentosPayload.length) {
+                        return intentar(idx + 1);
+                    }
+                    const backendSinSoporte = entidadBase === 'compra' && /entidad no reconocida|tipo no reconocido|hoja no reconocida/i.test(msg || '');
+                    if (backendSinSoporte) {
+                        mostrarToast('âœ— Sheet no soporta borrar compras todavÃ­a. Falta agregar ese caso en Apps Script.', 'error');
+                        return { ok: false, error: msg || 'No se pudo eliminar', backendSinSoporte, payload: payloadObj };
+                    }
+                    mostrarToast('✗ Sheet error: ' + (msg || 'No se pudo eliminar'), 'error');
+                } catch (e) {
+                    if (idx + 1 < intentosPayload.length) return intentar(idx + 1);
+                    return { ok: false, error: e && e.message ? e.message : 'Error eliminando en Sheet', payload: payloadObj };
+                    mostrarToast('✗ Error eliminando en Sheet', 'error');
+                }
+            };
+
+            return intentar();
         }
 
         // Helper: enviar edición al Sheet (reemplaza fila con mismo id)
@@ -16118,6 +16753,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
 
 _sheetCompras = comprasSheet;
 window._sheetCompras = _sheetCompras;
+window._comprasSheetCargadas = true;
 console.log('✓ Compras Sheet cargadas:', _sheetCompras.length);
 const fpResumen = {}; _sheetCompras.forEach(c=>{ const fp=c.formaPago||'(vacío)'; fpResumen[fp]=(fpResumen[fp]||0)+1; });
 console.log('📊 Compras por formaPago:', fpResumen);
@@ -19364,21 +20000,22 @@ console.log("FILTRADAS:", filtradas.length);
                     valorStockProv[prov] = (valorStockProv[prov]||0) + stockAct*(parseFloat(prod.costo)||0);
                 });
 
+                const cobrosPorVentaProv2 = {};
+                (_pagoVentasSheet || []).forEach(p => {
+                    const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                    if (!idV) return;
+                    cobrosPorVentaProv2[idV] = (cobrosPorVentaProv2[idV] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+                });
+
                 const _todasV2 = ventasParaCalculo();
                 const cobrarDeProv = {};
                 _todasV2.forEach(v => {
-                    // PAGO_CREDITO (v.credito) como crédito otorgado
-                    const creditoBruto = parseFloat(v.credito||v.deuda||0); if (creditoBruto<=0) return;
-                    const itemsProv = (v.items||[]).filter(i=>(i.proveedor||'').trim()!==''); if (!itemsProv.length) return;
-                    // Match por idSheet con fallback al id local
-                    const idVSheet = v.idSheet ? String(v.idSheet).trim()
-                        : (String(v.id||'').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_','') : String(v.id||'').trim());
-                    const idVLocal = String(v.id||'').trim();
-                    const pagadoV = (_pagoVentasSheet||[])
-                        .filter(p => { const pId=String(p.idVenta||p.IDVENTAS||'').trim(); return pId===idVSheet||pId===idVLocal; })
-                        .reduce((s,p)=>s+parseFloat(p.monto||p.MONTO||0),0);
-                    const saldoV = Math.max(0,creditoBruto-pagadoV); if (saldoV<=0) return;
-                    [...new Set(itemsProv.map(i=>(i.proveedor||'').trim().toUpperCase()).filter(Boolean))].forEach(prov=>{ cobrarDeProv[prov]=(cobrarDeProv[prov]||0)+saldoV; });
+                    const proveedoresVenta = [...new Set((v.items||[]).map(i => String(i.proveedor||'').trim().toUpperCase()).filter(Boolean))];
+                    proveedoresVenta.forEach(prov => {
+                        const resumenProv = calcularResumenProveedorVenta(v, prov, cobrosPorVentaProv2);
+                        if (!resumenProv || resumenProv.esClienteEspecial || resumenProv.capitalComprometidoProv <= 0) return;
+                        cobrarDeProv[prov] = (cobrarDeProv[prov] || 0) + resumenProv.capitalComprometidoProv;
+                    });
                 });
 
                 const todosProvs = [...new Set(Object.keys(deudaAProv))].sort().filter(p => !_provFiltro || p === _provFiltro);
@@ -19438,35 +20075,27 @@ console.log("FILTRADAS:", filtradas.length);
                     stockProv[prov] = (stockProv[prov]||0) + si * costo;
                 });
 
-                // 3) ME DEBEN CLIENTES = fiado pendiente desde fecha DESDE + dinero recuperado CASA ERAZO por proveedor
+                const cobrosPorVentaProv3 = {};
+                (_pagoVentasSheet || []).forEach(p => {
+                    const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                    if (!idV) return;
+                    cobrosPorVentaProv3[idV] = (cobrosPorVentaProv3[idV] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+                });
+
+                // 3) ME DEBEN CLIENTES = solo capital pendiente desde fecha DESDE + dinero recuperado CASA ERAZO por proveedor
                 const meadenProv = {};
 
-                // 3a) Fiado pendiente: PAGO_CREDITO de VENTAS − MONTO de PAGO_VENTAS (por IDVENTAS)
+                // 3a) Fiado pendiente: tomar solo capital pendiente, contemplando pago mixto y ganancia en efectivo
                 const _vistasP = new Set();
                 _todasV3.forEach(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha);
                     if (!fn || (desdeNum && fn < desdeNum)) return;
                     if (_vistasP.has(v.id)) return; _vistasP.add(v.id);
-                    // Usar PAGO_CREDITO (v.credito) como crédito otorgado
-                    const credito = parseFloat(v.credito||v.deuda||0); if (credito <= 0) return;
-                    // Match por idSheet (ID real del sheet) con fallback al id local
-                    const idVSheet = v.idSheet ? String(v.idSheet).trim()
-                        : (String(v.id||'').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_','') : String(v.id||'').trim());
-                    const idVLocal = String(v.id||'').trim();
-                    const pagado = (_pagoVentasSheet||[])
-                        .filter(p => {
-                            const pId = String(p.idVenta||p.IDVENTAS||'').trim();
-                            return pId === idVSheet || pId === idVLocal;
-                        })
-                        .reduce((s,p) => s + parseFloat(p.monto||p.MONTO||0), 0);
-                    const saldo = Math.max(0, credito - pagado); if (saldo <= 0) return;
-                    const total = parseFloat(v.total||0) || 1;
-                    (v.items||[]).forEach(item => {
-                        const prov = (item.proveedor||'').trim().toUpperCase();
-                        if (!prov) return;
-                        const cant   = parseFloat(item.cantidad)||1;
-                        const precio = (parseFloat(item.precio)||0) * cant;
-                        meadenProv[prov] = (meadenProv[prov]||0) + (precio / total) * saldo;
+                    const proveedoresVenta = [...new Set((v.items||[]).map(item => String(item.proveedor||'').trim().toUpperCase()).filter(Boolean))];
+                    proveedoresVenta.forEach(prov => {
+                        const resumenProv = calcularResumenProveedorVenta(v, prov, cobrosPorVentaProv3);
+                        if (!resumenProv || resumenProv.esClienteEspecial || resumenProv.capitalComprometidoProv <= 0) return;
+                        meadenProv[prov] = (meadenProv[prov]||0) + resumenProv.capitalComprometidoProv;
                     });
                 });
 
@@ -19540,6 +20169,129 @@ console.log("FILTRADAS:", filtradas.length);
 
         }
         // ── CARD: EFECTIVO A ENTREGAR AL PROVEEDOR ──────────────────────────
+        function _idsVentaCompat(v) {
+            const ids = new Set();
+            const idLocal = String(v?.id || '').trim();
+            const idSheet = v?.idSheet
+                ? String(v.idSheet).trim()
+                : (idLocal.startsWith('sheet_V_') ? idLocal.replace('sheet_V_', '') : idLocal);
+            if (idLocal) ids.add(idLocal);
+            if (idSheet) ids.add(idSheet);
+            return [...ids];
+        }
+
+        function _capitalItemProveedor(it) {
+            const cant = parseFloat(it?.cantidad) || 1;
+            const dinRec = parseFloat(it?.dineroRecuperado);
+            if (!isNaN(dinRec) && dinRec > 0) return dinRec;
+            return (parseFloat(it?.precioCosto || it?.costo || 0) || 0) * cant;
+        }
+
+        function _precioItemProveedor(it) {
+            const cant = parseFloat(it?.cantidad) || 1;
+            return (parseFloat(it?.precio || 0) || 0) * cant;
+        }
+
+        function calcularResumenProveedorVenta(v, provNombre, cobrosPorVenta = {}) {
+            const provUp = String(provNombre || '').trim().toUpperCase();
+            if (!provUp) return null;
+
+            const itemsVenta = Array.isArray(v?.items) ? v.items : [];
+            const itemsProv = itemsVenta.filter(i => String(i?.proveedor || '').trim().toUpperCase() === provUp);
+            if (!itemsProv.length) return null;
+
+            const totalItemsVenta = itemsVenta.reduce((s, it) => s + _precioItemProveedor(it), 0);
+            const totalVentaBase = Math.max(
+                parseFloat(v?.total || 0) || 0,
+                totalItemsVenta,
+                itemsProv.reduce((s, it) => s + _precioItemProveedor(it), 0),
+                1
+            );
+
+            const idsVenta = _idsVentaCompat(v);
+            const cobrosExtra = idsVenta.reduce((s, id) => s + (Number(cobrosPorVenta[id] || 0) || 0), 0);
+            const efectivoVenta = Math.max(0, Number(v?.efectivo || 0) || 0);
+            const creditoOriginal = Math.max(0, Number(v?.credito ?? v?.deuda ?? 0) || 0);
+            const cli = String(v?.cliente || '').trim().toUpperCase();
+            const esClienteEspecial = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
+            const deudaAbierta = !esClienteEspecial && Math.max(0, creditoOriginal - cobrosExtra) > 0;
+            const totalCobradoVenta = esClienteEspecial
+                ? totalVentaBase
+                : Math.min(totalVentaBase, Math.max(0, efectivoVenta + cobrosExtra));
+            const detallesBase = itemsProv.map(it => {
+                const precioItem = _precioItemProveedor(it);
+                const capitalItem = _capitalItemProveedor(it);
+                const gananciaTotalItem = Math.max(0, precioItem - capitalItem);
+                const shareVenta = totalVentaBase > 0 ? Math.min(1, precioItem / totalVentaBase) : 0;
+                return {
+                    item: it,
+                    producto: it?.nombre || '—',
+                    cantidad: parseFloat(it?.cantidad) || 1,
+                    precioItem,
+                    capitalItem,
+                    gananciaTotalItem,
+                    shareVenta
+                };
+            });
+
+            const precioProv = detallesBase.reduce((s, d) => s + d.precioItem, 0);
+            const capitalProv = detallesBase.reduce((s, d) => s + d.capitalItem, 0);
+            const gananciaProv = detallesBase.reduce((s, d) => s + d.gananciaTotalItem, 0);
+            const cobradoProv = esClienteEspecial
+                ? capitalProv
+                : totalCobradoVenta;
+
+            // Regla unificada:
+            // 1) Todo cobro del proveedor cubre primero capital.
+            // 2) Solo el excedente sobre el capital cuenta como ganancia cobrada.
+            const capitalCobradoProv = Math.min(capitalProv, cobradoProv);
+            const capitalPendienteProv = Math.max(0, capitalProv - capitalCobradoProv);
+            const gananciaCobradaProv = esClienteEspecial ? 0 : Math.min(gananciaProv, Math.max(0, cobradoProv - capitalProv));
+            const capitalComprometidoProv = deudaAbierta
+                ? (totalCobradoVenta < capitalProv ? capitalProv : capitalPendienteProv)
+                : capitalPendienteProv;
+
+            const detalles = detallesBase.map(d => {
+                const capitalShare = capitalProv > 0 ? d.capitalItem / capitalProv : 0;
+                const gananciaShare = gananciaProv > 0 ? d.gananciaTotalItem / gananciaProv : 0;
+                const capitalCobrado = Math.min(d.capitalItem, capitalCobradoProv * capitalShare);
+                const gananciaCobrada = esClienteEspecial ? 0 : Math.min(d.gananciaTotalItem, gananciaCobradaProv * gananciaShare);
+                const cobradoItem = capitalCobrado + gananciaCobrada;
+                const capitalPendiente = Math.max(0, d.capitalItem - capitalCobrado);
+                return {
+                    item: d.item,
+                    producto: d.producto,
+                    cantidad: d.cantidad,
+                    precioItem: d.precioItem,
+                    capitalItem: d.capitalItem,
+                    cobradoItem,
+                    capitalCobrado,
+                    capitalPendiente,
+                    gananciaTotalItem: d.gananciaTotalItem,
+                    gananciaCobrada
+                };
+            });
+
+            return {
+                venta: v,
+                detalles,
+                precioProv,
+                capitalProv,
+                capitalCobradoProv,
+                capitalPendienteProv,
+                capitalComprometidoProv,
+                gananciaProv,
+                gananciaCobradaProv,
+                cobradoProv,
+                totalVentaBase,
+                totalCobradoVenta,
+                efectivoVenta,
+                cobrosExtra,
+                esClienteEspecial,
+                deudaAbierta
+            };
+        }
+
         function renderCardEfectivoProveedor() {
             const cont = document.getElementById('cardEfectivoProveedor');
             if (!cont) return;
@@ -19585,62 +20337,23 @@ console.log("FILTRADAS:", filtradas.length);
                 if (!enR(fn) || vistas.has(v.id)) return;
                 vistas.add(v.id);
 
-                // Solo items del proveedor elegido
-                const itemsProv = (v.items || []).filter(i =>
-                    (i.proveedor || '').trim().toUpperCase() === provNombre
-                );
-                if (!itemsProv.length) return;
+                const resumenProv = calcularResumenProveedorVenta(v, provNombre, cobrosPorVenta);
+                if (!resumenProv) return;
 
-                const totalVenta = Number(v.total || 0) || 1;
-                const ef         = Number(v.efectivo || 0);
-                const idVSheet   = v.idSheet
-                    ? String(v.idSheet).trim()
-                    : (String(v.id || '').startsWith('sheet_V_') ? String(v.id).replace('sheet_V_', '') : String(v.id || '').trim());
-
-                // Dinero recuperado específico de los items del proveedor
-                const dinRecItemsProv = itemsProv.reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0);
-
-                const cli = String(v.cliente || '').toUpperCase().trim();
-                const esClienteEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
-
-                let cobradoProp, dinRecCubierto, gananciaItem;
-
-                if (esClienteEsp) {
-                    // CASA ERAZO / ERROR VENTA: el dinero recuperado va directo al proveedor, sin ganancia
-                    cobradoProp    = dinRecItemsProv;
-                    dinRecCubierto = dinRecItemsProv;
-                    gananciaItem   = 0;
-                } else {
-                    // Cobros de PAGO VENTAS (mismo IDVENTAS)
-                    const cobrosExtra = (cobrosPorVenta[idVSheet] || 0) + (cobrosPorVenta[String(v.id || '')] || 0);
-                    const totalCobradoVenta = ef + cobrosExtra;
-
-                    // Proporción de precio de items del proveedor sobre total de la venta
-                    const precioItemsProv = itemsProv.reduce((s, i) => s + (Number(i.precio || 0) * (Number(i.cantidad) || 1)), 0);
-                    const proporcion = totalVenta > 0 ? precioItemsProv / totalVenta : 0;
-
-                    // Cobrado proporcional para estos items
-                    cobradoProp    = totalCobradoVenta * proporcion;
-                    // Cuánto del dinero recuperado fue cubierto por los cobros
-                    dinRecCubierto = Math.min(cobradoProp, dinRecItemsProv);
-                    // Ganancia = lo que sobra después de cubrir el costo
-                    gananciaItem   = Math.max(0, cobradoProp - dinRecItemsProv);
-                }
-
-                totalParaProveedor += dinRecCubierto;
-                totalGanancia      += gananciaItem;
-                totalCobrado       += cobradoProp;
-                totalDinRec        += dinRecItemsProv;
+                totalParaProveedor += resumenProv.capitalCobradoProv;
+                totalGanancia      += resumenProv.gananciaCobradaProv;
+                totalCobrado       += resumenProv.cobradoProv;
+                totalDinRec        += resumenProv.capitalProv;
                 cantVentas++;
 
                 detalleVentas.push({
                     fecha:  (v.fechaISO || v.fecha || '').substring(0, 10),
                     cliente: v.cliente || '—',
-                    items:   itemsProv.map(i => (Number(i.cantidad) > 1 ? i.cantidad + 'x ' : '') + (i.nombre || '')).join(', '),
-                    cobrado: cobradoProp,
-                    dinRec:  dinRecItemsProv,
-                    paraProv: dinRecCubierto,
-                    ganancia: gananciaItem
+                    items:   resumenProv.detalles.map(d => (Number(d.cantidad) > 1 ? d.cantidad + 'x ' : '') + (d.producto || '')).join(', '),
+                    cobrado: resumenProv.cobradoProv,
+                    dinRec:  resumenProv.capitalProv,
+                    paraProv: resumenProv.capitalCobradoProv,
+                    ganancia: resumenProv.gananciaCobradaProv
                 });
             });
 
@@ -20576,23 +21289,25 @@ console.log("FILTRADAS:", filtradas.length);
             // ══════════════════════════════════════════════════════════
             const todasV = ventasParaCalculo();
 
+            const cobrosPorVentaDetalle = {};
+            (_pagoVentasSheet || []).forEach(p => {
+                const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!idV) return;
+                cobrosPorVentaDetalle[idV] = (cobrosPorVentaDetalle[idV] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+
             const deudaRows = [];
             todasV.forEach(v => {
-                const deudaBruta = parseFloat(v.deuda||0);
-                if (deudaBruta <= 0) return;
-                const itemsProv = (v.items||[]).filter(i => String(i.proveedor||'').trim().toUpperCase() === nombreUp);
-                if (!itemsProv.length) return;
-                const idV = String(v.id||'').trim();
-                const pagadoV = idV ? (_pagoVentasSheet||[])
-                    .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === idV)
-                    .reduce((s,p) => s+(parseFloat(p.monto||p.MONTO)||0), 0) : 0;
-                const saldo = Math.max(0, deudaBruta - pagadoV);
-                if (saldo <= 0) return;
-                itemsProv.forEach(it => {
-                    const cant = parseFloat(it.cantidad) || 1;
-                    const prodInv = (_sheetProductos||[]).find(p => String(p.nombre||'').trim().toUpperCase() === String(it.nombre||'').trim().toUpperCase());
-                    const costo = parseFloat(prodInv?.costo || it.costo) || 0;
-                    deudaRows.push({ cliente: v.cliente || '—', producto: it.nombre || '—', cantidad: cant, deuda: costo * cant });
+                const resumenProv = calcularResumenProveedorVenta(v, nombreUp, cobrosPorVentaDetalle);
+                if (!resumenProv || resumenProv.esClienteEspecial || !resumenProv.deudaAbierta) return;
+                resumenProv.detalles.forEach(d => {
+                    if (d.capitalItem <= 0) return;
+                    deudaRows.push({
+                        cliente: v.cliente || '—',
+                        producto: d.producto || '—',
+                        cantidad: d.cantidad,
+                        deuda: d.capitalItem
+                    });
                 });
             });
 
@@ -22378,8 +23093,9 @@ keys.forEach(key => {
             }
 
             if (key === 'compras') {
-
-                window._sheetCompras = data;
+                window._comprasFirebase = Array.isArray(data)
+                    ? data.map(c => ({ ...c, fromSheet: false, estadoSync: 'incorrecta' }))
+                    : [];
 
                 if (
                     typeof renderCompras === 'function' &&
@@ -22450,6 +23166,167 @@ Object.entries(d).forEach(([k,v])=>{
 });
 
 })();
+function _estadoRealPorPagos(totalBase, pagado) {
+    var saldo = (parseFloat(totalBase || 0) || 0) - (parseFloat(pagado || 0) || 0);
+    return {
+        saldo: Math.max(0, saldo),
+        estado: saldo <= 0.009 ? 'FINALIZADO' : 'PENDIENTE'
+    };
+}
+
+renderIngNeg = function(tipo) {
+    const esIngreso = tipo === 'ingresosNegocio';
+    const db = esIngreso ? (_sheetIngresosNegocio || []) : (_sheetEgresosNegocio || []);
+    const listaId = esIngreso ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
+    const container = document.getElementById(listaId);
+    if (!container) return;
+    const filtro = esIngreso ? (_filtroIngNeg || 'todos') : (_filtroEgrNeg || 'todos');
+    const pagosSrc = esIngreso
+        ? [...(_sheetPagoIngNeg || []), ...(_pagoIngNegSheet || [])]
+        : [...(_sheetPagoEgrNeg || []), ...(_pagoEgrNegSheet || [])];
+    const pagosMap = {};
+    pagosSrc.forEach(function(p) {
+        const idRef = String(esIngreso
+            ? (p.IDINGRESOSNEGOCIO || p.idIngresoNeg || '')
+            : (p.IDEGRESOSNEGOCIO || p.idEgresoNeg || '')
+        ).trim();
+        if (!idRef) return;
+        pagosMap[idRef] = (pagosMap[idRef] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+    });
+    const getIdRef = function(r) {
+        return String(esIngreso ? (_getIdSheetNN(r) || r.id || '') : (_getIdSheetEN(r) || r.id || '')).trim();
+    };
+    const calcEstado = function(r) {
+        return _estadoRealPorPagos(parseFloat(r.credito || r.total || 0) || 0, pagosMap[getIdRef(r)] || 0);
+    };
+    const dbFiltrado = db.filter(function(r) {
+        const estadoReal = calcEstado(r).estado;
+        if (filtro !== 'todos' && estadoReal !== filtro.toUpperCase()) return false;
+        return true;
+    });
+    if (!dbFiltrado.length) {
+        container.innerHTML = '<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin registros</div>';
+        return;
+    }
+    const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    container.innerHTML = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0)).map(function(r) {
+        const infoEstado = calcEstado(r);
+        const colorEstado = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
+        return `
+        <div class="glass-card p-4 rounded-2xl border border-slate-800">
+            <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(r.fecha||'')}</p>
+                    <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(r.cliente||r.proveedor||'-')}</p>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full border" style="color:${colorEstado};border-color:${colorEstado}55;background:${colorEstado}18;">${infoEstado.estado}</span>
+                        ${r.formaPago ? `<span class="text-[9px] text-slate-500">${Utils.escHtml(r.formaPago)}</span>` : ''}
+                        ${infoEstado.saldo > 0 ? `<span class="text-[9px] font-black text-amber-300">Saldo: $${Utils.fmt(infoEstado.saldo)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <span class="block text-sm font-black ${esIngreso ? 'text-emerald-400' : 'text-red-400'} font-mono">$${Utils.fmt(r.total||0)}</span>
+                    ${r.efectivo>0 ? `<span class="block text-[9px] font-black text-emerald-400">Ef: $${Utils.fmt(r.efectivo)}</span>` : ''}
+                    ${r.credito>0 ? `<span class="block text-[9px] font-black text-red-400">Cr: $${Utils.fmt(r.credito)}</span>` : ''}
+                </div>
+                <div class="flex flex-col gap-1 shrink-0">
+                    <button onclick="${esIngreso ? `abrirPagoIngNeg('${r.id}')` : `abrirPagoEgrNeg('${r.id}')`}" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='${esIngreso ? '#10b981' : '#f97316'}'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>
+                    <button onclick="editarIngNeg('${tipo}','${r.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#64748b'">${SVG_EDIT}</button>
+                    <button onclick="eliminarIngNeg('${tipo}','${r.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">${SVG_DEL}</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+renderIngEgr = function(tipo) {
+    const esIngreso = tipo === 'ingreso';
+    const dbFull = esIngreso ? (_sheetIngresos || []) : (_sheetEgresos || []);
+    const pagosSrc = esIngreso ? (_sheetPagoIngresos || []) : (_sheetPagoEgresos || []);
+    const filtro = esIngreso ? (_filtroIngreso || 'todos') : (_filtroEgreso || 'todos');
+    const prefix = esIngreso ? 'ingresos' : 'egresos';
+    const listaId = esIngreso ? 'listaIngresos' : 'listaEgresos';
+    const container = document.getElementById(listaId);
+    if (!container) return;
+    document.getElementById(prefix + 'TotalGasto').textContent = '$' + Utils.fmt(dbFull.reduce((s,c) => s + (Number(c.total) || 0), 0));
+    document.getElementById(prefix + 'TotalEfectivo').textContent = '$' + Utils.fmt(dbFull.reduce((s,c) => s + (Number(c.efectivo) || 0), 0));
+    document.getElementById(prefix + 'TotalCredito').textContent = '$' + Utils.fmt(dbFull.reduce((s,c) => s + (Number(c.credito) || 0), 0));
+    const pagosMap = {};
+    pagosSrc.forEach(function(p) {
+        const idRef = String(esIngreso ? (p.IDINGRESOS || p.idIngreso || '') : (p.IDEGRESOS || p.idEgreso || '')).trim();
+        if (!idRef) return;
+        pagosMap[idRef] = (pagosMap[idRef] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+    });
+    const getIdRef = function(r) {
+        return String(esIngreso ? (_getIdSheet(r) || r.id || '') : (_getIdSheetEgr(r) || r.id || '')).trim();
+    };
+    const calcEstado = function(r) {
+        return _estadoRealPorPagos(parseFloat(r.credito || r.total || 0) || 0, pagosMap[getIdRef(r)] || 0);
+    };
+    const db = dbFull.filter(function(c) {
+        const estadoReal = calcEstado(c).estado;
+        if (filtro !== 'todos' && estadoReal !== filtro.toUpperCase()) return false;
+        return true;
+    });
+    const searchInput = document.getElementById(esIngreso ? 'ingresosSearchInput' : 'egresosSearchInput');
+    const searchTxt = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    const dbFiltrado = searchTxt ? db.filter(function(c) {
+        const haystack = [c.proveedor||'', c.concepto||'', c.genero||'', c.formaPago||'', c.fecha||''].join(' ').toLowerCase();
+        return haystack.includes(searchTxt);
+    }) : db;
+    if (!dbFiltrado.length) {
+        container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">${searchTxt ? 'Sin resultados para "' + searchTxt + '"' : ('Sin ' + (esIngreso ? 'ingresos' : 'egresos') + ' registrados')}</div>`;
+        return;
+    }
+    const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    const listaActual = esIngreso ? (window._listaIngresos || []) : (window._listaEgresos || []);
+    const imgMapLista = {};
+    listaActual.forEach(function(it) { if (it.nombre && it.imagen) imgMapLista[it.nombre.toUpperCase().trim()] = it.imagen; });
+    container.innerHTML = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0)).map(function(c) {
+        const infoEstado = calcEstado(c);
+        const badgeColor = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
+        const provKey = (c.proveedor || '').toUpperCase().trim();
+        const concKey = (c.concepto || '').toUpperCase().trim();
+        const imgSC = c.imagen || imgMapLista[provKey] || imgMapLista[concKey] || ((typeof window._getCatImg === 'function') ? window._getCatImg('supercat', c.proveedor) : null);
+        const imgGN = (typeof window._getCatImg === 'function') ? window._getCatImg('genero', c.genero) : null;
+        const accentColor = esIngreso ? '#10b981' : '#f87171';
+        return `
+        <div class="glass-card p-4 rounded-2xl border border-slate-800">
+            <div class="flex justify-between items-start gap-3">
+                <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${accentColor}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                    ${imgSC ? `<img src="${imgSC}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">${esIngreso ? '📈' : '📉'}</span>` : `<span style="font-size:22px;line-height:1;">${esIngreso ? '📈' : '📉'}</span>`}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
+                    <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
+                    ${c.genero ? `<div style="display:flex;align-items:center;gap:4px;">${imgGN ? `<img src="${imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>` : ''}
+                    ${c.concepto ? `<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>` : ''}
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        ${c.formaPago ? `<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>` : ''}
+                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full border" style="color:${badgeColor};border-color:${badgeColor}55;background:${badgeColor}18;">${infoEstado.estado}</span>
+                        ${infoEstado.saldo > 0 ? `<span class="text-[9px] font-black text-amber-300">Saldo: $${Utils.fmt(infoEstado.saldo)}</span>` : ''}
+                    </div>
+                    ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">🏦 ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
+                    ${(c.items||[]).length>0?`<p class="text-[9px] text-slate-500">${c.items.map(i=>i.nombre).join(', ').substring(0,60)}</p>`:''}
+                    ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">🧾 Ver ticket</button>`:''}
+                </div>
+                <div class="text-right shrink-0">
+                    <span class="block text-sm font-black text-white font-mono">$${Utils.fmt(c.total || 0)}</span>
+                    ${c.credito>0?`<span class="block text-[9px] font-black text-red-400">Crédito: $${Utils.fmt(c.credito)}</span>`:''}
+                    ${c.efectivo>0?`<span class="block text-[9px] font-black text-emerald-400">Efectivo: $${Utils.fmt(c.efectivo)}</span>`:''}
+                </div>
+                <div class="flex flex-col gap-1 shrink-0">
+                    ${esIngreso ? `<button onclick="abrirPagoIngreso('${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>` : `<button onclick="abrirPagoEgreso('${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'" title="Registrar pago"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg></button>`}
+                    <button onclick="editarIngEgr('${tipo}','${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#64748b'">${SVG_EDIT}</button>
+                    <button onclick="eliminarIngEgr('${tipo}','${c.id}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">${SVG_DEL}</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+};
+
 </script>
 
 <dialog id="modalEditarPrecios" style="border:none;border-radius:16px;padding:30px;background:#1e293b;color:white;width:380px;box-shadow:0 20px 25px rgba(0,0,0,0.8);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999999;display:flex;flex-direction:column;gap:18px;">
