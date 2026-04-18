@@ -544,7 +544,7 @@ z-index:999999999;
     <button id="btnSyncManual" onclick="forzarSync()" title="Sincronizar ahora"
         style="background:#10b981;border:none;color:black;border-radius:50%;
         width:52px;height:52px;font-size:22px;cursor:pointer;
-        box-shadow:0 4px 20px rgba(16,185,129,0.5);">ðŸ”„</button>
+        box-shadow:0 4px 20px rgba(16,185,129,0.5);">&#10227;</button>
     <span id="colaPendienteBadge"
         style="display:none;position:absolute;top:-6px;right:-6px;
         background:#ef4444;color:white;border-radius:50%;
@@ -1002,7 +1002,7 @@ GUARDAR PRODUCTO
 
     <!-- MODAL DETALLE CLIENTE -->
     <div id="modalDetalleCliente" class="modal-overlay">
-        <div class="glass-card w-full max-w-2xl rounded-[2rem] flex flex-col border-2 border-slate-700 overflow-hidden m-4 max-h-[90vh]">
+        <div class="glass-card w-full max-w-2xl rounded-[2rem] flex flex-col border-2 border-slate-700 overflow-hidden m-4 max-h-[90vh]" onclick="event.stopPropagation()">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-700 flex items-center justify-center shrink-0">
@@ -1039,7 +1039,7 @@ GUARDAR PRODUCTO
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="glass-card p-4 rounded-2xl text-center">
-                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">PrÃ©stamo Deuda Total</span>
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Prestamo Deuda Total</span>
                         <span id="detalleTotalPrestamo" class="text-2xl font-black text-orange-400 font-mono">$0</span>
                     </div>
                     <div class="glass-card p-4 rounded-2xl text-center">
@@ -1050,20 +1050,20 @@ GUARDAR PRODUCTO
                 <!-- Card Deuda Capital -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="glass-card p-4 rounded-2xl text-center border border-amber-500/30" style="background:linear-gradient(135deg,#1a1100 0%,#0f172a 100%);">
-                        <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest block">ðŸ’° Deuda Capital</span>
+                        <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest block">&#128176; Deuda Capital</span>
                         <span id="detalleDeudaCapital" class="text-2xl font-black text-amber-300 font-mono">$0</span>
                         <span class="text-[8px] text-slate-600 block mt-1">Solo costo s/ganancia</span>
                     </div>
                     <div class="glass-card p-4 rounded-2xl text-center border border-purple-500/30" style="background:linear-gradient(135deg,#0d0620 0%,#0f172a 100%);">
-                        <span class="text-[9px] font-black text-purple-400 uppercase tracking-widest block">ðŸ“ˆ Ganancia en Deuda</span>
+                        <span class="text-[9px] font-black text-purple-400 uppercase tracking-widest block">&#128200; Ganancia en Deuda</span>
                         <span id="detalleGananciaDeuda" class="text-2xl font-black text-purple-300 font-mono">$0</span>
-                        <span class="text-[8px] text-slate-600 block mt-1">Precio âˆ’ Costo pendiente</span>
+                        <span class="text-[8px] text-slate-600 block mt-1">Precio - Costo pendiente</span>
                     </div>
                 </div>
-                <!-- InterÃ©s por mora -->
+                <!-- Interes por mora -->
                 <div id="detalleInteresBox" class="hidden glass-card p-3 rounded-2xl border border-yellow-500/30 bg-yellow-500/5">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] font-black text-yellow-400 uppercase tracking-widest">âš ï¸ InterÃ©s por mora (+15 dÃ­as)</span>
+                        <span class="text-[9px] font-black text-yellow-400 uppercase tracking-widest">&#9888;&#65039; Interes por mora (+15 dias)</span>
                         <div class="flex items-center gap-1">
                             <input type="number" id="inputTasaMora" min="0" max="100" step="0.5"
                                 onchange="localStorage.setItem('natanael_tasa_mora',this.value); abrirDetalleCliente(clienteDetalleId)"
@@ -1073,7 +1073,7 @@ GUARDAR PRODUCTO
                         </div>
                     </div>
                     <span id="detalleTotalInteres" class="text-2xl font-black text-yellow-400 font-mono">$0</span>
-                    <span class="text-[9px] text-yellow-600 font-bold block mt-1">Con interÃ©s: <span id="detalleTotalConInteres" class="text-yellow-400 font-black">$0</span></span>
+                    <span class="text-[9px] text-yellow-600 font-bold block mt-1">Con interes: <span id="detalleTotalConInteres" class="text-yellow-400 font-black">$0</span></span>
                 </div>
 
                <!-- SECCION 1 -->
@@ -1081,7 +1081,7 @@ GUARDAR PRODUCTO
   <h3 onclick="toggleSeccion('secComprasPend')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
       Compras con saldo pendiente
-      <span id="icon-secComprasPend">â–¼</span>
+      <span id="icon-secComprasPend">&#9660;</span>
   </h3>
   <div id="secComprasPend" class="space-y-2 hidden">
       <div id="detalleComprasDeuda"></div>
@@ -1092,8 +1092,8 @@ GUARDAR PRODUCTO
 <div>
   <h3 onclick="toggleSeccion('secPrestamosPend')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
-      PrÃ©stamos con saldo pendiente
-      <span id="icon-secPrestamosPend">â–¼</span>
+      Prestamos con saldo pendiente
+      <span id="icon-secPrestamosPend">&#9660;</span>
   </h3>
   <div id="secPrestamosPend" class="space-y-2 hidden">
       <div id="detallePrestamosPend"></div>
@@ -1105,7 +1105,7 @@ GUARDAR PRODUCTO
   <h3 onclick="toggleSeccion('secComprasPagadas')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
       Compras Pagadas
-      <span id="icon-secComprasPagadas">â–¼</span>
+      <span id="icon-secComprasPagadas">&#9660;</span>
   </h3>
 
   <div id="secComprasPagadas" class="space-y-2 hidden">
@@ -1117,8 +1117,13 @@ GUARDAR PRODUCTO
 <div>
   <h3 onclick="toggleSeccion('secPagosCompras')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
-      Historial de Pagos de Compras
-      <span id="icon-secPagosCompras">â–¼</span>
+      <span>Historial de Pagos de Compras</span>
+      <span class="flex items-center gap-2">
+          <button type="button" onclick="event.stopPropagation();generarPDFPagosClienteDetalle();" id="btnPdfPagosCliente" class="hidden px-2 py-1 rounded-md border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-colors" title="Descargar PDF de pagos" style="font-size:9px;line-height:1;font-weight:900;">
+              &#128196; PDF
+          </button>
+          <span id="icon-secPagosCompras">&#9660;</span>
+      </span>
   </h3>
   <div id="secPagosCompras" class="space-y-2 hidden">
       <div id="detallePagos"></div>
@@ -1129,8 +1134,8 @@ GUARDAR PRODUCTO
 <div>
   <h3 onclick="toggleSeccion('secPagosPrestamos')" 
       class="cursor-pointer text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex justify-between items-center">
-      Historial de Pagos de PrÃ©stamos
-      <span id="icon-secPagosPrestamos">â–¼</span>
+      Historial de Pagos de Prestamos
+      <span id="icon-secPagosPrestamos">&#9660;</span>
   </h3>
   <div id="secPagosPrestamos" class="space-y-2 hidden">
       <div id="detallePagosPrestamos"></div>
@@ -5726,9 +5731,13 @@ _sheetEgresosNegocio.forEach(e => {
                         const fotoItem = i.foto || (prodObj && prodObj.foto) || (prodObj && prodObj.imagen) || '';
                         const costoUnit = Number(i.costo || (prodObj && prodObj.costo) || 0) || 0;
                         const dineroRecuperadoItem = Number(i.dineroRecuperado || 0) || 0;
+                        const esItemPeso = Boolean(i.esPeso) || esTipoVenta(i.tipoVenta) || (prodObj && esTipoVenta(prodObj.tipoVenta));
+                        const precioFinalItem = Number(i.precioFinal || 0) || 0;
                         const precioItem = esClienteEspecialHist
                             ? (dineroRecuperadoItem || (costoUnit * cantItem))
-                            : ((Number(i.precio || 0) || 0) * cantItem);
+                            : (esItemPeso
+                                ? (precioFinalItem || Math.round((Number(i.precio || 0) || 0) * cantItem))
+                                : ((Number(i.precio || 0) || 0) * cantItem));
                         const fotoHtml = fotoItem
                             ? '<img src="' + driveUrl(fotoItem) + '" style="width:44px;height:44px;object-fit:contain;border-radius:10px;background:#0f172a;border:1.5px solid #334155;flex-shrink:0;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" alt=""><div style="display:none;width:44px;height:44px;border-radius:10px;background:#1e293b;border:1.5px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">ðŸ›’</div>'
                             : '<div style="width:44px;height:44px;border-radius:10px;background:#1e293b;border:1.5px solid #334155;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">ðŸ›’</div>';
@@ -6403,6 +6412,170 @@ _sheetEgresosNegocio.forEach(e => {
             return (logoFallback && logoFallback.src) ? logoFallback.src : '';
         }
 
+        function obtenerFotoProductoPorNombre(nombreProducto) {
+            const nombre = String(nombreProducto || '').trim().toUpperCase();
+            if (!nombre) return '';
+            const prod = (_sheetProductos || []).find(function(p) {
+                return String(p.nombre || '').trim().toUpperCase() === nombre;
+            });
+            return prod ? (prod.foto || prod.imagen || '') : '';
+        }
+
+        function cargarImagenParaPDF(url) {
+            return new Promise(function(resolve) {
+                const src = String(url || '').trim();
+                if (!src) { resolve(null); return; }
+                if (src.startsWith('data:image/')) {
+                    resolve({ dataUrl: src, format: 'JPEG' });
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth || img.width || 40;
+                        canvas.height = img.naturalHeight || img.height || 40;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve({ dataUrl: canvas.toDataURL('image/jpeg', 0.9), format: 'JPEG' });
+                    } catch(e) {
+                        resolve(null);
+                    }
+                };
+                img.onerror = function() { resolve(null); };
+                img.src = driveUrl(src);
+            });
+        }
+
+        async function generarPDFPagosClienteDetalle() {
+            const pagos = Array.isArray(window._detallePagosClienteActual) ? window._detallePagosClienteActual : [];
+            const clienteNombre = String(window._detallePagosClienteNombre || 'CLIENTE').trim() || 'CLIENTE';
+            if (pagos.length === 0) {
+                mostrarToast('No hay pagos para exportar', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
+            let y = 0;
+
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, W, 38, 'F');
+
+            const logoPDF = obtenerLogoPDFNatanael();
+            if (logoPDF) {
+                try { doc.addImage(logoPDF, 'JPEG', W - 40, 5, 24, 24, '', 'FAST'); } catch(e) {}
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(17);
+            doc.setTextColor(52, 211, 153);
+            doc.text('ALMACEN NATANAEL', 10, 16);
+            doc.setFontSize(9);
+            doc.setTextColor(148, 163, 184);
+            doc.text('HISTORIAL DE PAGOS DEL CLIENTE', 10, 24);
+
+            y = 46;
+            doc.setFillColor(15, 23, 42);
+            doc.roundedRect(8, y - 3, W - 16, 18, 2, 2, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text('CLIENTE', 14, y + 2);
+            doc.text('TOTAL COBRADO', W - 14, y + 2, { align: 'right' });
+            doc.setTextColor(226, 232, 240);
+            doc.setFontSize(10);
+            doc.text(clienteNombre.toUpperCase(), 14, y + 9);
+            doc.setTextColor(52, 211, 153);
+            doc.text('$' + Utils.fmt(pagos.reduce(function(s, p) { return s + (Number(p.monto) || 0); }, 0)), W - 14, y + 9, { align: 'right' });
+
+            y += 24;
+
+            doc.setFillColor(16, 185, 129);
+            doc.rect(8, y, W - 16, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(0, 0, 0);
+            doc.text('FECHA', 12, y + 5.5);
+            doc.text('TIPO / PRODUCTO', 48, y + 5.5);
+            doc.text('MONTO', W - 12, y + 5.5, { align: 'right' });
+            y += 10;
+
+            for (let idx = 0; idx < pagos.length; idx++) {
+                const p = pagos[idx];
+                if (y > 270) {
+                    doc.addPage();
+                    y = 15;
+                }
+                const rowBg = idx % 2 === 0 ? [15, 23, 42] : [2, 6, 23];
+                doc.setFillColor(rowBg[0], rowBg[1], rowBg[2]);
+                doc.roundedRect(8, y - 3, W - 16, 16, 2, 2, 'F');
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7);
+                doc.setTextColor(148, 163, 184);
+                doc.text(String(p.fecha || '-'), 12, y + 2);
+
+                const fotoProducto = p.fotoProducto || p.foto || p.imagen || obtenerFotoProductoPorNombre(p.producto || p.productos || '');
+                const imgPdf = await cargarImagenParaPDF(fotoProducto);
+                if (imgPdf && imgPdf.dataUrl) {
+                    try {
+                        doc.addImage(imgPdf.dataUrl, imgPdf.format || 'JPEG', 38, y - 1, 7, 7, '', 'FAST');
+                    } catch(e) {
+                        doc.setFillColor(30, 41, 59);
+                        doc.roundedRect(38, y - 1, 7, 7, 1, 1, 'F');
+                    }
+                } else {
+                    doc.setFillColor(30, 41, 59);
+                    doc.roundedRect(38, y - 1, 7, 7, 1, 1, 'F');
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(6);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(String((p.producto || p.productos || '?')).trim().charAt(0).toUpperCase() || '?', 41.5, y + 3, { align: 'center' });
+                }
+
+                doc.setTextColor(226, 232, 240);
+                doc.setFontSize(8.5);
+                doc.text(String(p.tipo || 'PAGO').toUpperCase(), 48, y + 1.5);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(52, 211, 153);
+                doc.text(String(p.productos || p.producto || 'SIN PRODUCTO').substring(0, 54), 48, y + 6.8);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.setTextColor(52, 211, 153);
+                doc.text('+$' + Utils.fmt(Number(p.monto) || 0), W - 12, y + 4.5, { align: 'right' });
+                y += 17;
+            }
+
+            doc.save('pagos_' + clienteNombre.replace(/\s+/g, '_') + '.pdf');
+            mostrarToast('PDF de pagos descargado');
+        }
+
+        function generarPDFPagoClienteDetalle(idx) {
+            const pagos = Array.isArray(window._detallePagosClienteActual) ? window._detallePagosClienteActual : [];
+            if (idx < 0 || idx >= pagos.length) return;
+            const original = pagos;
+            window._detallePagosClienteActual = [pagos[idx]];
+            generarPDFPagosClienteDetalle();
+            window._detallePagosClienteActual = original;
+        }
+
+        function generarPDFGrupoPagosCliente(idxGrupo) {
+            const grupos = Array.isArray(window._detallePagosClienteGrupos) ? window._detallePagosClienteGrupos : [];
+            if (idxGrupo < 0 || idxGrupo >= grupos.length) return;
+            const grupo = grupos[idxGrupo];
+            if (!grupo || !Array.isArray(grupo.pagos) || grupo.pagos.length === 0) return;
+            const original = Array.isArray(window._detallePagosClienteActual) ? window._detallePagosClienteActual : [];
+            window._detallePagosClienteActual = grupo.pagos;
+            generarPDFPagosClienteDetalle();
+            window._detallePagosClienteActual = original;
+        }
+
         function generarPDFVenta(idx) {
             if (idx < 0 || idx >= historial.length) return;
             const v = historial[idx];
@@ -6417,7 +6590,7 @@ _sheetEgresosNegocio.forEach(e => {
             doc.setFillColor(2, 6, 23);
             doc.rect(0, 0, W, 42, 'F');
 
-            // Texto a la izquierda y logo del almacÃ©n en el bloque superior derecho
+            // Texto a la izquierda y logo del almacen en el bloque superior derecho
             const logoPDF = obtenerLogoPDFNatanael();
             const logoX = 10;
             if (logoPDF) {
@@ -6458,8 +6631,8 @@ _sheetEgresosNegocio.forEach(e => {
             const deuda = Math.max(0, v.deuda || 0);
             const efectivo = v.efectivo || 0;
             let formaPago = 'EFECTIVO';
-            if (deuda > 0 && efectivo > 0) formaPago = 'MIXTO (EF + CRÃ‰DITO)';
-            else if (deuda > 0) formaPago = 'CRÃ‰DITO';
+            if (deuda > 0 && efectivo > 0) formaPago = 'MIXTO (EF + CREDITO)';
+            else if (deuda > 0) formaPago = 'CREDITO';
             else if (efectivo > 0) formaPago = 'EFECTIVO';
 
             doc.setTextColor(52, 211, 153);
@@ -6533,14 +6706,14 @@ _sheetEgresosNegocio.forEach(e => {
             if (deuda > 0) {
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(100, 116, 139);
-                doc.text('CrÃ©dito:', W - 76, ty);
+                doc.text('Credito:', W - 76, ty);
                 doc.setTextColor(248, 113, 113);
                 doc.setFont('helvetica', 'bold');
                 doc.text('$' + deuda.toLocaleString('es-AR'), W - 12, ty, { align: 'right' });
                 ty += 7;
             }
 
-            // LÃ­nea separadora
+            // Linea separadora
             doc.setDrawColor(51, 65, 85);
             doc.line(W - 76, ty, W - 12, ty);
             ty += 4;
@@ -8410,13 +8583,40 @@ function abrirGeneroInstantaneo(){
 function toggleSeccion(id) {
     const cont = document.getElementById(id);
     const icon = document.getElementById("icon-" + id);
+    if (!cont || !icon) return;
 
     if (cont.classList.contains("hidden")) {
         cont.classList.remove("hidden");
-        icon.textContent = "â–²";
+        icon.innerHTML = "&#9650;";
     } else {
         cont.classList.add("hidden");
-        icon.textContent = "â–¼";
+        icon.innerHTML = "&#9660;";
+    }
+}
+
+function resetSeccionesDetalleCliente() {
+    ['secComprasPend','secPrestamosPend','secComprasPagadas','secPagosCompras','secPagosPrestamos'].forEach(function(id) {
+        const cont = document.getElementById(id);
+        const icon = document.getElementById('icon-' + id);
+        if (cont) cont.classList.add('hidden');
+        if (icon) icon.innerHTML = '&#9660;';
+    });
+    window._detalleClienteGruposAbiertos = {};
+}
+
+function toggleGrupoPagosCliente(idGrupo) {
+    const cont = document.getElementById(idGrupo);
+    const icon = document.getElementById('icon-' + idGrupo);
+    if (!cont || !icon) return;
+    window._detalleClienteGruposAbiertos = window._detalleClienteGruposAbiertos || {};
+    if (cont.classList.contains('hidden')) {
+        cont.classList.remove('hidden');
+        icon.innerHTML = '&#9650;';
+        window._detalleClienteGruposAbiertos[idGrupo] = true;
+    } else {
+        cont.classList.add('hidden');
+        icon.innerHTML = '&#9660;';
+        delete window._detalleClienteGruposAbiertos[idGrupo];
     }
 }
 
@@ -8507,6 +8707,8 @@ function abrirDetalleCliente(id) {
 if(!id) return;
 
 const modal = document.getElementById('modalDetalleCliente');
+const estabaAbierto = !!(modal && modal.classList.contains('modal-active'));
+const esMismoCliente = clienteDetalleId === id;
 
 // siempre recalcular al abrir
 
@@ -8517,6 +8719,10 @@ const c = clientesDB.find(x => x.id === id);
 
 if (!c) {
 return;
+}
+
+if (!estabaAbierto || !esMismoCliente) {
+resetSeccionesDetalleCliente();
 }
 
             // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -8672,7 +8878,7 @@ return;
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin saldo pendiente</p>'
                     : ventasPend.map(({ v, idV, saldo }) => {
                         const ticketBtn = v.ticket
-                            ? `<button onclick="verTicketVentaDetalle('${v.id}')" style="padding:3px 7px;background:#1e3a5f;color:#93c5fd;border:1px solid #1d4ed8;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;" title="Ver ticket">ðŸ§¾</button>`
+                            ? `<button onclick="verTicketVentaDetalle('${v.id}')" style="padding:3px 7px;background:#1e3a5f;color:#93c5fd;border:1px solid #1d4ed8;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;" title="Ver ticket">&#128196;</button>`
                             : '';
                         const idSstr = v.idSheet ? String(v.idSheet).trim() : (idV.startsWith('sheet_V_') ? idV.replace('sheet_V_','') : idV);
                         const fechaVenta = v.fecha || v.fechaISO || '';
@@ -8686,6 +8892,13 @@ return;
                         const itemMapForV = _pvItemMap.get(idV) || _pvItemMap.get(idSstr) || new Map();
                         const itemsHtml = items.map(item => {
                             const nomProd  = (item.cantidad > 1 ? item.cantidad + 'x ' : '') + (item.nombre || 'â€”');
+                            const prodObj = (_sheetProductos || []).find(function(p) {
+                                return (p.nombre || '').trim().toUpperCase() === String(item.nombre || '').trim().toUpperCase();
+                            });
+                            const fotoProd = item.foto || item.imagen || (prodObj && (prodObj.foto || prodObj.imagen)) || '';
+                            const thumbProd = fotoProd
+                                ? `<img src="${driveUrl(fotoProd)}" style="width:28px;height:28px;object-fit:cover;border-radius:7px;background:#0f172a;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt=""><span style="display:none;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">&#128230;</span>`
+                                : `<span style="display:flex;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">&#128230;</span>`;
                             const subTotal = (parseFloat(item.precio)||0) * (parseFloat(item.cantidad)||1);
                             const nomUp    = nomProd.trim().toUpperCase();
                             const yaPagadoItem = itemMapForV.get(nomUp) || 0;
@@ -8693,14 +8906,17 @@ return;
                             const pagadoItem = yaPagadoItem > 0 && saldoItem <= 0;
                             return `<div class="py-1.5 border-t border-slate-800">
                                 <div class="flex justify-between items-center gap-2">
-                                    <span class="text-[10px] font-bold ${pagadoItem ? 'text-emerald-400 line-through' : 'text-slate-300'} flex-1 truncate">ðŸ“¦ ${Utils.escHtml(nomProd)}</span>
+                                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                                        ${thumbProd}
+                                        <span class="text-[10px] font-bold ${pagadoItem ? 'text-emerald-400 line-through' : 'text-slate-300'} flex-1 truncate">${Utils.escHtml(nomProd)}</span>
+                                    </div>
                                     <div class="flex items-center gap-1.5 shrink-0">
                                         <span class="text-[11px] font-mono ${pagadoItem ? 'text-emerald-400' : 'text-slate-400'}">$${Utils.fmt(saldoItem > 0 ? saldoItem : subTotal)}</span>
                                         ${saldoItem > 0
                                             ? `<button onclick="abrirPagoDesdeVenta('${v.id || ''}', '${c.id}', '${nomProd.replace(/'/g,"\\'")}',${subTotal})"
                                                 style="padding:3px 8px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:12px;font-weight:900;line-height:1;"
-                                                title="Registrar pago">ðŸ’³</button>`
-                                            : `<span style="padding:3px 8px;background:#052e16;color:#4ade80;border-radius:6px;font-size:11px;font-weight:900;">âœ…</span>`}
+                                                title="Registrar pago">&#128181;</button>`
+                                            : `<span style="padding:3px 8px;background:#052e16;color:#4ade80;border-radius:6px;font-size:11px;font-weight:900;">&#10003;</span>`}
                                     </div>
                                 </div>
                             </div>`;
@@ -8777,39 +8993,114 @@ return;
             if (contPagosComp) {
                 const idCl_p = String(c.idSheet || '').trim();
                 const SVG_TRASH = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+                const btnPdfPagosCliente = document.getElementById('btnPdfPagosCliente');
                 const pagosSheet = _pagoVentasSheet
                     .filter(p => String(p.idCliente || '').trim() === idCl_p)
                     .map(p => {
-                        const idVp  = String(p.idVenta || p.IDVENTAS || '').trim();
-                        const venta = _ventaById.get(idVp);
+                        const productoPrincipal = String(p.producto || '').trim();
                         return {
                             id:        p.id,
                             fecha:     fmtFecha(p.fecha) || p.fecha || '',
                             monto:     p.monto,
                             tipo:      'Pago Ventas',
                             fromSheet: true,
-                            productos: venta ? (venta.items||[]).map(i=>i.nombre).filter(Boolean).join(', ') : (p.producto||'')
+                            producto:  productoPrincipal,
+                            productos: productoPrincipal,
+                            fechaAgrupacion: String(p.fecha || p.FECHA || p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '').trim(),
+                            __localIdx: -1,
+                            fotoProducto: obtenerFotoProductoPorNombre(productoPrincipal)
                         };
                     });
-                const todosPagos = [...(c.pagos||[]), ...pagosSheet]
-                    .sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
+                const pagosLocales = (c.pagos || []).map((p, idxPagoLocal) => ({
+                    ...p,
+                    fechaAgrupacion: String(p.fecha || p.FECHA || p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '').trim(),
+                    __localIdx: idxPagoLocal
+                }));
+                const todosPagos = [...pagosLocales, ...pagosSheet]
+                    .map(p => {
+                        const productoPrincipal = String(p.producto || p.productos || '').trim();
+                        return {
+                            ...p,
+                            producto: productoPrincipal,
+                            productos: productoPrincipal,
+                            fechaAgrupacion: String(p.fecha || p.FECHA || p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '').trim(),
+                            fotoProducto: p.fotoProducto || p.foto || p.imagen || obtenerFotoProductoPorNombre(productoPrincipal)
+                        };
+                    })
+                    .sort((a,b) => {
+                        const fa = parseFechaNum(a.fechaAgrupacion || a.fecha || '') || 0;
+                        const fb = parseFechaNum(b.fechaAgrupacion || b.fecha || '') || 0;
+                        if (fb !== fa) return fb - fa;
+                        return (parseFechaNum(b.fecha || '') || 0) - (parseFechaNum(a.fecha || '') || 0);
+                    });
+                window._detallePagosClienteActual = todosPagos;
+                window._detallePagosClienteNombre = c.nombre || 'Cliente';
+                if (btnPdfPagosCliente) btnPdfPagosCliente.classList.toggle('hidden', todosPagos.length === 0);
                 contPagosComp.innerHTML = todosPagos.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin pagos registrados</p>'
-                    : todosPagos.map(p => {
-                        const localIdx = (c.pagos||[]).indexOf(p);
-                        const esLocal  = localIdx !== -1;
-                        return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
-                            <div class="flex-1 min-w-0">
-                                <span class="block text-[9px] font-black text-slate-400 uppercase">${fmtFecha(p.fecha)||p.fecha||''} Â· ${p.tipo||''}</span>
-                                ${p.productos ? `<span class="block text-[9px] font-bold text-emerald-300 truncate">ðŸ“¦ ${Utils.escHtml(p.productos)}</span>` : ''}
-                            </div>
-                            <span class="text-sm font-black text-emerald-400 font-mono shrink-0">+$${Utils.fmt(p.monto)}</span>
-                            ${esLocal ? `<button onclick="eliminarPago('${c.id}',${localIdx})" style="padding:5px;background:#7f1d1d;border-radius:6px;border:none;cursor:pointer;color:#fca5a5;display:flex;align-items:center;" title="Eliminar">${SVG_TRASH}</button>` : '<div style="width:22px"></div>'}
-                        </div>`;
-                    }).join('');
+                    : (() => {
+                        const grupos = new Map();
+                        todosPagos.forEach((p, idxPago) => {
+                            const claveFecha = String(p.fechaAgrupacion || p.fecha || 'Sin fecha').trim() || 'Sin fecha';
+                            if (!grupos.has(claveFecha)) grupos.set(claveFecha, []);
+                            grupos.get(claveFecha).push({ ...p, __idxPago: idxPago });
+                        });
+                        const gruposOrdenados = Array.from(grupos.entries())
+                            .sort((a, b) => {
+                                const fa = parseFechaNum(a[0] || '') || 0;
+                                const fb = parseFechaNum(b[0] || '') || 0;
+                                return fb - fa;
+                            });
+                        window._detallePagosClienteGrupos = gruposOrdenados.map(([fechaGrupo, pagosGrupo]) => ({
+                            fecha: fechaGrupo,
+                            pagos: pagosGrupo
+                        }));
+                        return gruposOrdenados.map(([fechaGrupo, pagosGrupo], idxGrupo) => {
+                            const idGrupo = `grupoPagoCliente_${String(fechaGrupo || idxGrupo).replace(/[^0-9A-Za-z]/g, '_')}`;
+                            const grupoAbierto = !!(window._detalleClienteGruposAbiertos && window._detalleClienteGruposAbiertos[idGrupo]);
+                            const filas = pagosGrupo.map(p => {
+                                const localIdx = Number(p.__localIdx);
+                                const esLocal  = localIdx >= 0;
+                                const thumbProd = p.fotoProducto
+                                    ? `<img src="${driveUrl(p.fotoProducto)}" style="width:28px;height:28px;object-fit:cover;border-radius:7px;background:#0f172a;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt=""><span style="display:none;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">&#128230;</span>`
+                                    : `<span style="display:flex;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;">&#128230;</span>`;
+                                return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
+                                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                                        ${thumbProd}
+                                        <div class="flex-1 min-w-0">
+                                            <span class="block text-[9px] font-black text-slate-400 uppercase">${fmtFecha(p.fecha)||p.fecha||''} - ${p.tipo||''}</span>
+                                            <span class="block text-[9px] font-bold text-emerald-300 truncate">&#128230; ${Utils.escHtml(p.producto || 'Sin producto')}</span>
+                                        </div>
+                                </div>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <span class="text-sm font-black text-emerald-400 font-mono shrink-0">+$${Utils.fmt(p.monto)}</span>
+                                    <button onclick="event.stopPropagation();generarPDFPagoClienteDetalle(${p.__idxPago})" style="padding:5px;background:#082f49;border-radius:6px;border:none;cursor:pointer;color:#7dd3fc;display:flex;align-items:center;" title="Descargar PDF">&#128196;</button>
+                                    ${esLocal ? `<button onclick="eliminarPago('${c.id}',${localIdx})" style="padding:5px;background:#7f1d1d;border-radius:6px;border:none;cursor:pointer;color:#fca5a5;display:flex;align-items:center;" title="Eliminar">${SVG_TRASH}</button>` : ''}
+                                </div>
+                            </div>`;
+                            }).join('');
+                            return `<div class="space-y-2 mb-3">
+                                <div class="px-3 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <span class="block text-[9px] font-black text-emerald-400 uppercase tracking-widest">Fecha</span>
+                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fmtFecha(fechaGrupo) || fechaGrupo)}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <button onclick="event.stopPropagation();generarPDFGrupoPagosCliente(${idxGrupo})" style="padding:5px;background:#082f49;border-radius:6px;border:none;cursor:pointer;color:#7dd3fc;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Descargar PDF de esta fecha">&#128196;</button>
+                                        <button onclick="event.stopPropagation();toggleGrupoPagosCliente('${idGrupo}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#34d399;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Desplegar u ocultar">
+                                            <span id="icon-${idGrupo}">${grupoAbierto ? '&#9650;' : '&#9660;'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="${idGrupo}" class="space-y-2 ${grupoAbierto ? '' : 'hidden'}">
+                                    ${filas}
+                                </div>
+                            </div>`;
+                        }).join('');
+                    })();
             }
 
-            // â”€â”€ Historial pagos de prÃ©stamos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Historial pagos de prestamos
             const contPagosPrest = document.getElementById('detallePagosPrestamos');
             if (contPagosPrest) {
                 const pagsPrest = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])].filter(p => {
@@ -8818,7 +9109,7 @@ return;
                     return (idCl && pIdCl && pIdCl === idCl) || pNomCl === nomCl;
                 });
                 contPagosPrest.innerHTML = pagsPrest.length === 0
-                    ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin pagos de prÃ©stamos</p>'
+                    ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin pagos de prestamos</p>'
                     : pagsPrest.map(p => {
                         const montoP = parseFloat(p.monto || p.MONTO || p['PAGO TOTAL'] || 0);
                         const fechaP = p.fecha || p.FECHA || '';
@@ -16640,11 +16931,19 @@ function verDetalleProveedor(tipo, id){
                         ventasMap[key].efectivo += _rowEf;
                         ventasMap[key].deuda    += _rowCr;
                         const rawCant = parseSheetNum(row['CANTIDAD']||row['Cantidad']||row['Cantidad Introducida']);
+                        const tipoVentaRow = String(row['TIPO DE VENTA']||row['Tipo de Venta']||'');
+                        const esPesoRow = esTipoVenta(tipoVentaRow);
+                        const cantidadRow = rawCant > 0 ? rawCant : 0;
+                        const pagoTotalRow = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']||0);
+                        const gramosStrRow = cantidadRow % 1 === 0 ? String(Math.round(cantidadRow)) : String(cantidadRow.toFixed(1));
                         ventasMap[key].items.push({
                             nombre:           String(row['PRODUCTO']||row['Producto']||''),
-                            cantidad:         rawCant > 0 ? rawCant : 0,
+                            cantidad:         cantidadRow,
                             precio:           parseSheetNum(row['PRECIO DE VENTA']||row['Precio de Venta']),
-                            tipoVenta:        String(row['TIPO DE VENTA']||row['Tipo de Venta']||''),
+                            precioFinal:      esPesoRow ? pagoTotalRow : 0,
+                            cantidadDisplay:  esPesoRow ? (gramosStrRow + 'gr') : cantidadRow,
+                            esPeso:           esPesoRow,
+                            tipoVenta:        tipoVentaRow,
                             proveedor:        String(row['PROVEEDOR']||row['Proveedor']||''),
                             categoria:        String(row['Categoria']||''),
                             depto:            String(row['Departamento']||''),
