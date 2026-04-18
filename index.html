@@ -814,12 +814,12 @@ z-index:999999999;
                         <option value="">Proveedor</option>
                     </select>
                     <select id="filtroInvCategoria" onchange="filtrarInventario()" class="text-xs px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 outline-none focus:border-emerald-500">
-                        <option value="">CategorÃ­a</option>
+                        <option value="">Categoria</option>
                     </select>
                     <select id="filtroInvDepto" onchange="filtrarInventario()" class="text-xs px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 outline-none focus:border-emerald-500">
                         <option value="">Departamento</option>
                     </select>
-                    <button onclick="limpiarFiltrosInv()" class="text-xs px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 hover:text-white outline-none">âœ• Limpiar</button>
+                    <button onclick="limpiarFiltrosInv()" class="text-xs px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 hover:text-white outline-none">&#10005; Limpiar</button>
                     <button onclick="abrirEditorProducto()" class="bg-emerald-500 text-black px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg hover:bg-emerald-400 btn-action">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="package-plus" aria-hidden="true" class="lucide lucide-package-plus w-4 h-4"><path d="M16 16h6"></path><path d="M19 13v6"></path><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"></path><path d="m7.5 4.27 9 5.15"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" x2="12" y1="22" y2="12"></line></svg> AGREGAR
                     </button>
@@ -887,7 +887,7 @@ z-index:999999999;
             <div class="flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic">Clientes</h1>
-                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">GestiÃ³n y deudas</p>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Gestion y deudas</p>
                 </div>
                 <button onclick="abrirEditorCliente()" class="bg-emerald-500 text-black px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg hover:bg-emerald-400 btn-action">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="user-plus" aria-hidden="true" class="lucide lucide-user-plus w-4 h-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg> AGREGAR CLIENTE
@@ -899,15 +899,15 @@ z-index:999999999;
             <!-- KPIs globales de deuda -->
             <div class="grid grid-cols-3 gap-3">
                 <div class="glass-card p-4 rounded-2xl text-center border border-red-500/30">
-                    <span class="text-[9px] font-black text-red-400 uppercase tracking-widest block mb-1">ðŸ’³ Total Debe</span>
+                    <span class="text-[9px] font-black text-red-400 uppercase tracking-widest block mb-1">&#128179; Total Debe</span>
                     <span id="kpiClientesTotalDebe" class="text-xl font-black text-red-400 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-4 rounded-2xl text-center border border-amber-500/30" style="background:linear-gradient(135deg,#1a1100 0%,#0f172a 100%);">
-                    <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest block mb-1">ðŸ’° Total Capital</span>
+                    <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest block mb-1">&#128176; Total Capital</span>
                     <span id="kpiClientesTotalCapital" class="text-xl font-black text-amber-300 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-4 rounded-2xl text-center border border-purple-500/30" style="background:linear-gradient(135deg,#0d0620 0%,#0f172a 100%);">
-                    <span class="text-[9px] font-black text-purple-400 uppercase tracking-widest block mb-1">ðŸ“ˆ Total Ganancia</span>
+                    <span class="text-[9px] font-black text-purple-400 uppercase tracking-widest block mb-1">&#128200; Total Ganancia</span>
                     <span id="kpiClientesTotalGanancia" class="text-xl font-black text-purple-300 font-mono">$0</span>
                 </div>
             </div>
@@ -4054,7 +4054,7 @@ CONFIRMAR PAGO
                     </div>
 
                     <div class="flex justify-between items-center border-t border-slate-800 pt-4">
-                        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">AÃ±adir Productos</label>
+                        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">Anadir Productos</label>
                         <div class="flex gap-2">
                            <button type="button" onclick="abrirScannerVenta()" class="bg-slate-700 hover:bg-slate-600 text-emerald-400 px-3 py-2 rounded-lg font-black text-[10px] flex items-center gap-1 btn-action" title="Escanear cÃ³digo">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
@@ -4126,7 +4126,7 @@ SCAN
     <div id="modalCatalogo" class="modal-overlay" style="z-index:199999999;">
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
             <div class="flex justify-between items-center">
-                <h3 class="text-sm font-black text-emerald-500 uppercase italic">CatÃ¡logo</h3>
+                <h3 class="text-sm font-black text-emerald-500 uppercase italic">Catalogo</h3>
                 <button onclick="cerrarCatalogo()" class="text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-6 h-6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
             </div>
             <input type="text" id="inputBusqueda" placeholder="Nombre del producto..." oninput="filtrarProductos(this.value)" class="search-input">
@@ -4200,11 +4200,11 @@ Agregar
             <form id="formProducto" class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <input type="hidden" id="editIndex">
 
-                <!-- SECCIÃ“N: IdentificaciÃ³n -->
-                <div class="md:col-span-3 text-[9px] font-black text-emerald-500 uppercase tracking-widest border-b border-slate-700 pb-1">IdentificaciÃ³n</div>
+                <!-- SECCION: Identificacion -->
+                <div class="md:col-span-3 text-[9px] font-black text-emerald-500 uppercase tracking-widest border-b border-slate-700 pb-1">Identificacion</div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Producto *</label><input type="text" id="pNombre" required=""></div>
                 <div class="flex flex-col gap-1 md:col-span-2">
-                    <label class="text-[10px] font-black text-emerald-500 uppercase">CÃ³digo de Barras</label>
+                    <label class="text-[10px] font-black text-emerald-500 uppercase">Codigo de Barras</label>
                     <div class="flex gap-2">
                         <input type="text" id="pCodigo" placeholder="Ej: 7790001234, 7790005678 (separar con coma)" class="flex-1 font-mono" title="PodÃ©s ingresar mÃºltiples cÃ³digos separados por coma">
                         <button type="button" onclick="abrirScanner('producto')" class="px-3 py-2 bg-emerald-500 text-black rounded-xl font-black text-xs flex items-center gap-1 hover:bg-emerald-400 btn-action shrink-0">
@@ -4213,12 +4213,12 @@ Agregar
                         </button>
                     </div>
                 </div>
-                <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">CategorÃ­a</label><input type="text" id="pCategoria"></div>
+                <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Categoria</label><input type="text" id="pCategoria"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Departamento</label><input type="text" id="pDepto"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Proveedor</label><input type="text" id="pProveedor"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Tipo de Venta</label>
                     <select id="pTipoVenta">
-                        <option value="">â€” Seleccionar â€”</option>
+                        <option value="">- Seleccionar -</option>
                         <option value="Unidad">Unidad</option>
                         <option value="Peso">Peso</option>
                         <option value="Caja">Caja</option>
@@ -4242,12 +4242,12 @@ Agregar
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Cantidad</label><input type="number" id="pCantidad" step="0.01"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Stock Actual *</label><input type="number" id="pStock" required=""></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Stock Seguro</label><input type="number" id="pStockSeguro"></div>
-                <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Cant. MÃ­nima Cat.</label><input type="number" id="pMinimo"></div>
+                <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Cant. Minima Cat.</label><input type="number" id="pMinimo"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Stock Comienzo</label><input type="number" id="pStockInicio"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Fecha Stock Inicio</label><input type="datetime-local" id="pFechaInicio"></div>
 
-                <!-- SECCIÃ“N: AuditorÃ­a -->
-                <div class="md:col-span-3 text-[9px] font-black text-emerald-500 uppercase tracking-widest border-b border-slate-700 pb-1 mt-2">AuditorÃ­a</div>
+                <!-- SECCION: Auditoria -->
+                <div class="md:col-span-3 text-[9px] font-black text-emerald-500 uppercase tracking-widest border-b border-slate-700 pb-1 mt-2">Auditoria</div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Stock Verificado</label><input type="number" id="pStockVerificado"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Fecha Stock Verif.</label><input type="datetime-local" id="pFechaVerif"></div>
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Stock Correcto</label><input type="number" id="pStockCorrecto"></div>
@@ -4258,7 +4258,7 @@ Agregar
                 <div class="flex flex-col gap-1"><label class="text-[10px] font-black text-emerald-500 uppercase">Vencimiento</label><input type="datetime-local" id="pVencimiento"></div>
                 <input type="hidden" id="pFechaVencimiento">
 
-                <!-- SECCIÃ“N: Foto -->
+                <!-- SECCION: Foto -->
                 <div class="md:col-span-3 text-[9px] font-black text-emerald-500 uppercase tracking-widest border-b border-slate-700 pb-1 mt-2">Foto del Producto</div>
                 <div class="md:col-span-3 flex items-center gap-4">
                     <!-- Preview -->
@@ -4271,7 +4271,7 @@ Agregar
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="upload" aria-hidden="true" class="lucide lucide-upload w-4 h-4"><path d="M12 3v12"></path><path d="m17 8-5-5-5 5"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path></svg> Subir foto
                         </label>
                         <input type="file" id="pFotoInput" accept="image/*" class="hidden" onchange="previsualizarFoto(this)">
-                        <button type="button" onclick="quitarFoto()" class="text-[9px] text-slate-600 hover:text-red-400 font-black uppercase transition-colors">âœ• Quitar foto</button>
+                        <button type="button" onclick="quitarFoto()" class="text-[9px] text-slate-600 hover:text-red-400 font-black uppercase transition-colors">&#10005; Quitar foto</button>
                     </div>
                 </div>
 
@@ -4595,12 +4595,22 @@ _sheetProductos.forEach(p => {
             carrito = [];
             document.getElementById('inputEfectivo').value = '';
             document.getElementById('inputCliente').value = 'Publico General';
+            document.getElementById('btnClearCliente')?.classList.remove('hidden');
+            document.getElementById('dropdownClientes')?.classList.add('hidden');
             document.getElementById('desgloseRealtime').innerHTML = '';
             document.getElementById('cajaCambio').classList.add('hidden');
+            _clienteVentaModalMostrado = false;
+            cerrarModalClienteVentaInvalido();
+            validarClienteVentaInput(false);
             toggleModal('modalVenta', true);
             renderCarrito();
         }
-        function cerrarNuevaVenta() { toggleModal('modalVenta', false); }
+        function cerrarNuevaVenta() {
+            _clienteVentaModalMostrado = false;
+            cerrarModalClienteVentaInvalido();
+            document.getElementById('dropdownClientes')?.classList.add('hidden');
+            toggleModal('modalVenta', false);
+        }
 
         function abrirSelectorProducto() {
             if (!validarClienteAntesDeAgregarProductos()) return;
@@ -4656,7 +4666,7 @@ _sheetProductos.forEach(p => {
                     ${thumb}
                     <div class="flex-1 min-w-0">
                         <span class="block font-black text-white uppercase text-xs truncate">${Utils.escHtml(p.nombre)}</span>
-                        <span class="block text-[9px] text-slate-500 font-bold">Stock: ${p.stockCalculado ?? p.stock ?? 0} Â· ${p.tipoVenta || 'Unidad'}</span>
+                        <span class="block text-[9px] text-slate-500 font-bold">Stock: ${p.stockCalculado ?? p.stock ?? 0} - ${p.tipoVenta || 'Unidad'}</span>
                     </div>
                     <span class="font-mono font-black text-emerald-500 shrink-0">$${Utils.fmt(p.precio)}</span>
                 </button>`;
@@ -5236,10 +5246,10 @@ _sheetProductos.forEach(p => {
                         </span>
 
                         <span class="font-mono font-black text-white shrink-0">$${Utils.fmt(precioItem(item))}</span>
-                        <button onclick="abrirModalPrecioVenta(${item.itemId})" style="background:none;border:none;cursor:pointer;color:#fbbf24;font-size:14px;padding:2px 4px;border-radius:4px;" title="Editar precio de venta">âœï¸</button>
-                        <button onclick="cambiarCantidadCarrito(${item.itemId},-1)" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:14px;font-weight:900;width:22px;height:22px;border-radius:4px;cursor:pointer;line-height:1;padding:0;">âˆ’</button>
+                        <button onclick="abrirModalPrecioVenta(${item.itemId})" style="background:none;border:none;cursor:pointer;color:#fbbf24;font-size:14px;padding:2px 4px;border-radius:4px;" title="Editar precio de venta">&#9998;</button>
+                        <button onclick="cambiarCantidadCarrito(${item.itemId},-1)" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:14px;font-weight:900;width:22px;height:22px;border-radius:4px;cursor:pointer;line-height:1;padding:0;">&#8722;</button>
                         <button onclick="cambiarCantidadCarrito(${item.itemId},+1)" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:14px;font-weight:900;width:22px;height:22px;border-radius:4px;cursor:pointer;line-height:1;padding:0;">+</button>
-                        <button onclick="eliminarDelCarrito(${item.itemId})" class="text-slate-600 hover:text-red-400 text-xs font-black shrink-0">âœ•</button>
+                        <button onclick="eliminarDelCarrito(${item.itemId})" class="text-slate-600 hover:text-red-400 text-xs font-black shrink-0">&#10005;</button>
                     </div>`;
                 }).join('');
             }
@@ -5756,7 +5766,7 @@ _sheetEgresosNegocio.forEach(e => {
                 rows += '<div style="display:flex;gap:4px;">';
                 rows += '<button onclick="accionVenta(' + realIdx + ',&quot;editar&quot;)" style="padding:6px 10px;background:#334155;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;">&#9999;</button>';
                 rows += '<button onclick="generarPDFVenta(' + realIdx + ')" style="padding:6px 10px;background:#1e3a5f;color:#60a5fa;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;" title="Descargar PDF">&#128196;</button>';
-                if (credito > 0) rows += '<button onclick="abrirPagoVenta(\'' + (v.id||'') + '\')" style="padding:6px 10px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:13px;font-weight:900;" title="Registrar pago">ðŸª</button>';
+                if (credito > 0) rows += '<button onclick="abrirPagoVenta(\'' + (v.id||'') + '\')" style="padding:6px 10px;background:#064e3b;color:#34d399;border:1px solid #065f46;border-radius:6px;cursor:pointer;font-size:13px;font-weight:900;" title="Registrar pago">&#128181;</button>';
                 rows += '<button onclick="accionVenta(' + realIdx + ',&quot;eliminar&quot;)" style="padding:6px 10px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;">&#128465;</button>';
                 rows += '</div>';
                 rows += '</div>';
@@ -6337,7 +6347,7 @@ _sheetEgresosNegocio.forEach(e => {
                     desdeEl.textContent = 'tocÃ¡ para configurar';
                 }
             }
-            if (infoEl) infoEl.textContent = 'inicial $' + Utils.fmt(cajaControl.montoInicial || 0) + ' + entradas âˆ’ salidas';
+            if (infoEl) infoEl.textContent = 'inicial $' + Utils.fmt(cajaControl.montoInicial || 0) + ' + entradas - salidas';
         }
 
         // AcciÃ³n directa por Ã­ndice â€” sin modales, sin data-attributes
@@ -7128,7 +7138,7 @@ function poblarSelectsInv() {
     const fill = (id, arr) => {
         const el = document.getElementById(id); if (!el) return;
         const prev = el.value;
-        el.innerHTML = `<option value="">${id==='filtroInvProveedor'?'Proveedor':id==='filtroInvCategoria'?'CategorÃ­a':'Departamento'}</option>` +
+        el.innerHTML = `<option value="">${id==='filtroInvProveedor'?'Proveedor':id==='filtroInvCategoria'?'Categoria':'Departamento'}</option>` +
             arr.map(v => `<option value="${v.toLowerCase()}" ${v.toLowerCase()===prev?'selected':''}>${v}</option>`).join('');
     };
     fill('filtroInvProveedor', provs);
@@ -7513,15 +7523,16 @@ container.innerHTML = productosVisibles.map((p) => {
                                 class="flex-1 py-1.5 bg-slate-800 hover:bg-emerald-500 hover:text-black text-slate-400 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-1">
                                 <i data-lucide="edit" class="w-3 h-3"></i> Editar
                             </button>
-                            <button onclick="abrirVerificarStock(${index})"
-                                class="flex-1 py-1.5 bg-slate-800 hover:bg-blue-500 hover:text-white text-slate-400 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-1"
-                                title="Verificar stock fÃ­sico">
-                                âœ… Stock
-                            </button>
-                            <button onclick="eliminarProducto(${index})"
-                                class="py-1.5 px-2.5 bg-slate-800 hover:bg-red-500 hover:text-white text-slate-500 rounded-lg transition-all">
-                                ðŸ—‘ï¸
-                            </button>
+                        <button onclick="abrirVerificarStock(${index})"
+                            class="flex-1 py-1.5 bg-slate-800 hover:bg-blue-500 hover:text-white text-slate-400 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-1"
+                            title="Verificar stock fisico">
+                            <i data-lucide="badge-check" class="w-3 h-3"></i> Stock
+                        </button>
+                        <button onclick="eliminarProducto(${index})"
+                            class="py-1.5 px-2.5 bg-slate-800 hover:bg-red-500 hover:text-white text-slate-500 rounded-lg transition-all"
+                            title="Eliminar producto">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
                         </div>
                     </div>
                 </div>`;
@@ -11643,8 +11654,8 @@ function mostrarAlertasVencimiento(porVencer, vencidos){
     widget.innerHTML = `
         <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:16px;padding:14px 16px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <span style="font-size:14px;">âš ï¸</span>
-                <span style="font-size:10px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;">Vencidos / Por Vencer â€” Click para editar vencimiento</span>
+                <span style="font-size:14px;">&#9888;&#65039;</span>
+                <span style="font-size:10px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;">Vencidos / Por Vencer - Click para editar vencimiento</span>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
                 ${todos.map(p => {
@@ -11654,7 +11665,7 @@ function mostrarAlertasVencimiento(porVencer, vencidos){
                     const bg     = vencido ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
                     const color  = vencido ? '#f87171' : '#fbbf24';
                     const border = vencido ? '#f87171' : '#f59e0b';
-                    const foto   = p.foto ? `<img src="${driveUrl(p.foto)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">ðŸ“¦</div>`;
+                    const foto   = p.foto ? `<img src="${driveUrl(p.foto)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">&#128230;</div>`;
                     const idProd = Utils.escHtml(p.id||'');
                     return `<div onclick="abrirEditVencWidget('${idProd}')" style="background:${bg};border:1px solid ${border}44;border-radius:10px;padding:7px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
                         ${foto}
