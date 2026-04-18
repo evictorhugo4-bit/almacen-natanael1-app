@@ -3575,7 +3575,7 @@ CONFIRMAR PAGO
                 <button onclick="cerrarNuevaCompra()" class="text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></button>
             </div>
 
-            <!-- MOBILE: columna Ãºnica scrolleable. DESKTOP: dos columnas -->
+                    <!-- MOBILE: columna unica scrolleable. DESKTOP: dos columnas -->
             <div class="flex-1 overflow-y-auto custom-scrollbar md:overflow-hidden md:flex md:flex-row" style="min-height:0;">
 
                 <!-- SecciÃ³n proveedor + carrito -->
@@ -3595,9 +3595,9 @@ CONFIRMAR PAGO
                         <div id="dropdownProveedores" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
                     </div>
                     <div class="flex justify-between items-center border-t border-slate-800 pt-3">
-                        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">AÃ±adir Productos</label>
+                        <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Anadir Productos</label>
                         <div class="flex gap-2">
-                            <button onclick="abrirScanner('compra')" class="bg-slate-700 hover:bg-slate-600 text-emerald-400 px-3 py-2 rounded-lg font-black text-[10px] flex items-center gap-1 btn-action" title="Escanear cÃ³digo">
+                            <button onclick="abrirScanner('compra')" class="bg-slate-700 hover:bg-slate-600 text-emerald-400 px-3 py-2 rounded-lg font-black text-[10px] flex items-center gap-1 btn-action" title="Escanear codigo">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
                                 SCAN
                             </button>
@@ -3611,10 +3611,10 @@ CONFIRMAR PAGO
                     </div>
                 </div>
 
-                <!-- SecciÃ³n totales + pago (en mobile fluye despuÃ©s del carrito) -->
+                    <!-- Seccion totales + pago (en mobile fluye despues del carrito) -->
                 <div class="p-4 space-y-3 border-t border-slate-700 md:border-t-0 md:border-l md:border-slate-700 md:w-[260px] md:overflow-y-auto md:custom-scrollbar bg-black/20 shrink-0">
                     <div class="bg-slate-900/80 p-3 rounded-xl border border-amber-500/30">
-                        <label class="text-[9px] font-black text-amber-400 uppercase">ðŸšš Flete / EnvÃ­o</label>
+                        <label class="text-[9px] font-black text-amber-400 uppercase">Flete / Envio</label>
                         <input type="number" id="inputCompraFlete" oninput="calcularCompra()" placeholder="0" min="0"
                             class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-amber-400 mt-1 focus:border-amber-500 outline-none">
                         <p id="fletePorItem" class="text-[9px] text-amber-500/70 font-bold mt-1 text-right hidden">distribuido en items</p>
@@ -3628,12 +3628,12 @@ CONFIRMAR PAGO
                         <input type="number" id="inputCompraEfectivo" oninput="calcularCompra()" class="w-full bg-slate-950 border border-slate-800 text-2xl p-2 rounded-lg text-right font-black text-emerald-400 mt-1 focus:border-emerald-500 outline-none">
                     </div>
                     <div class="bg-slate-900/80 p-3 rounded-xl border border-red-900/30">
-                        <label class="text-[9px] font-black text-red-400 uppercase">A CrÃ©dito</label>
+                        <label class="text-[9px] font-black text-red-400 uppercase">A Credito</label>
                         <div id="compraCredito" class="text-2xl font-black text-red-400 font-mono text-right mt-1">$0</div>
                         <div id="contenedorFormaCredito" class="mt-4 hidden">
                             <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Forma de pago del saldo</label>
                             <select id="formaPagoCredito" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
-                                <option value="CREDITO">Credito</option>
+                            <option value="CREDITO">Credito</option>
                                 <option value="TARJETA">Tarjeta</option>
                             </select>
                         </div>
@@ -3643,7 +3643,7 @@ CONFIRMAR PAGO
                         <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Ticket / Factura</label>
                         <div id="ticketGridNuevaCompra" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
                         <label style="display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
-                            ðŸ“Ž Agregar imÃ¡genes
+                            Agregar imagenes
                             <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
                         </label>
                     </div>
@@ -3659,7 +3659,7 @@ CONFIRMAR PAGO
 
     <!-- MODAL EDITAR COMPRA -->
     <div id="modalEditarCompra" class="modal-overlay" style="z-index:350;">
-        <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4 border border-blue-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
+        <div class="glass-card rounded-[2rem] p-6 w-full max-w-sm space-y-5 border-2 border-blue-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-blue-400 uppercase">Editar Compra</h3>
                 <button onclick="toggleModal('modalEditarCompra',false)" class="text-slate-500 hover:text-white text-lg font-black">&times;</button>
@@ -3667,8 +3667,20 @@ CONFIRMAR PAGO
             <input type="hidden" id="editCompraId">
             <div class="space-y-3">
                 <div>
+                    <label class="text-[10px] font-black text-blue-400 uppercase tracking-widest block mb-1">Total de la compra</label>
+                    <div id="editCompraTotal" class="text-2xl font-black text-white font-mono bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">$0</div>
+                </div>
+                <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase">Proveedor</label>
-                    <input id="editCompraProveedor" type="text" class="w-full mt-1 px-3 py-2 rounded-xl text-sm font-bold" style="background:#0f172a;border:1px solid #334155;color:white;">
+                    <div class="relative mt-1">
+                        <input id="editCompraProveedor" type="text" autocomplete="off"
+                            oninput="filtrarProveedoresEditCompra(this.value)"
+                            onfocus="filtrarProveedoresEditCompra(this.value)"
+                            onblur="setTimeout(function(){ document.getElementById('dropdownEditCompraProveedor')?.classList.add('hidden'); }, 150)"
+                            class="w-full px-3 py-2 rounded-xl text-sm font-bold"
+                            style="background:#0f172a;border:1px solid #334155;color:white;">
+                        <div id="dropdownEditCompraProveedor" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-xl mt-1 shadow-xl max-h-40 overflow-y-auto custom-scrollbar"></div>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -3682,7 +3694,16 @@ CONFIRMAR PAGO
                 </div>
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase">Productos (uno por linea: NOMBRE:CANTIDAD)</label>
-                    <textarea id="editCompraItems" rows="5" class="w-full mt-1 px-3 py-2 rounded-xl text-xs font-mono" style="background:#0f172a;border:1px solid #334155;color:white;resize:vertical;"></textarea>
+                    <div id="editCompraItemsVisual" class="space-y-2 max-h-[26vh] overflow-y-auto custom-scrollbar pr-1 mt-2"></div>
+                    <div class="relative mt-2">
+                        <input type="text" id="editCompraBuscarProd" autocomplete="off" placeholder="+ Agregar producto..."
+                            class="w-full bg-slate-900 border-2 border-dashed border-slate-700 p-3 rounded-xl text-white font-bold focus:border-blue-400 outline-none text-xs uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-500"
+                            oninput="filtrarProdsEditCompra(this.value)"
+                            onfocus="filtrarProdsEditCompra(this.value)"
+                            onblur="setTimeout(function(){ document.getElementById('dropdownProdsEditCompra').classList.add('hidden'); }, 200)">
+                        <div id="dropdownProdsEditCompra" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-xl mt-1 shadow-xl max-h-48 overflow-y-auto custom-scrollbar" style="top:100%;"></div>
+                    </div>
+                    <textarea id="editCompraItems" rows="5" class="hidden"></textarea>
                     <p class="text-[8px] text-slate-500 mt-1">Ej: ARROZ X1KG:5</p>
                 </div>
                 <div>
@@ -12091,16 +12112,16 @@ const editando = String(itemEnEdicion) === String(item.itemId);
         ${Utils.escHtml(item.nombre)}
     </span>
     <button onclick="abrirModalPrecios('${item.itemId}')"
-            style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);cursor:pointer;color:#fbbf24;width:34px;height:34px;font-size:16px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;">âœï¸</button>
+            style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);cursor:pointer;color:#fbbf24;min-width:54px;height:34px;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;text-transform:uppercase;">Editar</button>
     <button onclick="eliminarItemCompra('${item.itemId}')"
-            style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);cursor:pointer;color:#f87171;width:34px;height:34px;font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;">âœ•</button>
+            style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);cursor:pointer;color:#f87171;min-width:54px;height:34px;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;text-transform:uppercase;">Quitar</button>
 </div>
 
 <!-- fila 2: cantidad + subtotal -->
 <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
     <div style="display:flex;align-items:center;gap:4px;background:#0f172a;border-radius:8px;padding:3px 6px;">
         <button onclick="cambiarCantidadCompra('${item.itemId}', -1)"
-                style="background:#1e293b;color:white;border:none;padding:2px 10px;border-radius:6px;font-size:15px;font-weight:bold;">âˆ’</button>
+                style="background:#1e293b;color:white;border:none;padding:2px 10px;border-radius:6px;font-size:15px;font-weight:bold;">-</button>
         <span style="color:#10b981;font-weight:900;min-width:28px;text-align:center;font-size:15px;">${item.cantidad}</span>
         <button onclick="cambiarCantidadCompra('${item.itemId}', 1)"
                 style="background:#1e293b;color:white;border:none;padding:2px 10px;border-radius:6px;font-size:15px;font-weight:bold;">+</button>
@@ -12111,7 +12132,7 @@ const editando = String(itemEnEdicion) === String(item.itemId);
         ${item._fletePorItem > 0 ? `
         <span style="display:block;font-size:9px;color:#94a3b8;font-family:monospace;margin-top:1px;">sin flete $${Utils.fmt(subtotal)}</span>
         <span style="display:block;font-size:9px;color:#f59e0b;font-family:monospace;">
-            ðŸšš ${item._pctFlete}% = +$${Utils.fmt(item._fletePorItem)}
+            Flete ${item._pctFlete}% = +$${Utils.fmt(item._fletePorItem)}
         </span>
         <span style="display:block;font-size:9px;color:#fcd34d;font-family:monospace;">
             c/u $${Utils.fmt(item._costoConFlete)}
@@ -12120,8 +12141,8 @@ const editando = String(itemEnEdicion) === String(item.itemId);
 </div>
 
 ${editando ? `
-<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;border-top:1px solid #334155;padding-top:10px;">
-    <div style="font-size:11px;color:#10b981;font-weight:900;text-transform:uppercase;">âœï¸ Editar precios</div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;border-top:1px solid #334155;padding-top:10px;">
+    <div style="font-size:11px;color:#10b981;font-weight:900;text-transform:uppercase;">Editar precios</div>
     <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;">
         <div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Costo unitario</div>
         <input type="number" value="${item.costo}"
@@ -12749,11 +12770,11 @@ function eliminarItemCompra(itemId){
             grid.innerHTML = _ticketsNuevaCompra.map((t, i) => {
                 const isPdf = t.data.startsWith('data:application/pdf');
                 const thumb = isPdf
-                    ? `<div style="width:100%;height:54px;display:flex;align-items:center;justify-content:center;background:#1e293b;font-size:20px;border-radius:6px;">ðŸ“„</div>`
+                    ? `<div style="width:100%;height:54px;display:flex;align-items:center;justify-content:center;background:#1e293b;font-size:11px;font-weight:900;border-radius:6px;color:#cbd5e1;">PDF</div>`
                     : `<img src="${t.data}" style="width:100%;height:54px;object-fit:cover;border-radius:6px;">`;
                 return `<div style="position:relative;border:1px solid #334155;border-radius:8px;overflow:hidden;cursor:pointer;" onclick="verTicketNuevaCompraIdx(${i})">
                     ${thumb}
-                    <button onclick="event.stopPropagation();quitarTicketNuevaCompra(${i})" style="position:absolute;top:2px;right:2px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:4px;width:16px;height:16px;font-size:9px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;">âœ•</button>
+                    <button onclick="event.stopPropagation();quitarTicketNuevaCompra(${i})" style="position:absolute;top:2px;right:2px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:4px;width:16px;height:16px;font-size:9px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
                     <p style="font-size:7px;color:#475569;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.nombre}</p>
                 </div>`;
             }).join('');
@@ -13273,6 +13294,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         }
 
         let _editandoCompraIdx = -1;
+        let _editCompraItems = [];
+        let _editCompraProdOptions = [];
 
         function abrirEditarCompra(idx) {
             const c = _sheetCompras[idx];
@@ -13282,7 +13305,21 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             document.getElementById('editCompraProveedor').value = c.proveedor || '';
             document.getElementById('editCompraEfectivo').value  = c.efectivo || 0;
             document.getElementById('editCompraCredito').value   = c.credito  || 0;
-            document.getElementById('editCompraItems').value     = (c.items||[]).map(i => `${i.nombre}:${i.cantidad}`).join('\n');
+            _editCompraItems = (c.items || []).map(i => {
+                const prodRef = (_sheetProductos || []).find(function(p) {
+                    return String(p.id || '') === String(i.id || '') ||
+                           String(p.nombre || '').trim().toUpperCase() === String(i.nombre || '').trim().toUpperCase();
+                }) || {};
+                return {
+                    id: i.id || prodRef.id || '',
+                    nombre: i.nombre || '',
+                    cantidad: parseFloat(i.cantidad) || 1,
+                    costo: parseFloat(i.costo ?? prodRef.costo ?? prodRef.precioCosto ?? 0) || 0,
+                    precio: parseFloat(i.precio ?? prodRef.precio ?? prodRef.precioVenta ?? 0) || 0,
+                    foto: i.foto || i.imagen || prodRef.foto || prodRef.imagen || '',
+                    imagen: i.imagen || i.foto || prodRef.imagen || prodRef.foto || ''
+                };
+            });
             // Cargar tickets existentes (soporta array tickets[] y campo legacy ticket)
             window._editCompraTickets = [];
             if (c.tickets && c.tickets.length > 0) {
@@ -13290,8 +13327,11 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             } else if (c.ticket) {
                 window._editCompraTickets.push({ data: c.ticket, nombre: 'Ticket 1' });
             }
+            const buscador = document.getElementById('editCompraBuscarProd');
+            if (buscador) buscador.value = '';
             cerrarPreviewCapturaEditCompra();
             setEstadoTicketEditCompra('Cargando tickets...', '#fbbf24');
+            renderItemsEditCompra();
             renderEditCompraTicketsGrid();
             toggleModal('modalEditarCompra', true);
         }
@@ -13331,12 +13371,202 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             img.src = ticket.data;
         }
 
+        function _syncItemsEditCompraTextarea() {
+            const area = document.getElementById('editCompraItems');
+            if (!area) return;
+            area.value = (_editCompraItems || []).map(i => `${i.nombre}:${i.cantidad}`).join('\n');
+        }
+
+        function _recalcularItemsEditCompra() {
+            const items = (_editCompraItems || []).filter(i => i && i.nombre).map(i => ({
+                ...i,
+                cantidad: Math.max(1, parseFloat(i.cantidad) || 1),
+                costo: parseFloat(i.costo || 0) || 0
+            }));
+            const total = items.reduce((s, i) => s + ((parseFloat(i.costo) || 0) * (parseFloat(i.cantidad) || 1)), 0);
+            return { items, total };
+        }
+
+        function filtrarProveedoresEditCompra(query) {
+            const dd = document.getElementById('dropdownEditCompraProveedor');
+            if (!dd) return;
+            const fromCompras = [...new Set((_sheetCompras || []).map(c => c.proveedor).filter(Boolean))];
+            const fromProd = [...new Set((_sheetProductos || []).map(p => p.proveedor).filter(Boolean))];
+            const todos = [...new Set([...
+                (_proveedoresSheet || []),
+                ...(_sheetProveedoresNegocio || []).map(p => p.nombre).filter(Boolean),
+                ...(_sheetProveedoresGastos || []).map(p => p.nombre).filter(Boolean),
+                ...fromCompras,
+                ...fromProd
+            ])].sort();
+            const q = String(query || '').trim().toUpperCase();
+            const filtrados = q ? todos.filter(function(p) { return String(p || '').toUpperCase().includes(q); }) : todos;
+            if (!filtrados.length) {
+                dd.classList.add('hidden');
+                return;
+            }
+            dd.innerHTML = filtrados.map(function(p) {
+                var nombreSafe = String(p || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return `<div class="px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500/20 cursor-pointer uppercase"
+                    onmousedown="seleccionarProveedorEditCompra('${nombreSafe}')">${Utils.escHtml(p)}</div>`;
+            }).join('');
+            dd.classList.remove('hidden');
+        }
+
+        function seleccionarProveedorEditCompra(nombre) {
+            const input = document.getElementById('editCompraProveedor');
+            const dd = document.getElementById('dropdownEditCompraProveedor');
+            if (input) input.value = nombre || '';
+            if (dd) dd.classList.add('hidden');
+        }
+
+        function renderItemsEditCompra() {
+            const cont = document.getElementById('editCompraItemsVisual');
+            if (!cont) return;
+            const totalEl = document.getElementById('editCompraTotal');
+            const calc = _recalcularItemsEditCompra();
+            _editCompraItems = calc.items;
+            _syncItemsEditCompraTextarea();
+            if (totalEl) {
+                const efect = parseFloat(document.getElementById('editCompraEfectivo')?.value || 0) || 0;
+                const credEl = document.getElementById('editCompraCredito');
+                const credActual = parseFloat(credEl?.value || 0) || 0;
+                const sumaActual = efect + credActual;
+                const nuevoCredito = Math.max(0, calc.total - efect);
+                if (credEl && Math.abs(sumaActual - calc.total) > 0.009) {
+                    credEl.value = nuevoCredito ? nuevoCredito.toFixed(2) : '0';
+                }
+                totalEl.textContent = '$' + Utils.fmt(calc.total);
+            }
+            if (calc.items.length === 0) {
+                cont.innerHTML = '<p style="font-size:11px;color:#64748b;text-align:center;padding:8px 0;">Sin productos</p>';
+                return;
+            }
+            cont.innerHTML = calc.items.map(function(item, idx) {
+                var foto = item.foto || item.imagen || '';
+                var thumb = foto
+                    ? '<img src="' + foto + '" style="width:32px;height:32px;object-fit:cover;border-radius:8px;flex-shrink:0;">'
+                    : '<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#128230;</div>';
+                return '<div style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:8px 10px;">' +
+                    thumb +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<p style="font-size:11px;font-weight:900;color:#f1f5f9;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;">' + Utils.escHtml(item.nombre || '') + '</p>' +
+                        '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
+                            '<button onmousedown="ecItemEditCompra(' + idx + ',-1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">-</button>' +
+                            '<span style="font-size:12px;font-weight:900;color:#10b981;min-width:20px;text-align:center;">' + (item.cantidad || 1) + '</span>' +
+                            '<button onmousedown="ecItemEditCompra(' + idx + ',1)" style="width:20px;height:20px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>' +
+                            '<span style="font-size:11px;color:#64748b;font-weight:700;">$' + Utils.fmt(item.costo || 0) + ' c/u</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<button onmousedown="quitarItemEditCompra(' + idx + ')" style="width:28px;height:28px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#64748b;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'#450a0a\';this.style.color=\'#f87171\';" onmouseout="this.style.background=\'#1e293b\';this.style.color=\'#64748b\';">&times;</button>' +
+                '</div>';
+            }).join('');
+        }
+
+        function ecItemEditCompra(idx, delta) {
+            if (!_editCompraItems[idx]) return;
+            var nuevaCant = (parseFloat(_editCompraItems[idx].cantidad) || 1) + delta;
+            if (nuevaCant <= 0) { quitarItemEditCompra(idx); return; }
+            _editCompraItems[idx].cantidad = nuevaCant;
+            renderItemsEditCompra();
+        }
+
+        function quitarItemEditCompra(idx) {
+            _editCompraItems.splice(idx, 1);
+            renderItemsEditCompra();
+        }
+
+        function filtrarProdsEditCompra(query) {
+            var drop = document.getElementById('dropdownProdsEditCompra');
+            if (!drop) return;
+            var q = (query || '').trim().toUpperCase();
+            if (!q) {
+                _editCompraProdOptions = [];
+                drop.classList.add('hidden');
+                return;
+            }
+            var fuente = (typeof _sheetProductos !== 'undefined' ? _sheetProductos : []);
+            var filtrados = fuente.filter(function(p){ return (p.nombre || '').toUpperCase().includes(q); }).slice(0, 20);
+            _editCompraProdOptions = filtrados.slice();
+            if (filtrados.length === 0) {
+                drop.classList.add('hidden');
+                return;
+            }
+            drop.innerHTML = filtrados.map(function(p, idx) {
+                var foto = p.foto || p.imagen || '';
+                var thumb = foto
+                    ? '<img src="' + foto + '" style="width:28px;height:28px;object-fit:cover;border-radius:6px;flex-shrink:0;">'
+                    : '<div style="width:28px;height:28px;border-radius:6px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">&#128230;</div>';
+                return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #1e293b;" ' +
+                    'onmouseover="this.style.background=\'rgba(59,130,246,0.08)\'" onmouseout="this.style.background=\'\'" ' +
+                    'onmousedown="seleccionarProdEditCompra(' + idx + '); return false;">' +
+                    thumb +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<p style="font-size:11px;font-weight:900;color:#f1f5f9;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;">' + Utils.escHtml(p.nombre || '') + '</p>' +
+                        '<p style="font-size:10px;color:#64748b;font-weight:700;margin:0;">$' + Utils.fmt(p.costo || p.precioCosto || 0) + '</p>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            drop.classList.remove('hidden');
+        }
+
+        function seleccionarProdEditCompra(idx) {
+            var p = (_editCompraProdOptions || [])[idx];
+            if (!p) return;
+            agregarProdEditCompra(
+                String(p.id || ''),
+                String(p.nombre || ''),
+                Number(p.costo || p.precioCosto || 0),
+                Number(p.precio || p.precioVenta || 0)
+            );
+        }
+
+        function agregarProdEditCompra(id, nombre, costo, precio) {
+            var prodRef = (_sheetProductos || []).find(function(p) {
+                return String(p.id || '') === String(id || '') ||
+                       String(p.nombre || '').trim().toUpperCase() === String(nombre || '').trim().toUpperCase();
+            }) || {};
+            var existente = _editCompraItems.find(function(i) {
+                return String(i.nombre || '').trim().toUpperCase() === String(nombre || '').trim().toUpperCase();
+            });
+            if (existente) {
+                existente.cantidad = (parseFloat(existente.cantidad) || 1) + 1;
+            } else {
+                _editCompraItems.push({
+                    id: id,
+                    nombre: nombre,
+                    cantidad: 1,
+                    costo: parseFloat(costo || 0) || 0,
+                    precio: parseFloat(precio || 0) || 0,
+                    foto: prodRef.foto || prodRef.imagen || '',
+                    imagen: prodRef.imagen || prodRef.foto || ''
+                });
+            }
+            var bp = document.getElementById('editCompraBuscarProd');
+            if (bp) bp.value = '';
+            var drop = document.getElementById('dropdownProdsEditCompra');
+            if (drop) drop.classList.add('hidden');
+            renderItemsEditCompra();
+        }
+
+        document.getElementById('editCompraEfectivo')?.addEventListener('input', function() {
+            renderItemsEditCompra();
+        });
+        document.getElementById('editCompraCredito')?.addEventListener('input', function() {
+            renderItemsEditCompra();
+        });
+
         function obtenerItemsEditCompraActuales() {
-            const raw = (document.getElementById('editCompraItems')?.value || '').trim();
-            if (!raw) return [];
-            return raw.split('\n').map(line => {
-                const parts = line.split(':');
-                return { nombre: (parts[0] || '').trim(), cantidad: parseFloat(parts[1]) || 0 };
+            return (_editCompraItems || []).map(function(i) {
+                return {
+                    id: i.id || '',
+                    nombre: i.nombre || '',
+                    cantidad: Math.max(1, parseFloat(i.cantidad) || 1),
+                    costo: parseFloat(i.costo || 0) || 0,
+                    precio: parseFloat(i.precio || 0) || 0,
+                    foto: i.foto || '',
+                    imagen: i.imagen || ''
+                };
             }).filter(i => i.nombre);
         }
 
@@ -13652,11 +13882,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const efect   = parseFloat(document.getElementById('editCompraEfectivo').value) || 0;
             const cred    = parseFloat(document.getElementById('editCompraCredito').value)  || 0;
             const btnGuardar = document.getElementById('btnGuardarEditarCompra');
-            const itemsRaw = document.getElementById('editCompraItems').value.trim().split('\n');
-            const items   = itemsRaw.map(line => {
-                const parts = line.split(':');
-                return { nombre: parts[0].trim(), cantidad: parseFloat(parts[1]) || 0, costo: 0 };
-            }).filter(i => i.nombre);
+            const items   = obtenerItemsEditCompraActuales();
 
             // Revertir stock viejo
             (compra.items||[]).forEach(item => {
@@ -13704,8 +13930,28 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     idCompra: _idParaSheet,
                     fecha: compra.fechaISO || compra.fecha || '',
                     proveedor: prov,
+                    efectivo: efect,
+                    credito: cred,
+                    total: compra.total,
                     ticket: todosUrls.join('|') || null,
-                    tickets: todosUrls
+                    tickets: todosUrls,
+                    productos: items.map(function(item) {
+                        const prodRef = (_sheetProductos || []).find(function(p) {
+                            return String(p.id || '') === String(item.id || '') ||
+                                   String(p.nombre || '').trim().toUpperCase() === String(item.nombre || '').trim().toUpperCase();
+                        }) || {};
+                        return {
+                            id: item.id || prodRef.id || '',
+                            nombre: item.nombre || '',
+                            cantidad: Math.max(1, parseFloat(item.cantidad) || 1),
+                            precioCosto: parseFloat(item.costo || prodRef.costo || prodRef.precioCosto || 0) || 0,
+                            precioVenta: parseFloat(item.precio || prodRef.precio || prodRef.precioVenta || 0) || 0,
+                            tipoVenta: item.tipoVenta || prodRef.tipoVenta || prodRef['FORMA DE VENTA'] || '',
+                            departamento: item.departamento || prodRef.departamento || '',
+                            categoria: item.categoria || prodRef.categoria || '',
+                            formaPago: cred > 0 && efect > 0 ? 'Mixto' : (cred > 0 ? 'Credito' : 'Efectivo')
+                        };
+                    })
                 }));
 
                 toggleModal('modalEditarCompra', false);
@@ -16717,8 +16963,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÃ“N GOOGLE SHEETS â€” Tiempo real (30s)
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxMPX0svx5lkmqdlejPb0bCBOZ1jnFglFXR723iUY8QInny-Cbm9WmPwq6i74Q07dw3/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxMPX0svx5lkmqdlejPb0bCBOZ1jnFglFXR723iUY8QInny-Cbm9WmPwq6i74Q07dw3/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbwjBCRufqkG-LtLon72C2qfmPZEqp02njmq1kQownyDuDci3HqLJAjDfNw4W2DRbVvj/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbwjBCRufqkG-LtLon72C2qfmPZEqp02njmq1kQownyDuDci3HqLJAjDfNw4W2DRbVvj/exec';
         // â”€â”€ COLA DE ENVÃOS PENDIENTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexiÃ³n se reenvÃ­an automÃ¡ticamente.
