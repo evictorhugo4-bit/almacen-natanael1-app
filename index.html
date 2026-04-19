@@ -1361,9 +1361,6 @@ GUARDAR PRODUCTO
                     <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Registro de ingresos de dinero</p>
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
-                    <button onclick="abrirGestorCatImg('ingresos')" class="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all uppercase">
-                        ðŸ–¼ ImÃ¡genes
-                    </button>
                     <button onclick="abrirNuevoIngEgr('ingreso')" class="bg-emerald-500 text-black px-6 py-3 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-emerald-400 btn-action">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="plus-circle" aria-hidden="true" class="lucide lucide-plus-circle w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg> NUEVO INGRESO
                     </button>
@@ -1402,13 +1399,13 @@ GUARDAR PRODUCTO
             <div class="flex gap-2 items-center">
                 <div class="relative flex-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input type="text" id="ingresosSearchInput" placeholder="Buscar por concepto, proveedor, gÃ©nero..." oninput="renderIngEgr('ingreso')"
+                    <input type="text" id="ingresosSearchInput" placeholder="Buscar por concepto, proveedor, genero..." oninput="renderIngEgr('ingreso')"
                         style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:8px 10px 8px 30px;color:#f1f5f9;font-size:11px;font-weight:700;outline:none;box-sizing:border-box;"
                         onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#334155'">
                 </div>
                 <button onclick="document.getElementById('ingresosSearchInput').value='';renderIngEgr('ingreso');"
                     style="padding:8px 12px;background:#1e293b;border:1.5px solid #334155;border-radius:10px;color:#64748b;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap;"
-                    onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#64748b'">âœ• Limpiar</button>
+                    onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#64748b'">&times; Limpiar</button>
             </div>
             <div id="listaIngresos" class="space-y-3"></div>
         </div>
@@ -3006,8 +3003,8 @@ GUARDAR PRODUCTO
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
                 <div class="relative">
-                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">SupercategorÃ­a</label>
-                    <input type="text" id="inputIngEgrProveedor" placeholder="Buscar supercategorÃ­a..."
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Supercategoria</label>
+                    <input type="text" id="inputIngEgrProveedor" placeholder="Buscar supercategoria..."
                         autocomplete="off"
                         oninput="filtrarSupercatIngEgr(this.value)"
                         onfocus="filtrarSupercatIngEgr(this.value)"
@@ -3015,22 +3012,9 @@ GUARDAR PRODUCTO
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
                     <div id="ddSupercatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
-<div class="relative">
-    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">GÃ©nero</label>
-    <input type="text"
-        id="inputIngEgrGenero"
-        placeholder="Buscar gÃ©nero..."
-        autocomplete="off"
-        oninput="filtrarGeneroIngEgr(this.value)"
-        onfocus="filtrarGeneroIngEgr(this.value)"
-        onblur="setTimeout(()=>document.getElementById('ddGeneroIngEgr').classList.add('hidden'),300)"
-        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
-    <div id="ddGeneroIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
-</div>
-
                 <div class="relative">
-                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">CategorÃ­a</label>
-                    <input type="text" id="inputIngEgrConcepto" placeholder="Buscar categorÃ­a..."
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Categoria</label>
+                    <input type="text" id="inputIngEgrConcepto" placeholder="Buscar categoria..."
                         autocomplete="off"
                         oninput="filtrarCatIngEgr(this.value)"
                         onfocus="filtrarCatIngEgr(this.value)"
@@ -3075,7 +3059,7 @@ GUARDAR PRODUCTO
                         </label>
                         <button onclick="abrirCamaraTicketIngEgr()" class="flex-1 flex items-center justify-center gap-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-black uppercase transition-all border border-slate-700" title="Sacar foto">
                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                            CÃ¡mara
+                            Camara
                         </button>
                     </div>
                     <div id="camaraContainerIngEgr" class="hidden space-y-2">
@@ -3104,7 +3088,7 @@ GUARDAR PRODUCTO
                         <input type="number" id="inputIngEgrEfectivo" placeholder="0" oninput="calcularIngEgr()" class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-emerald-400 focus:border-emerald-500 outline-none">
                     </div>
                     <div class="bg-slate-900/80 p-3 rounded-xl border border-red-900/30">
-                        <label class="text-[9px] font-black text-red-400 uppercase block mb-1">A CrÃ©dito</label>
+                        <label class="text-[9px] font-black text-red-400 uppercase block mb-1">A Credito</label>
                         <input type="number" id="ingEgrCredito" placeholder="0" oninput="calcularIngEgr()" class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-red-400 focus:border-red-500 outline-none">
                     </div>
                 </div>
@@ -3520,11 +3504,16 @@ CONFIRMAR PAGO
                 </button>
             </div>
             <div>
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Total del ingreso</label>
+                <div id="editIngEgrTotal" class="text-2xl font-black text-white font-mono bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">$0</div>
+                <input type="hidden" id="editIngEgrTotalBase" value="0">
+            </div>
+            <div>
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Proveedor / Origen</label>
                 <input type="text" id="editIngEgrProveedor" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase">
             </div>
             <!-- Imagen categorÃ­a -->
-            <div id="editIngEgrImgWrap">
+            <div id="editIngEgrImgWrap" style="display:none;">
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Imagen de categorÃ­a</label>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div id="editIngEgrImgPreview" style="width:52px;height:52px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid #334155;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">ðŸ“‹</div>
@@ -3540,9 +3529,15 @@ CONFIRMAR PAGO
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Concepto</label>
                 <input type="text" id="editIngEgrConcepto" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm">
             </div>
-            <div>
-                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Efectivo</label>
-                <input type="number" id="editIngEgrEfectivo" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm text-right font-mono">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                    <label class="text-[9px] font-black text-emerald-400 uppercase block mb-1">Efectivo</label>
+                    <input type="number" id="editIngEgrEfectivo" oninput="recalcularEditarIngEgr()" class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-emerald-400 focus:border-emerald-500 outline-none">
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-red-900/30">
+                    <label class="text-[9px] font-black text-red-400 uppercase block mb-1">A Credito</label>
+                    <div id="editIngEgrCredito" class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-red-400 font-mono">$0</div>
+                </div>
             </div>
             <div id="editIngEgrTicketWrap" style="display:none;">
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Ticket (foto o PDF)</label>
@@ -6479,12 +6474,96 @@ _sheetEgresosNegocio.forEach(e => {
         }
 
         async function generarPDFPagosClienteDetalle() {
-            const pagos = Array.isArray(window._detallePagosClienteActual) ? window._detallePagosClienteActual : [];
+            const pagosBase = Array.isArray(window._detallePagosClienteActual) ? window._detallePagosClienteActual : [];
             const clienteNombre = String(window._detallePagosClienteNombre || 'CLIENTE').trim() || 'CLIENTE';
-            if (pagos.length === 0) {
+            if (pagosBase.length === 0) {
                 mostrarToast('No hay pagos para exportar', 'error');
                 return;
             }
+            const obtenerFechaOrdenPagoPDF = function(pago) {
+                const raw = String(
+                    (pago && (
+                        pago.fechaOriginal
+                        || pago.fechaOrig
+                        || pago['FECHA ORIGINAL']
+                        || pago.fechaPago
+                        || pago.fecha
+                        || pago.FECHA
+                    )) || ''
+                ).trim();
+                if (!raw) return 0;
+
+                let m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+                if (m) {
+                    return new Date(
+                        Number(m[3]),
+                        Number(m[2]) - 1,
+                        Number(m[1]),
+                        Number(m[4] || 0),
+                        Number(m[5] || 0),
+                        Number(m[6] || 0)
+                    ).getTime();
+                }
+
+                m = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+                if (m) {
+                    return new Date(
+                        Number(m[1]),
+                        Number(m[2]) - 1,
+                        Number(m[3]),
+                        Number(m[4] || 0),
+                        Number(m[5] || 0),
+                        Number(m[6] || 0)
+                    ).getTime();
+                }
+
+                const dt = new Date(raw);
+                return isNaN(dt.getTime()) ? 0 : dt.getTime();
+            };
+            const pagos = pagosBase.slice().sort(function(a, b) {
+                return obtenerFechaOrdenPagoPDF(b) - obtenerFechaOrdenPagoPDF(a);
+            });
+            const formatearFechaPagoPDF = function(valor) {
+                if (valor === null || valor === undefined || valor === '') return '-';
+                const raw = String(valor).trim();
+                if (!raw) return '-';
+
+                const pad = function(n) { return String(n).padStart(2, '0'); };
+                const desdePartes = function(yyyy, mm, dd, hh, mi, ss) {
+                    const fecha = new Date(
+                        Number(yyyy),
+                        Number(mm) - 1,
+                        Number(dd),
+                        Number(hh || 0),
+                        Number(mi || 0),
+                        Number(ss || 0)
+                    );
+                    return isNaN(fecha.getTime()) ? null : fecha;
+                };
+                const formatearDate = function(fecha) {
+                    if (!(fecha instanceof Date) || isNaN(fecha.getTime())) return raw;
+                    return `${pad(fecha.getDate())}/${pad(fecha.getMonth() + 1)}/${fecha.getFullYear()} ${pad(fecha.getHours())}:${pad(fecha.getMinutes())}:${pad(fecha.getSeconds())}`;
+                };
+
+                if (valor instanceof Date) return formatearDate(valor);
+
+                const mLatino = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+                if (mLatino) {
+                    const fechaLatina = desdePartes(mLatino[3], mLatino[2], mLatino[1], mLatino[4], mLatino[5], mLatino[6]);
+                    return fechaLatina ? formatearDate(fechaLatina) : raw;
+                }
+
+                const mIso = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+                if (mIso) {
+                    const fechaIso = desdePartes(mIso[1], mIso[2], mIso[3], mIso[4], mIso[5], mIso[6]);
+                    return fechaIso ? formatearDate(fechaIso) : raw;
+                }
+
+                const dt = new Date(raw);
+                if (!isNaN(dt.getTime())) return formatearDate(dt);
+                return raw;
+            };
+            const fechaPagoCabecera = formatearFechaPagoPDF(new Date());
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -6514,10 +6593,12 @@ _sheetEgresosNegocio.forEach(e => {
             doc.setFontSize(8);
             doc.setTextColor(100, 116, 139);
             doc.text('CLIENTE', 14, y + 2);
+            doc.text('FECHA DE PAGO', 42, y + 2);
             doc.text('TOTAL COBRADO', W - 14, y + 2, { align: 'right' });
             doc.setTextColor(226, 232, 240);
             doc.setFontSize(10);
             doc.text(clienteNombre.toUpperCase(), 14, y + 9);
+            doc.text(fechaPagoCabecera, 42, y + 9);
             doc.setTextColor(52, 211, 153);
             doc.text('$' + Utils.fmt(pagos.reduce(function(s, p) { return s + (Number(p.monto) || 0); }, 0)), W - 14, y + 9, { align: 'right' });
 
@@ -6529,7 +6610,7 @@ _sheetEgresosNegocio.forEach(e => {
             doc.setFontSize(8);
             doc.setTextColor(0, 0, 0);
             doc.text('FECHA', 12, y + 5.5);
-            doc.text('TIPO / PRODUCTO', 48, y + 5.5);
+            doc.text('TIPO / PRODUCTO', 50, y + 5.5);
             doc.text('MONTO', W - 12, y + 5.5, { align: 'right' });
             y += 10;
 
@@ -6546,34 +6627,42 @@ _sheetEgresosNegocio.forEach(e => {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(7);
                 doc.setTextColor(148, 163, 184);
-                doc.text(String(p.fecha || '-'), 12, y + 2);
+                const fechaOriginaria = String(
+                    p.fechaOriginal
+                    || p.fechaOrig
+                    || p['FECHA ORIGINAL']
+                    || p.fecha
+                    || p.FECHA
+                    || '-'
+                ).trim() || '-';
+                doc.text(formatearFechaPagoPDF(fechaOriginaria), 12, y + 2);
 
                 const fotoProducto = p.fotoProducto || p.foto || p.imagen || obtenerFotoProductoPorNombre(p.producto || p.productos || '');
                 const imgPdf = await cargarImagenParaPDF(fotoProducto);
                 if (imgPdf && imgPdf.dataUrl) {
                     try {
-                        doc.addImage(imgPdf.dataUrl, imgPdf.format || 'JPEG', 38, y - 1, 7, 7, '', 'FAST');
+                        doc.addImage(imgPdf.dataUrl, imgPdf.format || 'JPEG', 40, y - 1, 7, 7, '', 'FAST');
                     } catch(e) {
                         doc.setFillColor(30, 41, 59);
-                        doc.roundedRect(38, y - 1, 7, 7, 1, 1, 'F');
+                        doc.roundedRect(40, y - 1, 7, 7, 1, 1, 'F');
                     }
                 } else {
                     doc.setFillColor(30, 41, 59);
-                    doc.roundedRect(38, y - 1, 7, 7, 1, 1, 'F');
+                    doc.roundedRect(40, y - 1, 7, 7, 1, 1, 'F');
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(6);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(String((p.producto || p.productos || '?')).trim().charAt(0).toUpperCase() || '?', 41.5, y + 3, { align: 'center' });
+                    doc.text(String((p.producto || p.productos || '?')).trim().charAt(0).toUpperCase() || '?', 43.5, y + 3, { align: 'center' });
                 }
 
                 doc.setTextColor(226, 232, 240);
                 doc.setFontSize(8.5);
-                doc.text(String(p.tipo || 'PAGO').toUpperCase(), 48, y + 1.5);
+                doc.text(String(p.tipo || 'PAGO').toUpperCase(), 50, y + 1.5);
 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(7.5);
                 doc.setTextColor(52, 211, 153);
-                doc.text(String(p.productos || p.producto || 'SIN PRODUCTO').substring(0, 54), 48, y + 6.8);
+                doc.text(String(p.productos || p.producto || 'SIN PRODUCTO').substring(0, 50), 50, y + 6.8);
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8.5);
@@ -9355,6 +9444,8 @@ resetSeccionesDetalleCliente();
                         return {
                             id:        p.id,
                             fecha:     fmtFecha(p.fecha) || p.fecha || '',
+                            fechaPago: String(p.fecha || p.FECHA || '').trim(),
+                            fechaOriginal: String(p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || '').trim(),
                             monto:     p.monto,
                             tipo:      'Pago Ventas',
                             fromSheet: true,
@@ -9367,6 +9458,8 @@ resetSeccionesDetalleCliente();
                     });
                 const pagosLocales = (c.pagos || []).map((p, idxPagoLocal) => ({
                     ...p,
+                    fechaPago: String(p.fechaPago || p.fecha || p.FECHA || '').trim(),
+                    fechaOriginal: String(p.fechaOriginal || p.fechaOrig || p['FECHA ORIGINAL'] || p.fecha || p.FECHA || '').trim(),
                     fechaAgrupacion: String(p.fecha || p.FECHA || p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '').trim(),
                     __localIdx: idxPagoLocal
                 }));
@@ -9377,6 +9470,8 @@ resetSeccionesDetalleCliente();
                             ...p,
                             producto: productoPrincipal,
                             productos: productoPrincipal,
+                            fechaPago: String(p.fechaPago || p.fecha || p.FECHA || '').trim(),
+                            fechaOriginal: String(p.fechaOriginal || p.fechaOrig || p['FECHA ORIGINAL'] || p.fecha || p.FECHA || '').trim(),
                             fechaAgrupacion: String(p.fecha || p.FECHA || p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '').trim(),
                             fotoProducto: p.fotoProducto || p.foto || p.imagen || obtenerFotoProductoPorNombre(productoPrincipal)
                         };
@@ -9393,9 +9488,33 @@ resetSeccionesDetalleCliente();
                 contPagosComp.innerHTML = todosPagos.length === 0
                     ? '<p class="text-[10px] text-slate-600 font-bold uppercase italic">Sin pagos registrados</p>'
                     : (() => {
+                        const fechaSoloDiaPagoGrupo = function(valor) {
+                            const raw = String(valor || '').trim();
+                            if (!raw) return 'Sin fecha';
+
+                            const pad = function(n) { return String(n).padStart(2, '0'); };
+                            const desdeDate = function(d) {
+                                if (!(d instanceof Date) || isNaN(d.getTime())) return 'Sin fecha';
+                                return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+                            };
+
+                            if (/Z$/i.test(raw) || /[+\-]\d{2}:\d{2}$/.test(raw)) {
+                                const dIso = new Date(raw);
+                                return isNaN(dIso.getTime()) ? fechaSoloDia(raw) : desdeDate(dIso);
+                            }
+
+                            const mLat = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                            if (mLat) return `${pad(mLat[1])}/${pad(mLat[2])}/${mLat[3]}`;
+
+                            const mIso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                            if (mIso) return `${mIso[3]}/${mIso[2]}/${mIso[1]}`;
+
+                            const d = new Date(raw);
+                            return isNaN(d.getTime()) ? fechaSoloDia(raw) : desdeDate(d);
+                        };
                         const grupos = new Map();
                         todosPagos.forEach((p, idxPago) => {
-                            const claveFecha = String(p.fechaAgrupacion || p.fecha || 'Sin fecha').trim() || 'Sin fecha';
+                            const claveFecha = fechaSoloDiaPagoGrupo(p.fechaPago || p.fechaAgrupacion || p.fecha || 'Sin fecha');
                             if (!grupos.has(claveFecha)) grupos.set(claveFecha, []);
                             grupos.get(claveFecha).push({ ...p, __idxPago: idxPago });
                         });
@@ -9407,11 +9526,13 @@ resetSeccionesDetalleCliente();
                             });
                         window._detallePagosClienteGrupos = gruposOrdenados.map(([fechaGrupo, pagosGrupo]) => ({
                             fecha: fechaGrupo,
-                            pagos: pagosGrupo
+                            pagos: pagosGrupo,
+                            total: pagosGrupo.reduce((sum, pagoItem) => sum + (Number(pagoItem.monto) || 0), 0)
                         }));
                         return gruposOrdenados.map(([fechaGrupo, pagosGrupo], idxGrupo) => {
                             const idGrupo = `grupoPagoCliente_${String(fechaGrupo || idxGrupo).replace(/[^0-9A-Za-z]/g, '_')}`;
                             const grupoAbierto = !!(window._detalleClienteGruposAbiertos && window._detalleClienteGruposAbiertos[idGrupo]);
+                            const totalGrupo = pagosGrupo.reduce((sum, pagoItem) => sum + (Number(pagoItem.monto) || 0), 0);
                             const filas = pagosGrupo.map(p => {
                                 const localIdx = Number(p.__localIdx);
                                 const esLocal  = localIdx >= 0;
@@ -9437,9 +9558,10 @@ resetSeccionesDetalleCliente();
                                 <div class="px-3 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between gap-2">
                                     <div class="min-w-0">
                                         <span class="block text-[9px] font-black text-emerald-400 uppercase tracking-widest">Fecha</span>
-                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fmtFecha(fechaGrupo) || fechaGrupo)}</span>
+                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fechaGrupo)}</span>
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
+                                        <span class="text-sm font-black text-emerald-300 font-mono shrink-0">+$${Utils.fmt(totalGrupo)}</span>
                                         <button onclick="event.stopPropagation();generarPDFGrupoPagosCliente(${idxGrupo})" style="padding:5px;background:#082f49;border-radius:6px;border:none;cursor:pointer;color:#7dd3fc;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Descargar PDF de esta fecha">&#128196;</button>
                                         <button onclick="event.stopPropagation();toggleGrupoPagosCliente('${idGrupo}')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#34d399;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Desplegar u ocultar">
                                             <span id="icon-${idGrupo}">${grupoAbierto ? '&#9650;' : '&#9660;'}</span>
@@ -10339,6 +10461,12 @@ clienteDetalleId = null;
                     doc.addImage(c.foto, ext, 10, 8, 28, 28, '', 'FAST');
                     doc.setDrawColor(16, 185, 129); doc.setLineWidth(0.5);
                     doc.roundedRect(10, 8, 28, 28, 3, 3, 'S');
+                } catch(e) {}
+            }
+            const logoPDF = obtenerLogoPDFNatanael();
+            if (logoPDF) {
+                try {
+                    doc.addImage(logoPDF, 'JPEG', W - 42, 8, 28, 28, '', 'FAST');
                 } catch(e) {}
             }
             doc.setTextColor(255,255,255); doc.setFontSize(18); doc.setFont('helvetica','bold');
@@ -13176,7 +13304,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
             const titulo  = document.getElementById('ticketViewerTitulo');
-            titulo.textContent = 'TICKET â€” ' + (e.concepto||'').toUpperCase() + ' ' + (e.fecha||'');
+            titulo.textContent = 'TICKET - ' + (e.concepto||'').toUpperCase() + ' ' + (e.fecha||'');
             inner.innerHTML = `<img src="${e.ticket}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
             overlay.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.85);';
         };
@@ -13198,7 +13326,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                 if (window._ticketCompraActual) {
                     const c = window._ticketCompraActual;
                     c.ticket = dataUrl;
-                    titulo.textContent = 'TICKET â€” ' + (c.proveedor||'').toUpperCase();
+                    titulo.textContent = 'TICKET - ' + (c.proveedor||'').toUpperCase();
                     mostrarToast('âœ“ Guardando ticket...');
                     fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'actualizar_compra', idCompra:c.id, ticket:dataUrl }) });
                     window._ticketCompraActual = null;
@@ -13206,7 +13334,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                 } else if (window._ticketEgresoActual) {
                     const e = window._ticketEgresoActual;
                     e.ticket = dataUrl;
-                    titulo.textContent = 'TICKET â€” ' + (e.concepto||'').toUpperCase();
+                    titulo.textContent = 'TICKET - ' + (e.concepto||'').toUpperCase();
                     mostrarToast('âœ“ Guardando ticket...');
                     fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'egreso_ticket', id:e.idSheet, ticket:dataUrl }) });
                     window._ticketEgresoActual = null;
@@ -13222,7 +13350,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
             const titulo  = document.getElementById('ticketViewerTitulo');
-            titulo.textContent = 'TICKET ' + (tickets.length>1?ticketIdx+1+' â€” ':'â€” ') + (c.proveedor||'').toUpperCase();
+            titulo.textContent = 'TICKET ' + (tickets.length>1 ? (ticketIdx + 1) + ' - ' : '- ') + (c.proveedor||'').toUpperCase();
             inner.innerHTML = `<img src="${t}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
             overlay.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.85);';
         };
@@ -13238,7 +13366,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
             const titulo  = document.getElementById('ticketViewerTitulo');
-            titulo.textContent = 'TICKET â€” ' + (c.proveedor||'').toUpperCase() + ' ' + (c.fecha||'');
+            titulo.textContent = 'TICKET - ' + (c.proveedor||'').toUpperCase() + ' ' + (c.fecha||'');
             if (c.ticket.startsWith('data:application/pdf')) {
                 inner.innerHTML = `<iframe src="${c.ticket}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`;
             } else {
@@ -13254,7 +13382,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
             const titulo  = document.getElementById('ticketViewerTitulo');
-            titulo.textContent = 'TICKET â€” ' + (c.proveedor||'').toUpperCase() + ' ' + (c.fecha||'');
+            titulo.textContent = 'TICKET - ' + (c.proveedor||'').toUpperCase() + ' ' + (c.fecha||'');
             if (c.ticket.startsWith('data:application/pdf')) {
                 inner.innerHTML = `<iframe src="${c.ticket}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`;
             } else {
@@ -14588,8 +14716,8 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                     <div class="flex justify-between items-start gap-3">
                         <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${_accentColor}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
                             ${_imgSC
-                                ? `<img src="${_imgSC}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">${tipo==='ingreso'?'ðŸ“ˆ':'ðŸ“‰'}</span>`
-                                : `<span style="font-size:22px;line-height:1;">${tipo==='ingreso'?'ðŸ“ˆ':'ðŸ“‰'}</span>`
+                                ? `<img src="${_imgSC}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:${_accentColor};font-size:11px;font-weight:900;text-transform:uppercase;">${tipo==='ingreso'?'ING':'EGR'}</span>`
+                                : `<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:${_accentColor};font-size:11px;font-weight:900;text-transform:uppercase;">${tipo==='ingreso'?'ING':'EGR'}</span>`
                             }
                         </div>
                         <div class="flex-1 min-w-0">
@@ -14598,13 +14726,13 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                             ${c.genero?`<div style="display:flex;align-items:center;gap:4px;">${_imgGN ? `<img src="${_imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>`:''}
                             ${c.concepto?`<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>`:''}
                             ${c.formaPago?`<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>`:''}
-                            ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">ðŸ¦ ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
+                            ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">Tarjeta: ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
                             ${(c.items||[]).length>0?`<p class="text-[9px] text-slate-500">${c.items.map(i=>i.nombre).join(', ').substring(0,60)}</p>`:''}
-                            ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">ðŸ§¾ Ver ticket</button>`:''}
+                            ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">Ticket</button>`:''}
                         </div>
                         <div class="text-right shrink-0">
                             <span class="block text-sm font-black text-white font-mono">$${c.total}</span>
-                            ${c.credito>0?`<span class="block text-[9px] font-black text-red-400">CrÃ©dito: $${Utils.fmt(c.credito)}</span>`:''}
+                            ${c.credito>0?`<span class="block text-[9px] font-black text-red-400">Credito: $${Utils.fmt(c.credito)}</span>`:''}
                             ${c.efectivo>0?`<span class="block text-[9px] font-black text-emerald-400">Efectivo: $${Utils.fmt(c.efectivo)}</span>`:''}
                         </div>
                         <div class="flex flex-col gap-1 shrink-0">
@@ -15600,9 +15728,12 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             const db = tipo === 'ingreso' ? _sheetIngresos : _sheetEgresos;
             const r = db.find(c => c.id === id); if (!r) return;
             document.getElementById('tituloEditarIngEgr').textContent = `Editar ${tipo==='ingreso'?'Ingreso':'Egreso'}`;
+            document.getElementById('editIngEgrTotalBase').value = Number(r.total || 0);
+            document.getElementById('editIngEgrTotal').textContent = '$' + Utils.fmt(Number(r.total || 0));
             document.getElementById('editIngEgrProveedor').value = r.proveedor || '';
             document.getElementById('editIngEgrConcepto').value  = r.concepto  || '';
             document.getElementById('editIngEgrEfectivo').value  = r.efectivo  || '';
+            recalcularEditarIngEgr();
             // Ticket â€” solo para egresos
             const ticketWrap = document.getElementById('editIngEgrTicketWrap');
             ticketWrap.style.display = tipo === 'egreso' ? 'block' : 'none';
@@ -15633,6 +15764,16 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             if (btnQImg) btnQImg.style.display = _imgActual ? 'inline-block' : 'none';
             document.getElementById('editIngEgrImgFile').value = '';
             toggleModal('modalEditarIngEgr', true);
+        }
+
+        function recalcularEditarIngEgr() {
+            const total = parseFloat(document.getElementById('editIngEgrTotalBase')?.value) || 0;
+            const efectivo = parseFloat(document.getElementById('editIngEgrEfectivo')?.value) || 0;
+            const credito = Math.max(0, total - efectivo);
+            const totalEl = document.getElementById('editIngEgrTotal');
+            const creditoEl = document.getElementById('editIngEgrCredito');
+            if (totalEl) totalEl.textContent = '$' + Utils.fmt(total);
+            if (creditoEl) creditoEl.textContent = '$' + Utils.fmt(credito);
         }
 
         function previewEditIngEgrImg(input) {
@@ -15674,7 +15815,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
 
     r.concepto = document.getElementById('editIngEgrConcepto').value.trim();
 
-    r.efectivo = parseFloat(document.getElementById('editIngEgrEfectivo').value) || r.efectivo;
+    r.efectivo = parseFloat(document.getElementById('editIngEgrEfectivo').value) || 0;
 
     r.credito = Math.max(0, r.total - r.efectivo);
 
@@ -15698,6 +15839,9 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
                 id: r.idSheet || r.id,
                 proveedor: r.proveedor,
                 concepto: r.concepto,
+                efectivo: r.efectivo,
+                credito: r.credito,
+                total: r.total,
                 imagen: url
             });
             renderIngEgr(ingEgrTipo);
@@ -15709,6 +15853,9 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             id: r.idSheet || r.id,
             proveedor: r.proveedor,
             concepto: r.concepto,
+            efectivo: r.efectivo,
+            credito: r.credito,
+            total: r.total,
             imagen: r.imagen || ''
         };
         editarEnSheet(payload);
@@ -24424,7 +24571,10 @@ renderIngNeg = function(tipo) {
         <div class="glass-card p-4 rounded-2xl border border-slate-800">
             <div class="flex justify-between items-start gap-3">
                 <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${(esIngreso ? '#10b981' : '#f87171')}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                    ${fotoCliente ? `<img src="${fotoCliente}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">ðŸ‘¤</span>` : `<span style="font-size:20px;line-height:1;">ðŸ‘¤</span>`}
+                    ${fotoCliente
+                        ? `<img src="${fotoCliente}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:${esIngreso ? '#10b981' : '#f87171'};font-size:11px;font-weight:900;text-transform:uppercase;">${esIngreso ? 'ING' : 'EGR'}</span>`
+                        : `<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:${esIngreso ? '#10b981' : '#f87171'};font-size:11px;font-weight:900;text-transform:uppercase;">${esIngreso ? 'ING' : 'EGR'}</span>`
+                    }
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(r.fecha||'')}</p>
@@ -24499,14 +24649,21 @@ renderIngEgr = function(tipo) {
         const badgeColor = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
         const provKey = (c.proveedor || '').toUpperCase().trim();
         const concKey = (c.concepto || '').toUpperCase().trim();
-        const imgSC = c.imagen || imgMapLista[provKey] || imgMapLista[concKey] || ((typeof window._getCatImg === 'function') ? window._getCatImg('supercat', c.proveedor) : null);
+        const imgSC = c.imagen
+            || imgMapLista[provKey]
+            || imgMapLista[concKey]
+            || ((typeof window._getCatImg === 'function') ? (window._getCatImg('categoria', c.concepto) || window._getCatImg('supercat', c.proveedor)) : null);
         const imgGN = (typeof window._getCatImg === 'function') ? window._getCatImg('genero', c.genero) : null;
+        const imgCard = imgSC || imgGN || '';
         const accentColor = esIngreso ? '#10b981' : '#f87171';
         return `
         <div class="glass-card p-4 rounded-2xl border border-slate-800">
             <div class="flex justify-between items-start gap-3">
                 <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;background:#0f172a;border:1.5px solid ${accentColor}33;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                    ${imgSC ? `<img src="${imgSC}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="font-size:20px;display:none;">${esIngreso ? 'ðŸ“ˆ' : 'ðŸ“‰'}</span>` : `<span style="font-size:22px;line-height:1;">${esIngreso ? 'ðŸ“ˆ' : 'ðŸ“‰'}</span>`}
+                    ${imgCard
+                        ? `<img src="${imgCard}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:${accentColor};font-size:11px;font-weight:900;text-transform:uppercase;">${esIngreso ? 'ING' : 'EGR'}</span>`
+                        : `<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:${accentColor};font-size:11px;font-weight:900;text-transform:uppercase;">${esIngreso ? 'ING' : 'EGR'}</span>`
+                    }
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
@@ -24518,13 +24675,13 @@ renderIngEgr = function(tipo) {
                         <span class="text-[9px] font-black px-2 py-0.5 rounded-full border" style="color:${badgeColor};border-color:${badgeColor}55;background:${badgeColor}18;">${infoEstado.estado}</span>
                         ${infoEstado.saldo > 0 ? `<span class="text-[9px] font-black text-amber-300">Saldo: $${Utils.fmt(infoEstado.saldo)}</span>` : ''}
                     </div>
-                    ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">ðŸ¦ ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
+                    ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">Tarjeta: ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
                     ${(c.items||[]).length>0?`<p class="text-[9px] text-slate-500">${c.items.map(i=>i.nombre).join(', ').substring(0,60)}</p>`:''}
-                    ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">ðŸ§¾ Ver ticket</button>`:''}
+                    ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">Ticket</button>`:''}
                 </div>
                 <div class="text-right shrink-0">
                     <span class="block text-sm font-black text-white font-mono">$${Utils.fmt(c.total || 0)}</span>
-                    ${c.credito>0?`<span class="block text-[9px] font-black text-red-400">CrÃ©dito: $${Utils.fmt(c.credito)}</span>`:''}
+                    ${c.credito>0?`<span class="block text-[9px] font-black text-red-400">Credito: $${Utils.fmt(c.credito)}</span>`:''}
                     ${c.efectivo>0?`<span class="block text-[9px] font-black text-emerald-400">Efectivo: $${Utils.fmt(c.efectivo)}</span>`:''}
                 </div>
                 <div class="flex flex-col gap-1 shrink-0">
@@ -24844,7 +25001,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="glass-card w-full max-w-2xl rounded-2xl border border-slate-700 overflow-hidden flex flex-col" style="max-height:90vh;">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80 shrink-0">
                 <span id="ticketViewerTitulo" class="text-[11px] font-black text-emerald-400 uppercase tracking-widest"></span>
-                <button onclick="cerrarTicketViewer()" class="text-slate-400 hover:text-white font-black text-lg">âœ•</button>
+                <button onclick="cerrarTicketViewer()" class="text-slate-400 hover:text-white font-black text-lg">&times;</button>
             </div>
             <div id="ticketViewerInner" class="p-4 overflow-auto flex-1 bg-slate-950"></div>
         </div>
