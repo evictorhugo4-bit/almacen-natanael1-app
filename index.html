@@ -1471,9 +1471,6 @@ GUARDAR PRODUCTO
                     <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Registro de salidas de dinero</p>
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
-                    <button onclick="abrirGestorCatImg('egresos')" class="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all uppercase">
-                        🖼 Imágenes
-                    </button>
                     <button onclick="abrirNuevoIngEgr('egreso')" class="bg-red-500 text-white px-6 py-3 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-red-400 btn-action">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="plus-circle" aria-hidden="true" class="lucide lucide-plus-circle w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg> NUEVO EGRESO
                     </button>
@@ -2881,9 +2878,16 @@ GUARDAR PRODUCTO
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
-            <div>
+            <div class="relative">
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Cliente</label>
-                <input type="text" id="editIngNegCliente" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase">
+                <input type="text" id="editIngNegCliente"
+                    autocomplete="off"
+                    placeholder="Nombre del cliente..."
+                    oninput="filtrarClientesEditIngNeg(this.value)"
+                    onfocus="filtrarClientesEditIngNeg(this.value)"
+                    onblur="setTimeout(()=>document.getElementById('ddClientesEditIngNeg').classList.add('hidden'),150)"
+                    class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase">
+                <div id="ddClientesEditIngNeg" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
             </div>
             <div>
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Forma de Pago</label>
@@ -2903,10 +2907,6 @@ GUARDAR PRODUCTO
                     <label class="text-[10px] font-black text-red-400 uppercase tracking-widest block mb-1">Crédito</label>
                     <input type="number" id="editIngNegCredito" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-red-500 outline-none text-sm text-right font-mono">
                 </div>
-            </div>
-            <div>
-                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Fecha de Pago</label>
-                <input type="datetime-local" id="editIngNegFechaPago" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm" style="color-scheme:dark;">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="toggleModal('modalEditarIngNeg',false)" class="py-3 bg-slate-800 text-slate-300 font-black text-xs rounded-xl uppercase">Cancelar</button>
@@ -10871,6 +10871,22 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             document.getElementById('ddClientesIngNeg').classList.add('hidden');
         }
 
+        function filtrarClientesEditIngNeg(query) {
+            const dd = document.getElementById('ddClientesEditIngNeg');
+            if (!dd) return;
+            const q = (query||'').toUpperCase().trim();
+            const nombres = [...new Set(clientesDB.map(c=>c.nombre).filter(Boolean))].sort();
+            const filtrados = q ? nombres.filter(n=>n.toUpperCase().includes(q)) : nombres;
+            if (!filtrados.length) { dd.classList.add('hidden'); return; }
+            dd.innerHTML = filtrados.map(n=>`<div class="px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500/20 cursor-pointer uppercase" onmousedown="selClienteEditIngNeg('${n.replace(/'/g,"\\'")}')">${n}</div>`).join('');
+            dd.classList.remove('hidden');
+        }
+
+        function selClienteEditIngNeg(val) {
+            document.getElementById('editIngNegCliente').value = val;
+            document.getElementById('ddClientesEditIngNeg').classList.add('hidden');
+        }
+
        function confirmarIngNeg() {
 
     const cliente   = document.getElementById('inputIngNegCliente').value.trim() || 'Sin especificar';
@@ -10970,7 +10986,6 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             document.getElementById('editIngNegFormaPago').value  = r.formaPago || 'Efectivo';
             document.getElementById('editIngNegEfectivo').value   = r.efectivo || '';
             document.getElementById('editIngNegCredito').value    = r.credito || '';
-            document.getElementById('editIngNegFechaPago').value  = r.fechaPago || '';
             toggleModal('modalEditarIngNeg', true);
         }
 
@@ -11000,13 +11015,21 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
 
     r.total = ef + cr;
 
-    r.fechaPago = document.getElementById('editIngNegFechaPago').value || '';
+    // fechaPago se mantiene sin cambios al editar
 
     r.estado = cr > 0 ? 'PENDIENTE' : 'FINALIZADO';
 
+    const idParaSheet = r.idSheet ? r.idSheet : r.id;
+
+    // Marcar como editado localmente para que el sync no lo sobreescriba
+    // mientras el Sheet procesa el POST (se limpia automáticamente a los 60 seg)
+    r._editadoLocal = true;
+    r._editadoLocalTs = Date.now();
+    setTimeout(function() { r._editadoLocal = false; }, 60000);
+
     editarEnSheet({
         tipo: ingNegAccionTipo === 'ingresosNegocio' ? 'actualizar_ingneg' : 'actualizar_egrneg',
-        id: r.id,
+        id: idParaSheet,
         cliente: r.cliente,
         formaPago: r.formaPago,
         efectivo: r.efectivo,
@@ -18417,7 +18440,12 @@ if (indicator) indicator.classList.remove('hidden');
                     fromSheet: true, items:[] };
                 // Buscar por id generado O por idSheet para evitar duplicar registros locales + sheet
                 const idx = db.findIndex(r => r.id === id || (idRow && (r.idSheet === idRow || r.id === idRow)));
-                if (idx>=0) { db[idx]={...db[idx],...reg}; ac++; } else { db.push(reg); ag++; }
+                if (idx>=0) {
+                    // Si fue editado localmente en los últimos 60 seg, NO sobreescribir con datos
+                    // viejos del sheet (el POST puede no haberse procesado aún)
+                    const localEdit = db[idx]._editadoLocal && db[idx]._editadoLocalTs && (Date.now() - db[idx]._editadoLocalTs < 60000);
+                    if (!localEdit) { db[idx]={...db[idx],...reg}; ac++; }
+                } else { db.push(reg); ag++; }
             });
             try { if (typeof saveFn === 'function') saveFn(); } catch(e) {}
             const vista = document.getElementById('vista'+renderTipo.charAt(0).toUpperCase()+renderTipo.slice(1));
