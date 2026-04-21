@@ -5955,8 +5955,9 @@ _sheetEgresosNegocio.forEach(e => {
                 const estadoCalc = calcEstado(c);
                 const _provKey = (c.proveedor||'').toUpperCase().trim();
                 const _concKey = (c.concepto||'').toUpperCase().trim();
-                const _imgSC = c.imagen || _imgMapLista[_provKey] || _imgMapLista[_concKey]
-                    || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null);
+                const _imgSC = c.imagen
+                    || _imgMapLista[_concKey] || _imgMapLista[_provKey]
+                    || ((typeof window._getCatImg==='function') ? (window._getCatImg('categoria', c.concepto) || window._getCatImg('supercat', c.proveedor)) : null);
                 const _imgGN = (typeof window._getCatImg==='function') ? window._getCatImg('genero', c.genero) : null;
                 const _accentColor = tipo === 'ingreso' ? '#10b981' : '#f87171';
                 const estadoBg = estadoCalc.estado === 'Finalizada' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400';
@@ -11213,6 +11214,10 @@ function crearGeneroIngEgr(nombre) {
                 listaRef.map(r => (r.nombre||'').toUpperCase().trim()).filter(Boolean)
             )].sort();
 
+            // Mapa nombre -> imagen desde la lista de referencia
+            const _imgMap = {};
+            listaRef.forEach(r => { if (r.nombre && r.imagen) _imgMap[r.nombre.toUpperCase().trim()] = r.imagen; });
+
             const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
             const mostrarCrear = q && !opciones.some(o => o === q);
             if (!filtradas.length && !mostrarCrear) { dd.classList.add('hidden'); return; }
@@ -11220,10 +11225,18 @@ function crearGeneroIngEgr(nombre) {
                 <span style="font-size:14px;font-weight:900;color:${accentColor}">+</span>
                 <span style="color:${accentColor}">Crear categoría "<strong>${Utils.escHtml(q)}</strong>"</span>
             </div>` : '') +
-            filtradas.map(o =>
-                `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase"
-                      onmousedown="selCatIngEgr('${o.replace(/'/g, "\'")}')">${o}</div>`
-            ).join('');
+            filtradas.map(o => {
+                const imgUrl = _imgMap[o] || '';
+                const imgHtml = imgUrl
+                    ? `<img src="${imgUrl}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid ${accentColor}44;" onerror="this.style.display='none'">`
+                    : `<div style="width:28px;height:28px;border-radius:6px;background:#1e293b;border:1px solid #334155;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;">${esEgr ? '📉' : '📈'}</div>`;
+                return `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase"
+                      style="display:flex;align-items:center;gap:10px;"
+                      onmousedown="selCatIngEgr('${o.replace(/'/g, "\\'")}')">
+                    ${imgHtml}
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o}</span>
+                </div>`;
+            }).join('');
             dd.classList.remove('hidden');
         }
 
@@ -14801,8 +14814,9 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                 // Buscar imagen: primero en lista de categorías por nombre de proveedor/concepto, luego en _getCatImg
                 const _provKey = (c.proveedor||'').toUpperCase().trim();
                 const _concKey = (c.concepto||'').toUpperCase().trim();
-                const _imgSC = c.imagen || _imgMapLista[_provKey] || _imgMapLista[_concKey]
-                    || ((typeof window._getCatImg==='function') ? window._getCatImg('supercat', c.proveedor) : null);
+                const _imgSC = c.imagen
+                    || _imgMapLista[_concKey] || _imgMapLista[_provKey]
+                    || ((typeof window._getCatImg==='function') ? (window._getCatImg('categoria', c.concepto) || window._getCatImg('supercat', c.proveedor)) : null);
                 const _imgGN = (typeof window._getCatImg==='function') ? window._getCatImg('genero', c.genero) : null;
                 const _accentColor = tipo === 'ingreso' ? '#10b981' : '#f87171';
                 return `
@@ -20008,8 +20022,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const _map = {}; (lista||[]).forEach(it=>{ if(it.nombre&&it.imagen) _map[it.nombre.toUpperCase().trim()]=it.imagen; });
                 const pk = (r.proveedor||'').toUpperCase().trim();
                 const ck = (r.concepto||'').toUpperCase().trim();
-                return r.imagen || _map[pk] || _map[ck]
-                    || ((typeof window._getCatImg==='function') ? (window._getCatImg('supercat',r.proveedor)||window._getCatImg('supercat',r.concepto)) : null);
+                return r.imagen || _map[ck] || _map[pk]
+                    || ((typeof window._getCatImg==='function') ? (window._getCatImg('categoria',r.concepto) || window._getCatImg('supercat',r.proveedor)) : null);
             };
 
             // Card uniforme para filas normales
