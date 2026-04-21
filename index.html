@@ -9606,7 +9606,7 @@ resetSeccionesDetalleCliente();
                 const idsPrestamosCliente = new Set(ingresosNegCliente.map(function(e) {
                     return String(e.idSheet || e.id || '').trim();
                 }).filter(Boolean));
-                const pagosPrestSheet = [...(_sheetPagoIngNeg||[]), ...(_pagoIngNegSheet||[])]
+                const pagosPrestSheet = [...(_sheetPagoIngNeg||[])]
                     .filter(function(p) {
                         const pIdIng = String(p.IDINGRESOSNEGOCIO || p.idIngNeg || '').trim();
                         const pIdCl  = String(p.IDCLIENTE || p.idCliente || '').trim();
@@ -9622,7 +9622,14 @@ resetSeccionesDetalleCliente();
                             idIngNeg: idIng,
                             fecha: String(p.fecha || p.FECHA || '').trim(),
                             fechaAgrupacion: fechaSoloDia(String(p.fecha || p.FECHA || '').trim()),
-                            fechaOriginal: String(p.fechaOriginal || p['FECHA ORIGINAL'] || p['Fecha Original'] || p.fecha || p.FECHA || '').trim(),
+                            fechaOriginal: (function() {
+                                const raw = String(p.fechaOriginal || p['FECHA ORIGINAL'] || p['Fecha Original'] || '').trim();
+                                if (!raw) return '';
+                                // Formato ISO con Z: 2026-02-24T12:42:52.000Z
+                                const mIsoZ = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                                if (mIsoZ) return `${mIsoZ[3]}/${mIsoZ[2]}/${mIsoZ[1]} ${mIsoZ[4]}:${mIsoZ[5]}`;
+                                return fmtFecha(raw) || raw;
+                            })(),
                             monto: parseFloat(p.monto || p.MONTO || p['PAGO TOTAL'] || 0) || 0,
                             cliente: String(p.CLIENTE || p.cliente || c.nombre || '').trim(),
                             detalle: String((prestamo && (prestamo.concepto || prestamo.cliente)) || p.CLIENTE || p.cliente || 'Prestamo').trim()
