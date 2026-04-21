@@ -9621,7 +9621,8 @@ resetSeccionesDetalleCliente();
                         return {
                             idIngNeg: idIng,
                             fecha: String(p.fecha || p.FECHA || '').trim(),
-                            fechaAgrupacion: fechaSoloDia(p.fecha || p.FECHA || ''),
+                            fechaAgrupacion: fechaSoloDia(String(p.fecha || p.FECHA || '').trim()),
+                            fechaOriginal: String(p.fechaOriginal || p['FECHA ORIGINAL'] || p['Fecha Original'] || p.fecha || p.FECHA || '').trim(),
                             monto: parseFloat(p.monto || p.MONTO || p['PAGO TOTAL'] || 0) || 0,
                             cliente: String(p.CLIENTE || p.cliente || c.nombre || '').trim(),
                             detalle: String((prestamo && (prestamo.concepto || prestamo.cliente)) || p.CLIENTE || p.cliente || 'Prestamo').trim()
@@ -9662,7 +9663,9 @@ resetSeccionesDetalleCliente();
                             const filas = pagosGrupo.map(function(p) {
                                 return `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
                                     <div class="flex-1 min-w-0">
-                                        <span class="block text-[9px] font-black text-slate-400 uppercase">${Utils.escHtml(fmtFecha(p.fecha) || p.fecha || '')}</span>
+                                        <span class="block text-[9px] font-black text-slate-400 uppercase">FECHA</span>
+                                        <span class="block text-[9px] font-black text-white uppercase">${Utils.escHtml(p.fechaAgrupacion || fechaSoloDia(p.fecha) || '')}</span>
+                                        ${p.fechaOriginal && p.fechaOriginal !== p.fecha ? `<span class="block text-[8px] font-bold text-slate-500 uppercase">Orig: ${Utils.escHtml(p.fechaOriginal)}</span>` : ''}
                                         <span class="block text-[10px] font-bold text-emerald-300 truncate">${Utils.escHtml(p.detalle || 'Prestamo')}</span>
                                     </div>
                                     <span class="text-sm font-black text-emerald-400 font-mono shrink-0">+$${Utils.fmt(p.monto || 0)}</span>
@@ -9672,7 +9675,7 @@ resetSeccionesDetalleCliente();
                                 <div class="px-3 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between gap-2">
                                     <div class="min-w-0">
                                         <span class="block text-[9px] font-black text-emerald-400 uppercase tracking-widest">Fecha</span>
-                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fechaGrupo)}</span>
+                                        <span class="block text-[10px] font-black text-white uppercase">${Utils.escHtml(fechaSoloDia(fechaGrupo))}</span>
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span class="text-sm font-black text-emerald-400 font-mono">+$${Utils.fmt(totalGrupo)}</span>
