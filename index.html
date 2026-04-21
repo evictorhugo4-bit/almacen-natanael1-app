@@ -17322,8 +17322,8 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACIÓN GOOGLE SHEETS — Tiempo real (30s)
         // ══════════════════════════════════════════════════════
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbwjBCRufqkG-LtLon72C2qfmPZEqp02njmq1kQownyDuDci3HqLJAjDfNw4W2DRbVvj/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbwjBCRufqkG-LtLon72C2qfmPZEqp02njmq1kQownyDuDci3HqLJAjDfNw4W2DRbVvj/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzSxLiljkEjFhgBUxxaVJeysBtNXqo6Gjk9qxKWT3MsUtwP-87RHyuuPvveLJToMLeJ/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzSxLiljkEjFhgBUxxaVJeysBtNXqo6Gjk9qxKWT3MsUtwP-87RHyuuPvveLJToMLeJ/exec';
         // ── COLA DE ENVÍOS PENDIENTES ──────────────────────────────────────
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -17930,7 +17930,7 @@ function verDetalleProveedor(tipo, id){
                         try {
                             if (fechaRaw && (fechaRaw.includes('T')||fechaRaw.includes('-')||fechaRaw.includes('/'))) {
                                 const d = new Date(fechaRaw.includes('/')?fechaRaw.replace(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/,'$3-$2-$1'):fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+                                if (!isNaN(d)) fechaDisplay = String(d.getUTCDate()).padStart(2,'0')+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
                         const cliente = String(row['CLIENTE']||row['Cliente']||'').trim()||'-';
@@ -18182,7 +18182,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
                         try {
                             if (fechaRaw && (fechaRaw.includes('T') || fechaRaw.includes('-'))) {
                                 const d = new Date(fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+                                if (!isNaN(d)) fechaDisplay = String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
 
@@ -18291,7 +18291,7 @@ window._catsIngSheet = _catsIngSheet;
                         try {
                             if (fechaRaw && (fechaRaw.includes('T') || fechaRaw.includes('-'))) {
                                 const d = new Date(fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+                                if (!isNaN(d)) fechaDisplay = String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
 
@@ -18379,7 +18379,7 @@ window._catsEgrSheet = _catsEgrSheet;
                         try {
                             if (fechaRaw && (fechaRaw.includes('T') || fechaRaw.includes('-'))) {
                                 const d = new Date(fechaRaw);
-                                if (!isNaN(d)) fechaDisplay = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+                                if (!isNaN(d)) fechaDisplay = String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0');
                             }
                         } catch(e) {}
 
