@@ -6582,7 +6582,10 @@ _sheetEgresosNegocio.forEach(e => {
                 if (!isNaN(dt.getTime())) return formatearDate(dt);
                 return raw;
             };
-            const fechaPagoCabecera = formatearFechaPagoPDF(new Date());
+            // Usar la fecha real del pago (del primer pago del grupo) en lugar de la fecha actual
+            const _primerPago = pagosBase[0] || {};
+            const _fechaRealPago = _primerPago.fechaAgrupacion || _primerPago.fechaPago || _primerPago.fecha || _primerPago.FECHA || _primerPago.fechaOriginal || _primerPago.fechaOrig || '';
+            const fechaPagoCabecera = _fechaRealPago ? formatearFechaPagoPDF(_fechaRealPago) : formatearFechaPagoPDF(new Date());
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -9562,7 +9565,8 @@ resetSeccionesDetalleCliente();
                                     <div class="flex items-center gap-2 flex-1 min-w-0">
                                         ${thumbProd}
                                         <div class="flex-1 min-w-0">
-                                            <span class="block text-[9px] font-black text-slate-400 uppercase">${fmtFecha(p.fecha)||p.fecha||''} - ${p.tipo||''}</span>
+                                            <span class="block text-[9px] font-black text-slate-400 uppercase">${fmtFecha(p.fechaPago||p.fechaAgrupacion||p.fecha)||p.fechaPago||p.fechaAgrupacion||p.fecha||''} - ${p.tipo||''}</span>
+                                            ${(p.fechaOriginal||p.fechaOrig||p['FECHA ORIGINAL']) ? `<span class="block text-[8px] font-bold text-slate-500 uppercase">Orig: ${fmtFecha(p.fechaOriginal||p.fechaOrig||p['FECHA ORIGINAL'])||p.fechaOriginal||p.fechaOrig||p['FECHA ORIGINAL']||''}</span>` : ''}
                                             <span class="block text-[9px] font-bold text-emerald-300 truncate">&#128230; ${Utils.escHtml(p.producto || 'Sin producto')}</span>
                                         </div>
                                 </div>
