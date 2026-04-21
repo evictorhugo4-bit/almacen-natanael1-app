@@ -11202,51 +11202,27 @@ function crearGeneroIngEgr(nombre) {
             if (!dd) return;
             const _tipo = (typeof ingEgrTipo !== 'undefined' ? ingEgrTipo : window.ingEgrTipo) || 'ingreso';
             const esEgr = _tipo === 'egreso';
-            const sheetMap = esEgr ? (window._catsEgrSheet||{}) : (window._catsIngSheet||{});
-            const dbRef   = esEgr ? (window._sheetEgresos||[]) : (window._sheetIngresos||[]);
-            // sc en UPPERCASE para matchear con las keys del mapa
-            const sc = (supercat || document.getElementById('inputIngEgrProveedor')?.value || '').toUpperCase().trim();
-            const q  = (query||'').toUpperCase().trim();
-            // Mapa desde DB: proveedor(UPPERCASE) → Set de conceptos(UPPERCASE)
-            const dbCatsMap = {};
-            dbRef.forEach(r => {
-                const k = (r.proveedor||'').toUpperCase().trim();
-                const v = (r.concepto||'').toUpperCase().trim();
-                if (k && v) { if (!dbCatsMap[k]) dbCatsMap[k] = new Set(); dbCatsMap[k].add(v); }
-            });
-            // Normalizar sheetMap a UPPERCASE keys
-            const normalizedSheet = {};
-            Object.keys(sheetMap).forEach(k => {
-                const ku = k.toUpperCase().trim();
-                if (!normalizedSheet[ku]) normalizedSheet[ku] = new Set();
-                (sheetMap[k]||[]).forEach(v => normalizedSheet[ku].add((v||'').toUpperCase().trim()));
-            });
-            // Fusionar ambos mapas
-            const mergedMap = {};
-            [...new Set([...Object.keys(normalizedSheet), ...Object.keys(dbCatsMap)])].forEach(k => {
-                const s = new Set([...(normalizedSheet[k]||[]), ...(dbCatsMap[k]||[])]);
-                mergedMap[k] = [...s].filter(Boolean).sort();
-            });
-            let opciones = [];
-            if (Object.keys(mergedMap).length) {
-                opciones = sc && mergedMap[sc] ? mergedMap[sc]
-                    : [...new Set(Object.values(mergedMap).flat())].sort();
-            } else {
-                opciones = [...new Set((dbRef||[]).map(r => (r.concepto||'').toUpperCase().trim()).filter(Boolean))].sort();
-            }
-            const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
-            const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
+            const q = (query||'').toUpperCase().trim();
+            const color       = esEgr ? 'hover:bg-red-500/20'  : 'hover:bg-emerald-500/20';
             const accentColor = esEgr ? '#f87171' : '#10b981';
-            // Botón + Crear si hay texto y no coincide exactamente
+
+            // Fuente exclusiva: LISTA DE INGRESOS / LISTA DE GASTOS del Sheet
+            // NO mezclar con el historial de ingresos/egresos pasados
+            const listaRef = esEgr ? (window._listaEgresos||[]) : (window._listaIngresos||[]);
+            let opciones = [...new Set(
+                listaRef.map(r => (r.nombre||'').toUpperCase().trim()).filter(Boolean)
+            )].sort();
+
+            const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
             const mostrarCrear = q && !opciones.some(o => o === q);
             if (!filtradas.length && !mostrarCrear) { dd.classList.add('hidden'); return; }
-            dd.innerHTML = (mostrarCrear ? `<div class="px-3 py-2 text-xs font-black text-black cursor-pointer uppercase flex items-center gap-2" style="background:${accentColor}20;border-bottom:1px solid ${accentColor}33;" onmousedown="crearCatIngEgr('${q.replace(/'/g,"\\'")}')" >
-                <span style="font-size:14px;font-weight:900;color:${accentColor}">ï¼‹</span>
+            dd.innerHTML = (mostrarCrear ? `<div class="px-3 py-2 text-xs font-black cursor-pointer uppercase flex items-center gap-2" style="background:${accentColor}20;border-bottom:1px solid ${accentColor}33;" onmousedown="crearCatIngEgr('${q.replace(/'/g,"\'")}')">
+                <span style="font-size:14px;font-weight:900;color:${accentColor}">+</span>
                 <span style="color:${accentColor}">Crear categoría "<strong>${Utils.escHtml(q)}</strong>"</span>
             </div>` : '') +
             filtradas.map(o =>
                 `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase"
-                      onmousedown="selCatIngEgr('${o.replace(/'/g, "\\'")}')">${o}</div>`
+                      onmousedown="selCatIngEgr('${o.replace(/'/g, "\'")}')">${o}</div>`
             ).join('');
             dd.classList.remove('hidden');
         }
@@ -11256,7 +11232,37 @@ function crearGeneroIngEgr(nombre) {
             if (!nombre) return;
             document.getElementById('inputIngEgrConcepto').value = nombre;
             document.getElementById('ddCatIngEgr').classList.add('hidden');
-            mostrarToast(`✓ Categoría "${nombre}" lista para usar`);
+
+            // ── NUEVO: guardar la categoría en la lista (local + Sheet) ──────
+            const _tipo = (typeof ingEgrTipo !== 'undefined' ? ingEgrTipo : window.ingEgrTipo) || 'ingreso';
+            const esEgr = _tipo === 'egreso';
+            const listaRef = esEgr ? (window._listaEgresos || []) : (window._listaIngresos || []);
+            const yaExiste = listaRef.some(r => (r.nombre||'').toUpperCase().trim() === nombre);
+            if (!yaExiste) {
+                const nuevoId = 'local_' + Date.now();
+                const nuevaEntrada = { id: nuevoId, nombre: nombre, monto: 0, imagen: '' };
+                listaRef.push(nuevaEntrada);
+                if (esEgr) {
+                    window._listaEgresos = listaRef;
+                    try { localStorage.setItem('natanael_lista_egresos', JSON.stringify(listaRef)); } catch(e) {}
+                } else {
+                    window._listaIngresos = listaRef;
+                    try { localStorage.setItem('natanael_lista_ingresos', JSON.stringify(listaRef)); } catch(e) {}
+                }
+                if (typeof fetchSheets === 'function') {
+                    fetchSheets({ method: 'POST', body: JSON.stringify({
+                        tipo: 'actualizar_lista_cat',
+                        hoja: esEgr ? 'egresos' : 'ingresos',
+                        id: nuevoId,
+                        nombre: nombre,
+                        monto: 0,
+                        imagen: ''
+                    })});
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
+
+            mostrarToast(`✓ Categoría "${nombre}" creada y guardada`);
         }
 
 function selGeneroIngEgr(val){
@@ -25850,12 +25856,14 @@ function renderListaCat(tab, clearSearch) {
     var SVG_DEL  = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
     var SVG_IMG  = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 
-    lista.innerHTML = items.map(function(item, idx) {
+    lista.innerHTML = items.map(function(item) {
+        var itemId  = item.id || '';
         var imgUrl  = item.imagen || '';
         var imgHtml = imgUrl
             ? '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML=\'<span style=font-size:20px>📋</span>\'">'
             : '<span style="font-size:20px; line-height:1;">📋</span>';
         var montoStr = item.monto ? '$' + Number(item.monto).toLocaleString('es-AR') : '<span style="color:#475569">Sin monto</span>';
+        var safeId = itemId.replace(/'/g, "\\'");
 
         return '<div class="glass-card p-4 rounded-2xl border border-slate-800">' +
             '<div class="flex justify-between items-center gap-3">' +
@@ -25876,10 +25884,10 @@ function renderListaCat(tab, clearSearch) {
                 '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">' +
                     '<label style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'' + color + '\'" onmouseout="this.style.color=\'#64748b\'" title="' + (imgUrl ? 'Cambiar imagen' : 'Agregar imagen') + '">' +
                         SVG_IMG +
-                        '<input type="file" accept="image/*" style="display:none;" onchange="lcImgUpload(this,' + idx + ')">' +
+                        '<input type="file" accept="image/*" style="display:none;" onchange="lcImgUpload(this,\'' + safeId + '\')">' +
                     '</label>' +
-                    '<button onclick="lcAbrirEdit(' + idx + ')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'#34d399\'" onmouseout="this.style.color=\'#64748b\'">' + SVG_EDIT + '</button>' +
-                    '<button onclick="lcEliminar(' + idx + ')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'#64748b\'">' + SVG_DEL + '</button>' +
+                    '<button onclick="lcAbrirEdit(\'' + safeId + '\')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'#34d399\'" onmouseout="this.style.color=\'#64748b\'">' + SVG_EDIT + '</button>' +
+                    '<button onclick="lcEliminar(\'' + safeId + '\')" style="padding:5px;background:#1e293b;border-radius:6px;border:none;cursor:pointer;color:#64748b;display:flex;align-items:center;" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'#64748b\'">' + SVG_DEL + '</button>' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -25910,9 +25918,11 @@ function lcAbrirNuevo() {
     setTimeout(function(){ var el=document.getElementById('lcEditNombre'); if(el) el.focus(); }, 100);
 }
 
-function lcAbrirEdit(idx) {
+function lcAbrirEdit(itemId) {
     var items = lcGetItems();
-    var item = items[idx]; if (!item) return;
+    var item = items.find(function(it) { return it.id === itemId; });
+    if (!item) return;
+    var idx = items.indexOf(item);
     document.getElementById('lcEditIdx').value    = idx;
     document.getElementById('lcEditNombre').value = item.nombre || '';
     document.getElementById('lcEditMonto').value  = item.monto  || '';
@@ -25949,9 +25959,11 @@ window.lcGuardarEdit = function() {
     renderListaCat();
 };
 
-function lcEliminar(idx) {
+function lcEliminar(itemId) {
     var items = lcGetItems();
-    var item = items[idx]; if (!item) return;
+    var item = items.find(function(it) { return it.id === itemId; });
+    if (!item) return;
+    var idx = items.indexOf(item);
     if (!confirm('¿Eliminar "' + item.nombre + '"?')) return;
     if (typeof fetchSheets === 'function')
         fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'eliminar', entidad: (window._listaCatTab === 'ingresos' ? 'lista_ingreso' : 'lista_egreso'), id: item.id }) });
@@ -25961,11 +25973,12 @@ function lcEliminar(idx) {
     renderListaCat();
 }
 
-function lcImgUpload(input, idx) {
+function lcImgUpload(input, itemId) {
     var file = input.files && input.files[0]; if (!file) return;
     var items = lcGetItems();
-    var item = items[idx]; if (!item) return;
-    if (typeof mostrarToast === 'function') mostrarToast('⏳ Subiendo imagen...', 'info');
+    var item = items.find(function(it) { return it.id === itemId; });
+    if (!item) return;
+    if (typeof mostrarToast === 'function') mostrarToast('⏳ Comprimiendo imagen...', 'info');
     var reader = new FileReader();
     reader.onload = function(e) {
         var img = new Image();
@@ -25976,18 +25989,30 @@ function lcImgUpload(input, idx) {
             canvas.height = Math.round(img.height * ratio);
             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
             var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            if (typeof mostrarToast === 'function') mostrarToast('⏳ Subiendo imagen a Drive...', 'info');
             if (typeof subirFotoImgBB === 'function') {
-                subirFotoImgBB(dataUrl, function(urlFinal) { lcImgGuardar(item, urlFinal); });
-            } else { lcImgGuardar(item, dataUrl); }
+                subirFotoImgBB(dataUrl, function(urlFinal) {
+                    var urlAGuardar = (urlFinal && !urlFinal.startsWith('data:')) ? urlFinal : dataUrl;
+                    lcImgGuardar(item, urlAGuardar, urlFinal && !urlFinal.startsWith('data:'));
+                });
+            } else {
+                lcImgGuardar(item, dataUrl, false);
+            }
+        };
+        img.onerror = function() {
+            if (typeof mostrarToast === 'function') mostrarToast('⚠ Error al leer la imagen', 'error');
         };
         img.src = e.target.result;
     };
+    reader.onerror = function() {
+        if (typeof mostrarToast === 'function') mostrarToast('⚠ No se pudo leer el archivo', 'error');
+    };
     reader.readAsDataURL(file);
+    input.value = '';
 }
 
-function lcImgGuardar(item, url) {
+function lcImgGuardar(item, url, subidaOk) {
     item.imagen = url;
-    // Guardar en localStorage inmediatamente
     var hoja = window._listaCatTab || 'egresos';
     if (hoja === 'ingresos') {
         try { localStorage.setItem('natanael_lista_ingresos', JSON.stringify(window._listaIngresos||[])); } catch(e) {}
@@ -25996,7 +26021,13 @@ function lcImgGuardar(item, url) {
     }
     if (typeof fetchSheets === 'function')
         fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'actualizar_lista_cat', hoja: hoja, id: item.id, nombre: item.nombre, monto: item.monto || 0, imagen: url }) });
-    if (typeof mostrarToast === 'function') mostrarToast('✓ Imagen guardada');
+    if (typeof mostrarToast === 'function') {
+        if (subidaOk === false) {
+            mostrarToast('⚠ Sin conexión: imagen guardada solo localmente', 'warning');
+        } else {
+            mostrarToast('✓ Imagen guardada correctamente');
+        }
+    }
     renderListaCat();
 }
 
