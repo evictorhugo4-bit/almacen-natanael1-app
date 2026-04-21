@@ -13474,6 +13474,9 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         let _editCompraItems = [];
         let _editCompraProdOptions = [];
 
+        // Snapshot de valores originales al abrir edición
+        let _editCompraSnap = {};
+
         function abrirEditarCompra(idx) {
             const c = _sheetCompras[idx];
             if (!c) return;
@@ -13482,6 +13485,14 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             document.getElementById('editCompraProveedor').value = c.proveedor || '';
             document.getElementById('editCompraEfectivo').value  = c.efectivo || 0;
             document.getElementById('editCompraCredito').value   = c.credito  || 0;
+            // Guardar snapshot para detectar si el usuario cambió algo
+            _editCompraSnap = {
+                proveedor: c.proveedor || '',
+                efectivo:  c.efectivo  || 0,
+                credito:   c.credito   || 0,
+                itemsJson: JSON.stringify((c.items||[]).map(i=>({nombre:i.nombre,cantidad:i.cantidad}))),
+                ticketsLen: (c.tickets||[c.ticket].filter(Boolean)||[]).length
+            };
             _editCompraItems = (c.items || []).map(i => {
                 const prodRef = (_sheetProductos || []).find(function(p) {
                     return String(p.id || '') === String(i.id || '') ||
@@ -14054,36 +14065,27 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                 setEstadoTicketEditCompra('Hay una captura pendiente por confirmar', '#f87171');
                 return;
             }
-            const compra  = _sheetCompras[_editandoCompraIdx];
-            const prov    = document.getElementById('editCompraProveedor').value.trim() || compra.proveedor;
-            const efect   = parseFloat(document.getElementById('editCompraEfectivo').value) || 0;
-            const cred    = parseFloat(document.getElementById('editCompraCredito').value)  || 0;
+            const compra     = _sheetCompras[_editandoCompraIdx];
+            const prov       = document.getElementById('editCompraProveedor').value.trim() || compra.proveedor;
+            const efect      = parseFloat(document.getElementById('editCompraEfectivo').value) || 0;
+            const cred       = parseFloat(document.getElementById('editCompraCredito').value)  || 0;
             const btnGuardar = document.getElementById('btnGuardarEditarCompra');
-            const items   = obtenerItemsEditCompraActuales();
+            const items      = obtenerItemsEditCompraActuales();
 
-            // Revertir stock viejo
-            (compra.items||[]).forEach(item => {
-                const prod = _sheetProductos.find(p => p.nombre === item.nombre);
-                if (prod) prod.stock = Math.max(0, (prod.stock||0) - (item.cantidad||0));
-            });
-            // Aplicar stock nuevo
-            items.forEach(item => {
-                const prod = _sheetProductos.find(p => p.nombre === item.nombre);
-                if (prod) prod.stock = (prod.stock||0) + (item.cantidad||0);
-            });
-
-            compra.proveedor = prov;
-            compra.efectivo  = efect;
-            compra.credito   = cred;
-            compra.total     = efect + cred;
-            compra.items     = items;
-
-            const _idParaSheet = compra.idSheet || compra.id;
             const ticketsNuevos = window._editCompraTickets || [];
+            const ticketsUrl    = ticketsNuevos.filter(t => String(t.data||'').startsWith('http')).map(t => t.data);
+            const ticketsBase64 = ticketsNuevos.filter(t => String(t.data||'').startsWith('data:'));
+            const _idParaSheet  = compra.idSheet || compra.id;
 
-            // Separar tickets que ya son URL (ya subidos) de los base64 nuevos
-            const ticketsUrl    = ticketsNuevos.filter(t => t.data.startsWith('http')).map(t => t.data);
-            const ticketsBase64 = ticketsNuevos.filter(t => t.data.startsWith('data:'));
+            // ── Detectar si el usuario cambió algo más allá de agregar imágenes ──
+            const snap = _editCompraSnap || {};
+            const provCambio    = prov !== (snap.proveedor || '');
+            const efCambio      = Math.abs(efect - (snap.efectivo || 0)) > 0.01;
+            const crCambio      = Math.abs(cred  - (snap.credito  || 0)) > 0.01;
+            const itemsJsonNow  = JSON.stringify(items.map(i=>({nombre:i.nombre,cantidad:i.cantidad})));
+            const itemsCambio   = itemsJsonNow !== (snap.itemsJson || '');
+            const hayTicketsNuevos = ticketsBase64.length > 0;
+            const soloTickets   = hayTicketsNuevos && !provCambio && !efCambio && !crCambio && !itemsCambio;
 
             try {
                 if (btnGuardar) {
@@ -14091,52 +14093,102 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     btnGuardar.textContent = 'Guardando...';
                     btnGuardar.style.opacity = '0.7';
                 }
-                mostrarToast('Guardando tickets...');
-                setEstadoTicketEditCompra('Subiendo ticket(s)...', '#fbbf24');
 
-                const urlsSubidas = await Promise.all(
-                    ticketsBase64.map(t => subirTicketConReintentos(t.data, 2))
-                );
+                // ── CASO A: Solo se agregaron imágenes, sin cambiar datos ──
+                // → Subir imágenes y actualizar solo el campo ticket sin tocar productos ni pagos
+                if (soloTickets) {
+                    mostrarToast('Subiendo imagen(es)...', 'info');
+                    setEstadoTicketEditCompra('Subiendo imagen(s)...', '#fbbf24');
+                    const urlsSubidas = await Promise.all(
+                        ticketsBase64.map(t => subirTicketConReintentos(t.data, 2))
+                    );
+                    const todosUrls = [...ticketsUrl, ...urlsSubidas];
+                    compra.tickets = todosUrls;
+                    compra.ticket  = todosUrls[0] || null;
+                    // Usar _soloTicket para que el Apps Script NO toque productos/pagos
+                    await Promise.resolve(fetchSheets({
+                        method: 'POST',
+                        body: JSON.stringify({
+                            tipo:       'compra',
+                            _soloTicket: true,
+                            id:         _idParaSheet,
+                            tickets:    todosUrls,
+                            ticket:     todosUrls.join('|') || null
+                        })
+                    }));
+                    setEstadoTicketEditCompra('Imagen guardada correctamente ✓', '#34d399');
+                    mostrarToast('✓ Imagen guardada en la compra');
+                }
+                // ── CASO B: Cambios reales en datos → actualizar todo ──
+                else {
+                    // Revertir stock viejo y aplicar nuevo solo si cambiaron items
+                    if (itemsCambio) {
+                        (compra.items||[]).forEach(item => {
+                            const prod = _sheetProductos.find(p => p.nombre === item.nombre);
+                            if (prod) prod.stock = Math.max(0, (prod.stock||0) - (item.cantidad||0));
+                        });
+                        items.forEach(item => {
+                            const prod = _sheetProductos.find(p => p.nombre === item.nombre);
+                            if (prod) prod.stock = (prod.stock||0) + (item.cantidad||0);
+                        });
+                    }
+                    compra.proveedor = prov;
+                    compra.efectivo  = efect;
+                    compra.credito   = cred;
+                    compra.total     = efect + cred;
+                    compra.items     = items;
 
-                const todosUrls = [...ticketsUrl, ...urlsSubidas];
-                compra.tickets = todosUrls;
-                compra.ticket  = todosUrls[0] || null;
+                    if (hayTicketsNuevos) {
+                        mostrarToast('Subiendo imagen(es)...', 'info');
+                        setEstadoTicketEditCompra('Subiendo ticket(s)...', '#fbbf24');
+                    }
+                    const urlsSubidas = hayTicketsNuevos
+                        ? await Promise.all(ticketsBase64.map(t => subirTicketConReintentos(t.data, 2)))
+                        : [];
+                    const todosUrls = [...ticketsUrl, ...urlsSubidas];
+                    if (hayTicketsNuevos || todosUrls.length) {
+                        compra.tickets = todosUrls;
+                        compra.ticket  = todosUrls[0] || null;
+                    }
 
-                await Promise.resolve(editarEnSheet({
-                    tipo: 'actualizar_compra',
-                    idCompra: _idParaSheet,
-                    fecha: compra.fechaISO || compra.fecha || '',
-                    proveedor: prov,
-                    efectivo: efect,
-                    credito: cred,
-                    total: compra.total,
-                    ticket: todosUrls.join('|') || null,
-                    tickets: todosUrls,
-                    productos: items.map(function(item) {
-                        const prodRef = (_sheetProductos || []).find(function(p) {
-                            return String(p.id || '') === String(item.id || '') ||
-                                   String(p.nombre || '').trim().toUpperCase() === String(item.nombre || '').trim().toUpperCase();
-                        }) || {};
-                        return {
-                            id: item.id || prodRef.id || '',
-                            nombre: item.nombre || '',
-                            cantidad: Math.max(1, parseFloat(item.cantidad) || 1),
-                            precioCosto: parseFloat(item.costo || prodRef.costo || prodRef.precioCosto || 0) || 0,
-                            precioVenta: parseFloat(item.precio || prodRef.precio || prodRef.precioVenta || 0) || 0,
-                            tipoVenta: item.tipoVenta || prodRef.tipoVenta || prodRef['FORMA DE VENTA'] || '',
-                            departamento: item.departamento || prodRef.departamento || '',
-                            categoria: item.categoria || prodRef.categoria || '',
-                            formaPago: cred > 0 && efect > 0 ? 'Mixto' : (cred > 0 ? 'Credito' : 'Efectivo')
-                        };
-                    })
-                }));
+                    await Promise.resolve(editarEnSheet({
+                        tipo:     'actualizar_compra',
+                        idCompra: _idParaSheet,
+                        fecha:    compra.fechaISO || compra.fecha || '',
+                        proveedor: prov,
+                        efectivo: efect,
+                        credito:  cred,
+                        total:    compra.total,
+                        ticket:   todosUrls.length ? todosUrls.join('|') : undefined,
+                        tickets:  todosUrls.length ? todosUrls : undefined,
+                        // Solo enviar productos si realmente cambiaron (evita reescritura innecesaria)
+                        productos: itemsCambio ? items.map(function(item) {
+                            const prodRef = (_sheetProductos || []).find(function(p) {
+                                return String(p.id || '') === String(item.id || '') ||
+                                       String(p.nombre || '').trim().toUpperCase() === String(item.nombre || '').trim().toUpperCase();
+                            }) || {};
+                            return {
+                                id:           item.id || prodRef.id || '',
+                                nombre:       item.nombre || '',
+                                cantidad:     Math.max(1, parseFloat(item.cantidad) || 1),
+                                precioCosto:  parseFloat(item.costo || prodRef.costo || prodRef.precioCosto || 0) || 0,
+                                precioVenta:  parseFloat(item.precio || prodRef.precio || prodRef.precioVenta || 0) || 0,
+                                tipoVenta:    item.tipoVenta || prodRef.tipoVenta || prodRef['FORMA DE VENTA'] || '',
+                                departamento: item.departamento || prodRef.departamento || '',
+                                categoria:    item.categoria || prodRef.categoria || '',
+                                formaPago:    cred > 0 && efect > 0 ? 'Mixto' : (cred > 0 ? 'Credito' : 'Efectivo')
+                            };
+                        }) : undefined
+                    }));
+                    setEstadoTicketEditCompra('Guardado correctamente ✓', '#34d399');
+                    mostrarToast('✓ Compra actualizada');
+                }
 
                 toggleModal('modalEditarCompra', false);
                 _editandoCompraIdx = -1;
+                _editCompraSnap = {};
                 if (window._vistaActual === 'compras')    renderCompras();
                 if (window._vistaActual === 'inventario') renderInventario();
-                setEstadoTicketEditCompra('Tickets guardados correctamente', '#34d399');
-                mostrarToast('Compra actualizada');
             } finally {
                 if (btnGuardar) {
                     btnGuardar.disabled = false;
