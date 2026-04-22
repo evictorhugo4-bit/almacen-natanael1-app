@@ -5233,8 +5233,8 @@ _sheetProductos.forEach(p => {
             const lista = codigosActuales ? codigosActuales.split(',').map(c => c.trim()).filter(Boolean) : [];
             if (!lista.includes(codigo)) lista.push(codigo);
             prod.codigos = lista.join(',');
-            // Actualizar también en prodPorCodigo
-            prodPorCodigo.set(codigo, prod);
+            // Actualizar también en prodPorCodigo con variantes normalizadas
+            _codigosAlternativos(codigo).forEach(c => prodPorCodigo.set(c, prod));
             // Enviar al sheet
             fetchSheets({ method: 'POST', body: JSON.stringify({
                 tipo: 'producto',
@@ -8186,9 +8186,27 @@ container.innerHTML = productosVisibles.map((p) => {
 
 
 
-// Normaliza un código: quita espacios, saltos de línea y ceros a la izquierda
+// Normaliza un código para lecturas de scanner y valores traídos desde Sheets.
+function _limpiarCodigoBase(c) {
+    return String(c || '')
+        .replace(/[\r\n\t]/g, '')
+        .trim()
+        .replace(/\.0+$/, '')
+        .toUpperCase();
+}
+
 function _normCod(c) {
-    return String(c || '').replace(/[\r\n\t]/g, '').trim().replace(/^0+(?=\d)/, '');
+    return _limpiarCodigoBase(c)
+        .replace(/[\s\-_.]/g, '')
+        .replace(/^0+(?=\d)/, '');
+}
+
+function _codigosAlternativos(c) {
+    const base = _limpiarCodigoBase(c);
+    const norm = _normCod(base);
+    const soloAlnum = base.replace(/[^A-Z0-9]/g, '');
+    const sinCeros = soloAlnum.replace(/^0+(?=\d)/, '');
+    return [...new Set([base, norm, soloAlnum, sinCeros].filter(Boolean))];
 }
 
 function indexarProductos(){
@@ -8209,12 +8227,10 @@ function indexarProductos(){
 
         // Indexa un código crudo y también su versión normalizada (sin ceros iniciales)
         const _idx = (raw) => {
-            const cod = String(raw || '').replace(/[\r\n\t]/g, '').trim();
-            if (!cod) return;
-            prodPorCodigo.set(cod, p);
-            productosPorCodigo[cod] = p;
-            const norm = cod.replace(/^0+(?=\d)/, '');
-            if (norm !== cod) { prodPorCodigo.set(norm, p); productosPorCodigo[norm] = p; }
+            _codigosAlternativos(raw).forEach(cod => {
+                prodPorCodigo.set(cod, p);
+                productosPorCodigo[cod] = p;
+            });
         };
 
         // Indexar por 'codigos' (múltiples separados por coma o punto y coma)
@@ -8232,24 +8248,23 @@ function indexarProductos(){
 
 // Busca un producto por código con fallback robusto
 function _buscarProdPorCodigo(codigoRaw) {
-    const codigo = String(codigoRaw || '').replace(/[\r\n\t]/g, '').trim();
+    const codigo = _limpiarCodigoBase(codigoRaw);
     if (!codigo) return null;
-    // 1. Exacto en índice
-    let prod = prodPorCodigo.get(codigo);
-    if (prod) return prod;
-    // 2. Sin ceros iniciales
-    const sinCeros = codigo.replace(/^0+(?=\d)/, '');
-    if (sinCeros !== codigo) { prod = prodPorCodigo.get(sinCeros); if (prod) return prod; }
-    // 3. Búsqueda exhaustiva normalizando cada código del producto
-    const codigoNorm = _normCod(codigo);
+    // 1. Probar todas las variantes razonables del código escaneado
+    for (const intento of _codigosAlternativos(codigo)) {
+        const prod = prodPorCodigo.get(intento);
+        if (prod) return prod;
+    }
+    // 2. Búsqueda exhaustiva normalizando cada código del producto
+    const variantesBuscadas = _codigosAlternativos(codigo);
     prod = _sheetProductos.find(p => {
         const todos = [
             ...String(p.codigos || '').split(/[,;]/),
             ...String(p.codigo  || '').split(/[,;]/)
         ];
         return todos.some(c => {
-            const cn = _normCod(c);
-            return cn && (cn === codigoNorm || c.trim() === codigo);
+            const variantesProducto = _codigosAlternativos(c);
+            return variantesProducto.some(vp => variantesBuscadas.includes(vp));
         });
     });
     return prod || null;
