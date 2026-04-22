@@ -6449,9 +6449,9 @@ _sheetEgresosNegocio.forEach(e => {
         }
 
         function obtenerLogoPDFNatanael() {
+            if (window.__natanaelLogoData) return window.__natanaelLogoData;
             const logoGuardado = localStorage.getItem('natanael_logo') || '';
             if (logoGuardado) return logoGuardado;
-            if (window.__natanaelLogoData) return window.__natanaelLogoData;
             const logoSidebar = document.querySelector('img[alt="Almacen Natanael"]');
             if (logoSidebar && logoSidebar.src) return logoSidebar.src;
             const logoFallback = document.querySelector('#mainSidebar img');
@@ -6496,16 +6496,6 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             } catch(e) {}
             return localStorage.getItem('natanael_logo') || '';
-        }
-
-        function aplicarLogoNatanaelEmbebido() {
-            try {
-                if (!window.__natanaelLogoData) return;
-                document.querySelectorAll('img[alt="Almacen Natanael"]').forEach(function(img) {
-                    img.src = window.__natanaelLogoData;
-                });
-                localStorage.setItem('natanael_logo', window.__natanaelLogoData);
-            } catch(e) {}
         }
 
         function insertarLogoPDF(doc, x, y, w, h) {
@@ -26234,7 +26224,6 @@ function lcImgGuardar(item, url, subidaOk) {
 <script>
 setTimeout(function() {
     try {
-        aplicarLogoNatanaelEmbebido();
         precargarLogoPDFNatanael();
     } catch(e) {}
 }, 300);
