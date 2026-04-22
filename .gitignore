@@ -1,0 +1,5 @@
+*.bak
+*.tmp
+
+app/index.cleaned.preview.html
+
