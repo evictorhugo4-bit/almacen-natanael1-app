@@ -4349,7 +4349,7 @@ Agregar
 
     <!-- MODAL DETALLE EFECTIVO EN CAJA -->
     <div id="modalDetalleCaja" class="modal-overlay" style="z-index: 320;">
-        <div class="glass-card w-full max-w-3xl rounded-[2rem] p-6 md:p-7 border-2 border-emerald-500/30 m-4" style="max-height:92vh;overflow:hidden;">
+        <div class="glass-card w-full max-w-3xl rounded-[2rem] p-6 md:p-7 border-2 border-emerald-500/30 m-4" style="max-height:92vh;overflow-y:auto;overflow-x:hidden;">
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h3 class="text-lg font-black text-white uppercase italic">Efectivo en Caja</h3>
@@ -4379,7 +4379,7 @@ Agregar
                 <p class="text-[10px] text-slate-500 font-bold mt-1">Inicial + entradas - salidas</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto custom-scrollbar" style="max-height:50vh;padding-right:4px;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 custom-scrollbar" style="padding-right:4px;padding-bottom:4px;">
                 <div class="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="text-xs font-black uppercase tracking-widest text-emerald-400">Entradas</h4>
