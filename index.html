@@ -467,6 +467,27 @@ z-index:999999999;
     display: flex;
 }
 
+@media (max-width: 640px) {
+    #modalDetalleCaja.modal-active {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 10px;
+    }
+
+    #modalDetalleCaja > .glass-card {
+        max-height: none !important;
+        overflow: visible !important;
+        margin: 0;
+        padding: 18px;
+    }
+
+    #detalleCajaListaEntradas,
+    #detalleCajaListaSalidas {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}
+
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease; }
 
         @keyframes fadeIn {
