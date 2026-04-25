@@ -19084,10 +19084,14 @@ window._pagoVentasSheet = _pagoVentasSheet;
                                 items: []
                             };
                         }
-                        // Acumular totales (cada fila tiene subtotal del item)
-                        comprasMap[key].total   += parseSheetNum(row['PAGO TOTAL']    || row['Pago Total']   || 0);
-                        comprasMap[key].efectivo+= parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']|| 0);
-                        comprasMap[key].credito += parseSheetNum(row['PAGO CREDITO']  || row['Pago credito'] || row['Pago Credito'] || 0);
+                        // PAGO TOTAL, EFECTIVO y CREDITO se repiten igual en cada fila del mismo grupo
+                        // → tomar el máximo para no multiplicar por cantidad de productos
+                        const rowTotal    = parseSheetNum(row['PAGO TOTAL']    || row['Pago Total']   || 0);
+                        const rowEfectivo = parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']|| 0);
+                        const rowCredito  = parseSheetNum(row['PAGO CREDITO']  || row['Pago credito'] || row['Pago Credito'] || 0);
+                        if (rowTotal    > comprasMap[key].total)    comprasMap[key].total    = rowTotal;
+                        if (rowEfectivo > comprasMap[key].efectivo) comprasMap[key].efectivo = rowEfectivo;
+                        if (rowCredito  > comprasMap[key].credito)  comprasMap[key].credito  = rowCredito;
                         // Tomar formaPago de cualquier fila que tenga valor
                         const fpRow = String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase();
                         if (fpRow && !comprasMap[key].formaPago) comprasMap[key].formaPago = fpRow;
