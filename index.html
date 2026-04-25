@@ -11986,7 +11986,7 @@ window.filtrarCatIngEgr      = filtrarCatIngEgr;
                 if (!c.tickets) c.tickets = c.ticket ? [c.ticket] : [];
                 c.tickets.push(ticketUrl);
                 c.ticket = c.tickets[0];
-                fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'actualizar_compra', idCompra:c.id, ticket:ticketUrl }) });
+                fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'actualizar_compra', idCompra:c.id, ticket:ticketUrl, proveedor:c.proveedor||'', efectivo:c.efectivo||0, credito:c.credito||0, total:c.total||((c.efectivo||0)+(c.credito||0)), soloTicket:true }) });
                 mostrarToast(' Ticket guardado');
                 cerrarModalTicketProv();
             });
@@ -13773,7 +13773,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     c.ticket = dataUrl;
                     titulo.textContent = 'TICKET - ' + (c.proveedor||'').toUpperCase();
                     mostrarToast(' Guardando ticket...');
-                    fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'actualizar_compra', idCompra:c.id, ticket:dataUrl }) });
+                    fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'actualizar_compra', idCompra:c.id, ticket:dataUrl, proveedor:c.proveedor||'', efectivo:c.efectivo||0, credito:c.credito||0, total:c.total||((c.efectivo||0)+(c.credito||0)), soloTicket:true }) });
                     window._ticketCompraActual = null;
                 // Egreso
                 } else if (window._ticketEgresoActual) {
@@ -14505,11 +14505,17 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     compra.ticket  = todosUrls[0] || null;
                     window._editCompraTickets = todosUrls.map((url, i) => ({ data: url, nombre: 'Ticket ' + (i + 1) }));
                     await Promise.resolve(editarEnSheet({
-                        tipo:     'actualizar_compra',
-                        idCompra: _idParaSheet,
-                        tickets:  todosUrls,
-                        ticket:   ticketTexto,
-                        TICKET:   ticketTexto
+                        tipo:      'actualizar_compra',
+                        idCompra:  _idParaSheet,
+                        tickets:   todosUrls,
+                        ticket:    ticketTexto,
+                        TICKET:    ticketTexto,
+                        // Incluir datos existentes para evitar que el script pise los valores actuales
+                        proveedor: compra.proveedor || prov,
+                        efectivo:  compra.efectivo  || 0,
+                        credito:   compra.credito   || 0,
+                        total:     compra.total     || (compra.efectivo||0) + (compra.credito||0),
+                        soloTicket: true
                     }));
                     setEstadoTicketEditCompra('Imagen(es) guardada(s) correctamente', '#34d399');
                     mostrarToast('Imagen(es) guardada(s) en la compra');
