@@ -3003,10 +3003,11 @@ GUARDAR PRODUCTO
                         <input type="number" id="inputIngNegCredito" placeholder="0" oninput="calcularIngNeg()" class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-red-400 focus:border-red-500 outline-none">
                     </div>
                 </div>
-                <!-- Fecha de Pago -->
+                <!-- Motivo -->
                 <div>
-                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Fecha de Pago</label>
-                    <input type="datetime-local" id="inputIngNegFechaPago" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs" style="color-scheme:dark;">
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Motivo</label>
+                    <textarea id="inputIngNegMotivo" placeholder="Motivo del préstamo / movimiento..." rows="3"
+                        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs resize-none"></textarea>
                 </div>
                 <!-- Total -->
                 <div class="bg-slate-900 px-4 py-3 rounded-2xl border border-emerald-500/20 text-center">
@@ -6281,8 +6282,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxoufoJOR8XAZYL9yYANbkiUtAPZKoqURw2VRicaH-IR-gQq_WHSzmWI621Wp0zOXsk/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxoufoJOR8XAZYL9yYANbkiUtAPZKoqURw2VRicaH-IR-gQq_WHSzmWI621Wp0zOXsk/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz3kRb4RG_2W5-xlEb_6xL6tPaRK4EBN68PWOWp8v7n1pge_xuI_cVhLUaqdr7aZSV1/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbz3kRb4RG_2W5-xlEb_6xL6tPaRK4EBN68PWOWp8v7n1pge_xuI_cVhLUaqdr7aZSV1/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -6883,7 +6884,7 @@ _sheetEgresosNegocio.forEach(e => {
                     _sheetVentas = [];
                     const ventasMap = {};
                     if (data.ventas[0]) console.warn('[VENTAS COLS] ' + Object.keys(data.ventas[0]).join(' | ') + ' || PAGO CREDITO=' + data.ventas[0]['PAGO CREDITO'] + ' Pago Credito=' + data.ventas[0]['Pago Credito'] + ' PAGO TOTAL=' + data.ventas[0]['PAGO TOTAL']);
-                    data.ventas.forEach((row) => {
+                    data.ventas.forEach((row, _rowIdx) => {
                         let fechaRaw = String(row['FECHA']||row['Fecha']||row['fecha']||row['FECHA CORTA']||row['Fecha Corta']||'').trim();
                         let fechaDisplay = fechaRaw;
                         try {
@@ -6895,7 +6896,9 @@ _sheetEgresosNegocio.forEach(e => {
                         const cliente = String(row['CLIENTE']||row['Cliente']||'').trim()||'-';
                         const total   = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
                         const idVenta = String(row['IDVENTAS']||'').trim();
-                        const key     = idVenta||(fechaRaw+'|'+cliente+'|'+total);
+                        // Sin IDVENTAS: cada fila es venta independiente (evita acumular
+                        // dineroRecuperado de múltiples filas CASA ERAZO sin ID en un mismo bucket)
+                        const key     = idVenta || ('_row_'+_rowIdx);
                         if (!ventasMap[key]) {
                             // Inicializar con 0 ? se acumula fila a fila porque cada fila tiene el subtotal del item
                             ventasMap[key] = {
@@ -17600,7 +17603,7 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             document.getElementById('selectIngNegFormaPago').value = 'Efectivo';
             document.getElementById('inputIngNegEfectivo').value = '';
             document.getElementById('inputIngNegCredito').value = '';
-            document.getElementById('inputIngNegFechaPago').value = '';
+            document.getElementById('inputIngNegMotivo').value = '';
             document.getElementById('ingNegTotal').textContent = '$0';
             toggleModal('modalIngNeg', true);
             lucide.createIcons();
@@ -17653,7 +17656,7 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
     const efectivo  = parseFloat(document.getElementById('inputIngNegEfectivo').value) || 0;
     const credito   = parseFloat(document.getElementById('inputIngNegCredito').value) || 0;
     const estado    = credito > 0 ? 'PENDIENTE' : 'FINALIZADO';
-    const fechaPago = document.getElementById('inputIngNegFechaPago').value || '';
+    const motivo    = document.getElementById('inputIngNegMotivo').value.trim() || '';
     const total     = efectivo + credito;
 
     if (total === 0) {
@@ -17677,7 +17680,7 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         efectivo,
         credito,
         total,
-        fechaPago,
+        motivo,
         items:[]
     };
 
@@ -17717,7 +17720,8 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             formaPago,
             pagoEfectivo: efectivo,
             pagoCredito: credito,
-            pagoTotal: total
+            pagoTotal: total,
+            detalle: motivo
         })
     });
 
