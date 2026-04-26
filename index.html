@@ -6044,9 +6044,10 @@ _sheetEgresosNegocio.forEach(e => {
                     var pagado = parseFloat(pagoVentasPorId[id] || 0);
 
                     if (esEsp) {
-                        // CASA ERAZO / ERROR VENTA: EF.VENTA = dineroRecuperado, CR??DITO = 0, TOTAL = dineroRecuperado
+                        // CASA ERAZO / ERROR VENTA: EF.VENTA = dineroRecuperado (costo real cobrado), fallback a costo
                         var dinRec = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.dineroRecuperado) || 0); }, 0);
                         if (!dinRec) dinRec = (v.items || []).reduce(function(s, i) { return s + (parseFloat(i.costo) || 0) * (parseFloat(i.cantidad) || 1); }, 0);
+                        dinRec += pagado;
                         totEf  += dinRec;
                         totTot += dinRec;
                         var fecha = v.fecha || v.fechaISO || '';
@@ -8874,7 +8875,7 @@ console.log("FILTRADAS:", filtradas.length);
                 const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
                 const cli = String(v.cliente||'').toUpperCase().trim();
                 const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
-                if(cli==='CASA ERAZO') casaErazoTotal += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                if(cli==='CASA ERAZO') { const _drCE=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); casaErazoTotal += _drCE>0?_drCE:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0); }
                 if(esEsp) return;
                 const ganBruta = Math.max(0, total - dinRec);
                 const cobEf = ef + (_ppv[String(v.id)]||0);
@@ -9242,7 +9243,7 @@ console.log("FILTRADAS:", filtradas.length);
                     _vVisNeg.add(v.id);
                     const cli = String(v.cliente||'').toUpperCase().trim();
                     const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
-                    if (cli === 'CASA ERAZO') _casaErazoEfNeg += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                    if (cli === 'CASA ERAZO') { const _drCE2=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); _casaErazoEfNeg += _drCE2>0?_drCE2:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0); }
                     if (esEsp) return;
                     const total = Number(v.total||0), ef = Number(v.efectivo||0);
                     const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
@@ -9258,7 +9259,7 @@ console.log("FILTRADAS:", filtradas.length);
                     if (!enRango(fn)) return;
                     const cli = String(v.cliente||'').toUpperCase().trim();
                     if (!['ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
-                    _errorVentaEfNeg += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                    const _drEV=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); _errorVentaEfNeg += _drEV>0?_drEV:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
                 });
 
                 const ventasEfNeg    = sumVentasEP('efectivo', ['CASA ERAZO','ERROR VENTA','ERROR VENTAS']);
@@ -9645,7 +9646,7 @@ console.log("FILTRADAS:", filtradas.length);
                 const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
                 const cli = String(v.cliente||'').toUpperCase().trim();
                 const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
-                if(cli==='CASA ERAZO') casaErazoTotEN += (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                if(cli==='CASA ERAZO') { const _drCE3=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); casaErazoTotEN += _drCE3>0?_drCE3:costoV; }
                 if(esEsp) return;
                 const ganBruta = Math.max(0, total - dinRec);
                 const cobEf = ef + (_ppvEN[String(v.id)]||0);
@@ -24704,17 +24705,15 @@ function verDetalleProveedor(tipo, id){
                 let crConGanancia = 0, crSinGanancia = 0;
                 let totConGanancia = 0, totSinGanancia = 0;
                 if (esEsp) {
-                    // Casa Erazo / Error Venta: efectivo = dinero recuperado (costo)
-                    const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-                    ef = dinRec + pagado;
-                    cr = 0;
-                    tot = ef;
-                    efConGanancia = ef;
-                    efSinGanancia = ef;
-                    crConGanancia = cr;
-                    crSinGanancia = cr;
-                    totConGanancia = tot;
-                    totSinGanancia = tot;
+                    // Casa Erazo / Error Venta: ef = dineroRecuperado por ítem (costo real)
+                    const dinRecV = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+                    const costoV  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                    const efBase  = dinRecV > 0 ? dinRecV : costoV;
+                    ef = efBase + pagado;
+                    cr = 0; tot = ef;
+                    efConGanancia = ef; efSinGanancia = ef;
+                    crConGanancia = 0; crSinGanancia = 0;
+                    totConGanancia = ef; totSinGanancia = ef;
                 } else {
                     // Calcular ganancia bruta y su distribución ef/cr
                     const sumItemEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
@@ -24723,28 +24722,23 @@ function verDetalleProveedor(tipo, id){
                     const costoV  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
                     const dinRecV = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoV;
                     const ganBruta = Math.max(0, sumItemTot - dinRecV);
-                    // Ganancia efectivo: proporción cobrada en ef
                     const cobEf = sumItemEf + pagado;
                     const ganEfV = cobEf > dinRecV ? Math.min(cobEf - dinRecV, ganBruta) : 0;
                     const ganCrV = Math.max(0, ganBruta - ganEfV);
-                    // EF $ = pagoEf items + pagoVentas - ganEf
                     ef  = Math.max(0, cobEf - ganEfV);
-                    // CR $ = pagoCredito items - ganCr (pagado ya está en cobEf, no restar de cr)
                     cr  = Math.max(0, sumItemCr - ganCrV);
-                    // TOTAL $ = tot - ganancia total
                     tot = Math.max(0, sumItemTot - ganBruta);
-                    efConGanancia = cobEf;
-                    efSinGanancia = ef;
-                    crConGanancia = sumItemCr;
-                    crSinGanancia = cr;
-                    totConGanancia = sumItemTot;
-                    totSinGanancia = tot;
+                    efConGanancia = cobEf; efSinGanancia = ef;
+                    crConGanancia = sumItemCr; crSinGanancia = cr;
+                    totConGanancia = sumItemTot; totSinGanancia = tot;
                 }
                 const items = v.items||[];
+                // Para esEsp: _vSumTot = suma de dineroRecuperado por ítem (o costo)
+                const _vSumDinRec = esEsp ? (items.reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || items.reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0) || 1) : 1;
                 if (items.length === 0) {
                     rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                 } else {
-                    const _vSumTot = (typeof sumItemTot !== 'undefined' ? sumItemTot : 0) || 1;
+                    const _vSumTot = esEsp ? _vSumDinRec : ((typeof sumItemTot !== 'undefined' ? sumItemTot : 0) || 1);
                     items.forEach((it, i) => {
                         const _itNomUp = String(it.nombre||'').trim().toUpperCase();
                         const _itId    = String(it.id||'').trim();
@@ -24757,8 +24751,13 @@ function verDetalleProveedor(tipo, id){
                         const _itEf    = Number(it.pagoEfectivo||0);
                         const _itCr    = Number(it.pagoCredito||0);
                         let _ef, _cr, _tot, _efCG, _crCG, _totCG;
-                        if (_itEf > 0 || _itCr > 0) {
-                            const _itDR  = Number(it.dineroRecuperado||0) || (_itCosto * _itCant);
+                        if (esEsp) {
+                            // Casa Erazo / Error Venta: ef = dineroRecuperado del ítem (costo real cobrado)
+                            const _itDREsp = Number(it.dineroRecuperado||0) || (_itCosto * _itCant);
+                            _ef = _itDREsp; _cr = 0; _tot = _itDREsp;
+                            _efCG = _itDREsp; _crCG = 0; _totCG = _itDREsp;
+                        } else if (_itEf > 0 || _itCr > 0) {
+                            const _itDR  = (_itCosto * _itCant) || Number(it.dineroRecuperado||0);
                             const _itGB  = Math.max(0, (_itEf+_itCr) - _itDR);
                             const _ganEf = _itEf > _itDR ? Math.min(_itEf - _itDR, _itGB) : 0;
                             _efCG = _itEf; _crCG = _itCr; _totCG = _itEf + _itCr;
