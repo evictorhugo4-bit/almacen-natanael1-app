@@ -8378,24 +8378,12 @@ console.log("FILTRADAS:", filtradas.length);
                 return;
             }
 
-            // Inicializar set de categorías expandidas si no existe
-            if (!window._catGlobalExpandidas) window._catGlobalExpandidas = new Set();
-
             let html = '';
             [...catMap.keys()].sort().forEach(cat => {
                 const prods = catMap.get(cat);
-                const catId = 'catg_' + cat.replace(/[^a-zA-Z0-9]/g, '_');
-                const expandida = window._catGlobalExpandidas.has(cat);
-                const displayProds = expandida ? 'block' : 'none';
-                const flecha = expandida ? '▲' : '▼';
-
                 html += '<div style="margin-bottom:8px;">';
-                html += '<div onclick="window._toggleCatGlobal(\'' + cat.replace(/'/g, "\\'") + '\')" style="font-size:10px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;background:#1e1040;border-radius:6px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border:1px solid #3b1f6e;transition:background .15s;" onmouseover="this.style.background=\'#2d1a5a\'" onmouseout="this.style.background=\'#1e1040\'">'
-                      + '<span>' + Utils.escHtml(cat) + ' <span style="color:#475569;font-size:9px;">(' + prods.length + ' prod.)</span></span>'
-                      + '<span style="color:#7c3aed;font-size:10px;">' + flecha + '</span>'
-                      + '</div>';
-
-                html += '<div id="' + catId + '" style="display:' + displayProds + ';">';
+                html += '<div style="font-size:10px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;background:#1e1040;border-radius:6px;margin-bottom:4px;">'
+                      + cat + ' <span style="color:#475569;font-size:9px;">(' + prods.length + ' prod.)</span></div>';
                 prods.forEach(p => {
                     const stock = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '')
                         ? parseFloat(p.stockFisico)
@@ -8408,33 +8396,10 @@ console.log("FILTRADAS:", filtradas.length);
                     html += '</div>';
                 });
                 html += '</div>';
-
-                html += '</div>';
             });
 
             contenedor.style.display = 'block';
             contenedor.innerHTML = html;
-
-            // Función para toggle de categoría
-            window._toggleCatGlobal = function(cat) {
-                const catId = 'catg_' + cat.replace(/[^a-zA-Z0-9]/g, '_');
-                const el = document.getElementById(catId);
-                if (!el) return;
-                const abierto = el.style.display !== 'none';
-                if (abierto) {
-                    el.style.display = 'none';
-                    window._catGlobalExpandidas.delete(cat);
-                } else {
-                    el.style.display = 'block';
-                    window._catGlobalExpandidas.add(cat);
-                }
-                // Actualizar flecha del header
-                const header = el.previousElementSibling;
-                if (header) {
-                    const flecha = header.querySelector('span:last-child');
-                    if (flecha) flecha.textContent = abierto ? '▼' : '▲';
-                }
-            };
         };
 
         window.renderStockProveedor = function() {
@@ -12498,7 +12463,7 @@ console.log("FILTRADAS:", filtradas.length);
                         const prodObj = (_sheetProductos || []).find(function(p) {
                             return (p.nombre || '').trim().toUpperCase() === (item.nombre || '').trim().toUpperCase();
                         });
-                        const fotoProd = item.foto || item.imagen || (prodObj && (prodObj.foto || prodObj.imagen)) || '';
+                        const fotoProd = item.foto || item.imagen || item.fotoProducto || (prodObj && (prodObj.fotoProducto || prodObj.foto || prodObj.imagen)) || obtenerFotoProductoPorNombre(item.nombre || '') || '';
                         const thumbProd = fotoProd
                             ? `<img src="${fotoProd.startsWith('data:') ? fotoProd : driveUrl(fotoProd)}" style="width:28px;height:28px;object-fit:contain;border-radius:7px;background:#0f172a;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt=""><span style="display:none;width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#94a3b8;">-</span>`
                             : `<span style="width:28px;height:28px;border-radius:7px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#94a3b8;">-</span>`;
@@ -13286,7 +13251,7 @@ console.log("FILTRADAS:", filtradas.length);
             const prod = (_sheetProductos || []).find(function(p) {
                 return String(p.nombre || '').trim().toUpperCase() === nombre;
             });
-            return prod ? (prod.foto || prod.imagen || '') : '';
+            return prod ? (prod.foto || prod.imagen || prod.fotoProducto || '') : '';
         }
 
         function cargarImagenParaPDF(url) {
