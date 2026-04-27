@@ -2595,42 +2595,46 @@ GUARDAR PRODUCTO
         <div id="tabProductos" class="hidden space-y-5">
 
             <!-- STOCK POR PROVEEDOR -->
-            <div class="glass-card rounded-2xl p-4 border border-blue-500/20">
-                <div class="flex flex-wrap items-center gap-3 mb-4">
-                    <h3 class="text-xs font-black text-blue-400 uppercase tracking-widest flex-1">Stock por Proveedor</h3>
-                    <div id="stockProvProveedorFotoWrap" style="width:156px;height:88px;border-radius:16px;background:#0f172a;border:1px solid #334155;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            <div class="glass-card rounded-2xl border border-blue-500/20" style="overflow:hidden;">
+                <!-- Encabezado estilo calendario -->
+                <div style="background:#7c1d4e;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <span style="font-size:13px;font-weight:900;color:#fff;letter-spacing:.06em;text-transform:uppercase;">📦 Stock por Proveedor</span>
+                    <div id="stockProvProveedorFotoWrap" style="width:44px;height:44px;border-radius:10px;background:#5b1338;border:1.5px solid #a8476e;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
                         <img id="stockProvProveedorFoto" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
-                        <span id="stockProvProveedorFotoFallback" style="font-size:28px;font-weight:900;color:#475569;">-</span>
+                        <span id="stockProvProveedorFotoFallback" style="font-size:18px;font-weight:900;color:#e9a8c5;">–</span>
                     </div>
+                </div>
+                <!-- Cuerpo del filtro -->
+                <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
+                    <!-- Selector proveedor -->
                     <select id="filtroProveedorStat" onchange="renderStockProveedor()"
-                        class="text-[10px] px-3 py-1.5 rounded-lg font-bold"
-                        style="background:#0f172a;border:1px solid #334155;color:white;min-width:180px;">
-                        <option value="">- Elegir proveedor -</option>
+                        style="width:100%;background:#0f172a;border:2px solid #7c1d4e;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
+                        <option value="">– Elegir proveedor –</option>
                     </select>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-blue-400 uppercase">Desde</label>
-                        <input type="datetime-local" id="provStatDesde" onchange="renderStockProveedor()"
-                            class="text-[10px] px-2 py-1.5 rounded-lg"
-                            style="background:#0f172a;border:1px solid #334155;color:white;">
+                    <!-- Desde / Hasta -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Desde</label>
+                            <input type="datetime-local" id="provStatDesde" onchange="renderStockProveedor()"
+                                style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Hasta</label>
+                            <input type="datetime-local" id="provStatHasta" onchange="renderStockProveedor()"
+                                style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
+                        </div>
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-blue-400 uppercase">Hasta</label>
-                        <input type="datetime-local" id="provStatHasta" onchange="renderStockProveedor()"
-                            class="text-[10px] px-2 py-1.5 rounded-lg"
-                            style="background:#0f172a;border:1px solid #334155;color:white;">
+                    <!-- Botones rápidos estilo días de calendario -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;">
+                        <button onclick="setRangoProductosRapido('stock','hoy')"
+                            style="background:#7c1d4e;color:#fff;border:none;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">HOY</button>
+                        <button onclick="setRangoProductosRapido('stock','7d')"
+                            style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">7D</button>
+                        <button onclick="setRangoProductosRapido('stock','30d')"
+                            style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">30D</button>
+                        <button onclick="document.getElementById('provStatDesde').value='';document.getElementById('provStatHasta').value='';renderStockProveedor();"
+                            style="background:#1e293b;color:#94a3b8;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">↺</button>
                     </div>
-                    <button onclick="document.getElementById('provStatDesde').value='';document.getElementById('provStatHasta').value='';renderStockProveedor();"
-                        class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg mt-4"
-                        style="background:#334155;color:#94a3b8;">Limpiar</button>
-                    <button onclick="setRangoProductosRapido('stock','hoy')"
-                        class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg mt-4"
-                        style="background:#10b981;color:#052e16;">Hoy</button>
-                    <button onclick="setRangoProductosRapido('stock','7d')"
-                        class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg mt-4"
-                        style="background:#334155;color:#e2e8f0;">7D</button>
-                    <button onclick="setRangoProductosRapido('stock','30d')"
-                        class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg mt-4"
-                        style="background:#334155;color:#e2e8f0;">30D</button>
                 </div>
                 <div id="tablaStockProveedorWrap" class="overflow-x-auto hidden">
                     <table class="w-full text-[10px]">
@@ -2655,52 +2659,44 @@ GUARDAR PRODUCTO
             </div>
 
             <!-- VENTAS POR PRODUCTO -->
-            <div class="glass-card rounded-2xl p-4 border border-emerald-500/20">
-                <div class="flex flex-wrap items-center gap-3 mb-4">
-                    <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest flex-1">🏠 Ventas por Producto</h3>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-emerald-500 uppercase">Desde</label>
-                        <input type="datetime-local" id="ventasProdDesde" onchange="renderVentasPorProducto()"
-                            class="text-[10px] px-2 py-1.5 rounded-lg"
-                            style="background:#0f172a;border:1px solid #334155;color:white;">
+            <div class="glass-card rounded-2xl border border-emerald-500/20" style="overflow:hidden;">
+                <!-- Encabezado estilo calendario -->
+                <div style="background:#7c1d4e;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <span style="font-size:13px;font-weight:900;color:#fff;letter-spacing:.06em;text-transform:uppercase;">🏠 Ventas por Producto</span>
+                </div>
+                <!-- Cuerpo del filtro -->
+                <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
+                    <!-- Desde / Hasta -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Desde</label>
+                            <input type="datetime-local" id="ventasProdDesde" onchange="renderVentasPorProducto()"
+                                style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Hasta</label>
+                            <input type="datetime-local" id="ventasProdHasta" onchange="renderVentasPorProducto()"
+                                style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
+                        </div>
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label>
-                        <input type="datetime-local" id="ventasProdHasta" onchange="renderVentasPorProducto()"
-                            class="text-[10px] px-2 py-1.5 rounded-lg"
-                            style="background:#0f172a;border:1px solid #334155;color:white;">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-slate-500 uppercase">Proveedor</label>
+                    <!-- Selector proveedor -->
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                        <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Proveedor</label>
                         <select id="filtroProveedorVentas" onchange="renderVentasPorProducto()"
-                            class="text-[10px] px-3 py-1.5 rounded-lg font-bold"
-                            style="background:#0f172a;border:1px solid #334155;color:white;min-width:180px;">
-                            <option value="">- Todos los proveedores -</option>
+                            style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
+                            <option value="">– Todos los proveedores –</option>
                         </select>
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-slate-500 uppercase">&nbsp;</label>
+                    <!-- Botones rápidos estilo días de calendario -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;">
                         <button onclick="setRangoProductosRapido('ventas','hoy')"
-                            class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg"
-                            style="background:#10b981;color:#052e16;">Hoy</button>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-slate-500 uppercase">&nbsp;</label>
+                            style="background:#7c1d4e;color:#fff;border:none;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">HOY</button>
                         <button onclick="setRangoProductosRapido('ventas','7d')"
-                            class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg"
-                            style="background:#334155;color:#e2e8f0;">7D</button>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-slate-500 uppercase">&nbsp;</label>
+                            style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">7D</button>
                         <button onclick="setRangoProductosRapido('ventas','30d')"
-                            class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg"
-                            style="background:#334155;color:#e2e8f0;">30D</button>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[9px] font-black text-slate-500 uppercase">&nbsp;</label>
+                            style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">30D</button>
                         <button onclick="document.getElementById('ventasProdDesde').value='';document.getElementById('ventasProdHasta').value='';renderVentasPorProducto();"
-                            class="text-[10px] font-black uppercase px-3 py-1.5 rounded-lg"
-                            style="background:#334155;color:#94a3b8;">Limpiar</button>
+                            style="background:#1e293b;color:#94a3b8;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">↺</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -25454,12 +25450,12 @@ function verDetalleProveedor(tipo, id){
                         ? `<img src="${driveUrl(fotoUrl)}" style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`
                         : `<span style="width:24px;height:24px;border-radius:6px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#475569;flex-shrink:0;">${f.nom[0]}</span>`;
                 html += `<tr id="${catId}_row_${pi}" class="border-b border-slate-800" style="background:rgba(15,23,42,0.6);display:none;">
-                        <td style="padding:7px 8px;"></td>
+                        <td style="padding:7px 8px;text-align:center;color:#475569;font-size:10px;font-weight:700;">–</td>
                         <td style="padding:7px 8px;">
                             <div style="display:flex;align-items:center;gap:7px;padding-left:20px;">
-                                <span style="color:#475569;font-size:10px;">âó</span>
+                                <span style="color:#475569;font-size:10px;">↳</span>
                                 ${fotoHtml}
-                                <span style="font-weight:700;color:#94a3b8;font-size:10px;">${f.nom.length>35?f.nom.substring(0,34)+'â¬¦':f.nom}</span>
+                                <span style="font-weight:700;color:#94a3b8;font-size:10px;">${f.nom.length>35?f.nom.substring(0,34)+'…':f.nom}</span>
                             </div>
                         </td>
                         <td style="padding:7px 12px;text-align:center;font-weight:900;font-size:10px;color:${dColor};width:120px;">${f.diff>=0?'+':''}${Utils.fmt(f.diff)}</td>
@@ -27648,7 +27644,7 @@ function lcAbrirNuevo() {
     document.getElementById('lcEditMonto').value  = '';
     var esIng = window._listaCatTab === 'ingresos';
     var t = document.getElementById('modalLcEditTitle');
-    if (t) t.textContent = esIng ? 'âž? Nuevo ingreso' : 'âž? Nuevo gasto';
+    if (t) t.textContent = esIng ? '➕ Nuevo ingreso' : '➕ Nuevo gasto';
     toggleModal('modalLcEdit', true);
     setTimeout(function(){ var el=document.getElementById('lcEditNombre'); if(el) el.focus(); }, 100);
 }
