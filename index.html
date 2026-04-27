@@ -5815,6 +5815,14 @@ _sheetEgresosNegocio.forEach(e => {
             const totalPags = Math.ceil(datos.length / PAGE);
             const slice = datos.slice(0, PAGE * _renderHistorialData._page);
 
+            // Pre-calcular pagos de PAGO VENTAS por idVenta para cotejar estado
+            var _pvPorId = {};
+            (_pagoVentasSheet || []).forEach(function(p) {
+                var pid = String(p.idVenta || p.IDVENTAS || '').trim();
+                if (!pid) return;
+                _pvPorId[pid] = (_pvPorId[pid] || 0) + (parseFloat(p.monto || p.MONTO) || 0);
+            });
+
             let rows = '';
             slice.forEach(function(v) {
                 const realIdx = historial.indexOf(v);
@@ -5829,7 +5837,11 @@ _sheetEgresosNegocio.forEach(e => {
                         return s + (dinRecItem || (costoUnit * cant));
                     }, 0)
                     : 0;
-                const credito = esClienteEspecialHist ? 0 : Math.max(0, v.deuda || 0);
+                // Cotejar con PAGO VENTAS: si ya se pagó el saldo pendiente, estado FINALIZADO
+                var _vId = String(v.id || v.idSheet || '').trim();
+                var _pagadoExtra = _pvPorId[_vId] || 0;
+                var _deudaReal = Math.max(0, (v.deuda || 0) - _pagadoExtra);
+                const credito = esClienteEspecialHist ? 0 : _deudaReal;
                 const efectivoHist = esClienteEspecialHist ? totalEspecialHist : Number(v.efectivo || 0);
                 const totalHist = esClienteEspecialHist ? totalEspecialHist : Number(v.total || 0);
 
