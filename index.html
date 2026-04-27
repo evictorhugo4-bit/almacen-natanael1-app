@@ -2696,13 +2696,22 @@ GUARDAR PRODUCTO
                                 style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
                         </div>
                     </div>
-                    <!-- Selector proveedor -->
-                    <div style="display:flex;flex-direction:column;gap:3px;">
-                        <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Proveedor</label>
-                        <select id="filtroProveedorVentas" onchange="renderVentasPorProducto()"
-                            style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
-                            <option value="">– Todos los proveedores –</option>
-                        </select>
+                    <!-- Selector proveedor + departamento -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Proveedor</label>
+                            <select id="filtroProveedorVentas" onchange="renderVentasPorProducto()"
+                                style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
+                                <option value="">– Todos –</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Departamento</label>
+                            <select id="filtroDepartamentoVentas" onchange="renderVentasPorProducto()"
+                                style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
+                                <option value="">– Todos –</option>
+                            </select>
+                        </div>
                     </div>
                     <!-- Botones rápidos estilo días de calendario -->
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;">
@@ -2712,7 +2721,7 @@ GUARDAR PRODUCTO
                             style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">7D</button>
                         <button onclick="setRangoProductosRapido('ventas','30d')"
                             style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">30D</button>
-                        <button onclick="document.getElementById('ventasProdDesde').value='';document.getElementById('ventasProdHasta').value='';renderVentasPorProducto();"
+                        <button onclick="document.getElementById('ventasProdDesde').value='';document.getElementById('ventasProdHasta').value='';document.getElementById('filtroDepartamentoVentas').value='';renderVentasPorProducto();"
                             style="background:#1e293b;color:#94a3b8;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">↺</button>
                     </div>
                 </div>
@@ -25347,8 +25356,19 @@ function verDetalleProveedor(tipo, id){
                     _sheetProductos.map(p => String(p.proveedor||'').trim()).filter(Boolean)
                 )].sort();
                 const prevProv = selProvV.value;
-                selProvV.innerHTML = '<option value="">- Todos los proveedores -</option>' +
+                selProvV.innerHTML = '<option value="">– Todos –</option>' +
                     proveedores.map(pr => `<option value="${pr}" ${pr===prevProv?'selected':''}>${pr}</option>`).join('');
+            }
+
+            // Poblar select departamento (ventas por producto)
+            const selDepV = document.getElementById('filtroDepartamentoVentas');
+            if (selDepV) {
+                const deptos = [...new Set(
+                    _sheetProductos.map(p => String(p.depto||'').trim()).filter(Boolean)
+                )].sort();
+                const prevDep = selDepV.value;
+                selDepV.innerHTML = '<option value="">– Todos –</option>' +
+                    deptos.map(d => `<option value="${d}" ${d===prevDep?'selected':''}>${d}</option>`).join('');
             }
 
             // Poblar select kardex
@@ -25411,6 +25431,7 @@ function verDetalleProveedor(tipo, id){
             const desde = document.getElementById('ventasProdDesde').value;
             const hasta = document.getElementById('ventasProdHasta').value;
             const provFiltro = (document.getElementById('filtroProveedorVentas')?.value || '').trim().toUpperCase();
+            const deptoFiltro = (document.getElementById('filtroDepartamentoVentas')?.value || '').trim().toUpperCase();
             const tbody = document.getElementById('tablaVentasProductoBody');
             if (!tbody) return;
 
@@ -25444,6 +25465,8 @@ function verDetalleProveedor(tipo, id){
                 if ((parseFloat(p.stockMin)||0) <= 0) return;
                 const prov = String(p.proveedor||'').trim();
                 if (provFiltro && prov.toUpperCase() !== provFiltro) return;
+                const dep = String(p.depto||'').trim();
+                if (deptoFiltro && dep.toUpperCase() !== deptoFiltro) return;
                 ventasMap[nom] = { cantidad: 0, proveedor: prov };
             });
 
@@ -25453,12 +25476,14 @@ function verDetalleProveedor(tipo, id){
                     const prod = prodPorNombre[nom];
                     const prov = prod ? String(prod.proveedor||'').trim() : d.proveedor;
                     if (provFiltro && prov.toUpperCase() !== provFiltro) return null;
+                    const dep = prod ? String(prod.depto||'').trim() : '';
+                    if (deptoFiltro && dep.toUpperCase() !== deptoFiltro) return null;
                     const stock = prod ? Math.max(0, prod.stockCalculado ?? parseFloat(prod.stock) ?? 0) : 0;
                     const stockMin = prod ? Math.max(0, parseFloat(prod.stockMin) || 0) : 0;
                     const cat = prod ? String(prod.categoria||'SIN CATEGORÍA').trim().toUpperCase() : 'SIN CATEGORÍA';
                     const rawDiff = stock - d.cantidad;
                     const diff = rawDiff >= 0 ? rawDiff : Math.min(rawDiff, -stockMin);
-                    return { nom, cantidad: d.cantidad, prov, stock, stockMin, diff, cat };
+                    return { nom, cantidad: d.cantidad, prov, dep, stock, stockMin, diff, cat };
                 })
                 .filter(Boolean);
 
