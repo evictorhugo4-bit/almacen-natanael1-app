@@ -20012,7 +20012,11 @@ const productosPayload = _carritoSnapshot.map(c => {
         'FORMA DE PAGO': formaPagoItem,
         'PAGO EFECTIVO': pagoEfectivo,
         'PAGO CREDITO': pagoCredito,
-        'PAGO TOTAL': pagoTotal
+        'PAGO TOTAL': pagoTotal,
+        // ↗↗ Ticket incluido en cada producto para que el Apps Script lo escriba en cada fila ↗↗
+        ticket:   ticketsUrls[0] || null,
+        tickets:  ticketsUrls,
+        'TICKET': ticketsUrls.join('|') || null
     };
 });
 
@@ -20025,6 +20029,7 @@ const payload = {
     flete:         _fleteSnapshot,
     ticket:        ticketsUrls[0] || null,
     tickets:       ticketsUrls,
+    'TICKET':      ticketsUrls.join('|') || null,
     productos:     productosPayload
 };
 
