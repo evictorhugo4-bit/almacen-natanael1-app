@@ -2594,6 +2594,18 @@ GUARDAR PRODUCTO
 
         <div id="tabProductos" class="hidden space-y-5">
 
+            <!-- BUSCADOR GLOBAL DE CATEGORÍA -->
+            <div class="glass-card rounded-2xl border border-violet-500/20" style="overflow:hidden;">
+                <div style="background:#3b1f6e;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:13px;font-weight:900;color:#fff;letter-spacing:.06em;text-transform:uppercase;">🔍 Buscar por Categoría</span>
+                </div>
+                <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
+                    <input type="text" id="buscadorCatGlobal" placeholder="Escribí una categoría..." oninput="renderBuscadorCatGlobal()"
+                        style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #6d28d9;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:9px 12px;outline:none;">
+                    <div id="resultadosBuscadorCatGlobal" style="display:none;"></div>
+                </div>
+            </div>
+
             <!-- STOCK POR PROVEEDOR -->
             <div class="glass-card rounded-2xl border border-blue-500/20" style="overflow:hidden;">
                 <!-- Encabezado estilo calendario -->
@@ -2637,6 +2649,11 @@ GUARDAR PRODUCTO
                     </div>
                 </div>
                 <div id="tablaStockProveedorWrap" class="overflow-x-auto hidden">
+                    <!-- Buscador de categoría -->
+                    <div style="padding:8px 14px 0;">
+                        <input type="text" id="buscadorCatStock" placeholder="🔍 Buscar categoría..." oninput="renderStockProveedor()"
+                            style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #7c1d4e;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;outline:none;">
+                    </div>
                     <table class="w-full text-[10px]">
                         <thead>
                             <tr class="border-b border-slate-700">
@@ -8340,6 +8357,86 @@ console.log("FILTRADAS:", filtradas.length);
             renderStockProveedor();
         };
 
+        window.renderBuscadorCatGlobal = function() {
+            const q = (document.getElementById('buscadorCatGlobal')?.value || '').trim().toUpperCase();
+            const contenedor = document.getElementById('resultadosBuscadorCatGlobal');
+            if (!contenedor) return;
+            if (!q) { contenedor.style.display = 'none'; contenedor.innerHTML = ''; return; }
+
+            // Agrupar todos los productos por categoría filtrando por búsqueda
+            const catMap = new Map();
+            (_sheetProductos || []).forEach(p => {
+                const cat = (p.categoria || p.depto || 'SIN CATEGORÍA').trim().toUpperCase();
+                if (!cat.includes(q)) return;
+                if (!catMap.has(cat)) catMap.set(cat, []);
+                catMap.get(cat).push(p);
+            });
+
+            if (catMap.size === 0) {
+                contenedor.style.display = 'block';
+                contenedor.innerHTML = '<p style="font-size:10px;color:#64748b;text-align:center;padding:8px;font-weight:700;">Sin resultados</p>';
+                return;
+            }
+
+            // Inicializar set de categorías expandidas si no existe
+            if (!window._catGlobalExpandidas) window._catGlobalExpandidas = new Set();
+
+            let html = '';
+            [...catMap.keys()].sort().forEach(cat => {
+                const prods = catMap.get(cat);
+                const catId = 'catg_' + cat.replace(/[^a-zA-Z0-9]/g, '_');
+                const expandida = window._catGlobalExpandidas.has(cat);
+                const displayProds = expandida ? 'block' : 'none';
+                const flecha = expandida ? '▲' : '▼';
+
+                html += '<div style="margin-bottom:8px;">';
+                html += '<div onclick="window._toggleCatGlobal(\'' + cat.replace(/'/g, "\\'") + '\')" style="font-size:10px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;background:#1e1040;border-radius:6px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border:1px solid #3b1f6e;transition:background .15s;" onmouseover="this.style.background=\'#2d1a5a\'" onmouseout="this.style.background=\'#1e1040\'">'
+                      + '<span>' + Utils.escHtml(cat) + ' <span style="color:#475569;font-size:9px;">(' + prods.length + ' prod.)</span></span>'
+                      + '<span style="color:#7c3aed;font-size:10px;">' + flecha + '</span>'
+                      + '</div>';
+
+                html += '<div id="' + catId + '" style="display:' + displayProds + ';">';
+                prods.forEach(p => {
+                    const stock = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '')
+                        ? parseFloat(p.stockFisico)
+                        : (parseFloat(p.stock) || 0);
+                    const prov  = p.proveedor || '–';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;background:#0f172a;margin-bottom:2px;">';
+                    html += '<div><span style="font-size:10px;color:#e2e8f0;font-weight:700;">' + Utils.escHtml(p.nombre || '–') + '</span>'
+                          + '<span style="font-size:9px;color:#475569;margin-left:6px;">' + Utils.escHtml(prov) + '</span></div>';
+                    html += '<span style="font-size:10px;font-weight:900;font-family:monospace;color:' + (stock > 0 ? '#34d399' : '#f87171') + ';">' + stock + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+
+                html += '</div>';
+            });
+
+            contenedor.style.display = 'block';
+            contenedor.innerHTML = html;
+
+            // Función para toggle de categoría
+            window._toggleCatGlobal = function(cat) {
+                const catId = 'catg_' + cat.replace(/[^a-zA-Z0-9]/g, '_');
+                const el = document.getElementById(catId);
+                if (!el) return;
+                const abierto = el.style.display !== 'none';
+                if (abierto) {
+                    el.style.display = 'none';
+                    window._catGlobalExpandidas.delete(cat);
+                } else {
+                    el.style.display = 'block';
+                    window._catGlobalExpandidas.add(cat);
+                }
+                // Actualizar flecha del header
+                const header = el.previousElementSibling;
+                if (header) {
+                    const flecha = header.querySelector('span:last-child');
+                    if (flecha) flecha.textContent = abierto ? '▼' : '▲';
+                }
+            };
+        };
+
         window.renderStockProveedor = function() {
             const proveedor = (document.getElementById('filtroProveedorStat')?.value || '').trim();
             const wrap = document.getElementById('tablaStockProveedorWrap');
@@ -8572,11 +8669,15 @@ console.log("FILTRADAS:", filtradas.length);
                 return dA - dB; // negativos antes positivos
             });
 
+            // Filtrar categorías por buscador
+            const _busqCat = (document.getElementById('buscadorCatStock')?.value || '').trim().toUpperCase();
+            const catKeysFiltrados = _busqCat ? catKeys.filter(c => c.includes(_busqCat)) : catKeys;
+
             // Estado de acordeones persistido en objeto
             if (!window._stockProvCatOpen) window._stockProvCatOpen = {};
 
             let rowsHtml = '';
-            catKeys.forEach(cat => {
+            catKeysFiltrados.forEach(cat => {
                 const prods = catMap.get(cat);
                 let catSI=0, catC=0, catV=0, catSA=0, catSE=0;
 
