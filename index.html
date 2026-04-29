@@ -25098,16 +25098,18 @@ function verDetalleProveedor(tipo, id){
             let saldoEf = 0, saldoCr = 0;
             // Primero calcular totales para empezar desde 0 en orden desc
             rowsFiltradas.forEach(r => {
-                if (r.esEgreso) { saldoEf -= r.ef; saldoCr -= r.cr; }
-                else            { saldoEf += r.ef; saldoCr += r.cr; }
+                const _rCr = Number(r.crConGanancia || r.cr || 0);
+                if (r.esEgreso) { saldoEf -= r.ef; saldoCr -= _rCr; }
+                else            { saldoEf += r.ef; saldoCr += _rCr; }
             });
             // Ahora asignar saldo por fila de arriba a abajo (desc)
             let acumEf = saldoEf, acumCr = saldoCr;
             rowsFiltradas.forEach(r => {
                 r.saldoEf = acumEf;
                 r.saldoCr = acumCr;
-                if (r.esEgreso) { acumEf += r.ef; acumCr += r.cr; }
-                else            { acumEf -= r.ef; acumCr -= r.cr; }
+                const _rCr2 = Number(r.crConGanancia || r.cr || 0);
+                if (r.esEgreso) { acumEf += r.ef; acumCr += _rCr2; }
+                else            { acumEf -= r.ef; acumCr -= _rCr2; }
             });
 
             tbody.innerHTML = rowsFiltradas.map((r, idx) => {
@@ -25141,8 +25143,9 @@ function verDetalleProveedor(tipo, id){
                 const efHtml = r.ef > 0
                     ? '$' + Utils.fmt(mostrarEfDoble ? efConGanancia : r.ef)
                     : '<span style="color:#475569;">$0</span>';
-                const crHtml = r.cr > 0
-                    ? '$' + Utils.fmt(mostrarCrDoble ? crConGanancia : r.cr)
+                const _crDisplay = crConGanancia > 0 ? crConGanancia : r.cr;
+                const crHtml = _crDisplay > 0
+                    ? '$' + Utils.fmt(_crDisplay)
                     : '<span style="color:#475569;">$0</span>';
                 const totHtml = r.tot > 0
                     ? '$' + Utils.fmt(mostrarTotDoble ? totConGanancia : r.tot)
