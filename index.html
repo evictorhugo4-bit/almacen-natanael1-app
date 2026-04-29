@@ -7208,9 +7208,9 @@ window._pagoVentasSheet = _pagoVentasSheet;
                                 fecha: fechaDisplay,
                                 fechaISO: fechaRaw,
                                 proveedor: proveedor,
-                                total: 0,
-                                efectivo: 0,
-                                credito: 0,
+                                total: parseSheetNum(row['PAGO TOTAL']    || row['Pago Total']   || 0),
+                                efectivo: parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']|| 0),
+                                credito: parseSheetNum(row['PAGO CREDITO']  || row['Pago credito'] || row['Pago Credito'] || 0),
                                 formaPago: String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase(),
                                 estado: String(row['ESTADO'] || row['Estado'] || '').trim(),
                                 tickets: String(row['TICKET'] || row['Ticket'] || '').trim() ? String(row['TICKET'] || row['Ticket'] || '').trim().split('|').map(u=>u.trim()).filter(Boolean) : [],
@@ -7218,10 +7218,6 @@ window._pagoVentasSheet = _pagoVentasSheet;
                                 items: []
                             };
                         }
-                        // Acumular totales (cada fila tiene subtotal del item)
-                        comprasMap[key].total   += parseSheetNum(row['PAGO TOTAL']    || row['Pago Total']   || 0);
-                        comprasMap[key].efectivo+= parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']|| 0);
-                        comprasMap[key].credito += parseSheetNum(row['PAGO CREDITO']  || row['Pago credito'] || row['Pago Credito'] || 0);
                         // Tomar formaPago de cualquier fila que tenga valor
                         const fpRow = String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim().toUpperCase();
                         if (fpRow && !comprasMap[key].formaPago) comprasMap[key].formaPago = fpRow;
