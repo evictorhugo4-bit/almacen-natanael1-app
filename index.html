@@ -2053,6 +2053,7 @@ GUARDAR PRODUCTO
                 <!-- Tabs -->
                 <div class="flex gap-2 flex-wrap">
                     <button id="tabBtnHojaRuta" onclick="switchStatsTab('hojaRuta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💵 Efectivo</button>
+                    <button id="tabBtnCompraCalc" onclick="switchStatsTab('compraCalc')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Comprar</button>
                     <button id="tabBtnNegocio" onclick="switchStatsTab('negocio')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🏪 Negocio</button>
                     <button id="tabBtnCasaErazo" onclick="switchStatsTab('casaErazo')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🏠 Casa Erazo</button>
                     <button id="tabBtnResumen" onclick="switchStatsTab('resumen')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">👤 Estado Personal</button>
@@ -2141,6 +2142,56 @@ GUARDAR PRODUCTO
         </div>
 
         <p id="statsNoData" class="hidden text-center text-slate-500 font-bold text-xs uppercase py-10">Sin datos para el período seleccionado</p>
+
+        <div id="tabCompraCalc" class="hidden space-y-4">
+            <div class="glass-card rounded-2xl p-5 border border-emerald-500/20">
+                <div class="flex flex-col md:flex-row md:items-end gap-3">
+                    <div class="flex-1">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Proveedor</label>
+                        <select id="ccProveedor" onchange="ccCambiarProveedor()" style="width:100%;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;padding:10px;font-size:12px;font-weight:800;"></select>
+                    </div>
+                    <div class="flex-[1.5]">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Producto</label>
+                        <select id="ccProducto" onchange="ccActualizarCosto()" style="width:100%;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;padding:10px;font-size:12px;font-weight:800;"></select>
+                    </div>
+                    <div style="width:120px;">
+                        <label class="text-[9px] font-black text-emerald-500 uppercase">Cantidad</label>
+                        <input id="ccCantidad" type="number" min="0" step="0.01" value="1" style="width:100%;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;padding:10px;font-size:12px;font-weight:900;text-align:center;">
+                    </div>
+                    <button onclick="ccAgregarItem()" class="px-4 py-3 bg-emerald-500 text-black font-black text-xs rounded-xl uppercase btn-action">Agregar</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                    <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;">
+                        <p class="text-[9px] font-black text-slate-400 uppercase">Costo unitario</p>
+                        <p id="ccCostoUnit" class="text-xl font-black text-white font-mono">$0</p>
+                    </div>
+                    <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;">
+                        <p class="text-[9px] font-black text-slate-400 uppercase">Items</p>
+                        <p id="ccItemsCount" class="text-xl font-black text-blue-400 font-mono">0</p>
+                    </div>
+                    <div style="background:#052e1b;border:1px solid #10b98155;border-radius:12px;padding:12px;">
+                        <p class="text-[9px] font-black text-emerald-400 uppercase">Total a gastar</p>
+                        <p id="ccTotal" class="text-2xl font-black text-emerald-300 font-mono">$0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border border-slate-700">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;min-width:620px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid #334155;">
+                                <th style="padding:10px;text-align:left;font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">Producto</th>
+                                <th style="padding:10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">Cantidad</th>
+                                <th style="padding:10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">Costo</th>
+                                <th style="padding:10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">Subtotal</th>
+                                <th style="padding:10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ccTablaBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <!-- →→ TAB PRODUCTOS →→ -->
         <!-- TAB RESUMEN -->
@@ -12553,6 +12604,100 @@ console.log("FILTRADAS:", filtradas.length);
             } catch(e) { console.error('[renderHojaRuta]',e); }
         }
 
+        let _ccItems = [];
+
+        function renderCompraCalc() {
+            const selProv = document.getElementById('ccProveedor');
+            if (!selProv) return;
+            const provs = [...new Set((_sheetProductos || [])
+                .map(p => String(p.proveedor || '').trim())
+                .filter(Boolean))]
+                .sort((a,b)=>a.localeCompare(b));
+            const prev = selProv.value;
+            selProv.innerHTML = '<option value="">- Elegir proveedor -</option>' +
+                provs.map(p => '<option value="' + Utils.escHtml(p) + '">' + Utils.escHtml(p) + '</option>').join('');
+            if (prev && provs.includes(prev)) selProv.value = prev;
+            ccCambiarProveedor(false);
+            ccRenderTabla();
+        }
+
+        function ccProductosProveedor() {
+            const prov = String(document.getElementById('ccProveedor')?.value || '').trim().toUpperCase();
+            if (!prov) return [];
+            return (_sheetProductos || [])
+                .filter(p => String(p.proveedor || '').trim().toUpperCase() === prov)
+                .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
+        }
+
+        function ccCambiarProveedor(limpiar) {
+            const selProd = document.getElementById('ccProducto');
+            if (!selProd) return;
+            const productos = ccProductosProveedor();
+            selProd.innerHTML = productos.length
+                ? productos.map(p => '<option value="' + Utils.escHtml(String(p.id || p.nombre || '')) + '">' + Utils.escHtml(String(p.nombre || '')) + '</option>').join('')
+                : '<option value="">- Sin productos -</option>';
+            if (limpiar !== false) _ccItems = [];
+            ccActualizarCosto();
+            ccRenderTabla();
+        }
+
+        function ccProductoSeleccionado() {
+            const val = String(document.getElementById('ccProducto')?.value || '').trim();
+            const productos = ccProductosProveedor();
+            return productos.find(p => String(p.id || p.nombre || '') === val) || productos[0] || null;
+        }
+
+        function ccActualizarCosto() {
+            const prod = ccProductoSeleccionado();
+            const el = document.getElementById('ccCostoUnit');
+            if (el) el.textContent = '$' + Utils.fmt(prod ? (parseFloat(prod.costo || 0) || 0) : 0);
+        }
+
+        function ccAgregarItem() {
+            const prod = ccProductoSeleccionado();
+            if (!prod) return;
+            const cant = parseFloat(document.getElementById('ccCantidad')?.value || 0) || 0;
+            if (cant <= 0) return;
+            const costo = parseFloat(prod.costo || 0) || 0;
+            const key = String(prod.id || prod.nombre || '').trim();
+            const existente = _ccItems.find(i => i.key === key);
+            if (existente) {
+                existente.cantidad += cant;
+            } else {
+                _ccItems.push({ key, nombre: String(prod.nombre || ''), cantidad: cant, costo });
+            }
+            ccRenderTabla();
+        }
+
+        function ccQuitarItem(key) {
+            _ccItems = _ccItems.filter(i => i.key !== key);
+            ccRenderTabla();
+        }
+
+        function ccRenderTabla() {
+            const body = document.getElementById('ccTablaBody');
+            const total = _ccItems.reduce((s,i)=>s + ((parseFloat(i.cantidad)||0) * (parseFloat(i.costo)||0)), 0);
+            const totalEl = document.getElementById('ccTotal');
+            const countEl = document.getElementById('ccItemsCount');
+            if (totalEl) totalEl.textContent = '$' + Utils.fmt(total);
+            if (countEl) countEl.textContent = String(_ccItems.length);
+            if (!body) return;
+            if (!_ccItems.length) {
+                body.innerHTML = '<tr><td colspan="5" style="padding:18px;text-align:center;color:#475569;font-size:10px;font-weight:900;text-transform:uppercase;">Sin productos agregados</td></tr>';
+                return;
+            }
+            body.innerHTML = _ccItems.map(i => {
+                const sub = (parseFloat(i.cantidad)||0) * (parseFloat(i.costo)||0);
+                return '<tr style="border-bottom:1px solid #1e293b;">'
+                    + '<td style="padding:10px;font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">' + Utils.escHtml(i.nombre) + '</td>'
+                    + '<td style="padding:10px;text-align:right;font-size:12px;font-weight:900;color:#60a5fa;font-family:monospace;">' + Utils.fmt(i.cantidad) + '</td>'
+                    + '<td style="padding:10px;text-align:right;font-size:12px;font-weight:900;color:#94a3b8;font-family:monospace;">$' + Utils.fmt(i.costo) + '</td>'
+                    + '<td style="padding:10px;text-align:right;font-size:13px;font-weight:900;color:#34d399;font-family:monospace;">$' + Utils.fmt(sub) + '</td>'
+                    + '<td style="padding:10px;text-align:right;"><button onclick="ccQuitarItem(' + JSON.stringify(i.key).replace(/"/g,'&quot;') + ')" style="background:#7f1d1d;color:#fecaca;border:none;border-radius:8px;padding:6px 10px;font-size:10px;font-weight:900;cursor:pointer;">Quitar</button></td>'
+                    + '</tr>';
+            }).join('');
+        }
+
         function switchStatsTab(tab) {
           try {
             _statsTab = tab;
@@ -12564,6 +12709,7 @@ console.log("FILTRADAS:", filtradas.length);
             const isTarjeta   = tab === 'tarjeta';
             const isCaja      = tab === 'caja';
             const isHojaRuta  = tab === 'hojaRuta';
+            const isCompraCalc = tab === 'compraCalc';
             const isNegocio   = tab === 'negocio';
             const isCasaErazo = tab === 'casaErazo';
             const isControl   = false;
@@ -12576,6 +12722,7 @@ console.log("FILTRADAS:", filtradas.length);
             if(_sb('tabBtnProveedor')) _sb('tabBtnProveedor').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isProveedor ? 'bg-blue-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnTarjeta'))   _sb('tabBtnTarjeta').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isTarjeta   ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnHojaRuta'))  _sb('tabBtnHojaRuta').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isHojaRuta  ? 'bg-orange-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            if(_sb('tabBtnCompraCalc')) _sb('tabBtnCompraCalc').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCompraCalc ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnCaja'))      _sb('tabBtnCaja').className      = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCaja      ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnNegocio'))   _sb('tabBtnNegocio').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isNegocio   ? 'bg-cyan-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnCasaErazo')) _sb('tabBtnCasaErazo').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCasaErazo ? 'bg-rose-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
@@ -12599,6 +12746,8 @@ console.log("FILTRADAS:", filtradas.length);
             if (tabTarjeta)   tabTarjeta.classList.toggle('hidden', !isTarjeta);
             const tabHojaRuta  = document.getElementById('tabHojaRuta');
             if (tabHojaRuta)  tabHojaRuta.classList.toggle('hidden', !isHojaRuta);
+            const tabCompraCalc = document.getElementById('tabCompraCalc');
+            if (tabCompraCalc) tabCompraCalc.classList.toggle('hidden', !isCompraCalc);
             if (tabCaja)      tabCaja.classList.toggle('hidden', !isCaja);
             const tabNegocio  = document.getElementById('tabNegocio');
             if (tabNegocio)   tabNegocio.classList.toggle('hidden', !isNegocio);
@@ -12652,6 +12801,7 @@ console.log("FILTRADAS:", filtradas.length);
                 efSetHoy();
                 renderEfectivo();
             }
+            if (isCompraCalc) renderCompraCalc();
             if (isCaja) {
                 if (!document.getElementById('cajaDesde')?.value) cajaSetHoy();
                 else renderCaja();
@@ -25927,8 +26077,9 @@ function verDetalleProveedor(tipo, id){
                     const stock = prod ? Math.max(0, prod.stockCalculado ?? parseFloat(prod.stock) ?? 0) : 0;
                     const stockMin = prod ? Math.max(0, parseFloat(prod.stockMin) || 0) : 0;
                     const cat = prod ? String(prod.categoria||'SIN CATEGORÍA').trim().toUpperCase() : 'SIN CATEGORÍA';
-                    const rawDiff = stock - d.cantidad;
-                    const diff = rawDiff >= 0 ? rawDiff : Math.min(rawDiff, -stockMin);
+                    // Stock mínimo es la base: si ventas supera ese mínimo, manda ventas.
+                    const requerido = Math.max(stockMin, parseFloat(d.cantidad) || 0);
+                    const diff = stock - requerido;
                     return { nom, cantidad: d.cantidad, prov, dep, stock, stockMin, diff, cat };
                 })
                 .filter(Boolean);
@@ -25944,9 +26095,12 @@ function verDetalleProveedor(tipo, id){
                 if (!catMap[f.cat]) catMap[f.cat] = { cat: f.cat, cantidad: 0, stock: 0, stockMin: 0, diff: 0, productos: [] };
                 catMap[f.cat].cantidad += f.cantidad;
                 catMap[f.cat].stock   += f.stock;
-                catMap[f.cat].stockMin += f.stockMin || 0;
-                catMap[f.cat].diff    += f.diff;
+                catMap[f.cat].stockMin = Math.max(catMap[f.cat].stockMin || 0, f.stockMin || 0);
                 catMap[f.cat].productos.push(f);
+            });
+            Object.values(catMap).forEach(c => {
+                const requeridoCat = Math.max(c.stockMin || 0, c.cantidad || 0);
+                c.diff = c.stock - requeridoCat;
             });
 
             // Ordenar categorías por diferencia ascendente: más negativos primero, más positivos al final
