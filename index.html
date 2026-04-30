@@ -2581,13 +2581,39 @@ GUARDAR PRODUCTO
 
 
 
-            <!-- PERSONAL → Estado Personal completo -->
+            <!-- PERSONAL → Ganancia neta en efectivo -->
             <div class="glass-card rounded-2xl p-4 border border-amber-500/30">
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-                    <p style="font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:.1em;margin:0;">PERSONAL ↗ Estado Personal</p>
-
+                <p style="font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">👤 PERSONAL ↗ Ganancia Neta en Efectivo</p>
+                <p style="font-size:9px;color:#475569;font-weight:700;margin-bottom:16px;">Ganancia de ventas cobrada en efectivo, menos todos tus egresos personales pagados en efectivo</p>
+                <!-- KPI hero -->
+                <div style="background:#1a1200;border:1px solid #b45309;border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">💰 Ganancia neta</p>
+                        <p id="efPersNeto" style="font-size:34px;font-weight:900;font-family:monospace;color:#ffffff;line-height:1;">$0</p>
+                        <p id="efPersNetoDesc" style="font-size:9px;font-weight:700;color:#fbbf24;margin-top:4px;">Lo que te queda a vos</p>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                        <div style="display:flex;justify-content:space-between;gap:16px;">
+                            <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;">Ganancia cobrada</span>
+                            <span id="efPersGanancia" style="font-size:12px;font-weight:900;font-family:monospace;color:#34d399;">$0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;gap:16px;">
+                            <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;">Egresos personales</span>
+                            <span id="efPersEgresos" style="font-size:12px;font-weight:900;font-family:monospace;color:#f87171;">$0</span>
+                        </div>
+                    </div>
                 </div>
-                <div id="efPersonalDetalle"></div>
+                <!-- Detalle -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">✅ Ganancia en efectivo</p>
+                        <div id="efPersDetalleEntradas" class="space-y-1"></div>
+                    </div>
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🔴 Egresos personales en efectivo</p>
+                        <div id="efPersDetalleSalidas" class="space-y-1"></div>
+                    </div>
+                </div>
             </div>
 
         </div><!-- /tabHojaRuta -->
@@ -3142,6 +3168,16 @@ GUARDAR PRODUCTO
                         <label class="text-[9px] font-black text-red-400 uppercase block mb-1">A Credito</label>
                         <input type="number" id="ingEgrCredito" placeholder="0" oninput="calcularIngEgr()" class="w-full bg-slate-950 border border-slate-800 text-xl p-2 rounded-lg text-right font-black text-red-400 focus:border-red-500 outline-none">
                     </div>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Items del movimiento</label>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="agregarItemIngEgrDesdeFormulario()" class="px-3 py-2 bg-emerald-500 text-black rounded-lg text-[10px] font-black uppercase">Agregar item</button>
+                            <button type="button" onclick="abrirCatalogoIngEgr()" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-lg text-[10px] font-black uppercase border border-slate-700">Producto</button>
+                        </div>
+                    </div>
+                    <div id="carritoIngEgr" class="space-y-2"></div>
                 </div>
                 <div class="bg-slate-900 px-4 py-3 rounded-2xl border border-emerald-500/20 text-center">
                     <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total</span>
@@ -5181,8 +5217,9 @@ _sheetProductos.forEach(p => {
 
         function subirTicketImgBB(dataUrl, callback) {
             const base64 = dataUrl.split(',')[1];
-            const mime   = (dataUrl.match(/data:(image\/\w+);/) || [])[1] || 'image/jpeg';
-            const nombre = 'ticket_' + Date.now() + '.jpg';
+            const mime   = (dataUrl.match(/data:([^;]+);/) || [])[1] || 'image/jpeg';
+            const ext    = mime === 'application/pdf' ? 'pdf' : 'jpg';
+            const nombre = 'ticket_' + Date.now() + '.' + ext;
             fetch(SHEETS_URL, {
                 method: 'POST',
                 body: JSON.stringify({ tipo: 'subir_imagen', base64: base64, mimeType: mime, nombre: nombre })
@@ -6317,8 +6354,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz3kRb4RG_2W5-xlEb_6xL6tPaRK4EBN68PWOWp8v7n1pge_xuI_cVhLUaqdr7aZSV1/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbz3kRb4RG_2W5-xlEb_6xL6tPaRK4EBN68PWOWp8v7n1pge_xuI_cVhLUaqdr7aZSV1/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzXj_S0IM58h18dUSzpeUG60y-l_Rlyi63EQcgBMm05qedJOLtIZWNG40oM_sHG0gHi/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzXj_S0IM58h18dUSzpeUG60y-l_Rlyi63EQcgBMm05qedJOLtIZWNG40oM_sHG0gHi/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -6419,8 +6456,10 @@ _sheetEgresosNegocio.forEach(e => {
                             } else {
                                 mostrarToast('✅ Sheet error: ' + (d.error||txt.substring(0,100)), 'error');
                             }
+                            return d;
                         } catch(e) {
                             mostrarToast('✅ Respuesta rara: ' + txt.substring(0,100), 'error');
+                            return { ok: false, error: 'Respuesta rara', raw: txt };
                         }
                     })
                     .catch(e => {
@@ -6791,7 +6830,7 @@ _sheetEgresosNegocio.forEach(e => {
 
         // Helper: enviar edición al Sheet (reemplaza fila con mismo id)
         function editarEnSheet(payload) {
-            fetchSheets( { method: 'POST', body: JSON.stringify(payload) });
+            return fetchSheets( { method: 'POST', body: JSON.stringify(payload) });
         }
 
         // Helper global: detectar si tipoVenta es Peso (acepta 'Peso','Gramos','gramos','kg', etc)
@@ -7274,7 +7313,7 @@ console.log('🛒?Š Compras por formaPago:', fpResumen);
                     const supercatsSet = new Set();
 const generosMap = {};
 const catsMap = {};
-                    data.ingresos.forEach(row => {
+                    data.ingresos.forEach((row, rowIdx) => {
                         const sc = String(row['SUPER CATEGORIA'] || row['Supercategoria'] || row['Supercategoría'] || '').trim().toUpperCase();
                         const ca = String(row['CATEGORIA'] || row['Categoria'] || row['Categoría'] || '').trim().toUpperCase();
                         const ge = String(row['GENERO'] || row['Genero'] || row['Género'] || '').trim().toUpperCase();
@@ -7297,7 +7336,7 @@ window._catsIngSheet = _catsIngSheet;
 
                     // Sync registros
                     const norm = s => String(s||'').trim().toUpperCase();
-                    data.ingresos.forEach(row => {
+                    data.ingresos.forEach((row, rowIdx) => {
                         let fechaRaw = String(row['FECHA'] || row['Fecha'] || row['Fecha...'] || '').trim();
                         let fechaDisplay = fechaRaw;
                         try {
@@ -7309,7 +7348,7 @@ window._catsIngSheet = _catsIngSheet;
 
                         const idIngreso = String(row['IDINGRESOS'] || row['numeroIngreso'] || '').trim();
                         const pagoTotal = parseSheetNum(row['PAGO TOTAL'] || row['Pago Total']);
-                        const key = idIngreso || (fechaRaw + '|' + norm(row['SUPER CATEGORIA']||row['Supercategoria']||'') + '|' + pagoTotal);
+                        const key = idIngreso ? (idIngreso + '|' + rowIdx) : (fechaRaw + '|' + norm(row['SUPER CATEGORIA']||row['Supercategoria']||'') + '|' + pagoTotal);
                         const id = 'sheet_IN_' + key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
 
                         const sheetReg = {
@@ -7385,7 +7424,7 @@ Object.keys(catsMap || {}).forEach(k => {
 window._catsEgrSheet = _catsEgrSheet;
                     // Sync registros
                     const normEgr = s => String(s||'').trim().toUpperCase();
-                    data.gastos.forEach(row => {
+                    data.gastos.forEach((row, rowIdx) => {
                         let fechaRaw = String(row['FECHA'] || row['Fecha'] || row['Fecha...'] || '').trim();
                         let fechaDisplay = fechaRaw;
                         try {
@@ -7397,7 +7436,7 @@ window._catsEgrSheet = _catsEgrSheet;
 
                         const idGasto = String(row['Id_Gastos'] || row['ID_GASTOS'] || row['IDEGRESOS'] || row['numeroEgreso'] || '').trim();
                         const pagoTotal = parseSheetNum(row['PAGO TOTAL'] || row['Pago Total']);
-                        const key = idGasto || (fechaRaw + '|' + normEgr(row['SUPER CATEGORIA']||row['Supercategoria']||'') + '|' + pagoTotal);
+                        const key = idGasto ? (idGasto + '|' + rowIdx) : (fechaRaw + '|' + normEgr(row['SUPER CATEGORIA']||row['Supercategoria']||'') + '|' + pagoTotal);
                         const id = 'sheet_EG_' + key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
 
                         const sheetReg = {
@@ -7420,7 +7459,10 @@ window._catsEgrSheet = _catsEgrSheet;
 
                         if (sheetReg.idSheet && (window._idsEgresoBorrados||new Set()).has(sheetReg.idSheet)) return;
                         const idx = _sheetEgresos.findIndex(r => r.id === id);
-                        if (idx >= 0) { _sheetEgresos[idx] = {..._sheetEgresos[idx], ...sheetReg}; actualizados++; }
+                        if (idx >= 0) {
+                            const localEdit = _sheetEgresos[idx]._editadoLocal && _sheetEgresos[idx]._editadoLocalTs && (Date.now() - _sheetEgresos[idx]._editadoLocalTs < 60000);
+                            if (!localEdit) { _sheetEgresos[idx] = {..._sheetEgresos[idx], ...sheetReg}; actualizados++; }
+                        }
                         else          { _sheetEgresos.push(sheetReg); agregados++; }
                     });
 
@@ -7568,13 +7610,13 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.ingresos)) {
                     let ag=0,ac=0;
                     const normI = s => String(s||'').trim().toUpperCase();
-                    data.ingresos.forEach(row => {
+                    data.ingresos.forEach((row, rowIdx) => {
                         let fechaRaw = String(row['FECHA']||row['Fecha']||'').trim();
                         let fechaDisplay = fechaRaw;
                         try { if(fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))){const d=new Date(fechaRaw);if(!isNaN(d))fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}}catch(e){}
                         const idIngreso = String(row['IDINGRESOS']||row['Id_Ingresos']||'').trim();
                         const pagoTotal = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
-                        const key = idIngreso || (fechaRaw+'|'+normI(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
+                        const key = idIngreso ? (idIngreso + '|' + rowIdx) : (fechaRaw+'|'+normI(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
                         const id = 'sheet_IN_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
                         const reg = { id, idSheet:idIngreso, fecha:fechaDisplay, fechaISO:fechaRaw,
                             proveedor:String(row['SUPER CATEGORIA']||row['Supercategoria']||'').trim(),
@@ -7607,13 +7649,13 @@ if (indicator) indicator.classList.remove('hidden');
                     const src = data.egresos||data.gastos;
                     let ag=0,ac=0;
                     const normE = s=>String(s||'').trim().toUpperCase();
-                    src.forEach(row => {
+                    src.forEach((row, rowIdx) => {
                         let fechaRaw=String(row['FECHA']||row['Fecha']||'').trim();
                         let fechaDisplay=fechaRaw;
                         try{if(fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))){const d=new Date(fechaRaw);if(!isNaN(d))fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}}catch(e){}
                         const idGasto=String(row['Id_Gastos']||row['ID_GASTOS']||row['IDEGRESOS']||'').trim();
                         const pagoTotal=parseSheetNum(row['PAGO TOTAL']||row['Pago Total']);
-                        const key=idGasto||(fechaRaw+'|'+normE(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
+                        const key=idGasto ? (idGasto + '|' + rowIdx) : (fechaRaw+'|'+normE(row['SUPER CATEGORIA']||'')+'|'+pagoTotal);
                         const id='sheet_EG_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
                         const reg={id,idSheet:idGasto,fecha:fechaDisplay,fechaISO:fechaRaw,
                             proveedor:String(row['SUPER CATEGORIA']||row['Supercategoria']||'').trim(),
@@ -7628,7 +7670,10 @@ if (indicator) indicator.classList.remove('hidden');
                             fromSheet:true,items:[]};
                         if (idGasto && (window._idsEgresoBorrados||new Set()).has(idGasto)) return;
                         const idx=_sheetEgresos.findIndex(r=>r.id===id);
-                        if(idx>=0){_sheetEgresos[idx]={..._sheetEgresos[idx],...reg};ac++;}else{_sheetEgresos.push(reg);ag++;}
+                        if(idx>=0){
+                            const localEdit = _sheetEgresos[idx]._editadoLocal && _sheetEgresos[idx]._editadoLocalTs && (Date.now() - _sheetEgresos[idx]._editadoLocalTs < 60000);
+                            if(!localEdit){_sheetEgresos[idx]={..._sheetEgresos[idx],...reg};ac++;}
+                        }else{_sheetEgresos.push(reg);ag++;}
                         window._sheetEgresos = _sheetEgresos;
                     });
                     // Extraer géneros únicos de egresos
@@ -10999,12 +11044,17 @@ console.log("FILTRADAS:", filtradas.length);
                     const totalEgreso = parseFloat(e.total || 0) || 0;
                     const idEgreso = String(e.idSheet || e.id || e.IDEGRESOS || e.ID_GASTOS || '').trim();
                     const pagadoReal = Math.max(0, pagosEgresosTarjetaMap[idEgreso] || 0);
+                    const ticketsEgreso = String(e.ticket || e.TICKET || '').trim()
+                        ? String(e.ticket || e.TICKET || '').trim().split('|').map(t=>t.trim()).filter(Boolean)
+                        : [];
                     const reg = {
+                        id:idEgreso,
                         tipo:'EGRESO', fecha:e.fecha||'', fechaISO:e.fechaISO||e.fecha||'',
                         concepto:e.proveedor||e.concepto||'?',
                         detalle:e.concepto||e.detalle||'',
                         credito:Math.max(0, totalEgreso - pagadoReal), pagado:Math.min(totalEgreso, pagadoReal), total:totalEgreso,
-                        items:[]
+                        items:[],
+                        tickets:ticketsEgreso
                     };
                     if (_tcFiltro === 'credito' && reg.credito <= 0) return;
                     if (_tcFiltro === 'pagado'  && reg.pagado < reg.total) return;
@@ -12036,27 +12086,74 @@ console.log("FILTRADAS:", filtradas.length);
                     }
                 }
 
-                // ↗↗ PERSONAL ? replica Estado Personal (solo efectivo, con fechas de CAJA) ↗↗↗↗↗↗
-                const persDiv = document.getElementById('efPersonalDetalle');
-                if (persDiv && typeof renderResumen === 'function') {
-                    // Copiar fechas de efDesde/efHasta a resumenDesde/resumenHasta temporalmente
-                    const _rD = document.getElementById('resumenDesde');
-                    const _rH = document.getElementById('resumenHasta');
-                    const _eD = document.getElementById('efDesde');
-                    const _eH = document.getElementById('efHasta');
-                    const _prevD = _rD ? _rD.value : '';
-                    const _prevH = _rH ? _rH.value : '';
-                    // efDesde/efHasta es tipo date (YYYY-MM-DD), resumenDesde es datetime-local
-                    if (_rD && _eD && _eD.value) _rD.value = _eD.value + 'T00:00';
-                    if (_rH && _eH && _eH.value) _rH.value = _eH.value + 'T23:59';
-                    _epFiltro = 'efectivo';
-                    renderResumen();
-                    const src = document.getElementById('epContenido');
-                    if (src) persDiv.innerHTML = src.innerHTML;
-                    // Restaurar valores originales
-                    if (_rD) _rD.value = _prevD;
-                    if (_rH) _rH.value = _prevH;
+                // ↗↗ PERSONAL → Ganancia neta en efectivo ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+                // Calcular ganancia cobrada en efectivo proporcional al cobro de cada venta
+                const todasVPers = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : [];
+                const cobrosPorVentaPers = {};
+                [...(_sheetPagoVentas||[]),...(_pagoVentasSheet||[])].forEach(p => {
+                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!idV) return;
+                    cobrosPorVentaPers[idV] = (cobrosPorVentaPers[idV]||0) + Number(p.monto||p.MONTO||0);
+                });
+                const vistasPersPers = new Set();
+                let gananciaEfectivoPers = 0;
+                todasVPers.forEach(v => {
+                    if (!_efEnRango(v.fechaISO||v.fecha||'') || vistasPersPers.has(v.id)) return;
+                    vistasPersPers.add(v.id);
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    if (['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
+                    const totalVenta = Number(v.total||0);
+                    if (!totalVenta) return;
+                    const ef = Number(v.efectivo||0);
+                    const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
+                    const cobrosExtra = (cobrosPorVentaPers[idVSheet]||0) + (cobrosPorVentaPers[String(v.id||'')]||0);
+                    const totalCobrado = ef + cobrosExtra;
+                    // Ganancia total de la venta = suma de (precio - costo) * cantidad por item
+                    const gananciaVenta = (v.items||[]).reduce((s, i) => {
+                        const precio = Number(i.precio||0);
+                        const costo  = Number(i.costo||0);
+                        const cant   = Number(i.cantidad||1);
+                        const pagoIt = Number(i.pagoEfectivo||0) + Number(i.pagoCredito||0);
+                        const dr     = Number(i.dineroRecuperado||0);
+                        const gan    = i.esPeso
+                            ? Math.max(0, pagoIt - dr)
+                            : Math.max(0, (precio - costo) * cant);
+                        return s + gan;
+                    }, 0);
+                    // Proporción cobrada en efectivo respecto al total de la venta
+                    const prop = totalVenta > 0 ? Math.min(totalCobrado / totalVenta, 1) : 0;
+                    gananciaEfectivoPers += gananciaVenta * prop;
+                });
+
+                // Egresos personales en efectivo (ya calculados arriba)
+                const efEgrPersTotal = efEgrPersonal + efPagoEgresos;
+                const netoPersonal   = gananciaEfectivoPers - efEgrPersTotal;
+
+                // Render KPI hero
+                const elPersNeto = document.getElementById('efPersNeto');
+                if (elPersNeto) {
+                    elPersNeto.textContent = fmt$(Math.abs(netoPersonal));
+                    elPersNeto.style.color = netoPersonal >= 0 ? '#ffffff' : '#f87171';
                 }
+                const elPersDesc = document.getElementById('efPersNetoDesc');
+                if (elPersDesc) elPersDesc.textContent = netoPersonal >= 0 ? 'Lo que te queda a vos ✅' : '⚠️ Egresos superan la ganancia cobrada';
+                const elPersGan = document.getElementById('efPersGanancia');
+                if (elPersGan) elPersGan.textContent = fmt$(gananciaEfectivoPers);
+                const elPersEgr = document.getElementById('efPersEgresos');
+                if (elPersEgr) elPersEgr.textContent = fmt$(efEgrPersTotal);
+
+                const elPersEnt = document.getElementById('efPersDetalleEntradas');
+                if (elPersEnt) elPersEnt.innerHTML =
+                    _efFila('Ganancia cobrada en ventas', gananciaEfectivoPers);
+
+                const elPersSal = document.getElementById('efPersDetalleSalidas');
+                if (elPersSal) elPersSal.innerHTML =
+                    _efFila('Egresos personales (efectivo)', efEgrPersonal, '#f87171') +
+                    _efFila('Pagos egresos (efectivo)',      efPagoEgresos, '#f87171') +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #334155;margin-top:4px;">' +
+                        '<span style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">Total egresos</span>' +
+                        '<span style="font-size:13px;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(efEgrPersTotal) + '</span>' +
+                    '</div>';
 
             } catch(e) { console.error('[renderEfectivo]', e); }
         }
@@ -12420,17 +12517,23 @@ console.log("FILTRADAS:", filtradas.length);
                 return String(p.proveedor||'').trim().toUpperCase() === nombreUp;
             });
 
-            const totalCompras = comprasProv.reduce((s,c) => s + (Number(c.total)||0), 0);
-            const totalCredito = comprasProv.reduce((s,c) => s + (Number(c.credito)||0), 0);
+            const totalCompraRegistroProv = c => (c.items||[]).length
+                ? (c.items||[]).reduce((s,it)=>s+(Number(it.pagoTotal||it.subtotal)||0),0)
+                : (Number(c.total)||0);
+            const creditoCompraRegistroProv = c => (c.items||[]).length
+                ? (c.items||[]).reduce((s,it)=>s+(Number(it.pagoCredito)||0),0)
+                : (Number(c.credito)||0);
+            const totalCompras = comprasProv.reduce((s,c) => s + totalCompraRegistroProv(c), 0);
+            const totalCredito = comprasProv.reduce((s,c) => s + creditoCompraRegistroProv(c), 0);
             const totalPagado  = pagosComp.reduce((s,p) => s + (Number(p.MONTO||p.monto)||0), 0);
             const deudaReal    = Math.max(0, totalCredito - totalPagado);
 
             const gruposCompra = new Map();
             comprasProv.forEach(c => {
-                const idC = String(c.id||c.idSheet||'').trim();
+                const idC = String(c.idSheet||c.id||'').trim();
                 const pagadoEsta = (idC ? pagosComp.filter(p => String(p.idCompra||p.IDCOMPRAS||'').trim() === idC) : [])
                     .reduce((s,p)=> s+(Number(p.monto||p.MONTO)||0), 0);
-                const montoBruto = (Number(c.credito)||0) || (Number(c.total)||0);
+                const montoBruto = creditoCompraRegistroProv(c);
                 const saldo = Math.round(Math.max(0, montoBruto - pagadoEsta) * 100) / 100;
                 if (saldo <= 0) return;
                 const idBase = String(c.fechaISO || c.fecha || '').trim();
@@ -12442,10 +12545,9 @@ console.log("FILTRADAS:", filtradas.length);
                 const tkC = c.tickets && c.tickets.length > 0 ? c.tickets : (c.ticket ? [c.ticket] : []);
                 tkC.forEach(t => { if (t && !g.tickets.includes(t)) g.tickets.push(t); });
                 const itemsC = c.items && c.items.length > 0 ? c.items : [{nombre: c.producto||'?', cantidad:1, costo: montoBruto, subtotal: montoBruto}];
-                const costoTotal = itemsC.reduce((s,i) => s + (parseFloat(i.costo||0))*(parseFloat(i.cantidad)||1), 0);
-                const totalItems = costoTotal > 0 ? costoTotal : itemsC.reduce((s,i) => s + parseFloat(i.subtotal||0), 0) || montoBruto;
+                const totalItems = itemsC.reduce((s,i) => s + (parseFloat(i.pagoCredito||0) || 0), 0) || montoBruto;
                 itemsC.forEach(item => {
-                    const sub = (parseFloat(item.costo||0))*(parseFloat(item.cantidad)||1) || parseFloat(item.subtotal||0) || (montoBruto/Math.max(itemsC.length,1));
+                    const sub = (parseFloat(item.pagoCredito||0) || 0) || (montoBruto/Math.max(itemsC.length,1));
                     const saldoItem = totalItems > 0 ? Math.round(saldo * sub / totalItems) : Math.round(saldo/Math.max(itemsC.length,1));
                     g.items.push({...item, _saldoItem: saldoItem, _idC: idC});
                     g.saldoTotal += saldoItem;
@@ -21336,6 +21438,7 @@ function filtrarGeneroEgr(query) {
             document.getElementById('inputIngEgrEfectivo').value = '';
             document.getElementById('ingEgrCredito').value = '';
             document.getElementById('ingEgrTotal').textContent = '$0';
+            renderCarritoIngEgr();
             if (document.getElementById('inputIngEgrProveedorTarjeta')) document.getElementById('inputIngEgrProveedorTarjeta').value = '';
             seleccionarFormaPagoIngEgr('EFECTIVO');
             resetTicketIngEgr();
@@ -21406,6 +21509,37 @@ function filtrarGeneroEgr(query) {
             if (!prodPendienteIngEgr) return;
             carritoIngEgr.push({ ...prodPendienteIngEgr, cantidad: qty, itemId: Utils.genId() });
             toggleModal('modalCantidadIngEgr', false);
+            renderCarritoIngEgr();
+        }
+
+        function agregarItemIngEgrDesdeFormulario() {
+            const categoria = document.getElementById('inputIngEgrConcepto').value.trim();
+            const detalle = document.getElementById('inputIngEgrDetalle')?.value.trim() || '';
+            const efectivo = parseFloat(document.getElementById('inputIngEgrEfectivo').value) || 0;
+            const credito = parseFloat(document.getElementById('ingEgrCredito').value) || 0;
+            const total = efectivo + credito;
+
+            if (!categoria) { mostrarToast('Ingresa una categoria', 'error'); return; }
+            if (total === 0) { mostrarToast('Ingresa un monto', 'error'); return; }
+
+            carritoIngEgr.push({
+                itemId: Utils.genId(),
+                tipoItem: 'categoria',
+                nombre: categoria,
+                concepto: categoria,
+                detalle,
+                cantidad: 1,
+                efectivo,
+                credito,
+                total,
+                formaPago: ingEgrFormaPago,
+                proveedorTarjeta: ingEgrFormaPago === 'TARJETA' ? (document.getElementById('inputIngEgrProveedorTarjeta')?.value.trim() || '') : ''
+            });
+
+            document.getElementById('inputIngEgrConcepto').value = '';
+            if (document.getElementById('inputIngEgrDetalle')) document.getElementById('inputIngEgrDetalle').value = '';
+            document.getElementById('inputIngEgrEfectivo').value = '';
+            document.getElementById('ingEgrCredito').value = '';
             renderCarritoIngEgr();
         }
 
@@ -21570,9 +21704,8 @@ function eliminarProductoCompra(itemId) {
             const container = document.getElementById('carritoIngEgr');
             if (!container) return;
             if (carritoIngEgr.length === 0) {
-                container.innerHTML = '<p class="text-[10px] text-slate-600 italic">Sin productos (opcional)</p>';
-                document.getElementById('ingEgrTotal').textContent = '$0';
-                document.getElementById('ingEgrCredito').value = '';
+                container.innerHTML = '<p class="text-[10px] text-slate-600 italic">Sin items agregados</p>';
+                calcularIngEgr();
                 return;
             }
             const colors = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
@@ -21588,6 +21721,20 @@ function eliminarProductoCompra(itemId) {
                 const thumb = item.foto
                     ? `<img src="${driveUrl(item.foto)}" class="w-9 h-9 object-contain rounded-lg shrink-0" alt="">`
                     : `<div class="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0" style="background:${color}22;color:${color}">${initials}</div>`;
+                if (item.tipoItem === 'categoria') {
+                    const totalItem = Number(item.total) || 0;
+                    const detalleItem = item.detalle ? `<span class="block text-[9px] text-slate-500 italic truncate">${Utils.escHtml(item.detalle)}</span>` : '';
+                    return `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center gap-2">
+                        ${thumb}
+                        <div class="flex-1 min-w-0">
+                            <span class="block text-xs font-black text-slate-300 uppercase truncate">${Utils.escHtml(item.nombre || 'Sin nombre')}</span>
+                            ${detalleItem}
+                            <span class="text-[10px] text-slate-500 font-mono">Item</span>
+                        </div>
+                        <span class="font-mono font-black text-white shrink-0">$${Utils.fmt(totalItem)}</span>
+                        <button onclick="eliminarItemIngEgr('${item.itemId}')" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-red-400 hover:bg-slate-700 shrink-0">X</button>
+                    </div>`;
+                }
                 const val = Number(ingEgrTipo === 'ingreso' ? item.precio : item.costo) || 0;
                 return `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center gap-2">
                     ${thumb}
@@ -21625,19 +21772,61 @@ function eliminarItemIngEgr(itemId){
 }
 
         function calcularIngEgr() {
+            if (carritoIngEgr.length > 0) {
+                const total = carritoIngEgr.reduce((sum, item) => {
+                    if (item.tipoItem === 'categoria') return sum + (Number(item.total) || 0);
+                    const val = Number(ingEgrTipo === 'ingreso' ? item.precio : item.costo) || 0;
+                    return sum + val * (Number(item.cantidad) || 1);
+                }, 0);
+                document.getElementById('ingEgrTotal').textContent = '$' + Utils.fmt(total);
+                return;
+            }
             const efectivo = parseFloat(document.getElementById('inputIngEgrEfectivo').value) || 0;
             const credito  = parseFloat(document.getElementById('ingEgrCredito').value) || 0;
             const total    = efectivo + credito;
             document.getElementById('ingEgrTotal').textContent = '$' + Utils.fmt(total);
         }
 
-        function confirmarIngEgr() {
+        async function confirmarIngEgr() {
             const supercategoria = document.getElementById('inputIngEgrProveedor').value.trim() || 'Sin especificar';
             const categoria      = document.getElementById('inputIngEgrConcepto').value.trim() || '';
             const detalle        = document.getElementById('inputIngEgrDetalle')?.value.trim() || '';
             const efectivo       = parseFloat(document.getElementById('inputIngEgrEfectivo').value) || 0;
             const credito        = parseFloat(document.getElementById('ingEgrCredito').value) || 0;
-            const total          = efectivo + credito;
+            const tieneItems     = carritoIngEgr.length > 0;
+            const itemsGuardar   = tieneItems ? carritoIngEgr.map(item => {
+                if (item.tipoItem === 'categoria') {
+                    return {
+                        categoria: item.concepto || item.nombre || '',
+                        detalle: item.detalle || '',
+                        efectivo: Number(item.efectivo) || 0,
+                        credito: Number(item.credito) || 0,
+                        total: Number(item.total) || 0,
+                        formaPago: item.formaPago || ingEgrFormaPago,
+                        proveedorTarjeta: item.proveedorTarjeta || ''
+                    };
+                }
+                const totalItem = (Number(ingEgrTipo === 'ingreso' ? item.precio : item.costo) || 0) * (Number(item.cantidad) || 1);
+                const esCredito = ingEgrFormaPago === 'TARJETA';
+                return {
+                    categoria: item.nombre || '',
+                    detalle: `${Number(item.cantidad) || 1}x ${item.nombre || ''}`,
+                    efectivo: esCredito ? 0 : totalItem,
+                    credito: esCredito ? totalItem : 0,
+                    total: totalItem,
+                    formaPago: ingEgrFormaPago,
+                    proveedorTarjeta: esCredito ? (document.getElementById('inputIngEgrProveedorTarjeta')?.value.trim() || '') : ''
+                };
+            }) : [{
+                categoria,
+                detalle,
+                efectivo,
+                credito,
+                total: efectivo + credito,
+                formaPago: ingEgrFormaPago || (credito > 0 ? (efectivo > 0 ? 'Mixto' : 'Credito') : 'Efectivo'),
+                proveedorTarjeta: ingEgrFormaPago === 'TARJETA' ? (document.getElementById('inputIngEgrProveedorTarjeta')?.value.trim() || '') : ''
+            }];
+            const total          = itemsGuardar.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
             if (total === 0) { mostrarToast('Ingresa un monto', 'error'); return; }
             const ahora = new Date();
             const fecha = ahora.toLocaleString('es-AR', {
@@ -21648,11 +21837,17 @@ function eliminarItemIngEgr(itemId){
     minute: '2-digit',
     second: '2-digit'
 });
-            const idIngreso  = Utils.genId();
+            const idGrupoIngEgr = Utils.genId();
+            const idIngreso  = idGrupoIngEgr;
             const formaPago  = ingEgrFormaPago || (credito > 0 ? (efectivo > 0 ? 'Mixto' : 'Crédito') : 'Efectivo');
             const estado     = credito > 0 ? 'PENDIENTE' : 'FINALIZADO';
             const proveedorTarjeta = ingEgrFormaPago === 'TARJETA' ? (document.getElementById('inputIngEgrProveedorTarjeta')?.value.trim() || '') : '';
-            const registro = { id: idIngreso, fecha, fechaISO: ahora.toISOString(), proveedor: supercategoria, concepto: categoria, detalle, total, efectivo, credito, estado, formaPago, proveedorTarjeta, ticket: _ticketDataIngEgr || null, items: [] };
+            let ticketFinalIngEgr = _ticketDataIngEgr || null;
+            if (ticketFinalIngEgr && String(ticketFinalIngEgr).startsWith('data:')) {
+                mostrarToast('Subiendo ticket...');
+                ticketFinalIngEgr = await subirTicketConReintentos(ticketFinalIngEgr, 2);
+            }
+            const registro = { id: idIngreso, fecha, fechaISO: ahora.toISOString(), proveedor: supercategoria, concepto: categoria, detalle, total, efectivo, credito, estado, formaPago, proveedorTarjeta, ticket: ticketFinalIngEgr, items: [] };
            
 
 
@@ -21660,36 +21855,42 @@ function eliminarItemIngEgr(itemId){
 const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
 
             // Enviar a Google Sheets
-            fetchSheets({
-  method: 'POST',
-  body: JSON.stringify({
-    tipo:           ingEgrTipo,
-    numeroIngreso:  idIngreso,
-    numeroEgreso:   idIngreso,
-    idRegistro:     idIngreso,
-    id:             idIngreso,
+            itemsGuardar.forEach((item, idxItem) => {
+                const idItem = tieneItems ? (idGrupoIngEgr + '_' + (idxItem + 1)) : idGrupoIngEgr;
+                const estadoItem = item.credito > 0 ? 'PENDIENTE' : 'FINALIZADO';
+                fetchSheets({
+                    method: 'POST',
+                    body: JSON.stringify({
+                        tipo:           ingEgrTipo,
+                        numeroIngreso:  idGrupoIngEgr,
+                        numeroEgreso:   idGrupoIngEgr,
+                        idRegistro:     idItem,
+                        id:             idItem,
+                        idGrupo:        idGrupoIngEgr,
+                        IDINGRESOS:     ingEgrTipo === 'ingreso' ? idGrupoIngEgr : '',
+                        ID_INGRESOS:    ingEgrTipo === 'ingreso' ? idGrupoIngEgr : '',
+                        Id_Ingresos:    ingEgrTipo === 'ingreso' ? idGrupoIngEgr : '',
+                        IDEGRESOS:      ingEgrTipo === 'egreso' ? idGrupoIngEgr : '',
+                        ID_GASTOS:      ingEgrTipo === 'egreso' ? idGrupoIngEgr : '',
+                        Id_Gastos:      ingEgrTipo === 'egreso' ? idGrupoIngEgr : '',
+                        fecha:          fechaSheet(ahora),
+                        fechaISO:       ahora.toISOString(),
+                        estado:         estadoItem,
+                        genero:         genero,
+                        supercategoria: supercategoria,
+                        categoria:      item.categoria,
+                        detalle:        item.detalle,
+                        formaPago:      item.formaPago,
+                        proveedorTarjeta: item.proveedorTarjeta,
+                        pagoEfectivo:   item.efectivo,
+                        pagoCredito:    item.credito,
+                        pagoTotal:      item.total,
+                        ticket:         ticketFinalIngEgr
+                    })
+                });
+            });
 
-    fecha:          fechaSheet(ahora),
-    fechaISO:       ahora.toISOString(),
-    estado:         estado,
-
-  genero: genero,
-
-
-    supercategoria: supercategoria,
-    categoria:      categoria,
-    detalle:        detalle,
-
-    formaPago:      formaPago,
-    proveedorTarjeta: proveedorTarjeta,
-
-    pagoEfectivo:   efectivo,
-    pagoCredito:    credito,
-    pagoTotal:      total,
-    ticket:         _ticketDataIngEgr || null
-  })
-});
-
+            carritoIngEgr = [];
             toggleModal('modalIngEgr', false);
             mostrarToast(`✅ ${ingEgrTipo === 'ingreso' ? 'Ingreso' : 'Egreso'} de $${Utils.fmt(total)} registrado`);
             if (typeof calcularWidgetGastoFamiliar === 'function') calcularWidgetGastoFamiliar();
@@ -22848,7 +23049,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             document.getElementById('editIngEgrImgFile').value = '';
         }
 
-        function confirmarEditarIngEgr() {
+        async function confirmarEditarIngEgr() {
 
     const db = ingEgrTipo === 'ingreso' ? _sheetIngresos : _sheetEgresos;
 
@@ -22871,6 +23072,15 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
         r.ticket = window._editIngEgrTicketData;
     }
 
+    if (ingEgrTipo === 'egreso' && r.ticket && String(r.ticket).startsWith('data:')) {
+        mostrarToast('Subiendo ticket...');
+        r.ticket = await subirTicketConReintentos(r.ticket, 2);
+        window._editIngEgrTicketData = r.ticket;
+    }
+
+    r._editadoLocal = true;
+    r._editadoLocalTs = Date.now();
+
     // Imagen individual del registro
     const _tieneNuevaImg = window._editIngEgrImgData && window._editIngEgrImgData.startsWith && window._editIngEgrImgData.startsWith('data:');
     if (window._editIngEgrImgData === '') {
@@ -22884,12 +23094,16 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             editarEnSheet({
                 tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
                 id: r.idSheet || r.id,
+                IDEGRESOS: r.idSheet || r.id,
+                ID_GASTOS: r.idSheet || r.id,
                 proveedor: r.proveedor,
                 concepto: r.concepto,
                 efectivo: r.efectivo,
                 credito: r.credito,
                 total: r.total,
-                imagen: url
+                imagen: url,
+                ticket: r.ticket || '',
+                TICKET: r.ticket || ''
             });
             renderIngEgr(ingEgrTipo);
         });
@@ -22898,21 +23112,21 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
         const payload = {
             tipo: ingEgrTipo === 'ingreso' ? 'actualizar_ingreso' : 'actualizar_egreso',
             id: r.idSheet || r.id,
+            IDEGRESOS: r.idSheet || r.id,
+            ID_GASTOS: r.idSheet || r.id,
             proveedor: r.proveedor,
             concepto: r.concepto,
             efectivo: r.efectivo,
             credito: r.credito,
             total: r.total,
-            imagen: r.imagen || ''
+            imagen: r.imagen || '',
+            ticket: r.ticket || '',
+            TICKET: r.ticket || ''
         };
-        editarEnSheet(payload);
+        await editarEnSheet(payload);
     }
 
     // Ticket: enviar por separado usando el handler específico (solo egresos)
-    if (ingEgrTipo === 'egreso' && window._editIngEgrTicketData !== undefined && window._editIngEgrTicketData !== null) {
-        fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'egreso_ticket', id: r.idSheet || r.id, ticket: window._editIngEgrTicketData }) });
-    }
-
     renderIngEgr(ingEgrTipo);
 
     toggleModal('modalEditarIngEgr', false);
@@ -23849,10 +24063,13 @@ function calcularCajaEsperada() {
 
             // NEGOCIO ? igual que antes
             const db = _sheetProveedoresNegocio;
+            const creditoCompraProveedor = c => (c.items||[]).length
+                ? (c.items||[]).reduce((s,it)=>s+(Number(it.pagoCredito)||0),0)
+                : (Number(c.credito)||0);
             const filtrados = (q ? db.filter(p => (p.nombre||'').toUpperCase().includes(q)) : [...db])
                 .sort((a, b) => {
-                    const da = _sheetCompras.filter(c=>(c.proveedor||'').toUpperCase()===(a.nombre||'').toUpperCase()).reduce((s,c)=>s+(Number(c.credito)||0),0);
-                    const db2 = _sheetCompras.filter(c=>(c.proveedor||'').toUpperCase()===(b.nombre||'').toUpperCase()).reduce((s,c)=>s+(Number(c.credito)||0),0);
+                    const da = _sheetCompras.filter(c=>(c.proveedor||'').toUpperCase()===(a.nombre||'').toUpperCase()).reduce((s,c)=>s+creditoCompraProveedor(c),0);
+                    const db2 = _sheetCompras.filter(c=>(c.proveedor||'').toUpperCase()===(b.nombre||'').toUpperCase()).reduce((s,c)=>s+creditoCompraProveedor(c),0);
                     return db2 - da;
                 });
             if (!filtrados.length) {
@@ -23869,7 +24086,7 @@ function calcularCajaEsperada() {
                 const cantCompras = comprasProv.length;
 
                 // ↗↗ 1. DEUDA REAL AL PROVEEDOR (compras con crédito - pagos ya realizados) ↗↗
-                const totalCreditoProv = comprasProv.reduce((s, c) => s + (Number(c.credito) || 0), 0);
+                const totalCreditoProv = comprasProv.reduce((s, c) => s + creditoCompraProveedor(c), 0);
                 const _idsComprasProv = new Set(comprasProv.map(c => String(c.idSheet||c.id||'').trim()).filter(Boolean));
                 const totalPagadoProv  = (_sheetPagoCompras||[])
                     .filter(pg => {
@@ -24234,8 +24451,14 @@ window.verDetalleProveedor = function(tipo, id) {
             return (p.proveedor||'').toUpperCase() === nombre.toUpperCase();
           });
 
-    const totalCompras = registros.reduce((s,r)=> s+(Number(r.total)||0), 0);
-    const totalCredito = registros.reduce((s,r)=> s+(Number(r.credito)||0), 0);
+    const totalCompraRegistro = r => (r.items||[]).length
+        ? (r.items||[]).reduce((s,it)=>s+(Number(it.pagoTotal||it.subtotal)||0),0)
+        : (Number(r.total)||0);
+    const creditoCompraRegistro = r => (r.items||[]).length
+        ? (r.items||[]).reduce((s,it)=>s+(Number(it.pagoCredito)||0),0)
+        : (Number(r.credito)||0);
+    const totalCompras = registros.reduce((s,r)=> s+totalCompraRegistro(r), 0);
+    const totalCredito = registros.reduce((s,r)=> s+creditoCompraRegistro(r), 0);
     const totalPagado  = esGasto
         ? pagosRegistrados.reduce((s,p)=> s+(Number(p.MONTO||p.monto)||0), 0)
         : pagosRegistrados.reduce((s,p)=> s+(Number(p.MONTO||p.monto)||0), 0);
@@ -24272,13 +24495,13 @@ window.verDetalleProveedor = function(tipo, id) {
     console.warn('[PROV DBG] ALL items sample:', comprasProveedor.slice(0,3).map(c=>({id:c.id,cred:c.credito,total:c.total,items:(c.items||[]).map(i=>({n:i.nombre,cant:i.cantidad,costo:i.costo,sub:i.subtotal}))})));
     const gruposCompra = new Map();
     comprasProveedor.forEach(c => {
-        const idC = esGasto ? String(c.idSheet||c.id||'').trim() : String(c.id||'').trim();
+        const idC = esGasto ? String(c.idSheet||c.id||'').trim() : String(c.idSheet||c.id||'').trim();
         const pagadoEsta = esGasto
             ? pagosComp.filter(p => idC && String(p.IDEGRESOS||p.idEgreso||'').trim() === idC)
                        .reduce((s,p)=> s+(Number(p.MONTO||p.monto)||0), 0)
             : (idC ? pagosComp.filter(p => String(p.idCompra||p.IDCOMPRAS||'').trim() === idC) : [])
                        .reduce((s,p)=> s+(Number(p.MONTO||p.monto)||0), 0);
-        const montoBruto = (Number(c.credito)||0) || (Number(c.total)||0);
+        const montoBruto = esGasto ? ((Number(c.credito)||0) || (Number(c.total)||0)) : creditoCompraRegistro(c);
         const saldo = Math.round(Math.max(0, montoBruto - pagadoEsta) * 100) / 100;
         if (saldo <= 0) return;
         const idBase = String(c.fechaISO || c.fecha || '').trim();
@@ -24292,10 +24515,13 @@ window.verDetalleProveedor = function(tipo, id) {
         const itemsC = c.items && c.items.length > 0 ? c.items
             : esGasto ? [{nombre: (c.detalle||c.concepto||'?'), cantidad:1, costo: montoBruto, subtotal: montoBruto}]
             : [{nombre: c.producto||'?', cantidad:1, costo: montoBruto, subtotal: montoBruto}];
-        const _costoTotal = itemsC.reduce((s,i) => s + (parseFloat(i.costo||0))*(parseFloat(i.cantidad)||1), 0);
-        const totalItems = _costoTotal > 0 ? _costoTotal : itemsC.reduce((s,i) => s + parseFloat(i.subtotal||0), 0) || montoBruto;
+        const totalItems = itemsC.reduce((s,i) => s + (esGasto
+            ? (parseFloat(i.subtotal||i.pagoTotal||0) || 0)
+            : (parseFloat(i.pagoCredito||0) || 0)), 0) || montoBruto;
         itemsC.forEach(item => {
-            const sub = (parseFloat(item.costo||0))*(parseFloat(item.cantidad)||1) || parseFloat(item.subtotal||0) || (montoBruto/Math.max(itemsC.length,1));
+            const sub = esGasto
+                ? ((parseFloat(item.subtotal||item.pagoTotal||0) || 0) || (montoBruto/Math.max(itemsC.length,1)))
+                : ((parseFloat(item.pagoCredito||0) || 0) || (montoBruto/Math.max(itemsC.length,1)));
             const saldoItem = totalItems > 0 ? Math.round(saldo * sub / totalItems) : Math.round(saldo/Math.max(itemsC.length,1));
             g.items.push({...item, _saldoItem: saldoItem, _idC: idC});
             g.saldoTotal += saldoItem;
@@ -26644,7 +26870,42 @@ renderIngNeg = function(tipo) {
 
 renderIngEgr = function(tipo) {
     const esIngreso = tipo === 'ingreso';
-    const dbFull = esIngreso ? (_sheetIngresos || []) : (_sheetEgresos || []);
+    const dbRaw = esIngreso ? (_sheetIngresos || []) : (_sheetEgresos || []);
+    const grupos = {};
+    dbRaw.forEach(function(r) {
+        const idGrupo = String(r.idSheet || r.IDINGRESOS || r.IDEGRESOS || r.ID_GASTOS || r.id || '').trim();
+        const key = idGrupo || String(r.id || Utils.genId());
+        if (!grupos[key]) {
+            grupos[key] = {
+                ...r,
+                id: r.id,
+                idSheet: idGrupo || r.idSheet || r.id,
+                total: 0,
+                efectivo: 0,
+                credito: 0,
+                items: []
+            };
+        }
+        const g = grupos[key];
+        g.total += Number(r.total) || 0;
+        g.efectivo += Number(r.efectivo) || 0;
+        g.credito += Number(r.credito) || 0;
+        if (r.ticket && !g.ticket) g.ticket = r.ticket;
+        if (r.fechaISO && (!g.fechaISO || new Date(r.fechaISO) > new Date(g.fechaISO))) {
+            g.fecha = r.fecha;
+            g.fechaISO = r.fechaISO;
+        }
+        g.items.push({
+            nombre: r.concepto || r.detalle || r.proveedor || '',
+            detalle: r.detalle || '',
+            total: Number(r.total) || 0
+        });
+    });
+    const dbFull = Object.values(grupos).map(function(g) {
+        const nombres = g.items.map(i => i.nombre).filter(Boolean);
+        if (g.items.length > 1) g.concepto = nombres.join(', ');
+        return g;
+    });
     const pagosSrc = esIngreso ? (_sheetPagoIngresos || []) : (_sheetPagoEgresos || []);
     const filtro = esIngreso ? (_filtroIngreso || 'todos') : (_filtroEgreso || 'todos');
     const prefix = esIngreso ? 'ingresos' : 'egresos';
@@ -26669,7 +26930,8 @@ renderIngEgr = function(tipo) {
     const searchInput = document.getElementById(esIngreso ? 'ingresosSearchInput' : 'egresosSearchInput');
     const searchTxt = (searchInput ? searchInput.value : '').toLowerCase().trim();
     const dbFiltrado = searchTxt ? db.filter(function(c) {
-        const haystack = [c.proveedor||'', c.concepto||'', c.genero||'', c.formaPago||'', c.fecha||''].join(' ').toLowerCase();
+        const itemTxt = (c.items || []).map(i => [i.nombre || '', i.detalle || ''].join(' ')).join(' ');
+        const haystack = [c.proveedor||'', c.concepto||'', c.genero||'', c.formaPago||'', c.fecha||'', itemTxt].join(' ').toLowerCase();
         return haystack.includes(searchTxt);
     }) : db;
     if (!dbFiltrado.length) {
@@ -26681,18 +26943,50 @@ renderIngEgr = function(tipo) {
     const listaActual = esIngreso ? (window._listaIngresos || []) : (window._listaEgresos || []);
     const imgMapLista = {};
     listaActual.forEach(function(it) { if (it.nombre && it.imagen) imgMapLista[it.nombre.toUpperCase().trim()] = it.imagen; });
+    const imgCategoriaIngEgr = function(nombre, proveedor) {
+        const n = String(nombre || '').toUpperCase().trim();
+        const p = String(proveedor || '').toUpperCase().trim();
+        return imgMapLista[n]
+            || imgMapLista[p]
+            || ((typeof window._getCatImg === 'function') ? (window._getCatImg('categoria', nombre) || window._getCatImg('supercat', proveedor) || '') : '');
+    };
     container.innerHTML = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0)).map(function(c) {
         const infoEstado = calcEstado(c);
         const badgeColor = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
         const provKey = (c.proveedor || '').toUpperCase().trim();
         const concKey = (c.concepto || '').toUpperCase().trim();
+        const primerItem = ((c.items || []).find(i => i && i.nombre) || {});
+        const esGrupoItems = (c.items || []).length > 1;
         const imgSC = c.imagen
-            || imgMapLista[provKey]
+            || (esGrupoItems
+                ? imgCategoriaIngEgr(c.proveedor, c.proveedor)
+                : (imgCategoriaIngEgr(c.concepto, c.proveedor) || imgCategoriaIngEgr(c.proveedor, c.proveedor)))
             || imgMapLista[concKey]
+            || imgMapLista[provKey]
             || ((typeof window._getCatImg === 'function') ? (window._getCatImg('categoria', c.concepto) || window._getCatImg('supercat', c.proveedor)) : null);
         const imgGN = (typeof window._getCatImg === 'function') ? window._getCatImg('genero', c.genero) : null;
         const imgCard = imgSC || imgGN || '';
         const accentColor = esIngreso ? '#10b981' : '#f87171';
+        const itemsGrupoHtml = (c.items && c.items.length > 1)
+            ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;max-width:520px;">
+                ${c.items.map(i => {
+                    const itemImg = imgCategoriaIngEgr(i.nombre, c.proveedor);
+                    return `<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:9px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:6px 8px;">
+                        <div style="width:38px;height:38px;border-radius:8px;overflow:hidden;background:#020617;border:1px solid ${accentColor}33;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            ${itemImg
+                                ? `<img src="${itemImg}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span style="display:none;color:${accentColor};font-size:9px;font-weight:900;">${esIngreso ? 'ING' : 'EGR'}</span>`
+                                : `<span style="color:${accentColor};font-size:9px;font-weight:900;">${esIngreso ? 'ING' : 'EGR'}</span>`
+                            }
+                        </div>
+                        <div style="min-width:0;">
+                            <div class="text-[10px] font-black text-slate-200 uppercase truncate">${Utils.escHtml(i.nombre || '')}</div>
+                            ${i.detalle ? `<div class="text-[8px] text-slate-500 italic truncate">${Utils.escHtml(i.detalle)}</div>` : ''}
+                        </div>
+                        <span class="font-mono text-[11px] font-black text-white shrink-0">$${Utils.fmt(i.total || 0)}</span>
+                    </div>`;
+                }).join('')}
+            </div>`
+            : '';
         return `
         <div class="glass-card p-4 rounded-2xl border border-slate-800">
             <div class="flex justify-between items-start gap-3">
@@ -26706,14 +27000,14 @@ renderIngEgr = function(tipo) {
                     <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
                     <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
                     ${c.genero ? `<div style="display:flex;align-items:center;gap:4px;">${imgGN ? `<img src="${imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>` : ''}
-                    ${c.concepto ? `<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>` : ''}
+                    ${itemsGrupoHtml || (c.concepto ? `<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>` : '')}
                     <div class="flex items-center gap-2 mt-1 flex-wrap">
                         ${c.formaPago ? `<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>` : ''}
                         <span class="text-[9px] font-black px-2 py-0.5 rounded-full border" style="color:${badgeColor};border-color:${badgeColor}55;background:${badgeColor}18;">${infoEstado.estado}</span>
                         ${infoEstado.saldo > 0 ? `<span class="text-[9px] font-black text-amber-300">Saldo: $${Utils.fmt(infoEstado.saldo)}</span>` : ''}
                     </div>
                     ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">Tarjeta: ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
-                    ${(c.items||[]).length>0?`<p class="text-[9px] text-slate-500">${c.items.map(i=>i.nombre).join(', ').substring(0,60)}</p>`:''}
+                    ${(c.items||[]).length>1?`<p class="text-[9px] text-slate-500 mt-1">${c.items.length} items juntos</p>`:''}
                     ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">Ticket</button>`:''}
                 </div>
                 <div class="text-right shrink-0">
@@ -27935,7 +28229,3 @@ setTimeout(function() {
 
 </body>
 </html>
-
-
-
-
