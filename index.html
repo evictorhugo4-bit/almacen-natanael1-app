@@ -2145,6 +2145,17 @@ GUARDAR PRODUCTO
 
         <div id="tabCompraCalc" class="hidden space-y-4">
             <div class="glass-card rounded-2xl p-5 border border-emerald-500/20">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;gap:14px;min-width:0;">
+                        <div id="ccProveedorAvatar" style="width:96px;height:96px;border-radius:16px;background:#0f172a;border:1px solid #334155;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:26px;font-weight:900;overflow:hidden;flex-shrink:0;">?</div>
+                        <div style="min-width:0;">
+                            <p class="text-[9px] font-black text-emerald-500 uppercase">Proveedor elegido</p>
+                            <p id="ccProveedorNombre" style="color:#f8fafc;font-size:18px;font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Elegir proveedor</p>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">Lista de compra</p>
+                        </div>
+                    </div>
+                    <button onclick="ccDescargarPDF()" title="Descargar PDF" style="width:74px;height:74px;border-radius:16px;border:1px solid #ef444455;background:#3b0b12;color:#fecaca;font-size:18px;font-weight:1000;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 18px rgba(239,68,68,.18);flex-shrink:0;">PDF</button>
+                </div>
                 <div class="flex flex-col md:flex-row md:items-end gap-3">
                     <div class="flex-1">
                         <label class="text-[9px] font-black text-emerald-500 uppercase">Proveedor</label>
@@ -2152,7 +2163,8 @@ GUARDAR PRODUCTO
                     </div>
                     <div class="flex-[1.5]">
                         <label class="text-[9px] font-black text-emerald-500 uppercase">Producto</label>
-                        <select id="ccProducto" onchange="ccActualizarCosto()" style="width:100%;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;padding:10px;font-size:12px;font-weight:800;"></select>
+                        <input id="ccProductoBuscar" type="text" oninput="ccFiltrarProductos()" placeholder="Buscar producto..." style="width:100%;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;padding:10px;font-size:12px;font-weight:800;">
+                        <div id="ccProductoLista" style="margin-top:6px;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:6px;max-height:220px;overflow-y:auto;"></div>
                     </div>
                     <div style="width:120px;">
                         <label class="text-[9px] font-black text-emerald-500 uppercase">Cantidad</label>
@@ -11054,7 +11066,13 @@ console.log("FILTRADAS:", filtradas.length);
                 const v = String(fp || '').trim().toUpperCase();
                 return v === 'TARJETA';
             };
-            const esItemFlete = item => String(item?.nombre || item?.categoria || '').trim().toUpperCase() === 'FLETE';
+            const esItemFlete = item => [
+                item?.nombre,
+                item?.categoria,
+                item?.depto,
+                item?.departamento,
+                item?.tipoVenta
+            ].some(valor => String(valor || '').trim().toUpperCase().includes('FLETE'));
             const pagosComprasTarjetaMap = {};
             (_sheetPagoCompras || []).forEach(function(p) {
                 const id = String(p.IDCOMPRAS || p.idCompra || '').trim();
@@ -12619,6 +12637,7 @@ console.log("FILTRADAS:", filtradas.length);
             if (prev && provs.includes(prev)) selProv.value = prev;
             ccCambiarProveedor(false);
             ccRenderTabla();
+            ccActualizarProveedorVisual();
         }
 
         function ccProductosProveedor() {
@@ -12630,19 +12649,93 @@ console.log("FILTRADAS:", filtradas.length);
         }
 
         function ccCambiarProveedor(limpiar) {
-            const selProd = document.getElementById('ccProducto');
-            if (!selProd) return;
-            const productos = ccProductosProveedor();
-            selProd.innerHTML = productos.length
-                ? productos.map(p => '<option value="' + Utils.escHtml(String(p.id || p.nombre || '')) + '">' + Utils.escHtml(String(p.nombre || '')) + '</option>').join('')
-                : '<option value="">- Sin productos -</option>';
+            const buscar = document.getElementById('ccProductoBuscar');
+            if (buscar) buscar.value = '';
+            ccActualizarProveedorVisual();
+            ccFiltrarProductos();
             if (limpiar !== false) _ccItems = [];
-            ccActualizarCosto();
             ccRenderTabla();
         }
 
+        function ccProveedorActual() {
+            return String(document.getElementById('ccProveedor')?.value || '').trim();
+        }
+
+        function ccBuscarProveedorObj(nombre) {
+            const n = String(nombre || '').trim().toUpperCase();
+            const bases = [
+                ...(_sheetProveedoresNegocio || []),
+                ...(_sheetProveedoresGastos || []),
+                ...(_proveedoresSheet || []).map(p => typeof p === 'string' ? { nombre: p } : p)
+            ];
+            return bases.find(p => {
+                const nom = String(p?.nombre || p?.NOMBRE || p?.proveedor || p?.PROVEEDOR || '').trim().toUpperCase();
+                return nom && nom === n;
+            }) || null;
+        }
+
+        function ccProveedorImagen(nombre) {
+            const obj = ccBuscarProveedorObj(nombre);
+            return obj ? (obj.imagen || obj.IMAGEN || obj.foto || obj.FOTO || obj.image || obj.url || '') : '';
+        }
+
+        function ccActualizarProveedorVisual() {
+            const nombre = ccProveedorActual();
+            const avatar = document.getElementById('ccProveedorAvatar');
+            const label = document.getElementById('ccProveedorNombre');
+            if (label) label.textContent = nombre || 'Elegir proveedor';
+            if (!avatar) return;
+            const img = ccProveedorImagen(nombre);
+            if (img) {
+                avatar.innerHTML = '<img src="' + driveUrl(img) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=&quot;' + Utils.escHtml((nombre || '?').charAt(0).toUpperCase()) + '&quot;">';
+            } else {
+                avatar.textContent = (nombre || '?').charAt(0).toUpperCase();
+            }
+        }
+
+        function ccFiltrarProductos() {
+            const lista = document.getElementById('ccProductoLista');
+            if (!lista) return;
+            const q = String(document.getElementById('ccProductoBuscar')?.value || '').trim().toUpperCase();
+            const normalizar = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+            const palabras = normalizar(q).split(/\s+/).filter(Boolean);
+            const productos = ccProductosProveedor().filter(p => {
+                const txt = normalizar((p.nombre || '') + ' ' + (p.categoria || '') + ' ' + (p.depto || ''));
+                return palabras.every(w => txt.includes(w));
+            });
+            window._ccProductosFiltrados = productos;
+            if (!productos.length) {
+                lista.innerHTML = '<div style="padding:14px;text-align:center;color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;">Sin productos</div>';
+                window._ccProductoKey = '';
+                ccActualizarCosto();
+                return;
+            }
+            if (!window._ccProductoKey || !productos.some(p => String(p.id || p.nombre || '') === window._ccProductoKey)) {
+                window._ccProductoKey = String(productos[0].id || productos[0].nombre || '');
+            }
+            lista.innerHTML = productos.map(p => {
+                const key = String(p.id || p.nombre || '');
+                const active = key === window._ccProductoKey;
+                const img = p.foto || p.imagen || '';
+                const imgHtml = img
+                    ? '<img src="' + driveUrl(img) + '" style="width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display=&quot;none&quot;">'
+                    : '<span style="width:34px;height:34px;border-radius:8px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#64748b;flex-shrink:0;">' + Utils.escHtml(String(p.nombre||'?').charAt(0)) + '</span>';
+                return '<button type="button" onclick="ccSeleccionarProducto(' + JSON.stringify(key).replace(/"/g,'&quot;') + ')" style="width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:' + (active?'#12352b':'transparent') + ';border:' + (active?'1px solid #10b98155':'1px solid transparent') + ';border-radius:9px;padding:7px;cursor:pointer;margin-bottom:4px;">'
+                    + imgHtml
+                    + '<span style="flex:1;min-width:0;"><span style="display:block;color:#f8fafc;font-size:11px;font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + Utils.escHtml(p.nombre||'') + '</span>'
+                    + '<span style="display:block;color:#64748b;font-size:9px;font-weight:800;text-transform:uppercase;">$' + Utils.fmt(parseFloat(p.costo||0)||0) + '</span></span>'
+                    + '</button>';
+            }).join('');
+            ccActualizarCosto();
+        }
+
+        function ccSeleccionarProducto(key) {
+            window._ccProductoKey = String(key || '');
+            ccFiltrarProductos();
+        }
+
         function ccProductoSeleccionado() {
-            const val = String(document.getElementById('ccProducto')?.value || '').trim();
+            const val = String(window._ccProductoKey || '').trim();
             const productos = ccProductosProveedor();
             return productos.find(p => String(p.id || p.nombre || '') === val) || productos[0] || null;
         }
@@ -12664,7 +12757,7 @@ console.log("FILTRADAS:", filtradas.length);
             if (existente) {
                 existente.cantidad += cant;
             } else {
-                _ccItems.push({ key, nombre: String(prod.nombre || ''), cantidad: cant, costo });
+                _ccItems.push({ key, nombre: String(prod.nombre || ''), cantidad: cant, costo, imagen: prod.foto || prod.imagen || '' });
             }
             ccRenderTabla();
         }
@@ -12688,14 +12781,108 @@ console.log("FILTRADAS:", filtradas.length);
             }
             body.innerHTML = _ccItems.map(i => {
                 const sub = (parseFloat(i.cantidad)||0) * (parseFloat(i.costo)||0);
+                const imgHtml = i.imagen
+                    ? '<img src="' + driveUrl(i.imagen) + '" style="width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display=&quot;none&quot;">'
+                    : '<span style="width:34px;height:34px;border-radius:8px;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#64748b;flex-shrink:0;">' + Utils.escHtml(String(i.nombre||'?').charAt(0)) + '</span>';
                 return '<tr style="border-bottom:1px solid #1e293b;">'
-                    + '<td style="padding:10px;font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">' + Utils.escHtml(i.nombre) + '</td>'
+                    + '<td style="padding:10px;font-size:11px;font-weight:900;color:#f1f5f9;text-transform:uppercase;"><div style="display:flex;align-items:center;gap:10px;">' + imgHtml + '<span>' + Utils.escHtml(i.nombre) + '</span></div></td>'
                     + '<td style="padding:10px;text-align:right;font-size:12px;font-weight:900;color:#60a5fa;font-family:monospace;">' + Utils.fmt(i.cantidad) + '</td>'
                     + '<td style="padding:10px;text-align:right;font-size:12px;font-weight:900;color:#94a3b8;font-family:monospace;">$' + Utils.fmt(i.costo) + '</td>'
                     + '<td style="padding:10px;text-align:right;font-size:13px;font-weight:900;color:#34d399;font-family:monospace;">$' + Utils.fmt(sub) + '</td>'
                     + '<td style="padding:10px;text-align:right;"><button onclick="ccQuitarItem(' + JSON.stringify(i.key).replace(/"/g,'&quot;') + ')" style="background:#7f1d1d;color:#fecaca;border:none;border-radius:8px;padding:6px 10px;font-size:10px;font-weight:900;cursor:pointer;">Quitar</button></td>'
                     + '</tr>';
             }).join('');
+        }
+
+        function ccImagenDataUrl(src) {
+            return new Promise(resolve => {
+                if (!src) return resolve('');
+                const finalSrc = driveUrl(src);
+                if (String(finalSrc).startsWith('data:')) return resolve(finalSrc);
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth || 80;
+                        canvas.height = img.naturalHeight || 80;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg', 0.86));
+                    } catch(e) { resolve(''); }
+                };
+                img.onerror = function() { resolve(''); };
+                img.src = finalSrc;
+            });
+        }
+
+        async function ccDescargarPDF() {
+            const jsPDF = window.jspdf && window.jspdf.jsPDF;
+            if (!jsPDF) {
+                if (typeof mostrarToast === 'function') mostrarToast('No se cargo el generador PDF', 'error');
+                return;
+            }
+            if (!_ccItems.length) {
+                if (typeof mostrarToast === 'function') mostrarToast('Agrega productos a la lista', 'warning');
+                return;
+            }
+            const proveedor = ccProveedorActual() || 'Proveedor';
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const total = _ccItems.reduce((s,i)=>s + ((parseFloat(i.cantidad)||0) * (parseFloat(i.costo)||0)), 0);
+            const provImg = await ccImagenDataUrl(ccProveedorImagen(proveedor));
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('Lista de compra', 14, 18);
+            doc.setFontSize(11);
+            doc.text(String(proveedor).toUpperCase(), 14, 27);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text(new Date().toLocaleString('es-AR'), 14, 34);
+            if (provImg) doc.addImage(provImg, 'JPEG', 160, 12, 32, 32);
+            doc.setDrawColor(20, 184, 166);
+            doc.line(14, 42, 196, 42);
+
+            let y = 52;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.text('PRODUCTO', 28, y);
+            doc.text('CANT.', 126, y, { align: 'right' });
+            doc.text('COSTO', 158, y, { align: 'right' });
+            doc.text('SUBTOTAL', 194, y, { align: 'right' });
+            y += 5;
+
+            for (const item of _ccItems) {
+                if (y > 272) {
+                    doc.addPage();
+                    y = 18;
+                }
+                const sub = (parseFloat(item.cantidad)||0) * (parseFloat(item.costo)||0);
+                const itemImg = await ccImagenDataUrl(item.imagen);
+                if (itemImg) doc.addImage(itemImg, 'JPEG', 14, y - 3, 10, 10);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.text(String(item.nombre || '').toUpperCase().slice(0, 58), 28, y + 3);
+                doc.setFont('helvetica', 'normal');
+                doc.text(Utils.fmt(item.cantidad), 126, y + 3, { align: 'right' });
+                doc.text('$' + Utils.fmt(item.costo), 158, y + 3, { align: 'right' });
+                doc.setFont('helvetica', 'bold');
+                doc.text('$' + Utils.fmt(sub), 194, y + 3, { align: 'right' });
+                doc.setDrawColor(226, 232, 240);
+                doc.line(14, y + 11, 196, y + 11);
+                y += 16;
+            }
+
+            if (y > 260) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.text('TOTAL A GASTAR', 120, y + 8);
+            doc.text('$' + Utils.fmt(total), 194, y + 8, { align: 'right' });
+            doc.save('lista-compra-' + proveedor.replace(/[^\w\-]+/g, '_') + '.pdf');
         }
 
         function switchStatsTab(tab) {
@@ -19416,7 +19603,13 @@ function filtrarProductosCompra(query) {
 
 
 function esItemFleteCompra(item) {
-    return String(item?.nombre || item?.categoria || '').trim().toUpperCase() === 'FLETE';
+    return [
+        item?.nombre,
+        item?.categoria,
+        item?.depto,
+        item?.departamento,
+        item?.tipoVenta
+    ].some(valor => String(valor || '').trim().toUpperCase().includes('FLETE'));
 }
 
 function obtenerMontoFleteInputCompra() {
@@ -20641,6 +20834,11 @@ const grupos = Array.from(gruposMap.values())
 container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
     const idx = realIdx;
     const todosItems = [...(c.items||[]), ...extraItems];
+    const totalProductosGrupo = todosItems.reduce((sum, i) => {
+        const totalItem = parseFloat(i.total || 0) || ((parseFloat(i.costo || 0) || 0) * (parseFloat(i.cantidad || 1) || 1));
+        return sum + totalItem;
+    }, 0);
+    const totalMostradoCompra = totalProductosGrupo > 0 ? totalProductosGrupo : (parseFloat(c.total || 0) || 0);
 
     const tickets = c.tickets || (c.ticket ? [c.ticket] : []);
     const ticketBtn = tickets.length > 0
@@ -20712,7 +20910,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
                     </div>
                 </div>
                 <div class="text-right flex flex-col items-end gap-1 flex-shrink-0">
-                    <span class="block text-sm font-black text-white font-mono">$${Utils.fmt(c.total)}</span>
+                    <span class="block text-sm font-black text-white font-mono">$${Utils.fmt(totalMostradoCompra)}</span>
                     ${estadoCompra.saldo > 0 ? `<span class="block text-[9px] font-black text-red-400">Saldo: $${Utils.fmt(estadoCompra.saldo)}</span>` : ''}
                     ${creditoSpan}${efectivoSpan}
                     <div class="flex gap-1 mt-1">
