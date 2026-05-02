@@ -7307,6 +7307,7 @@ window._pagoVentasSheet = _pagoVentasSheet;
 
                 // ↗↗ Procesar COMPRAS del Sheet ? POS ↗↗
                 if (Array.isArray(data.compras) && data.compras.length > 0) {
+                    window._sheetComprasRaw = data.compras || [];
                     const norm = s => String(s||'').trim().toUpperCase().replace(/\s+/g,' ');
                     let agregados = 0, actualizados = 0;
                     const comprasMap = {};
@@ -7480,6 +7481,7 @@ window._catsIngSheet = _catsIngSheet;
 
                 // ↗↗ Procesar GASTOS del Sheet ? POS (egresos) ↗↗
                 if (Array.isArray(data.gastos) && data.gastos.length > 0) {
+                    window._sheetEgresosRaw = data.gastos || [];
                     let agregados = 0, actualizados = 0;
                     // Extraer supercategorías y categorías únicas para los dropdowns
                     const supercatsSet = new Set();
@@ -12028,6 +12030,37 @@ console.log("FILTRADAS:", filtradas.length);
             }, 0);
         }
 
+        function _efSumaPagoEfectivoCompras() {
+            const filasRaw = Array.isArray(window._sheetComprasRaw) ? window._sheetComprasRaw : [];
+            if (filasRaw.length) {
+                return filasRaw.reduce(function(s, row) {
+                    if (!_efEnRango(row)) return s;
+                    return s + parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo'] || row['pago efectivo'] || 0);
+                }, 0);
+            }
+            return (window._sheetCompras || []).reduce(function(s, c) {
+                if (!_efEnRango(c)) return s;
+                const efItems = (c.items || []).reduce(function(t, i) {
+                    return t + (parseSheetNum(i.pagoEfectivo || i['PAGO EFECTIVO'] || 0) || 0);
+                }, 0);
+                return s + (efItems || parseSheetNum(c.efectivo || c['PAGO EFECTIVO'] || 0));
+            }, 0);
+        }
+
+        function _efSumaPagoEfectivoEgresos() {
+            const filasRaw = Array.isArray(window._sheetEgresosRaw) ? window._sheetEgresosRaw : [];
+            if (filasRaw.length) {
+                return filasRaw.reduce(function(s, row) {
+                    if (!_efEnRango(row)) return s;
+                    return s + parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo'] || row['pago efectivo'] || 0);
+                }, 0);
+            }
+            return (window._sheetEgresos || []).reduce(function(s, r) {
+                if (!_efEnRango(r)) return s;
+                return s + parseSheetNum(r.efectivo || r['PAGO EFECTIVO'] || 0);
+            }, 0);
+        }
+
         function _efFila(label, valor, color) {
             const c = color || (valor >= 0 ? '#34d399' : '#f87171');
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;">' +
@@ -12079,7 +12112,7 @@ console.log("FILTRADAS:", filtradas.length);
 
                 // ↗↗ SALIDAS ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 // 7. Pago efectivo de COMPRAS
-                const efCompras = _efSumaEfectivo(window._sheetCompras || []);
+                const efCompras = _efSumaPagoEfectivoCompras();
 
                 // 8. MONTO de PAGO COMPRAS ? no tiene formaPago, suma todo
                 const efPagoCompras = _efSumaMontoPagos(
@@ -12088,7 +12121,7 @@ console.log("FILTRADAS:", filtradas.length);
                 );
 
                 // 9. Pago efectivo de EGRESOS (personal)
-                const efEgrPersonal = _efSumaEfectivo(window._sheetEgresos || []);
+                const efEgrPersonal = _efSumaPagoEfectivoEgresos();
 
                 // 10. MONTO de PAGO EGRESOS (personal) ? no tiene formaPago, suma todo
                 const efPagoEgresos = _efSumaMontoPagos(
