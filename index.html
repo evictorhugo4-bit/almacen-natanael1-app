@@ -7378,7 +7378,14 @@ window._pagoVentasSheet = _pagoVentasSheet;
                         });
                     });
 
-                    const comprasSheet = Object.values(comprasMap);
+                    const comprasSheet = Object.values(comprasMap).map(c => {
+                        if (Array.isArray(c.items) && c.items.length > 0) {
+                            c.total = c.items.reduce((s, i) => s + (Number(i.pagoTotal || i.subtotal || 0) || 0), 0);
+                            c.efectivo = c.items.reduce((s, i) => s + (Number(i.pagoEfectivo || 0) || 0), 0);
+                            c.credito = c.items.reduce((s, i) => s + (Number(i.pagoCredito || 0) || 0), 0);
+                        }
+                        return c;
+                    });
 
 
 
@@ -9406,6 +9413,89 @@ console.log("FILTRADAS:", filtradas.length);
 
             html += tablaIng + tablaEgr;
 
+            const epComparador = {
+                gananciasConsumo: {
+                    titulo: 'Ganancias Totales vs Consumo + Comida + Diezmo',
+                    labels: ['Ganancias totales', 'Consumo + comida + diezmo'],
+                    valores: [ganFiltroEP, egrConsumoNeg + egrComidaFam + egrDiezmo],
+                    colores: ['#fbbf24', '#fb7185']
+                },
+                propiosExtra: {
+                    titulo: 'Ingresos Propios Extra vs Egresos Propios Extra',
+                    labels: ['Ingresos propios extra', 'Egresos propios extra'],
+                    valores: [ingPropiosExtra, egrPropiosExtra],
+                    colores: ['#34d399', '#f87171']
+                },
+                ajenosExtra: {
+                    titulo: 'Ingresos Ajenos Extra vs Egresos Ajenos Extra',
+                    labels: ['Ingresos ajenos extra', 'Egresos ajenos extra'],
+                    valores: [ingAjenosExtra, egrAjenosExtra],
+                    colores: ['#22d3ee', '#fb7185']
+                },
+                natanael: {
+                    titulo: 'Natanael Escuela/Iglesia',
+                    labels: ['Ingresos Natanael', 'Egresos Natanael'],
+                    valores: [ingNatanael, egrNatanael],
+                    colores: ['#a78bfa', '#f87171']
+                },
+                total: {
+                    titulo: 'Total Personal',
+                    labels: ['Ingresos totales', 'Egresos totales'],
+                    valores: [epIngTot, epEgrTot],
+                    colores: ['#4ade80', '#ef4444']
+                }
+            };
+            const epBalColorGraf = epBalTot >= 0 ? '#34d399' : '#f87171';
+            html += `
+                <div class="glass-card rounded-2xl border" style="border-color:#f59e0b33;overflow:hidden;margin:14px 0 10px;background:
+                    radial-gradient(circle at top left, rgba(245,158,11,.12), transparent 28%),
+                    linear-gradient(135deg,#111827 0%,#0f172a 100%);">
+                    <div style="padding:14px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:12px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">Graficos interactivos del Estado Personal</div>
+                            <div style="font-size:10px;font-weight:800;color:#64748b;">Comparaciones segun el mismo rango y filtro ${filtroLabelEP}</div>
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button id="epCmpBtn_gananciasConsumo" onclick="epSetComparador('gananciasConsumo')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Ganancias vs Consumo</button>
+                            <button id="epCmpBtn_propiosExtra" onclick="epSetComparador('propiosExtra')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Propios Extra</button>
+                            <button id="epCmpBtn_ajenosExtra" onclick="epSetComparador('ajenosExtra')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Ajenos Extra</button>
+                            <button id="epCmpBtn_natanael" onclick="epSetComparador('natanael')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Natanael</button>
+                            <button id="epCmpBtn_total" onclick="epSetComparador('total')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Total</button>
+                        </div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <div style="min-width:132px;padding:9px 12px;border-radius:14px;background:#0f172a;border:1px solid #22c55e33;">
+                                <div style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">Ingresos</div>
+                                <div style="font-size:18px;font-weight:900;color:#f8fafc;font-family:monospace;">$${Utils.fmt(epIngTot)}</div>
+                            </div>
+                            <div style="min-width:132px;padding:9px 12px;border-radius:14px;background:#0f172a;border:1px solid #ef444433;">
+                                <div style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">Egresos</div>
+                                <div style="font-size:18px;font-weight:900;color:#f8fafc;font-family:monospace;">$${Utils.fmt(epEgrTot)}</div>
+                            </div>
+                            <div style="min-width:132px;padding:9px 12px;border-radius:14px;background:#0f172a;border:1px solid ${epBalColorGraf}55;">
+                                <div style="font-size:9px;font-weight:900;color:${epBalColorGraf};text-transform:uppercase;">Balance</div>
+                                <div style="font-size:18px;font-weight:900;color:${epBalColorGraf};font-family:monospace;">$${Utils.fmt(epBalTot)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding:14px;border-bottom:1px solid #1e293b;">
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #f59e0b33;">
+                            <div id="epComparadorTitulo" style="font-size:11px;font-weight:900;color:#f59e0b;text-transform:uppercase;margin-bottom:10px;">Comparador</div>
+                            <canvas id="chartEstadoPersonalComparador" height="230"></canvas>
+                        </div>
+                    </div>
+                    <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #334155;">
+                            <div style="font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;margin-bottom:10px;">Balances principales</div>
+                            <canvas id="chartEstadoPersonalBalances" height="210"></canvas>
+                        </div>
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #334155;">
+                            <div style="font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;margin-bottom:10px;">Distribucion ingresos / egresos</div>
+                            <canvas id="chartEstadoPersonalMix" height="210"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             // ↗↗ ESTADO NEGOCIO / EFECTIVO (solo cuando filtro = efectivo) ↗↗
             if (_epFiltro === 'efectivo') {
                 const sumVentasEP = (campo, excluir) => {
@@ -9542,6 +9632,90 @@ console.log("FILTRADAS:", filtradas.length);
             }
 
             document.getElementById('epContenido').innerHTML = html;
+
+            window._epComparadorData = epComparador;
+            if (!window._epComparadorModo || !epComparador[window._epComparadorModo]) {
+                window._epComparadorModo = 'gananciasConsumo';
+            }
+            window.epSetComparador = function(modo) {
+                if (!window._epComparadorData || !window._epComparadorData[modo]) return;
+                window._epComparadorModo = modo;
+                ['gananciasConsumo','propiosExtra','ajenosExtra','natanael','total'].forEach(k => {
+                    const b = document.getElementById('epCmpBtn_' + k);
+                    if (!b) return;
+                    const activo = k === modo;
+                    b.style.background = activo ? '#f59e0b' : '#1e293b';
+                    b.style.color = activo ? '#020617' : '#cbd5e1';
+                    b.style.borderColor = activo ? '#fbbf24' : '#334155';
+                });
+                const cfg = window._epComparadorData[modo];
+                const dif = (Number(cfg.valores[0] || 0) - Number(cfg.valores[1] || 0));
+                const titulo = document.getElementById('epComparadorTitulo');
+                if (titulo) {
+                    titulo.textContent = cfg.titulo + ' | Diferencia: $' + Utils.fmt(dif);
+                    titulo.style.color = dif >= 0 ? '#34d399' : '#f87171';
+                }
+                statsChart('chartEstadoPersonalComparador', 'bar',
+                    cfg.labels,
+                    [{
+                        label: cfg.titulo,
+                        data: cfg.valores,
+                        backgroundColor: cfg.colores.map(c => c + 'cc'),
+                        borderColor: cfg.colores,
+                        borderWidth: 1,
+                        borderRadius: 14
+                    }],
+                    {
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } },
+                            y: { ticks: { color: '#e2e8f0', font: { size: 12, weight: '900' } }, grid: { display: false } }
+                        }
+                    }
+                );
+            };
+            window.epSetComparador(window._epComparadorModo);
+
+            if (document.getElementById('chartEstadoPersonalBalances')) {
+                const balLabels = ['Ganancias/consumo', 'Propios extra', 'Ajenos extra', 'Natanael'];
+                const balVals = [epBal1, epBal2, epBal3, epBal4];
+                statsChart('chartEstadoPersonalBalances', 'bar',
+                    balLabels,
+                    [{
+                        label: 'Balance',
+                        data: balVals,
+                        backgroundColor: balVals.map(v => v >= 0 ? 'rgba(52,211,153,.76)' : 'rgba(248,113,113,.76)'),
+                        borderColor: balVals.map(v => v >= 0 ? '#34d399' : '#f87171'),
+                        borderWidth: 1,
+                        borderRadius: 10
+                    }],
+                    {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#cbd5e1', font: { size: 10, weight: '800' } }, grid: { display: false } },
+                            y: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } }
+                        }
+                    }
+                );
+            }
+            if (document.getElementById('chartEstadoPersonalMix')) {
+                statsChart('chartEstadoPersonalMix', 'doughnut',
+                    ['Ingresos', 'Egresos'],
+                    [{
+                        data: [Math.max(0, epIngTot), Math.max(0, epEgrTot)],
+                        backgroundColor: ['#34d399', '#f87171'],
+                        borderColor: '#0f172a',
+                        borderWidth: 4,
+                        hoverOffset: 10
+                    }],
+                    {
+                        plugins: {
+                            legend: { labels: { color: '#cbd5e1', boxWidth: 10, padding: 12, font: { size: 10, weight: '800' } } }
+                        }
+                    }
+                );
+            }
         }
 
         // ↗↗ ESTADO NEGOCIO ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
@@ -9811,6 +9985,11 @@ console.log("FILTRADAS:", filtradas.length);
             // ↗↗ Helper: suma campo de compras en rango ↗↗
             const sumCompras = campo => (_sheetCompras||[]).reduce((s,c) => {
                 if (!enRango(parseFechaNum(c.fechaISO||c.fecha||''))) return s;
+                if (Array.isArray(c.items) && c.items.length > 0) {
+                    if (campo === 'efectivo') return s + c.items.reduce((si,i)=>si+(Number(i.pagoEfectivo||0)||0),0);
+                    if (campo === 'credito')  return s + c.items.reduce((si,i)=>si+(Number(i.pagoCredito||0)||0),0);
+                    return s + c.items.reduce((si,i)=>si+(Number(i.pagoTotal||i.subtotal||0)||0),0);
+                }
                 return s + Number(c[campo]||0);
             }, 0);
 
@@ -10019,6 +10198,80 @@ console.log("FILTRADAS:", filtradas.length);
             let html = '';
             const filtroLabel = _enFiltro === 'efectivo' ? 'EFECTIVO' : _enFiltro === 'credito' ? 'CR\u00c9DITO' : 'TOTAL';
             html += '<div style="margin-bottom:10px;"><span style="font-size:10px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em;">\ud83d\udcca ESTADO NEGOCIO / ' + filtroLabel + '</span></div>';
+
+            const enGraficos = (() => {
+                if (_enFiltro === 'efectivo') {
+                    const v3efG      = ventasEf - ganEfEN;
+                    const ingresosG  = [v3efG, pagoVentEf, casaErazo, errorVenta, ingNegEf, pagoIngNegEf];
+                    const egresosG   = [0, 0, 0, 0, comprasEf + pagoCompEf, egrNegEf + pagoEgrNegEf];
+                    const labelsG    = ['Ventas s/gan.', 'Pago ventas', 'Casa Erazo', 'Error venta', 'Compras + pagos', 'Egr. negocio'];
+                    return {
+                        labels: labelsG,
+                        ingresos: ingresosG,
+                        egresos: egresosG,
+                        balances: ingresosG.map((v, i) => v - egresosG[i]),
+                        totalIngresos: ingresosG.reduce((s, v) => s + v, 0),
+                        totalEgresos: egresosG.reduce((s, v) => s + v, 0)
+                    };
+                }
+                if (_enFiltro === 'credito') {
+                    const ing1crG = ventasCr - ganCrEN - pagoVentCr;
+                    const egr1crG = comprasCr - pagoCompCr;
+                    const ing2crG = Math.max(0, ingNegCr - pagoIngNegCr);
+                    const egr2crG = Math.max(0, egrNegCr - pagoEgrNegCr);
+                    return {
+                        labels: ['Ventas credito', 'Compras credito', 'Ing. negocio', 'Egr. negocio'],
+                        ingresos: [ing1crG, 0, ing2crG, 0],
+                        egresos: [0, egr1crG, 0, egr2crG],
+                        balances: [ing1crG, -egr1crG, ing2crG, -egr2crG],
+                        totalIngresos: ing1crG + ing2crG,
+                        totalEgresos: egr1crG + egr2crG
+                    };
+                }
+                const v3TotG = ventasTot - ganTotEN;
+                return {
+                    labels: ['Ventas s/gan.', 'Casa Erazo', 'Error venta', 'Compras', 'Ing. negocio', 'Egr. negocio'],
+                    ingresos: [v3TotG, casaErazo, errorVenta, 0, ingNegTot, 0],
+                    egresos: [0, 0, 0, comprasTot, 0, egrNegTot],
+                    balances: [v3TotG, casaErazo, errorVenta, -comprasTot, ingNegTot, -egrNegTot],
+                    totalIngresos: v3TotG + casaErazo + errorVenta + ingNegTot,
+                    totalEgresos: comprasTot + egrNegTot
+                };
+            })();
+            enGraficos.balance = enGraficos.totalIngresos - enGraficos.totalEgresos;
+            const enComparador = (() => {
+                if (_enFiltro === 'efectivo') {
+                    const ventas = (ventasEf - ganEfEN) + casaErazo + errorVenta + pagoVentEf;
+                    const compras = comprasEf + pagoCompEf;
+                    const ingresos = ingNegEf + pagoIngNegEf;
+                    const egresos = egrNegEf + pagoEgrNegEf;
+                    return {
+                        ventasCompras: { titulo: 'Ventas vs Compras', labels: ['Ventas', 'Compras'], valores: [ventas, compras], colores: ['#34d399', '#f87171'] },
+                        ingresosEgresos: { titulo: 'Ingresos vs Egresos Negocio', labels: ['Ingresos negocio', 'Egresos negocio'], valores: [ingresos, egresos], colores: ['#22c55e', '#fb7185'] },
+                        total: { titulo: 'Total Entradas vs Salidas', labels: ['Entradas', 'Salidas'], valores: [ventas + ingresos, compras + egresos], colores: ['#38bdf8', '#f97316'] }
+                    };
+                }
+                if (_enFiltro === 'credito') {
+                    const ventas = ventasCr - ganCrEN - pagoVentCr;
+                    const compras = Math.max(0, comprasCr - pagoCompCr);
+                    const ingresos = Math.max(0, ingNegCr - pagoIngNegCr);
+                    const egresos = Math.max(0, egrNegCr - pagoEgrNegCr);
+                    return {
+                        ventasCompras: { titulo: 'Ventas vs Compras', labels: ['Ventas credito', 'Compras credito'], valores: [ventas, compras], colores: ['#34d399', '#f87171'] },
+                        ingresosEgresos: { titulo: 'Ingresos vs Egresos Negocio', labels: ['Ingresos credito', 'Egresos credito'], valores: [ingresos, egresos], colores: ['#22c55e', '#fb7185'] },
+                        total: { titulo: 'Total Pendiente', labels: ['Por cobrar', 'Por pagar'], valores: [ventas + ingresos, compras + egresos], colores: ['#38bdf8', '#f97316'] }
+                    };
+                }
+                const ventas = (ventasTot - ganTotEN) + casaErazo + errorVenta;
+                const compras = comprasTot;
+                const ingresos = ingNegTot;
+                const egresos = egrNegTot;
+                return {
+                    ventasCompras: { titulo: 'Ventas vs Compras', labels: ['Ventas', 'Compras'], valores: [ventas, compras], colores: ['#34d399', '#f87171'] },
+                    ingresosEgresos: { titulo: 'Ingresos vs Egresos Negocio', labels: ['Ingresos negocio', 'Egresos negocio'], valores: [ingresos, egresos], colores: ['#22c55e', '#fb7185'] },
+                    total: { titulo: 'Total Ingresos vs Egresos', labels: ['Ingresos totales', 'Egresos totales'], valores: [ventas + ingresos, compras + egresos], colores: ['#38bdf8', '#f97316'] }
+                };
+            })();
 
             if (_enFiltro === 'total') {
                 // Filas individuales
@@ -10958,7 +11211,171 @@ console.log("FILTRADAS:", filtradas.length);
                 `;
             })();
 
+            const enGraficosBalanceColor = enGraficos.balance >= 0 ? '#34d399' : '#f87171';
+            html += `
+                <div class="glass-card rounded-2xl border" style="border-color:#22d3ee33;overflow:hidden;margin:14px 0 10px;background:
+                    radial-gradient(circle at top left, rgba(34,211,238,.12), transparent 28%),
+                    linear-gradient(135deg,#111827 0%,#0f172a 100%);">
+                    <div style="padding:14px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:12px;font-weight:900;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em;">Graficos interactivos del Estado del Negocio</div>
+                            <div style="font-size:10px;font-weight:800;color:#64748b;">Mismos datos de la tabla superior, respetando fecha y filtro ${filtroLabel}</div>
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button id="enCmpBtn_ventasCompras" onclick="enSetComparador('ventasCompras')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Ventas vs Compras</button>
+                            <button id="enCmpBtn_ingresosEgresos" onclick="enSetComparador('ingresosEgresos')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Ingresos vs Egresos</button>
+                            <button id="enCmpBtn_total" onclick="enSetComparador('total')" class="btn-action" style="padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;">Total</button>
+                        </div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <div style="min-width:132px;padding:9px 12px;border-radius:14px;background:#0f172a;border:1px solid #22c55e33;">
+                                <div style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">Ingresos</div>
+                                <div style="font-size:18px;font-weight:900;color:#f8fafc;font-family:monospace;">$${Utils.fmt(enGraficos.totalIngresos)}</div>
+                            </div>
+                            <div style="min-width:132px;padding:9px 12px;border-radius:14px;background:#0f172a;border:1px solid #ef444433;">
+                                <div style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">Egresos</div>
+                                <div style="font-size:18px;font-weight:900;color:#f8fafc;font-family:monospace;">$${Utils.fmt(enGraficos.totalEgresos)}</div>
+                            </div>
+                            <div style="min-width:132px;padding:9px 12px;border-radius:14px;background:#0f172a;border:1px solid ${enGraficosBalanceColor}55;">
+                                <div style="font-size:9px;font-weight:900;color:${enGraficosBalanceColor};text-transform:uppercase;">Balance</div>
+                                <div style="font-size:18px;font-weight:900;color:${enGraficosBalanceColor};font-family:monospace;">$${Utils.fmt(enGraficos.balance)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding:14px;border-bottom:1px solid #1e293b;">
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #22d3ee33;">
+                            <div id="enComparadorTitulo" style="font-size:11px;font-weight:900;color:#22d3ee;text-transform:uppercase;margin-bottom:10px;">Comparador</div>
+                            <canvas id="chartEstadoNegocioComparador" height="230"></canvas>
+                        </div>
+                    </div>
+                    <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #334155;">
+                            <div style="font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;margin-bottom:10px;">Ingresos vs egresos por concepto</div>
+                            <canvas id="chartEstadoNegocioFlujo" height="210"></canvas>
+                        </div>
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #334155;">
+                            <div style="font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;margin-bottom:10px;">Balance por concepto</div>
+                            <canvas id="chartEstadoNegocioBalance" height="210"></canvas>
+                        </div>
+                        <div style="padding:14px;border-radius:18px;background:#0f172a;border:1px solid #334155;">
+                            <div style="font-size:10px;font-weight:900;color:#cbd5e1;text-transform:uppercase;margin-bottom:10px;">Distribucion total</div>
+                            <canvas id="chartEstadoNegocioMix" height="210"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             container.innerHTML = html;
+
+            window._enComparadorData = enComparador;
+            if (!window._enComparadorModo || !enComparador[window._enComparadorModo]) {
+                window._enComparadorModo = 'ventasCompras';
+            }
+            window.enSetComparador = function(modo) {
+                if (!window._enComparadorData || !window._enComparadorData[modo]) return;
+                window._enComparadorModo = modo;
+                ['ventasCompras','ingresosEgresos','total'].forEach(k => {
+                    const b = document.getElementById('enCmpBtn_' + k);
+                    if (!b) return;
+                    const activo = k === modo;
+                    b.style.background = activo ? '#22d3ee' : '#1e293b';
+                    b.style.color = activo ? '#020617' : '#cbd5e1';
+                    b.style.borderColor = activo ? '#67e8f9' : '#334155';
+                });
+                const cfg = window._enComparadorData[modo];
+                const titulo = document.getElementById('enComparadorTitulo');
+                if (titulo) {
+                    const dif = (Number(cfg.valores[0] || 0) - Number(cfg.valores[1] || 0));
+                    titulo.textContent = cfg.titulo + ' | Diferencia: $' + Utils.fmt(dif);
+                    titulo.style.color = dif >= 0 ? '#34d399' : '#f87171';
+                }
+                statsChart('chartEstadoNegocioComparador', 'bar',
+                    cfg.labels,
+                    [{
+                        label: cfg.titulo,
+                        data: cfg.valores,
+                        backgroundColor: cfg.colores.map(c => c + 'cc'),
+                        borderColor: cfg.colores,
+                        borderWidth: 1,
+                        borderRadius: 14
+                    }],
+                    {
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } },
+                            y: { ticks: { color: '#e2e8f0', font: { size: 12, weight: '900' } }, grid: { display: false } }
+                        }
+                    }
+                );
+            };
+            window.enSetComparador(window._enComparadorModo);
+
+            if (document.getElementById('chartEstadoNegocioFlujo')) {
+                statsChart('chartEstadoNegocioFlujo', 'bar',
+                    enGraficos.labels,
+                    [
+                        {
+                            label: 'Ingresos',
+                            data: enGraficos.ingresos,
+                            backgroundColor: 'rgba(52,211,153,.72)',
+                            borderColor: '#34d399',
+                            borderWidth: 1,
+                            borderRadius: 10
+                        },
+                        {
+                            label: 'Egresos',
+                            data: enGraficos.egresos,
+                            backgroundColor: 'rgba(248,113,113,.72)',
+                            borderColor: '#f87171',
+                            borderWidth: 1,
+                            borderRadius: 10
+                        }
+                    ],
+                    {
+                        scales: {
+                            x: { ticks: { color: '#cbd5e1', font: { size: 10, weight: '800' } }, grid: { display: false } },
+                            y: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } }
+                        }
+                    }
+                );
+            }
+            if (document.getElementById('chartEstadoNegocioBalance')) {
+                statsChart('chartEstadoNegocioBalance', 'bar',
+                    enGraficos.labels,
+                    [{
+                        label: 'Balance',
+                        data: enGraficos.balances,
+                        backgroundColor: enGraficos.balances.map(v => v >= 0 ? 'rgba(52,211,153,.76)' : 'rgba(248,113,113,.76)'),
+                        borderColor: enGraficos.balances.map(v => v >= 0 ? '#34d399' : '#f87171'),
+                        borderWidth: 1,
+                        borderRadius: 10
+                    }],
+                    {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#cbd5e1', font: { size: 10, weight: '800' } }, grid: { display: false } },
+                            y: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } }
+                        }
+                    }
+                );
+            }
+            if (document.getElementById('chartEstadoNegocioMix')) {
+                statsChart('chartEstadoNegocioMix', 'doughnut',
+                    ['Ingresos', 'Egresos'],
+                    [{
+                        data: [Math.max(0, enGraficos.totalIngresos), Math.max(0, enGraficos.totalEgresos)],
+                        backgroundColor: ['#34d399', '#f87171'],
+                        borderColor: '#0f172a',
+                        borderWidth: 4,
+                        hoverOffset: 10
+                    }],
+                    {
+                        plugins: {
+                            legend: { labels: { color: '#cbd5e1', boxWidth: 10, padding: 12, font: { size: 10, weight: '800' } } }
+                        }
+                    }
+                );
+            }
 
             if (document.getElementById('chartCasaErazoTopMonto')) {
                 statsChart('chartCasaErazoTopMonto', 'bar',
