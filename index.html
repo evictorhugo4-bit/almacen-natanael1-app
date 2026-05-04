@@ -4801,7 +4801,7 @@ _sheetProductos.forEach(p => {
         // ============================================================
         function guardarYDescargar() {
             try {
-                const claves = ['natanael_inventario_v1','natanael_historial_v1','natanael_clientes_v1',
+                const claves = ['natanael_inventario_v1','natanael_clientes_v1',
                                 'natanael_compras_v1','natanael_ingresos_v1','natanael_egresos_v1',
                                 'natanael_horario_caja','natanael_firebase_url','natanael_logo'];
                 const datos = {};
@@ -6467,8 +6467,20 @@ _sheetEgresosNegocio.forEach(e => {
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
         const _COLA_KEY = 'natanael_cola_pendientes_v1';
+        const _TIPOS_SIN_LOCALSTORAGE = new Set(['venta','eliminar_venta','pago_venta','ingresosegocio','ingresonegocio','actualizar_ingneg','pago_ingneg']);
+
+        function _payloadUsaLocalStorageProhibido(payload) {
+            try {
+                const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+                const tipo = String(data && data.tipo || '').trim().toLowerCase();
+                return _TIPOS_SIN_LOCALSTORAGE.has(tipo);
+            } catch(e) {
+                return false;
+            }
+        }
 
         function _colaGuardar(payload) {
+            if (_payloadUsaLocalStorageProhibido(payload)) return;
             try {
                 const cola = JSON.parse(localStorage.getItem(_COLA_KEY) || '[]');
                 cola.push({ payload, ts: Date.now() });
@@ -6493,7 +6505,10 @@ _sheetEgresosNegocio.forEach(e => {
 
         async function _colaFlush() {
             try {
-                const cola = JSON.parse(localStorage.getItem(_COLA_KEY) || '[]');
+                let cola = JSON.parse(localStorage.getItem(_COLA_KEY) || '[]');
+                const filtrada = cola.filter(item => !_payloadUsaLocalStorageProhibido(item.payload));
+                if (filtrada.length !== cola.length) localStorage.setItem(_COLA_KEY, JSON.stringify(filtrada));
+                cola = filtrada;
                 if (cola.length === 0) return;
                 const pendientes = [...cola];
                 // Limpiar la cola primero para evitar doble envío
@@ -6571,6 +6586,10 @@ _sheetEgresosNegocio.forEach(e => {
                     })
                     .catch(e => {
                         // Sin red ? guardar en cola
+                        if (_payloadUsaLocalStorageProhibido(payload)) {
+                            mostrarToast('Sin conexion: no se guardo localmente. Reintenta cuando vuelva internet.', 'error');
+                            return;
+                        }
                         _colaGuardar(payload);
                         mostrarToast('🔥 Sin conexión ? guardado localmente (' + (JSON.parse(localStorage.getItem(_COLA_KEY)||'[]').length) + ' pendiente/s)', 'error');
                     });
@@ -7983,7 +8002,7 @@ if (indicator) indicator.classList.remove('hidden');
         const PAGOS_CONFIG = {
             pagoVentas: {
                 label: 'Pago Ventas',
-                key: 'natanael_pago_ventas_v1',
+                key: '',
                 sheetKey: 'pagoVentas',
                 cols: ['IDPAGODEVENTAS','IDVENTAS','FECHA','CLIENTE','IMAGEN DEL PRODUCTO','PRODUCTO','FORMA DE PAGO','MONTO','PROVEEDOR','FECHA ORIGINAL'],
                 idCol: 'IDPAGODEVENTAS',
@@ -8014,7 +8033,7 @@ if (indicator) indicator.classList.remove('hidden');
             },
             pagoIngNeg: {
                 label: 'Pago Ing. Negocio',
-                key: 'natanael_pago_ingneg_v1',
+                key: '',
                 sheetKey: 'pagoIngNeg',
                 cols: ['NUMERO DE PAGO INGRESOS NEGOCIO','NUMERO DE INGRESOS NEGOCIO','FECHA','CLIENTE','FORMA DE PAGO','MONTO','FECHA ORIGINAL'],
                 moneyCol: 'MONTO'
@@ -18993,11 +19012,6 @@ clienteDetalleId = null;
         let ingNegTipo = 'ingresosNegocio';
         let _sheetIngresosNegocio = []; 
         let _sheetEgresosNegocio  = [];
-        try {
-            const _rawIngNegInit = localStorage.getItem('natanael_ingneg_v1');
-            const _arrIngNegInit = _rawIngNegInit ? JSON.parse(_rawIngNegInit) : [];
-            if (Array.isArray(_arrIngNegInit) && _arrIngNegInit.length) _sheetIngresosNegocio = _arrIngNegInit;
-        } catch(e) {}
         window._sheetIngresosNegocio = _sheetIngresosNegocio;
         window._sheetEgresosNegocio  = _sheetEgresosNegocio;
         let _listaIngresos = []; window._listaIngresos = _listaIngresos;
@@ -19007,7 +19021,7 @@ clienteDetalleId = null;
         let _supercatsEgrNegSheet = [];
         let _catsEgrNegSheet = {};
 
-        function saveIngresosNeg() { try { localStorage.setItem('natanael_ingneg_v1', JSON.stringify(_sheetIngresosNegocio)); } catch(e){} }
+        function saveIngresosNeg() {}
         function saveEgresosNeg()  {}
 
         function renderIngNeg(tipo) {
@@ -25122,12 +25136,19 @@ function calcularCajaEsperada() {
         function _limpiarLocalStorageNoPermitido() {
             try {
                 [
+                    'natanael_historial_v1',
+                    'natanael_pago_ventas_v1',
+                    'natanael_ingneg_v1',
+                    'natanael_pago_ingneg_v1',
                     'natanael_egrneg_v1',
                     'natanael_pago_compras_v1',
                     'natanael_pago_ingresos_v1',
                     'natanael_pago_egresos_v1',
                     'natanael_pago_egrneg_v1'
                 ].forEach(k => localStorage.removeItem(k));
+                const cola = JSON.parse(localStorage.getItem('natanael_cola_pendientes_v1') || '[]');
+                const colaLimpia = cola.filter(item => !_payloadUsaLocalStorageProhibido(item.payload));
+                if (colaLimpia.length !== cola.length) localStorage.setItem('natanael_cola_pendientes_v1', JSON.stringify(colaLimpia));
             } catch(e) {}
         }
         _limpiarLocalStorageNoPermitido();
@@ -25137,11 +25158,7 @@ function calcularCajaEsperada() {
                 const snapshot = {
                     ts:                  Date.now(),
                     inventario:          _sheetProductos          || [],
-                    ventas:              _sheetVentas              || [],
                     clientes:            typeof clientesDB !== 'undefined' ? clientesDB : [],
-                    ingresosNegocio:     _sheetIngresosNegocio     || [],
-                    pagoVentas:          typeof _pagoVentasSheet    !== 'undefined' ? _pagoVentasSheet    : [],
-                    pagoIngresosNegocio: typeof _sheetPagoIngNeg    !== 'undefined' ? _sheetPagoIngNeg    : [],
                 };
                 localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
@@ -25172,7 +25189,7 @@ function calcularCajaEsperada() {
                     }
                 }
 
-                ['compras','ingresos','egresos','egresosNegocio','pagoCompras','pagoIngresos','pagoEgresos','pagoEgresosNegocio','pagoEgrNeg','supercatsIng','supercatsEgr','generosIng','generosEgr'].forEach(function(k) {
+                ['ventas','compras','ingresos','egresos','ingresosNegocio','egresosNegocio','pagoVentas','pagoIngresosNegocio','pagoCompras','pagoIngresos','pagoEgresos','pagoEgresosNegocio','pagoIngNeg','pagoEgrNeg','supercatsIng','supercatsEgr','generosIng','generosEgr'].forEach(function(k) {
                     if (Object.prototype.hasOwnProperty.call(c, k)) { delete c[k]; dirty = true; }
                 });
 
@@ -25211,16 +25228,7 @@ function calcularCajaEsperada() {
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
                 if (Array.isArray(c.inventario)      && c.inventario.length)      { _sheetProductos = c.inventario; indexarProductos(); }
-                if (Array.isArray(c.ventas)           && c.ventas.length)           { _sheetVentas    = c.ventas;    historial = [...c.ventas]; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
-                if (Array.isArray(c.ingresosNegocio)  && c.ingresosNegocio.length)  { _sheetIngresosNegocio = c.ingresosNegocio; window._sheetIngresosNegocio = _sheetIngresosNegocio; }
-                else {
-                    const rawIngNeg = localStorage.getItem('natanael_ingneg_v1');
-                    const arrIngNeg = rawIngNeg ? JSON.parse(rawIngNeg) : [];
-                    if (Array.isArray(arrIngNeg) && arrIngNeg.length) { _sheetIngresosNegocio = arrIngNeg; window._sheetIngresosNegocio = _sheetIngresosNegocio; }
-                }
-                if (Array.isArray(c.pagoVentas))      { _pagoVentasSheet   = c.pagoVentas;    window._pagoVentasSheet   = _pagoVentasSheet;   }
-                if (Array.isArray(c.pagoIngresosNegocio)) { _sheetPagoIngNeg = c.pagoIngresosNegocio; _pagoIngNegSheet = c.pagoIngresosNegocio; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; }
                 return true;
             } catch(e) { console.warn('[Cache] Error al cargar:', e.message); return false; }
         }
@@ -28044,29 +28052,6 @@ function _aliasIdsNegocioEgreso(r) {
 renderIngNeg = function(tipo) {
     const esIngreso = tipo === 'ingresosNegocio';
     let db = esIngreso ? (_sheetIngresosNegocio || []) : (_sheetEgresosNegocio || []);
-    if (esIngreso && (!db || !db.length) && typeof localStorage !== 'undefined') {
-        try {
-            const raw = localStorage.getItem('natanael_ingneg_v1');
-            const parsed = raw ? JSON.parse(raw) : [];
-            if (Array.isArray(parsed) && parsed.length) {
-                db = parsed;
-                _sheetIngresosNegocio = parsed;
-                window._sheetIngresosNegocio = parsed;
-            }
-        } catch (e) {}
-    }
-    if (esIngreso && (!db || !db.length) && typeof localStorage !== 'undefined') {
-        try {
-            const rawCache = localStorage.getItem('natanael_sheet_cache_v1');
-            const cache = rawCache ? JSON.parse(rawCache) : null;
-            const arr = cache ? cache.ingresosNegocio : [];
-            if (Array.isArray(arr) && arr.length) {
-                db = arr;
-                _sheetIngresosNegocio = arr;
-                window._sheetIngresosNegocio = arr;
-            }
-        } catch (e) {}
-    }
     const listaId = esIngreso ? 'listaIngresosNegocio' : 'listaEgresosNegocio';
     const pfx = esIngreso ? 'ingNeg' : 'egrNeg';
     const container = document.getElementById(listaId);
