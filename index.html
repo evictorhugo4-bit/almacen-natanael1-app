@@ -2053,6 +2053,7 @@ GUARDAR PRODUCTO
                 <!-- Tabs -->
                 <div class="flex gap-2 flex-wrap">
                     <button id="tabBtnHojaRuta" onclick="switchStatsTab('hojaRuta')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">💵 Efectivo</button>
+                    <button id="tabBtnCoordPagos" onclick="switchStatsTab('coordPagos')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Coordinacion de Pagos</button>
                     <button id="tabBtnCompraCalc" onclick="switchStatsTab('compraCalc')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">Comprar</button>
                     <button id="tabBtnNegocio" onclick="switchStatsTab('negocio')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🏪 Negocio</button>
                     <button id="tabBtnCasaErazo" onclick="switchStatsTab('casaErazo')" class="px-5 py-2 rounded-xl font-black text-xs uppercase bg-slate-700 text-slate-300 hover:bg-slate-600 btn-action">🏠 Casa Erazo</button>
@@ -2445,7 +2446,7 @@ GUARDAR PRODUCTO
                 <!-- Filtros -->
                 <div class="glass-card rounded-2xl p-4 border border-slate-700 space-y-3 md:col-span-2">
                     <p class="text-[9px] font-black text-purple-400 uppercase tracking-widest">Filtros</p>
-                    <div class="flex flex-wrap gap-2 items-end" style="display:none;">
+                    <div class="flex flex-wrap gap-2 items-end">
                         <div class="flex flex-col gap-1">
                             <label class="text-[9px] font-black text-slate-500 uppercase">Desde</label>
                             <input type="date" id="tcDesde" onchange="renderTarjetaCredito()" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
@@ -2711,6 +2712,18 @@ GUARDAR PRODUCTO
             </div>
 
         </div><!-- /tabHojaRuta -->
+
+        <div id="tabCoordPagos" class="hidden space-y-4">
+            <div class="glass-card rounded-2xl p-4 border border-sky-500/30">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Coordinacion de Pagos</p>
+                        <p style="font-size:9px;color:#64748b;font-weight:700;">Estructura visual tipo Estado Financiero</p>
+                    </div>
+                </div>
+                <div id="coordPagosContenido"></div>
+            </div>
+        </div><!-- /tabCoordPagos -->
 
         <div id="tabProductos" class="hidden space-y-5">
 
@@ -6939,6 +6952,12 @@ _sheetEgresosNegocio.forEach(e => {
             if (typeof raw === 'number') return raw;
             let str = String(raw).trim().replace(/[$\s]/g,'');
             if (!str) return 0;
+            if (str.includes('.') && str.includes(',')) {
+                const lastDot = str.lastIndexOf('.');
+                const lastComma = str.lastIndexOf(',');
+                str = lastComma > lastDot ? str.replace(/\./g,'').replace(',','.') : str.replace(/,/g,'');
+                return parseFloat(str) || 0;
+            }
             // Formato argentino con punto como miles: "10.000" o "1.500.000"
             if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(str)) {
                 str = str.replace(/\./g,'').replace(',','.');
@@ -12486,6 +12505,205 @@ console.log("FILTRADAS:", filtradas.length);
                 '</div>';
         }
 
+        const COORD_PAGOS_SHEET_ID = '1TzYA7OE4bjG6z_zT42TaSbhyvVb2xCBVwCrTg7p_5ko';
+        let _coordPagosRows = [];
+        let _coordPagosData = { egresos: [], ingresos: [] };
+        let _coordPagosLoading = false;
+
+        function _coordParseCSV(text) {
+            const rows = [];
+            let row = [], cur = '', q = false;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i], nx = text[i + 1];
+                if (ch === '"' && q && nx === '"') { cur += '"'; i++; continue; }
+                if (ch === '"') { q = !q; continue; }
+                if (ch === ',' && !q) { row.push(cur); cur = ''; continue; }
+                if ((ch === '\n' || ch === '\r') && !q) {
+                    if (ch === '\r' && nx === '\n') i++;
+                    row.push(cur); cur = '';
+                    if (row.some(v => String(v).trim() !== '')) rows.push(row);
+                    row = [];
+                    continue;
+                }
+                cur += ch;
+            }
+            row.push(cur);
+            if (row.some(v => String(v).trim() !== '')) rows.push(row);
+            if (!rows.length) return [];
+            const headers = rows.shift().map(h => String(h || '').trim());
+            return rows.map(r => {
+                const obj = {};
+                headers.forEach((h, i) => obj[h] = r[i] || '');
+                return obj;
+            });
+        }
+
+        function _coordParseCSVMatrix(text) {
+            const rows = [];
+            let row = [], cur = '', q = false;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i], nx = text[i + 1];
+                if (ch === '"' && q && nx === '"') { cur += '"'; i++; continue; }
+                if (ch === '"') { q = !q; continue; }
+                if (ch === ',' && !q) { row.push(cur); cur = ''; continue; }
+                if ((ch === '\n' || ch === '\r') && !q) {
+                    if (ch === '\r' && nx === '\n') i++;
+                    row.push(cur); cur = '';
+                    if (row.some(v => String(v).trim() !== '')) rows.push(row);
+                    row = [];
+                    continue;
+                }
+                cur += ch;
+            }
+            row.push(cur);
+            if (row.some(v => String(v).trim() !== '')) rows.push(row);
+            return rows;
+        }
+
+        function _coordBuildDataFromMatrix(matrix) {
+            const norm = v => String(v || '').trim();
+            const findHeader = (conceptCol, montoCol) => matrix.findIndex(r =>
+                norm(r[conceptCol]).toUpperCase() === 'CONCEPTO' &&
+                norm(r[montoCol]).toUpperCase() === 'MONTO'
+            );
+            const egHeader = findHeader(1, 2);
+            const inHeader = findHeader(8, 9);
+            const readSide = (startRow, conceptCol, montoCol, fechaCol, tipo) => {
+                if (startRow < 0) return [];
+                const out = [];
+                for (let i = startRow + 1; i < matrix.length; i++) {
+                    const r = matrix[i] || [];
+                    const concepto = norm(r[conceptCol]);
+                    const monto = parseSheetNum(norm(r[montoCol]));
+                    const fecha = norm(r[fechaCol]);
+                    if (!concepto && !monto && !fecha) continue;
+                    if (concepto.toUpperCase() === 'CONCEPTO') continue;
+                    out.push({ tipo, concepto, monto, fecha, fechaNum: _coordFechaNum(fecha) });
+                }
+                return out;
+            };
+            return {
+                egresos: readSide(egHeader, 1, 2, 3, 'egreso'),
+                ingresos: readSide(inHeader, 8, 9, 10, 'ingreso')
+            };
+        }
+
+        function _coordVal(row, names) {
+            const keys = Object.keys(row || {});
+            for (const n of names) {
+                const wanted = String(n).toUpperCase().trim();
+                const k = keys.find(x => String(x).toUpperCase().trim() === wanted);
+                if (k && String(row[k] || '').trim() !== '') return String(row[k]).trim();
+            }
+            for (const n of names) {
+                const wanted = String(n).toUpperCase().trim();
+                const k = keys.find(x => String(x).toUpperCase().includes(wanted));
+                if (k && String(row[k] || '').trim() !== '') return String(row[k]).trim();
+            }
+            return '';
+        }
+
+        function _coordFechaNum(v) {
+            const s = String(v || '').trim();
+            if (!s) return 0;
+            const n = parseFechaNum(s);
+            if (n) return n;
+            const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+            if (m) {
+                const y = m[3].length === 2 ? ('20' + m[3]) : m[3];
+                return parseFechaNum(y + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0') + 'T00:00:00');
+            }
+            return 0;
+        }
+
+        function _coordNormRow(row) {
+            const concepto = _coordVal(row, ['CONCEPTO','DETALLE','DESCRIPCION','DESCRIPCIÓN','PAGO','CUENTA','PROVEEDOR','NOMBRE']);
+            const persona = _coordVal(row, ['PERSONA','CLIENTE','PROVEEDOR','A QUIEN','QUIEN','DESTINATARIO']);
+            const tipo = _coordVal(row, ['TIPO','CATEGORIA','CATEGORÍA','CLASE','GRUPO']);
+            const estado = _coordVal(row, ['ESTADO','STATUS','SITUACION','SITUACIÓN']);
+            const fecha = _coordVal(row, ['FECHA','VENCIMIENTO','FECHA DE PAGO','FECHA PAGO','HASTA']);
+            const monto = parseSheetNum(_coordVal(row, ['MONTO','IMPORTE','TOTAL','VALOR','PAGO TOTAL','SALDO']));
+            const forma = _coordVal(row, ['FORMA DE PAGO','FORMA PAGO','MEDIO','METODO','MÉTODO']);
+            const nota = _coordVal(row, ['NOTA','OBSERVACION','OBSERVACIÓN','COMENTARIO']);
+            return { concepto, persona, tipo, estado, fecha, fechaNum: _coordFechaNum(fecha), monto, forma, nota };
+        }
+
+        function renderCoordinacionPagos() {
+            const wrap = document.getElementById('coordPagosContenido') || document.getElementById('efCoordPagos');
+            if (!wrap) return;
+            const egresos = [
+                { concepto:'TARJETA VISA', monto:470513.22, fecha:'4/5/2026' },
+                { concepto:'DIEGO DEUDA', monto:200000, fecha:'8/5/2026' },
+                { concepto:'PRESTAMO MERCADO PAGO PERSONAL', monto:263151.77, fecha:'18/5/2026' },
+                { concepto:'PRESTAMO MERCADO PAGO NEGOCIO', monto:535309, fecha:'29/5/2026' },
+                { concepto:'CETROGAR SA AURICULARES 9/9 JUNIO', monto:12704.05, fecha:'1/6/2026' },
+                { concepto:'ZAPATILLAS 3/6 ADIDAS', monto:19999.83, fecha:'1/6/2026' },
+                { concepto:'BICI 5/6 JULIO', monto:56000, fecha:'1/6/2026' },
+                { concepto:'MANTENIMIENTO VISA', monto:61700, fecha:'1/6/2026' }
+            ];
+            const ingresos = [
+                { concepto:'TENGO', monto:23000, fecha:'4/5/2026' },
+                { concepto:'PRESTAMO MERCADO PAGO NEGOCIO 1', monto:447514, fecha:'4/5/2026' },
+                { concepto:'MIRNA', monto:83100, fecha:'8/5/2026' },
+                { concepto:'MARCELO', monto:61800, fecha:'8/5/2026' },
+                { concepto:'BRENDA', monto:50200, fecha:'8/5/2026' },
+                { concepto:'ASIGNACION UNIVERSAL', monto:109334.80, fecha:'18/5/2026' },
+                { concepto:'ALIMENTAR', monto:52250, fecha:'18/5/2026' },
+                { concepto:'NENE', monto:200000, fecha:'18/5/2026' }
+            ];
+            const totalEgresos = egresos.reduce((s,r)=>s+(Number(r.monto)||0),0);
+            const totalIngresos = ingresos.reduce((s,r)=>s+(Number(r.monto)||0),0);
+            const balance = totalIngresos - totalEgresos;
+            const fechas = {};
+            [...egresos.map(r => ({...r, tipo:'egreso'})), ...ingresos.map(r => ({...r, tipo:'ingreso'}))].forEach(r => {
+                const k = r.fecha || 'Sin fecha';
+                if (!fechas[k]) fechas[k] = { fecha: k, ingresos: 0, egresos: 0, fechaNum: r.fechaNum || 0 };
+                fechas[k][r.tipo === 'ingreso' ? 'ingresos' : 'egresos'] += Number(r.monto) || 0;
+                if (!fechas[k].fechaNum && r.fechaNum) fechas[k].fechaNum = r.fechaNum;
+            });
+            const resumenFechas = Object.values(fechas).sort((a,b)=>(a.fechaNum||99999999999999)-(b.fechaNum||99999999999999));
+            const card = (label, val, color) => '<div style="padding:12px;border-radius:14px;background:#0f172a;border:1px solid '+color+'44;"><div style="font-size:9px;font-weight:900;color:'+color+';text-transform:uppercase;">'+label+'</div><div style="font-size:20px;font-weight:900;color:#f8fafc;font-family:monospace;">$'+Utils.fmt(Math.abs(val))+'</div></div>';
+            const fila = (r, color) => {
+                return '<tr style="border-bottom:1px solid #0f172a;">'
+                    + '<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#e2e8f0;text-transform:uppercase;">'+Utils.escHtml(r.concepto || '-')+'</td>'
+                    + '<td style="padding:8px 10px;font-size:11px;font-weight:900;color:'+color+';font-family:monospace;text-align:right;">$'+Utils.fmt(r.monto || 0)+'</td>'
+                    + '<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#facc15;text-align:center;white-space:nowrap;">'+Utils.escHtml(r.fecha || '-')+'</td>'
+                    + '</tr>';
+            };
+            const tabla = (titulo, rows, color) => '<div style="overflow:hidden;border-radius:2px;border:1px solid #020617;background:#0b1220;">'
+                + '<div style="padding:10px 12px;background:'+color+';color:#020617;font-size:13px;font-weight:900;text-align:center;text-transform:uppercase;">'+titulo+'</div>'
+                + '<div style="overflow:auto;max-height:520px;"><table style="width:100%;border-collapse:collapse;min-width:430px;">'
+                + '<thead><tr style="background:#2f6f56;"><th style="padding:8px 10px;text-align:left;font-size:9px;color:#f8fafc;text-transform:uppercase;">Concepto</th><th style="padding:8px 10px;text-align:right;font-size:9px;color:#f8fafc;text-transform:uppercase;">Monto</th><th style="padding:8px 10px;text-align:center;font-size:9px;color:#f8fafc;text-transform:uppercase;">Fecha</th></tr></thead>'
+                + '<tbody>' + (rows.length ? rows.map(r => fila(r, color)).join('') : '<tr><td colspan="3" style="padding:14px;text-align:center;color:#64748b;font-size:10px;font-weight:800;">Sin datos</td></tr>') + '</tbody></table></div></div>';
+            const balanceFecha = r => r.ingresos - r.egresos;
+            const tablaFechas = '<div style="overflow:hidden;border-radius:14px;border:1px solid #facc1555;background:#0b1220;">'
+                + '<div style="padding:10px 12px;background:#facc15;color:#020617;font-size:13px;font-weight:900;text-align:center;text-transform:uppercase;">Resumen por fecha</div>'
+                + '<div style="overflow:auto;max-height:520px;"><table style="width:100%;border-collapse:collapse;min-width:520px;"><thead><tr style="background:#0f172a;">'
+                + '<th style="padding:8px 10px;text-align:left;font-size:9px;color:#94a3b8;text-transform:uppercase;">Fecha</th>'
+                + '<th style="padding:8px 10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;">Ingresos</th>'
+                + '<th style="padding:8px 10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;">Egresos</th>'
+                + '<th style="padding:8px 10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;">Balance</th>'
+                + '</tr></thead><tbody>'
+                + resumenFechas.map(r => '<tr style="border-bottom:1px solid #0f172a;">'
+                    + '<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#facc15;">'+Utils.escHtml(r.fecha)+'</td>'
+                    + '<td style="padding:8px 10px;font-size:11px;font-weight:900;color:#34d399;font-family:monospace;text-align:right;">$'+Utils.fmt(r.ingresos)+'</td>'
+                    + '<td style="padding:8px 10px;font-size:11px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;">$'+Utils.fmt(r.egresos)+'</td>'
+                    + '<td style="padding:8px 10px;font-size:11px;font-weight:900;color:'+(balanceFecha(r) >= 0 ? '#34d399' : '#f87171')+';font-family:monospace;text-align:right;">'+(balanceFecha(r) >= 0 ? '$' : '$-')+Utils.fmt(Math.abs(balanceFecha(r)))+'</td>'
+                    + '</tr>').join('')
+                + '</tbody></table></div></div>';
+            wrap.innerHTML = ''
+                + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px;">'
+                + card('Total ingresos', totalIngresos, '#22c55e')
+                + card('Total egresos', totalEgresos, '#ef4444')
+                + card('Balance', balance, balance >= 0 ? '#22c55e' : '#ef4444')
+                + '</div>'
+                + '<div style="display:grid;grid-template-columns:minmax(320px,1fr) minmax(190px,.55fr) minmax(320px,1fr);gap:14px;align-items:start;">'
+                + tabla('Egresos', egresos, '#ef4444')
+                + tablaFechas
+                + tabla('Ingresos', ingresos, '#22c55e')
+                + '</div>';
+        }
+
         function renderEfectivo() {
             try {
                 efSetHoy();
@@ -12852,7 +13070,6 @@ console.log("FILTRADAS:", filtradas.length);
                         '<span style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">Total egresos</span>' +
                         '<span style="font-size:13px;font-weight:900;font-family:monospace;color:#f87171;">$' + Utils.fmt(efEgrPersTotal) + '</span>' +
                     '</div>';
-
             } catch(e) { console.error('[renderEfectivo]', e); }
         }
 
@@ -13346,6 +13563,7 @@ console.log("FILTRADAS:", filtradas.length);
             const isTarjeta   = tab === 'tarjeta';
             const isCaja      = tab === 'caja';
             const isHojaRuta  = tab === 'hojaRuta';
+            const isCoordPagos = tab === 'coordPagos';
             const isCompraCalc = tab === 'compraCalc';
             const isNegocio   = tab === 'negocio';
             const isCasaErazo = tab === 'casaErazo';
@@ -13359,6 +13577,7 @@ console.log("FILTRADAS:", filtradas.length);
             if(_sb('tabBtnProveedor')) _sb('tabBtnProveedor').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isProveedor ? 'bg-blue-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnTarjeta'))   _sb('tabBtnTarjeta').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isTarjeta   ? 'bg-purple-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnHojaRuta'))  _sb('tabBtnHojaRuta').className  = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isHojaRuta  ? 'bg-orange-500 text-black'  : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
+            if(_sb('tabBtnCoordPagos')) _sb('tabBtnCoordPagos').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCoordPagos ? 'bg-sky-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnCompraCalc')) _sb('tabBtnCompraCalc').className = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCompraCalc ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnCaja'))      _sb('tabBtnCaja').className      = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isCaja      ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
             if(_sb('tabBtnNegocio'))   _sb('tabBtnNegocio').className   = 'px-5 py-2 rounded-xl font-black text-xs uppercase btn-action ' + (isNegocio   ? 'bg-cyan-500 text-black'    : 'bg-slate-700 text-slate-300 hover:bg-slate-600');
@@ -13383,6 +13602,8 @@ console.log("FILTRADAS:", filtradas.length);
             if (tabTarjeta)   tabTarjeta.classList.toggle('hidden', !isTarjeta);
             const tabHojaRuta  = document.getElementById('tabHojaRuta');
             if (tabHojaRuta)  tabHojaRuta.classList.toggle('hidden', !isHojaRuta);
+            const tabCoordPagos = document.getElementById('tabCoordPagos');
+            if (tabCoordPagos) tabCoordPagos.classList.toggle('hidden', !isCoordPagos);
             const tabCompraCalc = document.getElementById('tabCompraCalc');
             if (tabCompraCalc) tabCompraCalc.classList.toggle('hidden', !isCompraCalc);
             if (tabCaja)      tabCaja.classList.toggle('hidden', !isCaja);
@@ -13438,6 +13659,7 @@ console.log("FILTRADAS:", filtradas.length);
                 efSetHoy();
                 renderEfectivo();
             }
+            if (isCoordPagos) renderCoordinacionPagos();
             if (isCompraCalc) renderCompraCalc();
             if (isCaja) {
                 if (!document.getElementById('cajaDesde')?.value) cajaSetHoy();
