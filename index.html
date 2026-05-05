@@ -4692,7 +4692,14 @@ Agregar
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;');
             },
-            fmt(n) { return Number(n).toLocaleString(); },
+            fmt(n) {
+                const num = Number(n) || 0;
+                const tieneCentavos = Math.abs(num - Math.round(num)) > 0.0001;
+                return num.toLocaleString('es-AR', {
+                    minimumFractionDigits: tieneCentavos ? 2 : 0,
+                    maximumFractionDigits: 2
+                });
+            },
             genId() { return Date.now() + Math.floor(Math.random() * 1000); }
         };
 
@@ -5998,7 +6005,39 @@ _sheetEgresosNegocio.forEach(e => {
                 const realIdx = historial.indexOf(v);
                 const clienteNombreUpper = (v.cliente||'').trim().toUpperCase();
                 const esClienteEspecialHist = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(clienteNombreUpper);
-                const itemsVenta = v.items || [];
+                const itemsVenta = [];
+                const itemsVentaKeys = new Set();
+                (v.items || []).forEach(function(item) {
+                    const cant = Number(item.cantidad || 1) || 1;
+                    const precio = Number(item.precio || 0) || 0;
+                    const precioFinal = Number(item.precioFinal || 0) || 0;
+                    const keyItem = [
+                        String(item.nombre || '').trim().toUpperCase(),
+                        cant,
+                        precio,
+                        precioFinal,
+                        Number(item.costo || 0) || 0,
+                        Number(item.dineroRecuperado || 0) || 0,
+                        Number(item.pagoEfectivo || 0) || 0,
+                        Number(item.pagoCredito || 0) || 0
+                    ].join('|');
+                    if (itemsVentaKeys.has(keyItem)) return;
+                    itemsVentaKeys.add(keyItem);
+                    itemsVenta.push(item);
+                });
+                const hayItemsDuplicadosHist = itemsVenta.length !== (v.items || []).length;
+                const totalItemsSinDuplicarHist = itemsVenta.reduce(function(s, i) {
+                    const cant = Number(i.cantidad || 1) || 1;
+                    const precioFinal = Number(i.precioFinal || 0) || 0;
+                    const precio = Number(i.precio || 0) || 0;
+                    return s + (precioFinal || (precio * cant));
+                }, 0);
+                const efectivoItemsSinDuplicarHist = itemsVenta.reduce(function(s, i) {
+                    return s + (Number(i.pagoEfectivo || 0) || 0);
+                }, 0);
+                const creditoItemsSinDuplicarHist = itemsVenta.reduce(function(s, i) {
+                    return s + (Number(i.pagoCredito || 0) || 0);
+                }, 0);
                 const totalEspecialHist = esClienteEspecialHist
                     ? itemsVenta.reduce(function(s, i) {
                         const cant = Number(i.cantidad || 1) || 1;
@@ -6010,10 +6049,11 @@ _sheetEgresosNegocio.forEach(e => {
                 // Cotejar con PAGO VENTAS: si ya se pagó el saldo pendiente, estado FINALIZADO
                 var _vId = String(v.id || v.idSheet || '').trim();
                 var _pagadoExtra = _pvPorId[_vId] || 0;
-                var _deudaReal = Math.max(0, (v.deuda || 0) - _pagadoExtra);
+                var _deudaBaseHist = hayItemsDuplicadosHist && creditoItemsSinDuplicarHist > 0 ? creditoItemsSinDuplicarHist : (v.deuda || 0);
+                var _deudaReal = Math.max(0, _deudaBaseHist - _pagadoExtra);
                 const credito = esClienteEspecialHist ? 0 : _deudaReal;
-                const efectivoHist = esClienteEspecialHist ? totalEspecialHist : Number(v.efectivo || 0);
-                const totalHist = esClienteEspecialHist ? totalEspecialHist : Number(v.total || 0);
+                const efectivoHist = esClienteEspecialHist ? totalEspecialHist : (hayItemsDuplicadosHist && efectivoItemsSinDuplicarHist > 0 ? efectivoItemsSinDuplicarHist : Number(v.efectivo || 0));
+                const totalHist = esClienteEspecialHist ? totalEspecialHist : (hayItemsDuplicadosHist && totalItemsSinDuplicarHist > 0 ? totalItemsSinDuplicarHist : Number(v.total || 0));
 
                 rows += '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:8px;margin-bottom:4px;">';
                 // Line 1: fecha + cliente
@@ -7127,17 +7167,29 @@ _sheetEgresosNegocio.forEach(e => {
                             };
                         }
                         // PAGO TOTAL acumula por ítem (cada fila es el precio del ítem)
-                        ventasMap[key].total    += parseSheetNum(row['PAGO TOTAL']   ||row['Pago Total']||0);
+                        const pagoTotalRow = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']||0);
                         // PAGO EFECTIVO y PAGO CREDITO: distribuido proporcionalmente por ítem ? sumar todas las filas
                         const _rowEf = parseSheetNum(row['PAGO EFECTIVO']||row['Pago Efectivo']||0);
                         const _rowCr = parseSheetNum(row['PAGO CREDITO'] ||row['Pago credito']||row['Pago Credito']||0);
+                        const rawCant = parseSheetNum(row['CANTIDAD']||row['Cantidad']||row['Cantidad Introducida']);
+                        const _ventaFilaKey = [
+                            String(row['PRODUCTO']||row['Producto']||'').trim().toUpperCase(),
+                            rawCant,
+                            pagoTotalRow,
+                            _rowEf,
+                            _rowCr,
+                            parseSheetNum(row['PRECIO DE VENTA']||row['Precio de Venta']),
+                            parseSheetNum(row['PRECIO DE COSTO']||row['Precio de Costo']||row['Precio Costo']||row['COSTO']||0)
+                        ].join('|');
+                        if (!ventasMap[key]._filasVistas) ventasMap[key]._filasVistas = new Set();
+                        if (ventasMap[key]._filasVistas.has(_ventaFilaKey)) return;
+                        ventasMap[key]._filasVistas.add(_ventaFilaKey);
+                        ventasMap[key].total    += pagoTotalRow;
                         ventasMap[key].efectivo += _rowEf;
                         ventasMap[key].deuda    += _rowCr;
-                        const rawCant = parseSheetNum(row['CANTIDAD']||row['Cantidad']||row['Cantidad Introducida']);
                         const tipoVentaRow = String(row['TIPO DE VENTA']||row['Tipo de Venta']||'');
                         const esPesoRow = esTipoVenta(tipoVentaRow);
                         const cantidadRow = rawCant > 0 ? rawCant : 0;
-                        const pagoTotalRow = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']||0);
                         const gramosStrRow = cantidadRow % 1 === 0 ? String(Math.round(cantidadRow)) : String(cantidadRow.toFixed(1));
                         ventasMap[key].items.push({
                             nombre:           String(row['PRODUCTO']||row['Producto']||''),
@@ -11560,7 +11612,7 @@ console.log("FILTRADAS:", filtradas.length);
             (_sheetPagoCompras || []).forEach(function(p) {
                 const id = String(p.IDCOMPRAS || p.idCompra || '').trim();
                 if (!id) return;
-                pagosComprasTarjetaMap[id] = (pagosComprasTarjetaMap[id] || 0) + (parseFloat(p.MONTO || p.monto || 0) || 0);
+                pagosComprasTarjetaMap[id] = (pagosComprasTarjetaMap[id] || 0) + parseSheetNum(p.MONTO || p.monto || 0);
             });
             const pagosEgresosTarjetaMap = {};
             (_sheetPagoEgresos || []).forEach(function(p) {
@@ -13017,7 +13069,7 @@ console.log("FILTRADAS:", filtradas.length);
                         if (!_efEnRangoOriginal(p)) return;
                         const pn = normProvEf(p.proveedor || p.PROVEEDOR);
                         if (!pn) return;
-                        pagoComprasPorProv[pn] = (pagoComprasPorProv[pn] || 0) + (Number(p.monto || p.MONTO || 0) || 0);
+                        pagoComprasPorProv[pn] = (pagoComprasPorProv[pn] || 0) + parseSheetNum(p.monto || p.MONTO || 0);
                     });
 
                     const provMapEf = {};
@@ -13072,7 +13124,7 @@ console.log("FILTRADAS:", filtradas.length);
 
                     Object.keys(provMapEf).forEach(pn => {
                         const comprasEf = comprasEfPorProv[pn] || 0;
-                        const pagoCompras = pagoComprasPorProv[pn] || 0;
+                    const pagoCompras = pagoComprasPorProv[pn] || 0;
                         provMapEf[pn].totalComprasEf = comprasEf;
                         provMapEf[pn].totalPagoCompras = pagoCompras;
                         provMapEf[pn].totalParaProv = provMapEf[pn].totalCobrado - provMapEf[pn].totalGan - comprasEf - pagoCompras;
@@ -13868,9 +13920,11 @@ console.log("FILTRADAS:", filtradas.length);
                 const totalItems = itemsC.reduce((s,i) => s + (parseFloat(i.pagoCredito||0) || 0), 0) || montoBruto;
                 itemsC.forEach(item => {
                     const sub = (parseFloat(item.pagoCredito||0) || 0) || (montoBruto/Math.max(itemsC.length,1));
-                    const saldoItem = totalItems > 0 ? Math.round(saldo * sub / totalItems) : Math.round(saldo/Math.max(itemsC.length,1));
+                    const saldoItem = totalItems > 0
+                        ? Math.round((saldo * sub / totalItems) * 100) / 100
+                        : Math.round((saldo / Math.max(itemsC.length,1)) * 100) / 100;
                     g.items.push({...item, _saldoItem: saldoItem, _idC: idC});
-                    g.saldoTotal += saldoItem;
+                    g.saldoTotal = Math.round((g.saldoTotal + saldoItem) * 100) / 100;
                 });
             });
             const comprasPendList = Array.from(gruposCompra.values())
@@ -23645,19 +23699,26 @@ renderIngresos();
                 btn.style.cursor  = 'not-allowed';
                 btn.textContent   = 'â³ Guardando...';
             }
+            let esAsync = false;
             try {
-                fn();
+                const res = fn();
+                if (res && typeof res.finally === 'function') {
+                    esAsync = true;
+                    res.finally(function(){ _liberarPago(btnId); });
+                }
             } finally {
                 // Liberar después de 3 s como máximo (por si el modal no se cierra)
-                setTimeout(function() {
-                    _pagoEnProceso = false;
-                    if (btn) {
-                        btn.disabled  = false;
-                        btn.style.opacity = '';
-                        btn.style.cursor  = '';
-                        btn.textContent   = textoOrig;
-                    }
-                }, 3000);
+                if (!esAsync) {
+                    setTimeout(function() {
+                        _pagoEnProceso = false;
+                        if (btn) {
+                            btn.disabled  = false;
+                            btn.style.opacity = '';
+                            btn.style.cursor  = '';
+                            btn.textContent   = textoOrig;
+                        }
+                    }, 3000);
+                }
             }
         }
 
@@ -23886,7 +23947,7 @@ _pagoCompraNombre = nombreProducto || null;
 
     const yaPagado = _sheetPagoCompras
         .filter(p => String(p.IDCOMPRAS) === String(idSheet))
-        .reduce((s,p)=>s+(parseFloat(p.MONTO)||0),0);
+        .reduce((s,p)=>s+parseSheetNum(p.MONTO || p.monto || 0),0);
 
     const saldo = (r.total||0) - yaPagado;
 
@@ -23918,23 +23979,29 @@ _pagoCompraNombre = nombreProducto || null;
             });
         }
         function actualizarSaldoPagoCompra() {
-            const r = _sheetCompras.find(c => String(c.id) === String(_pagoCompraId)); if(!r) return;
+            const r = _sheetCompras.find(c =>
+                String(c.id) === String(_pagoCompraId) ||
+                String(c.IDCOMPRAS || c.idSheet || c.idCompra || '') === String(_pagoCompraId)
+            ); if(!r) return;
             const idSheet = _getIdSheetCompra(r);
-            const yaPagado = _sheetPagoCompras.filter(p => String(p.IDCOMPRAS)===String(idSheet)).reduce((s,p)=>s+(parseFloat(p.MONTO)||0),0);
-            const monto = parseFloat(document.getElementById('inputPagoCompraMonto').value)||0;
+            const yaPagado = _sheetPagoCompras.filter(p => String(p.IDCOMPRAS)===String(idSheet)).reduce((s,p)=>s+parseSheetNum(p.MONTO || p.monto || 0),0);
+            const monto = parseSheetNum(document.getElementById('inputPagoCompraMonto').value);
             document.getElementById('pagoCompraSaldo').textContent = '$'+Utils.fmt(Math.max(0,(r.total||0)-yaPagado-monto));
         }
      function confirmarPagoCompra() { _ejecutarPagoUnico('btnConfPagoCompra', _confirmarPagoCompraImpl); }
-     function _confirmarPagoCompraImpl() {
+     async function _confirmarPagoCompraImpl() {
 
 console.log("CONFIRMAR PAGO COMPRA INICIO");
 console.log("ID BUSCADO:", _pagoCompraId);
 console.log("COMPRAS DB:", _sheetCompras);
 
-const r = _sheetCompras.find(c => String(c.id) === String(_pagoCompraId));
+const r = _sheetCompras.find(c =>
+    String(c.id) === String(_pagoCompraId) ||
+    String(c.IDCOMPRAS || c.idSheet || c.idCompra || '') === String(_pagoCompraId)
+);
 if(!r) return;
 
-const monto = parseFloat(document.getElementById('inputPagoCompraMonto').value)||0;
+const monto = Math.round(parseSheetNum(document.getElementById('inputPagoCompraMonto').value) * 100) / 100;
 if(monto<=0){
     mostrarToast('Ingresá un monto válido','error');
     return;
@@ -23942,56 +24009,83 @@ if(monto<=0){
 
 const idSheet = _getIdSheetCompra(r);
 const ahora = new Date();
-const detalles = Array.isArray(_pagoCompraDetalleItems) && _pagoCompraDetalleItems.length
-    ? _pagoCompraDetalleItems
-    : (Array.isArray(r.items) && r.items.length
-        ? r.items.map(function(item) {
-            return {
-                nombre: item.nombre || '',
-                saldo: (parseFloat(item.costo || 0) || 0) * (parseFloat(item.cantidad || 0) || 0)
-            };
-        }).filter(function(item) {
-            return item.nombre && item.saldo > 0;
-        })
-        : [{ nombre: _pagoCompraNombre || 'COMPRA', saldo: monto }]);
+const enviosPagoCompra = [];
+let detallesPagoCompra = [];
+
+if (_pagoCompraNombre) {
+    detallesPagoCompra = [{ nombre: _pagoCompraNombre, base: monto }];
+} else if (Array.isArray(_pagoCompraDetalleItems) && _pagoCompraDetalleItems.length) {
+    detallesPagoCompra = _pagoCompraDetalleItems.map(function(item) {
+        return {
+            nombre: item.nombre || 'COMPRA',
+            base: parseSheetNum(item.saldo || item._saldoItem || 0)
+        };
+    });
+} else if (Array.isArray(r.items) && r.items.length) {
+    detallesPagoCompra = r.items.map(function(item) {
+        const cant = parseSheetNum(item.cantidad || item.cant || 1) || 1;
+        const costo = parseSheetNum(item.costo || item.precioCosto || item['PRECIO DE COSTO'] || 0);
+        const base = parseSheetNum(item.pagoCredito || item['PAGO CREDITO'] || item.pagoTotal || item['PAGO TOTAL'] || item.subtotal || item.total || (costo * cant));
+        return {
+            nombre: item.nombre || item.producto || item.PRODUCTO || 'COMPRA',
+            base: base
+        };
+    });
+} else {
+    detallesPagoCompra = [{ nombre: 'COMPRA', base: monto }];
+}
+
+detallesPagoCompra = detallesPagoCompra.filter(function(item) {
+    return parseSheetNum(item.base) > 0;
+});
+if (!detallesPagoCompra.length) detallesPagoCompra = [{ nombre: 'COMPRA', base: monto }];
+
+const baseTotal = detallesPagoCompra.reduce(function(s, item) {
+    return s + parseSheetNum(item.base);
+}, 0) || monto;
 let restantePagoCompra = monto;
-detalles.forEach(function(det) {
+
+detallesPagoCompra.forEach(function(item, idx) {
     if (restantePagoCompra <= 0) return;
-    const pagoDet = Math.min(restantePagoCompra, Number(det.saldo || 0) || 0);
+    const esUltimo = idx === detallesPagoCompra.length - 1;
+    const pagoDet = esUltimo
+        ? Math.round(restantePagoCompra * 100) / 100
+        : Math.min(restantePagoCompra, Math.round((monto * parseSheetNum(item.base) / baseTotal) * 100) / 100);
+    restantePagoCompra = Math.round((restantePagoCompra - pagoDet) * 100) / 100;
     if (pagoDet <= 0) return;
-    restantePagoCompra -= pagoDet;
-    const id = Utils.genId();
+
+    const id = String(Date.now()) + '_' + String(idx + 1).padStart(3, '0');
+    const productoPago = item.nombre || 'COMPRA';
     _sheetPagoCompras.push({
         IDPAGOCOMPRAS:id,
         IDCOMPRAS:idSheet,
         FECHA:fechaSheet(ahora),
-        PRODUCTO: det.nombre || _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '),
+        PRODUCTO:productoPago,
         'FORMA DE PAGO':_pagoCompraFP,
         MONTO:pagoDet,
         monto:pagoDet,
-        proveedor: (r.proveedor||'').toUpperCase(),
+        proveedor:(r.proveedor||'').toUpperCase(),
         'FECHA ORIGINAL':r.fecha||''
     });
-
-    fetchSheets({
-      method:'POST',
-      body: JSON.stringify({
-        tipo:'pago_compra',
-        id,
-        IDPAGOCOMPRAS:id,
-        IDCOMPRAS:idSheet,
-        fecha:fechaSheet(ahora),
-        fechaISO:ahora.toISOString(),
-        producto: det.nombre || _pagoCompraNombre || (r.items||[]).map(i=>i.nombre).join(', '),
-        proveedor: r.proveedor || '',
-        formaPago:_pagoCompraFP,
-        monto:pagoDet,
-        fechaOriginal:r.fecha||''
-      })
+    enviosPagoCompra.push({
+        method:'POST',
+        body: JSON.stringify({
+            tipo:'pago_compra',
+            id,
+            IDPAGOCOMPRAS:id,
+            IDCOMPRAS:idSheet,
+            fecha:fechaSheet(ahora),
+            fechaISO:ahora.toISOString(),
+            producto:productoPago,
+            proveedor:r.proveedor || '',
+            formaPago:_pagoCompraFP,
+            monto:pagoDet,
+            fechaOriginal:r.fecha||''
+        })
     });
 });
 
-console.log("FETCH ENVIADO");
+console.log("FETCH ENVIADO", enviosPagoCompra.length);
 
 toggleModal('modalPagoCompra', false);
 _liberarPago('btnConfPagoCompra');
@@ -24004,6 +24098,19 @@ renderCompras();
 if (window._provDetalleActivo) {
     console.log('[REFRESH PROV] refrescando:', JSON.stringify(window._provDetalleActivo));
     verDetalleProveedor(window._provDetalleActivo.tipo, window._provDetalleActivo.id);
+}
+
+if (enviosPagoCompra.length) {
+    (async function() {
+        let enviados = 0;
+        for (let i = 0; i < enviosPagoCompra.length; i += 4) {
+            const tanda = enviosPagoCompra.slice(i, i + 4);
+            const res = await Promise.allSettled(tanda.map(function(req){ return fetchSheets(req); }));
+            enviados += res.filter(function(r){ return r.status === 'fulfilled'; }).length;
+        }
+        mostrarToast('Pagos enviados al Sheet: ' + enviados + '/' + enviosPagoCompra.length, enviados === enviosPagoCompra.length ? 'success' : 'error');
+        if (typeof sincronizarSheetsSilencioso === 'function') setTimeout(function(){ sincronizarSheetsSilencioso(); }, 800);
+    })();
 }
 
 console.log("FUNCION TERMINADA"); }
@@ -25829,9 +25936,11 @@ window.verDetalleProveedor = function(tipo, id) {
             const sub = esGasto
                 ? ((parseFloat(item.subtotal||item.pagoTotal||0) || 0) || (montoBruto/Math.max(itemsC.length,1)))
                 : ((parseFloat(item.pagoCredito||0) || 0) || (montoBruto/Math.max(itemsC.length,1)));
-            const saldoItem = totalItems > 0 ? Math.round(saldo * sub / totalItems) : Math.round(saldo/Math.max(itemsC.length,1));
+            const saldoItem = totalItems > 0
+                ? Math.round((saldo * sub / totalItems) * 100) / 100
+                : Math.round((saldo / Math.max(itemsC.length,1)) * 100) / 100;
             g.items.push({...item, _saldoItem: saldoItem, _idC: idC});
-            g.saldoTotal += saldoItem;
+            g.saldoTotal = Math.round((g.saldoTotal + saldoItem) * 100) / 100;
         });
     });
 
@@ -28161,10 +28270,21 @@ renderIngEgr = function(tipo) {
                 total: 0,
                 efectivo: 0,
                 credito: 0,
+                _filasVistas: new Set(),
                 items: []
             };
         }
         const g = grupos[key];
+        const filaKey = [
+            String(r.concepto || '').trim().toUpperCase(),
+            String(r.detalle || '').trim().toUpperCase(),
+            Number(r.total) || 0,
+            Number(r.efectivo) || 0,
+            Number(r.credito) || 0,
+            String(r.formaPago || '').trim().toUpperCase()
+        ].join('|');
+        if (g._filasVistas.has(filaKey)) return;
+        g._filasVistas.add(filaKey);
         g.total += Number(r.total) || 0;
         g.efectivo += Number(r.efectivo) || 0;
         g.credito += Number(r.credito) || 0;
@@ -28176,10 +28296,30 @@ renderIngEgr = function(tipo) {
         g.items.push({
             nombre: r.concepto || r.detalle || r.proveedor || '',
             detalle: r.detalle || '',
-            total: Number(r.total) || 0
+            total: Number(r.total) || 0,
+            efectivo: Number(r.efectivo) || 0,
+            credito: Number(r.credito) || 0
         });
     });
     const dbFull = Object.values(grupos).map(function(g) {
+        const vistosItems = new Set();
+        g.items = (g.items || []).filter(function(i) {
+            const k = [
+                String(i.nombre || '').trim().toUpperCase(),
+                String(i.detalle || '').trim().toUpperCase(),
+                Number(i.total || 0) || 0,
+                Number(i.efectivo || 0) || 0,
+                Number(i.credito || 0) || 0
+            ].join('|');
+            if (vistosItems.has(k)) return false;
+            vistosItems.add(k);
+            return true;
+        });
+        if (g.items.length) {
+            g.total = g.items.reduce(function(s, i) { return s + (Number(i.total) || 0); }, 0);
+            g.efectivo = g.items.reduce(function(s, i) { return s + (Number(i.efectivo) || 0); }, 0);
+            g.credito = g.items.reduce(function(s, i) { return s + (Number(i.credito) || 0); }, 0);
+        }
         const nombres = g.items.map(i => i.nombre).filter(Boolean);
         if (g.items.length > 1) g.concepto = nombres.join(', ');
         return g;
@@ -28233,8 +28373,20 @@ renderIngEgr = function(tipo) {
         const badgeColor = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
         const provKey = (c.proveedor || '').toUpperCase().trim();
         const concKey = (c.concepto || '').toUpperCase().trim();
-        const primerItem = ((c.items || []).find(i => i && i.nombre) || {});
-        const esGrupoItems = (c.items || []).length > 1;
+        const itemsVisibles = [];
+        const itemsVisiblesKeys = new Set();
+        (c.items || []).forEach(function(i) {
+            const itemKey = [
+                String(i.nombre || '').trim().toUpperCase(),
+                String(i.detalle || '').trim().toUpperCase(),
+                Number(i.total || 0) || 0
+            ].join('|');
+            if (itemsVisiblesKeys.has(itemKey)) return;
+            itemsVisiblesKeys.add(itemKey);
+            itemsVisibles.push(i);
+        });
+        const primerItem = (itemsVisibles.find(i => i && i.nombre) || {});
+        const esGrupoItems = itemsVisibles.length > 1;
         const imgSC = c.imagen
             || (esGrupoItems
                 ? imgCategoriaIngEgr(c.proveedor, c.proveedor)
@@ -28245,9 +28397,9 @@ renderIngEgr = function(tipo) {
         const imgGN = (typeof window._getCatImg === 'function') ? window._getCatImg('genero', c.genero) : null;
         const imgCard = imgSC || imgGN || '';
         const accentColor = esIngreso ? '#10b981' : '#f87171';
-        const itemsGrupoHtml = (c.items && c.items.length > 1)
+        const itemsGrupoHtml = (itemsVisibles.length > 1)
             ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;max-width:520px;">
-                ${c.items.map(i => {
+                ${itemsVisibles.map(i => {
                     const itemImg = imgCategoriaIngEgr(i.nombre, c.proveedor);
                     return `<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:9px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:6px 8px;">
                         <div style="width:38px;height:38px;border-radius:8px;overflow:hidden;background:#020617;border:1px solid ${accentColor}33;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -28285,7 +28437,7 @@ renderIngEgr = function(tipo) {
                         ${infoEstado.saldo > 0 ? `<span class="text-[9px] font-black text-amber-300">Saldo: $${Utils.fmt(infoEstado.saldo)}</span>` : ''}
                     </div>
                     ${c.formaPago==='TARJETA'&&c.proveedorTarjeta?`<span class="block text-[9px] font-black text-blue-300 uppercase">Tarjeta: ${Utils.escHtml(c.proveedorTarjeta)}</span>`:''}
-                    ${(c.items||[]).length>1?`<p class="text-[9px] text-slate-500 mt-1">${c.items.length} items juntos</p>`:''}
+                    ${itemsVisibles.length>1?`<p class="text-[9px] text-slate-500 mt-1">${itemsVisibles.length} items juntos</p>`:''}
                     ${c.ticket?`<button onclick="verTicketIngEgr('${c.id}','${tipo}')" style="margin-top:4px;padding:3px 10px;background:#422006;color:#fb923c;border:1px solid #9a3412;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;display:inline-flex;align-items:center;gap:4px;">Ticket</button>`:''}
                 </div>
                 <div class="text-right shrink-0">
