@@ -5654,6 +5654,7 @@ _sheetProductos.forEach(p => {
 
 
 function confirmarVenta() {
+    if (confirmarVenta._guardando) return;
 
     if (carrito.length === 0) { 
         mostrarToast('Agregá al menos un producto', 'error'); 
@@ -5675,6 +5676,8 @@ function confirmarVenta() {
         mostrarModalClienteVentaInvalido();
         return;
     }
+    confirmarVenta._guardando = true;
+    setTimeout(() => { confirmarVenta._guardando = false; }, 15000);
     const efectivo = parseFloat(document.getElementById('inputEfectivo').value) || 0;
 
     const esClienteEspecial = ['CASA ERAZO', 'ERROR VENTAS', 'ERROR VENTA'].includes(cliente.toUpperCase().trim());
@@ -5824,7 +5827,8 @@ ganancia:     ganancia
 
     // Envío en background (el payload ya está capturado arriba, no depende del carrito)
   setTimeout(() => {
-    fetchSheets({ method: 'POST', body: JSON.stringify(ventaPayload) });
+    fetchSheets({ method: 'POST', body: JSON.stringify(ventaPayload) })
+        .finally(() => { confirmarVenta._guardando = false; });
     syncStockSheet(_prodsVendidos);
     sincronizarSheets();
 }, 0);
@@ -6507,7 +6511,14 @@ _sheetEgresosNegocio.forEach(e => {
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
         const _COLA_KEY = 'natanael_cola_pendientes_v1';
-        const _TIPOS_SIN_LOCALSTORAGE = new Set(['venta','eliminar_venta','pago_venta','ingresosegocio','ingresonegocio','actualizar_ingneg','pago_ingneg']);
+        const _TIPOS_SIN_LOCALSTORAGE = new Set([
+            'venta','eliminar_venta','pago_venta',
+            'compra','eliminar_compra','pago_compra',
+            'ingreso','pago_ingreso',
+            'egreso','pago_egreso',
+            'ingresosegocio','ingresonegocio','actualizar_ingneg','pago_ingneg',
+            'egresosegocio','egresonegocio','actualizar_egrneg','pago_egrneg'
+        ]);
 
         function _payloadUsaLocalStorageProhibido(payload) {
             try {
@@ -6589,12 +6600,111 @@ _sheetEgresosNegocio.forEach(e => {
             mostrarToast('🔴 Sin conexión ? los cambios se guardan localmente', 'error');
         });
 
+        function _getIdUnicoEnvioSheet(p, tipo) {
+            const id = p.IDPAGOCOMPRAS || p.IDPAGODEVENTAS || p.IDPAGOSINGRESOS || p.IDPAGOEGRESOS ||
+                p.IDPAGOSINGRESOSNEGOCIO || p.IDPAGOEGRESOSNEGOCIO || p.IDPAGOINGRESOSNEGOCIO ||
+                p.IDPAGOEGRNEG || p.IDVENTAS || p.IDCOMPRAS || p.IDINGRESOS || p.IDEGRESOS ||
+                p.IDINGRESOSNEGOCIO || p.IDEGRESOSNEGOCIO || p.idVenta || p.idCompra ||
+                p.idIngreso || p.idEgreso || p.idIngNeg || p.idEgrNeg || '';
+            const idTxt = String(id || '').trim();
+            if (idTxt) return String(tipo || '').toLowerCase() + ':' + idTxt;
+            return /^pago_/i.test(String(tipo || '')) && p.id ? String(tipo || '').toLowerCase() + ':' + String(p.id).trim() : '';
+        }
+
+        const _IDS_SHEET_ENVIADOS_KEY = 'natanael_ids_sheet_enviados_v1';
+        function _tomarIdEnvioSheet(idEnvioUnico) {
+            if (!idEnvioUnico) return true;
+            const ahora = Date.now();
+            let ids = {};
+            try { ids = JSON.parse(localStorage.getItem(_IDS_SHEET_ENVIADOS_KEY) || '{}') || {}; } catch(e) { ids = {}; }
+            Object.keys(ids).forEach(k => {
+                if (ahora - ids[k] > 600000) delete ids[k];
+            });
+            if (ids[idEnvioUnico]) return false;
+            ids[idEnvioUnico] = ahora;
+            try { localStorage.setItem(_IDS_SHEET_ENVIADOS_KEY, JSON.stringify(ids)); } catch(e) {}
+            return true;
+        }
+        function _liberarIdEnvioSheet(idEnvioUnico) {
+            if (!idEnvioUnico) return;
+            try {
+                const ids = JSON.parse(localStorage.getItem(_IDS_SHEET_ENVIADOS_KEY) || '{}') || {};
+                delete ids[idEnvioUnico];
+                localStorage.setItem(_IDS_SHEET_ENVIADOS_KEY, JSON.stringify(ids));
+            } catch(e) {}
+        }
+
         function fetchSheets(options) {
             if (!options || options.method !== 'POST') {
                 return fetch(SHEETS_URL2).catch(()=>{});
             }
             try {
                 const payload = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+                let idEnvioUnico = '';
+                try {
+                    const p = JSON.parse(payload);
+                    const tipoDedup = String(p.tipo || '').toLowerCase();
+                    idEnvioUnico = _getIdUnicoEnvioSheet(p, tipoDedup);
+                    if (idEnvioUnico) {
+                        if (!_tomarIdEnvioSheet(idEnvioUnico)) {
+                            console.warn('[Sheet] ID duplicado bloqueado:', idEnvioUnico);
+                            mostrarToast('Registro duplicado bloqueado', 'error');
+                            return Promise.resolve({ ok:false, duplicado:true });
+                        }
+                    }
+                    const tiposDedup = new Set([
+                        'venta','compra','ingreso','egreso',
+                        'ingresosegocio','ingresonegocio','egresosegocio','egresonegocio',
+                        'pago_venta','pago_compra','pago_ingreso','pago_egreso','pago_ingneg','pago_egrneg'
+                    ]);
+                    if (tiposDedup.has(tipoDedup)) {
+                        const productosKey = Array.isArray(p.productos)
+                            ? p.productos.map(x => [
+                                x.nombre || '',
+                                x.producto || '',
+                                x.cantidad || '',
+                                x.precio || '',
+                                x.total || '',
+                                x.pagoTotal || '',
+                                x.pagoEfectivo || '',
+                                x.pagoCredito || ''
+                            ].join(':')).join('|')
+                            : '';
+                        const idDocumento = p.IDVENTAS || p.IDCOMPRAS || p.IDINGRESOS || p.ID_INGRESOS ||
+                            p.IDEGRESOS || p.ID_GASTOS || p.IDINGRESOSNEGOCIO || p.IDEGRESOSNEGOCIO ||
+                            p.idVenta || p.idCompra || p.idIngreso || p.idEgreso || p.idEgresoNeg ||
+                            p.numeroVenta || p.numeroCompra || p.numeroIngreso || p.numeroEgreso || p.idGrupo || '';
+                        const montoPrincipal = p.monto ?? p.MONTO ?? p.total ?? p.pagoTotal ?? '';
+                        const dedupKey = [
+                            tipoDedup,
+                            idDocumento,
+                            p.cliente || '',
+                            p.idCliente || '',
+                            p.proveedor || '',
+                            p.supercategoria || '',
+                            p.categoria || '',
+                            p.producto || '',
+                            p.detalle || '',
+                            montoPrincipal,
+                            p.efectivo || p.pagoEfectivo || '',
+                            p.credito || p.pagoCredito || '',
+                            p.formaPago || '',
+                            p.fechaOriginal || p.fechaOrig || p['FECHA ORIGINAL'] || '',
+                            productosKey
+                        ].join('||').toUpperCase();
+                        fetchSheets._dedupRecientes = fetchSheets._dedupRecientes || {};
+                        const ahoraDedup = Date.now();
+                        Object.keys(fetchSheets._dedupRecientes).forEach(k => {
+                            if (ahoraDedup - fetchSheets._dedupRecientes[k] > 15000) delete fetchSheets._dedupRecientes[k];
+                        });
+                        if (fetchSheets._dedupRecientes[dedupKey] && ahoraDedup - fetchSheets._dedupRecientes[dedupKey] < 15000) {
+                            console.warn('[Sheet] POST duplicado bloqueado:', tipoDedup, dedupKey);
+                            mostrarToast('Envio duplicado bloqueado', 'error');
+                            return Promise.resolve({ ok:false, duplicado:true });
+                        }
+                        fetchSheets._dedupRecientes[dedupKey] = ahoraDedup;
+                    }
+                } catch(e) {}
                 console.log('[Sheet] POST ? body length:', payload.length);
                 console.log('[Sheet] POST ? body preview:', payload.substring(0, 300));
                 const sheetController = new AbortController();
@@ -6616,6 +6726,7 @@ _sheetEgresosNegocio.forEach(e => {
                                 // Si llegó bien, aprovechar a vaciar cola pendiente
                                 _colaFlush();
                             } else {
+                                _liberarIdEnvioSheet(idEnvioUnico);
                                 mostrarToast('✅ Sheet error: ' + (d.error||txt.substring(0,100)), 'error');
                             }
                             return d;
@@ -6627,6 +6738,7 @@ _sheetEgresosNegocio.forEach(e => {
                     .catch(e => {
                         // Sin red ? guardar en cola
                         if (_payloadUsaLocalStorageProhibido(payload)) {
+                            _liberarIdEnvioSheet(idEnvioUnico);
                             mostrarToast('Sin conexion: no se guardo localmente. Reintenta cuando vuelva internet.', 'error');
                             return;
                         }
@@ -6635,6 +6747,7 @@ _sheetEgresosNegocio.forEach(e => {
                     });
             } catch(e) {
                 console.error('[Sheet error]', e);
+                _liberarIdEnvioSheet(idEnvioUnico);
                 mostrarToast('? Error al enviar al Sheet: ' + e.message, 'error');
                 return Promise.reject(e);
             }
@@ -7908,7 +8021,7 @@ if (indicator) indicator.classList.remove('hidden');
                         if (_md && !_md.classList.contains('hidden')) abrirDetalleCliente(clienteDetalleId);
                     }
                 }
-                if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>({IDCOMPRAS:String(r['IDCOMPRAS']||'').trim(), MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase()})); window._sheetPagoCompras = _sheetPagoCompras; }
+                if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
                 if (Array.isArray(data.pagoIngresos))         { _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['ID_INGRESOS']||r['Id_Ingresos']||r['NUMERO DE INGRESOS']||r['NUMERO_DE_INGRESOS']||r['numeroIngreso']||'').trim(),ID_INGRESOS:String(r['ID_INGRESOS']||r['Id_Ingresos']||r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()})); window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(data.pagoEgresos))          { _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['ID_GASTOS']||r['Id_Gastos']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),ID_GASTOS:String(r['ID_GASTOS']||r['Id_Gastos']||r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim(),proveedor:String(r['SUPERCATEGORIA']||r['Supercategoria']||r['PROVEEDOR']||r['Proveedor']||'').trim(),categoria:String(r['CATEGORIA']||r['Categoria']||'').trim()})); window._sheetPagoEgresos = _sheetPagoEgresos; }
                 if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim()})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; }
@@ -11682,14 +11795,16 @@ console.log("FILTRADAS:", filtradas.length);
                         const fhn = parseFechaNum(hasta + 'T23:59:59');
                         if (fhn && fn && fn > fhn) return;
                     }
+                    const idCompraRaw = String(val(row, ['IDCOMPRAS','NUMERO DE COMPRAS','NUMERO_DE_COMPRAS','Numero de Compras','idCompra','ID Compra']) || '').trim();
                     const proveedor = String(val(row, ['PROVEEDOR','Proveedor']) || '?').trim() || '?';
                     const ticketKey = String(val(row, ['TICKET','Ticket']) || '').trim();
-                    const key = fechaRaw + '|' + proveedor + '|' + ticketKey;
+                    const key = idCompraRaw ? ('ID:' + idCompraRaw) : (fechaRaw + '|' + proveedor + '|' + ticketKey);
                     if (!grupos[key]) {
                         let fechaDisplay = fechaRaw;
                         try { const ff = fmtFecha24(fechaRaw); if (ff) fechaDisplay = ff; } catch(e) {}
                         grupos[key] = {
-                            id: key,
+                            id: idCompraRaw || key,
+                            idSheet: idCompraRaw,
                             tipo: 'COMPRA',
                             fecha: fechaDisplay,
                             fechaISO: fechaRaw,
@@ -11721,9 +11836,10 @@ console.log("FILTRADAS:", filtradas.length);
                     });
                 });
                 return Object.values(grupos).map(r => {
-                    const pagadoReal = 0;
+                    const idCompra = String(r.idSheet || r.id || '').trim();
+                    const pagadoReal = idCompra ? Math.max(0, pagosComprasTarjetaMap[idCompra] || 0) : 0;
                     r.pagado = Math.min(r.total, pagadoReal);
-                    r.credito = r.total;
+                    r.credito = Math.max(0, r.total - r.pagado);
                     return r;
                 }).filter(r => r.total > 0);
             };
@@ -18311,6 +18427,10 @@ clienteDetalleId = null;
         }
 
         async function confirmarPagoRapidoProv() {
+            if (confirmarPagoRapidoProv._guardando) {
+                mostrarToast('Pago en proceso, espera un momento', 'error');
+                return;
+            }
             const monto = parseFloat(document.getElementById('pagoRapidoProvMonto').value) || 0;
             if (monto <= 0) { mostrarToast('Ingresá un monto', 'error'); return; }
             let restante = monto;
@@ -18326,17 +18446,21 @@ clienteDetalleId = null;
 
             if (pagos.length === 0) { mostrarToast('Sin pagos a procesar', 'error'); return; }
 
+            confirmarPagoRapidoProv._guardando = true;
             toggleModal('modalPagoRapidoProv', false);
             mostrarToast(`â³ Procesando ${pagos.length} pago${pagos.length!==1?'s':''}...`);
 
             let contadorId = Date.now();
             let procesados = 0;
+            try {
             for (const p of pagos) {
                 const idPago = String(contadorId++);
                 try {
                     const reg = { id: idPago, IDPAGOCOMPRAS: idPago, idCompra: p.idCompra, IDCOMPRAS: p.idCompra, fecha: fechaFmt, fechaISO: fechaFmt, proveedor: p.proveedor, formaPago: 'EFECTIVO', monto: p.pagado, MONTO: p.pagado, fechaOriginal: p.fecha };
                     if (!window._sheetPagoCompras) window._sheetPagoCompras = [];
-                    window._sheetPagoCompras.push(reg);
+                    if (!window._sheetPagoCompras.some(x => String(x.IDPAGOCOMPRAS || x.id || '') === String(idPago))) {
+                        window._sheetPagoCompras.push(reg);
+                    }
                     await fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'pago_compra', id: idPago, IDPAGOCOMPRAS: idPago, IDCOMPRAS: p.idCompra, fecha: fechaFmt, proveedor: p.proveedor, formaPago: 'EFECTIVO', monto: p.pagado, fechaOriginal: p.fecha }) });
                     procesados++;
                     if (procesados < pagos.length) await new Promise(r => setTimeout(r, 800));
@@ -18346,6 +18470,9 @@ clienteDetalleId = null;
             }
 
             mostrarToast(`✅ Pago de $${Utils.fmt(monto)} distribuido en ${procesados} registro${procesados!==1?'s':''}`);
+            } finally {
+                confirmarPagoRapidoProv._guardando = false;
+            }
             // Refrescar detalle proveedor
             setTimeout(() => {
                 const nombre = _pagoRapidoProvNombreActual;
@@ -23163,6 +23290,7 @@ function eliminarItemIngEgr(itemId){
         }
 
         async function confirmarIngEgr() {
+            if (confirmarIngEgr._guardando) return;
             const supercategoria = document.getElementById('inputIngEgrProveedor').value.trim() || 'Sin especificar';
             const categoria      = document.getElementById('inputIngEgrConcepto').value.trim() || '';
             const detalle        = document.getElementById('inputIngEgrDetalle')?.value.trim() || '';
@@ -23203,6 +23331,8 @@ function eliminarItemIngEgr(itemId){
             }];
             const total          = itemsGuardar.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
             if (total === 0) { mostrarToast('Ingresa un monto', 'error'); return; }
+            confirmarIngEgr._guardando = true;
+            setTimeout(() => { confirmarIngEgr._guardando = false; }, 15000);
             const ahora = new Date();
             const fecha = ahora.toLocaleString('es-AR', {
     day: '2-digit',
@@ -23269,6 +23399,7 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
             toggleModal('modalIngEgr', false);
             mostrarToast(`✅ ${ingEgrTipo === 'ingreso' ? 'Ingreso' : 'Egreso'} de $${Utils.fmt(total)} registrado`);
             if (typeof calcularWidgetGastoFamiliar === 'function') calcularWidgetGastoFamiliar();
+            confirmarIngEgr._guardando = false;
         }
 
         let _filtroIngreso = 'todos';
@@ -24043,6 +24174,30 @@ if (!detallesPagoCompra.length) detallesPagoCompra = [{ nombre: 'COMPRA', base: 
 const baseTotal = detallesPagoCompra.reduce(function(s, item) {
     return s + parseSheetNum(item.base);
 }, 0) || monto;
+
+const firmaPagoCompra = [
+    idSheet,
+    Math.round(monto * 100),
+    _pagoCompraFP,
+    detallesPagoCompra.map(function(item) {
+        return [
+            String(item.nombre || 'COMPRA').trim().toUpperCase(),
+            Math.round(parseSheetNum(item.base) * 100)
+        ].join(':');
+    }).join('|')
+].join('||');
+_confirmarPagoCompraImpl._firmasRecientes = _confirmarPagoCompraImpl._firmasRecientes || {};
+Object.keys(_confirmarPagoCompraImpl._firmasRecientes).forEach(function(k) {
+    if (Date.now() - _confirmarPagoCompraImpl._firmasRecientes[k] > 15000) {
+        delete _confirmarPagoCompraImpl._firmasRecientes[k];
+    }
+});
+if (_confirmarPagoCompraImpl._firmasRecientes[firmaPagoCompra]) {
+    mostrarToast('Pago compra duplicado bloqueado', 'error');
+    return;
+}
+_confirmarPagoCompraImpl._firmasRecientes[firmaPagoCompra] = Date.now();
+
 let restantePagoCompra = monto;
 
 detallesPagoCompra.forEach(function(item, idx) {
