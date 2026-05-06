@@ -4284,13 +4284,13 @@ CONFIRMAR PAGO
                     <div class="space-y-2 relative">
                         <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">Cliente</label>
                         <div class="relative flex items-center">
-                          <input type="text" id="inputCliente" placeholder="Buscar cliente existente..." autocomplete="off" oninput="manejarClienteVentaInput(this.value)" onfocus="filtrarClientesVenta(this.value)" onblur="setTimeout(()=>{ 
+                          <input type="text" id="inputCliente" placeholder="Buscar cliente existente..." autocomplete="off" oninput="manejarClienteVentaInput(this.value)" onfocus="filtrarClientesVenta(this.value);actualizarPosicionClearCliente()" onblur="setTimeout(()=>{ 
  validarClienteVentaInput(false);
  if(!document.getElementById('modalSelector').classList.contains('modal-active')){
    document.getElementById('dropdownClientes').classList.add('hidden')
  }
 },150)" class="w-full bg-slate-900 border-2 border-slate-800 p-3 pr-8 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
-                          <button id="btnClearCliente" onclick="document.getElementById('inputCliente').value='';this.classList.add('hidden');filtrarClientesVenta('');renderCarrito();validarClienteVentaInput(false);_clienteVentaModalMostrado=false;document.getElementById('inputCliente').focus();" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white font-black text-sm leading-none bg-slate-700 hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center transition-colors" type="button">&#x2715;</button>
+                          <button id="btnClearCliente" onclick="document.getElementById('inputCliente').value='';this.classList.add('hidden');filtrarClientesVenta('');renderCarrito();validarClienteVentaInput(false);_clienteVentaModalMostrado=false;actualizarPosicionClearCliente();document.getElementById('inputCliente').focus();" class="hidden absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-white font-black text-[10px] leading-none bg-slate-700 hover:bg-red-500 rounded-full w-4 h-4 flex items-center justify-center transition-colors" type="button">&#x2715;</button>
                         </div>
                         <div id="dropdownClientes" class="hidden absolute z-50 w-full bg-slate-900 border border-slate-700 rounded-xl mt-1 shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
                         </div>
@@ -4843,8 +4843,9 @@ _sheetProductos.forEach(p => {
         // ============================================================
         function guardarYDescargar() {
             try {
-                const claves = ['natanael_inventario_v1','natanael_clientes_v1',
-                                'natanael_compras_v1','natanael_ingresos_v1','natanael_egresos_v1',
+                const claves = ['natanael_inventario_v1','natanael_historial_v1','natanael_pago_ventas_v1',
+                                'natanael_sheet_cache_v1','natanael_clientes_v1','natanael_compras_v1',
+                                'natanael_ingresos_v1','natanael_egresos_v1',
                                 'natanael_horario_caja','natanael_firebase_url','natanael_logo'];
                 const datos = {};
                 claves.forEach(k => { const v = localStorage.getItem(k); if(v) datos[k] = v; });
@@ -4942,6 +4943,8 @@ _sheetProductos.forEach(p => {
             cerrarModalClienteVentaInvalido();
             validarClienteVentaInput(false);
             toggleModal('modalVenta', true);
+            setTimeout(actualizarPosicionClearCliente, 0);
+            setTimeout(actualizarPosicionClearCliente, 80);
             renderCarrito();
         }
         function cerrarNuevaVenta() {
@@ -5080,7 +5083,27 @@ _sheetProductos.forEach(p => {
             filtrarClientesVenta(value);
             renderCarrito();
             document.getElementById('btnClearCliente').classList.toggle('hidden', !value);
+            actualizarPosicionClearCliente();
             validarClienteVentaInput(false);
+        }
+
+        function actualizarPosicionClearCliente() {
+            const input = document.getElementById('inputCliente');
+            const btn = document.getElementById('btnClearCliente');
+            if (!input || !btn) return;
+            const value = String(input.value || '');
+            if (!value) return;
+            const canvas = actualizarPosicionClearCliente._canvas || (actualizarPosicionClearCliente._canvas = document.createElement('canvas'));
+            const ctx = canvas.getContext('2d');
+            const cs = getComputedStyle(input);
+            ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+            const textWidth = ctx.measureText(value.toUpperCase()).width;
+            const leftPad = parseFloat(cs.paddingLeft) || 12;
+            const gap = 8;
+            const btnW = btn.offsetWidth || 16;
+            const maxLeft = Math.max(leftPad, input.clientWidth - btnW - 8);
+            btn.style.right = 'auto';
+            btn.style.left = Math.min(leftPad + textWidth + gap, maxLeft) + 'px';
         }
 
         function validarClienteAntesDeAgregarProductos() {
@@ -5105,7 +5128,9 @@ _sheetProductos.forEach(p => {
         function seleccionarClienteVenta(nombre) {
             document.getElementById('inputCliente').value = nombre;
             document.getElementById('dropdownClientes').classList.add('hidden');
+            document.getElementById('btnClearCliente')?.classList.remove('hidden');
             _clienteVentaModalMostrado = false;
+            actualizarPosicionClearCliente();
             validarClienteVentaInput(false);
             renderCarrito();
         }
@@ -7285,6 +7310,7 @@ _sheetEgresosNegocio.forEach(e => {
                 if (Array.isArray(data.ventas)) {
                     _sheetVentas = [];
                     _sheetVentasRaw = data.ventas || [];
+                    window._sheetVentasRaw = _sheetVentasRaw;
                     const ventasMap = {};
                     if (data.ventas[0]) console.warn('[VENTAS COLS] ' + Object.keys(data.ventas[0]).join(' | ') + ' || PAGO CREDITO=' + data.ventas[0]['PAGO CREDITO'] + ' Pago Credito=' + data.ventas[0]['Pago Credito'] + ' PAGO TOTAL=' + data.ventas[0]['PAGO TOTAL']);
                     data.ventas.forEach((row, _rowIdx) => {
@@ -7303,11 +7329,13 @@ _sheetEgresosNegocio.forEach(e => {
                         // dineroRecuperado de múltiples filas CASA ERAZO sin ID en un mismo bucket)
                         const key     = idVenta || ('_row_'+_rowIdx);
                         if (!ventasMap[key]) {
+                            const fechaPagoRaw = String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim();
                             // Inicializar con 0 ? se acumula fila a fila porque cada fila tiene el subtotal del item
                             ventasMap[key] = {
                                 id:        idVenta||('sheet_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,50)),
                                 fecha:     fechaDisplay,
                                 fechaISO:  fechaRaw,
+                                fechaPago: fechaPagoRaw,
                                 cliente:   cliente,
                                 idCliente: String(row['IDCLIENTE']||'').trim(),
                                 total:     0,
@@ -7360,6 +7388,7 @@ _sheetEgresosNegocio.forEach(e => {
                         });
                     });
                     _sheetVentas = Object.values(ventasMap);
+                    window._sheetVentas = _sheetVentas;
                     // Debug: verificar efectivo en primeras ventas del día actual
                     const _hoy = new Date(); const _hoyStr = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')+'-'+String(_hoy.getDate()).padStart(2,'0');
                     const _ventasHoy = _sheetVentas.filter(v => (v.fechaISO||v.fecha||'').startsWith(_hoyStr) || parseFechaNum(v.fechaISO||v.fecha||'') >= parseFechaNum(_hoyStr+'T00:00'));
@@ -7958,6 +7987,7 @@ if (indicator) indicator.classList.remove('hidden');
             try {
                 // Ingresos
                 if (Array.isArray(data.ingresos)) {
+                    window._sheetIngresosRaw = data.ingresos || [];
                     let ag=0,ac=0;
                     const normI = s => String(s||'').trim().toUpperCase();
                     data.ingresos.forEach((row, rowIdx) => {
@@ -7975,6 +8005,7 @@ if (indicator) indicator.classList.remove('hidden');
                             detalle:String(row['DETALLE']||row['Detalle']||'').trim(),
                             estado:String(row['ESTADO']||'').trim(),
                             formaPago:String(row['FORMA DE PAGO']||'').trim(),
+                            fechaPago:String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim(),
                             total:pagoTotal, efectivo:parseSheetNum(row['PAGO EFECTIVO']||0),
                             credito:parseSheetNum(row['PAGO CREDITO']||0),
                             ticket:String(row['TICKET']||'').trim()||null,
@@ -8125,6 +8156,9 @@ if (indicator) indicator.classList.remove('hidden');
                 // Recalcular caja ahora que tenemos todos los datos (egresos, pagos, etc.)
                 actualizarResumenCaja();
                 renderTarjetaCreditoAuto();
+                if (typeof _statsTab !== 'undefined' && _statsTab === 'coordPagos' && typeof renderCoordinacionPagos === 'function') {
+                    renderCoordinacionPagos();
+                }
                 // Guardar caché fresco con todos los datos secundarios
                 if (typeof _guardarCache === 'function') _guardarCache();
             } catch(e) {
@@ -13174,39 +13208,39 @@ console.log("FILTRADAS:", filtradas.length);
 
             // 4) VENTAS  → PAGO VENTAS
             var pagoVentasMap = {};
+            var pagoVentasPagadoMap = {};
             var _pvSheet = window._pagoVentasSheet || [];
             try { if (typeof _pagoVentasSheet !== 'undefined' && _pagoVentasSheet.length) _pvSheet = _pagoVentasSheet; } catch(e) {}
             _pvSheet.forEach(function(p) {
                 var id = String(p.idVenta || p.IDVENTAS || '').trim();
                 var fp = fmtF(String(p.fechaOrig || p.fecha || '').trim());
-                if (!id || !fp || !p.monto) return;
+                var monto = Number(p.monto || p.MONTO || 0);
+                if (!id || !fp || !monto) return;
                 if (!pagoVentasMap[id]) pagoVentasMap[id] = [];
-                pagoVentasMap[id].push({ fp: fp, monto: Number(p.monto), cliente: String(p.cliente||'').trim().toUpperCase() });
+                pagoVentasMap[id].push({ fp: fp, monto: monto, cliente: String(p.cliente||'').trim().toUpperCase() });
+                pagoVentasPagadoMap[id] = (pagoVentasPagadoMap[id] || 0) + monto;
             });
             var rawVt = Array.isArray(window._sheetVentasRaw) ? window._sheetVentasRaw : [];
             var vtFPMap = {};
             rawVt.forEach(function(row) {
-                var id = String(row['IDVENTAS']||'').trim();
-                var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim());
+                var id = String(row['IDVENTAS']||row['IDVENTA']||'').trim();
+                var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim());
                 if (id && fp) vtFPMap[id] = fp;
             });
             (window._sheetVentas || []).forEach(function(v) {
-                var id = String(v.id || '').trim();
+                var id = String(v.idSheet || v.IDVENTAS || v.id || '').trim();
                 var cli = String(v.cliente || v.nombreCliente || '-').trim().toUpperCase();
-                var monto = Number(v.total || v.totalFinal || 0);
-                if (!monto) return;
+                var creditoVal = Number(v.deuda || v.credito || v.pagoCredito || 0);
+                var totalVal = Number(v.total || v.totalFinal || 0);
+                var monto = creditoVal > 0 ? creditoVal : totalVal;
+                var yaPagado = id ? (pagoVentasPagadoMap[id] || 0) : 0;
+                var saldo = monto - yaPagado;
+                if (saldo <= 0.009) return;
                 // REGLA: solo mostrar si tiene FECHA DE PAGO registrada
                 var fp = (id && vtFPMap[id]) ? vtFPMap[id] : fmtF(String(v.fechaPago||'').trim());
                 if (!fp) return;
-                if (id && pagoVentasMap[id] && pagoVentasMap[id].length) {
-                    pagoVentasMap[id].forEach(function(pg) {
-                        if (!inMapFecha[fp]) inMapFecha[fp] = { fecha: fp, items: [] };
-                        inMapFecha[fp].items.push({ fuente:'venta', label: pg.cliente || cli, monto: pg.monto });
-                    });
-                } else {
-                    if (!inMapFecha[fp]) inMapFecha[fp] = { fecha: fp, items: [] };
-                    inMapFecha[fp].items.push({ fuente:'venta', label: cli, monto: monto });
-                }
+                if (!inMapFecha[fp]) inMapFecha[fp] = { fecha: fp, items: [] };
+                inMapFecha[fp].items.push({ fuente:'venta', label: cli, monto: saldo });
             });
 
             // 5) INGRESOS  → PAGO INGRESOS
@@ -13224,12 +13258,12 @@ console.log("FILTRADAS:", filtradas.length);
             var rawIn = Array.isArray(window._sheetIngresosRaw) ? window._sheetIngresosRaw : [];
             var inFPMap = {};
             rawIn.forEach(function(row) {
-                var id = String(row['IDINGRESOS']||row['numeroIngreso']||'').trim();
-                var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim());
+                var id = String(row['IDINGRESOS']||row['ID_INGRESOS']||row['Id_Ingresos']||row['numeroIngreso']||'').trim();
+                var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim());
                 if (id && fp) inFPMap[id] = fp;
             });
             (window._sheetIngresos || []).forEach(function(i) {
-                var id = String(i.idSheet || '').trim();
+                var id = String(i.idSheet || i.IDINGRESOS || i.id || '').trim();
                 var cat = String(i.concepto||i.categoria||i.proveedor||'-').trim().toUpperCase();
                 var montoTotal = Number(i.total || 0);
                 if (!montoTotal) return;
@@ -13248,16 +13282,16 @@ console.log("FILTRADAS:", filtradas.length);
             var pagoIngNegPagadoMap = {};
             var _wIN = window._sheetPagoIngNeg || window._pagoIngNegSheet || [];
             _wIN.forEach(function(p) {
-                var id = String(p.IDINGRESOSNEGOCIO || '').trim();
+                var id = String(p.idIngresoNeg || p.IDINGRESOSNEGOCIO || '').trim();
                 var fp = fmtF(String(p.fechaOriginal || p['FECHA ORIGINAL'] || p.fecha || '').trim());
-                var monto = Number(p.monto || 0);
+                var monto = Number(p.monto || p.MONTO || 0);
                 if (!id || !fp || !monto) return;
                 if (!pagoIngNegMap[id]) pagoIngNegMap[id] = [];
                 pagoIngNegMap[id].push({ fp: fp, monto: monto, cliente: String(p.cliente||'').trim().toUpperCase() });
                 pagoIngNegPagadoMap[id] = (pagoIngNegPagadoMap[id] || 0) + monto;
             });
             (window._sheetIngresosNegocio || []).forEach(function(i) {
-                var idIN = String(i.idSheet || i.id || '').trim();
+                var idIN = _coordGetIdEN(i);
                 var cat = String(i.cliente||i.proveedor||i.concepto||i.categoria||'-').trim().toUpperCase();
                 var creditoVal = parseFloat(i.credito || 0);
                 var totalVal   = parseFloat(i.total || 0);
@@ -13320,7 +13354,21 @@ console.log("FILTRADAS:", filtradas.length);
             }
             function filaGrupo(g, nro, colorTxt, colorMonto, uid) {
                 var totalGrupo = g.items.reduce(function(s,it){ return s+it.monto; },0);
-                var detalle = g.items.map(function(it) {
+                var detalleItems = [];
+                var detalleMap = {};
+                g.items.forEach(function(it) {
+                    var key = String(it.fuente || '') + '|' + String(it.label || '').trim().toUpperCase();
+                    if (!detalleMap[key]) {
+                        detalleMap[key] = {
+                            fuente: it.fuente,
+                            label: it.label,
+                            monto: 0
+                        };
+                        detalleItems.push(detalleMap[key]);
+                    }
+                    detalleMap[key].monto += Number(it.monto || 0);
+                });
+                var detalle = detalleItems.map(function(it) {
                     var c = fuenteColor(it.fuente);
                     var tag = fuenteTag(it.fuente);
                     return '<tr style="background:#0a0f1c;">'
@@ -13374,12 +13422,16 @@ console.log("FILTRADAS:", filtradas.length);
                 +'<th style="padding:8px 10px;text-align:left;font-size:9px;color:#94a3b8;text-transform:uppercase;">Fecha</th>'
                 +'<th style="padding:8px 10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;">Ingresos</th>'
                 +'<th style="padding:8px 10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;">Egresos</th>'
+                +'<th style="padding:8px 10px;text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;">Diferencia</th>'
                 +'</tr></thead><tbody>'
                 +resumenFechas.map(function(r){
+                    var diff = r.ingresos - r.egresos;
+                    var diffColor = diff >= 0 ? '#34d399' : '#f87171';
                     return '<tr style="border-bottom:1px solid #0f172a;">'
                         +'<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#facc15;">'+Utils.escHtml(r.fecha)+'</td>'
                         +'<td style="padding:8px 10px;font-size:11px;font-weight:900;color:#34d399;font-family:monospace;text-align:right;">$'+Utils.fmt(r.ingresos)+'</td>'
                         +'<td style="padding:8px 10px;font-size:11px;font-weight:900;color:#f87171;font-family:monospace;text-align:right;">$'+Utils.fmt(r.egresos)+'</td>'
+                        +'<td style="padding:8px 10px;font-size:11px;font-weight:900;color:'+diffColor+';font-family:monospace;text-align:right;">$'+Utils.fmt(Math.abs(diff))+'</td>'
                         +'</tr>';
                 }).join('')
                 +'</tbody></table></div></div>';
@@ -25899,7 +25951,7 @@ function calcularCajaEsperada() {
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
                 if (Array.isArray(c.inventario)      && c.inventario.length)      { _sheetProductos = c.inventario; indexarProductos(); }
-                if (Array.isArray(c.ventas)          && c.ventas.length)          { _sheetVentas = c.ventas; historial = c.ventas; }
+                if (Array.isArray(c.ventas)          && c.ventas.length)          { _sheetVentas = c.ventas; window._sheetVentas = _sheetVentas; historial = c.ventas; }
                 if (Array.isArray(c.pagoVentas)      && c.pagoVentas.length)      { _pagoVentasSheet = c.pagoVentas; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
                 return true;
@@ -27188,7 +27240,7 @@ function verDetalleProveedor(tipo, id){
                 const ef = Number(r.efectivo||r.pagoEfectivo||0) + pagado;
                 const tot = Number(r.total||r.pagoTotal||0);
                 const cr = Math.max(0, tot - ef);
-                rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PR??STAMO', prodFotoKey:'', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: false });
+                rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PRESTAMO', prodFotoKey:'PRESTAMO', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: false });
             });
 
             // ↗↗ Pre-calcular PAGO EGR NEGOCIO ↗↗
@@ -27207,7 +27259,7 @@ function verDetalleProveedor(tipo, id){
                 const ef = Number(r.efectivo||r.pagoEfectivo||0) + pagado;
                 const tot = Number(r.total||r.pagoTotal||0);
                 const cr = Math.max(0, tot - ef);
-                rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PR??STAMO', prodFotoKey:'', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: true });
+                rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PRESTAMO', prodFotoKey:'PRESTAMO', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: true });
             });
 
             // ↗↗ PAGO VENTAS ↗↗
