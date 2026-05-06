@@ -103,6 +103,7 @@ img, video { max-width: 100%; height: auto; }
 .h-6 { height: 1.5rem; }
 .h-7 { height: 1.75rem; }
 .h-8 { height: 2rem; }
+.h-9 { height: 2.25rem; }
 .h-10 { height: 2.5rem; }
 .h-12 { height: 3rem; }
 .h-20 { height: 5rem; }
@@ -125,6 +126,7 @@ img, video { max-width: 100%; height: auto; }
 .w-6 { width: 1.5rem; }
 .w-7 { width: 1.75rem; }
 .w-8 { width: 2rem; }
+.w-9 { width: 2.25rem; }
 .w-10 { width: 2.5rem; }
 .w-12 { width: 3rem; }
 .w-20 { width: 5rem; }
@@ -401,16 +403,22 @@ img, video { max-width: 100%; height: auto; }
             #colKpisDia { order: 0; }
             #colVentasRecientes { order: 0; }
         }
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            .md\:col-span-2 { grid-column: span 2 / span 2 !important; }
+        }
+        .natanael-logo-desktop { display: block; }
+        .natanael-logo-mobile { display: none; }
+        @media (max-width: 1023px) {
+            .natanael-logo-desktop { display: none !important; }
+            .natanael-logo-mobile { display: block !important; }
+        }
+        @media (min-width: 1024px) {
+            .natanael-logo-desktop { display: block !important; }
+            .natanael-logo-mobile { display: none !important; }
+        }
     </style>
-    <!-- CDN como fallback adicional cuando hay internet -->
-    <script>
-    // Cargar Tailwind CDN solo si hay internet (mejora visual en desktop)
-    if (navigator.onLine) {
-        var s = document.createElement('script');
-        s.src = 'https://cdn.tailwindcss.com';
-        document.head.appendChild(s);
-    }
-    </script><script src="https://cdn.tailwindcss.com"></script>
+    <!-- CSS de Tailwind ya esta inline para evitar cargar CDN duplicado -->
     <script src="https://unpkg.com/lucide@latest" onerror="window.lucide={createIcons:function(){}}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -577,8 +585,8 @@ z-index:999999999;
     <!-- Sidebar Lateral -->
     <aside class="w-full md:w-24 lg:w-64 bg-[#020617] border-b md:border-b-0 md:border-r border-slate-800 flex-shrink-0" style="display:flex;flex-direction:row;align-items:center;padding:8px 12px;gap:6px;overflow-x:auto;position:sticky;top:0;z-index:50;flex-wrap:nowrap;" id="mainSidebar">
         <div class="hidden md:flex flex-col items-center lg:items-start gap-2" style="flex-shrink:0;">
-            <img src="./almacen_natanael_512x512.png" alt="Almacen Natanael" style="width:120px;height:120px;object-fit:contain;border-radius:12px;" class="hidden lg:block natanael-logo-img">
-            <img src="./almacen_natanael_512x512.png" alt="Almacen Natanael" style="width:48px;height:48px;object-fit:contain;border-radius:8px;" class="block lg:hidden natanael-logo-img">
+            <img src="./almacen_natanael_512x512.png" alt="Almacen Natanael" style="width:120px;height:120px;object-fit:contain;border-radius:12px;" class="natanael-logo-img natanael-logo-desktop">
+            <img src="./almacen_natanael_512x512.png" alt="Almacen Natanael" style="width:48px;height:48px;object-fit:contain;border-radius:8px;" class="natanael-logo-img natanael-logo-mobile">
             <!-- btnGuardar oculto para compatibilidad JS -->
             <button id="btnGuardar" onclick="guardarYDescargar()" style="display:none;"></button>
         </div>
@@ -2361,7 +2369,7 @@ GUARDAR PRODUCTO
                 <!-- Tarjeta visual Visa -->
                 <div style="background:
                         linear-gradient(135deg,rgba(15,23,42,0.18),rgba(15,23,42,0.1)),
-                        url('assets/cards/visa_gold_card.avif') center/cover no-repeat;
+                        url('./assets/cards/visa_gold_card.avif') center/cover no-repeat;
                         border-radius:20px;padding:22px;position:relative;overflow:hidden;min-height:160px;
                         box-shadow:0 20px 60px rgba(15,23,42,0.35);border:1px solid rgba(250,204,21,0.25);">
                     <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(15,23,42,0.18),rgba(15,23,42,0.04));"></div>
@@ -2638,7 +2646,7 @@ GUARDAR PRODUCTO
             <div class="glass-card rounded-[2rem] p-5 border border-emerald-500/30 hidden" style="display:none!important;background:linear-gradient(135deg,#042f1e,#064e3b,#065f46);">
                 <div class="flex flex-wrap gap-4 items-center justify-between">
                     <div style="flex-shrink:0;position:relative;width:220px;">
-                        <img src="assets/images/billete_1000.jpg" alt="Billete 1000 pesos" style="width:220px;border-radius:10px;filter:drop-shadow(0 4px 20px rgba(16,185,129,0.5));display:block;">
+                        <img src="./assets/images/billete_1000.jpg" alt="Billete 1000 pesos" style="width:220px;border-radius:10px;filter:drop-shadow(0 4px 20px rgba(16,185,129,0.5));display:block;">
                         <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);border-radius:8px;padding:3px 12px;text-align:center;white-space:nowrap;">
                             <span id="efHeroBillete" style="font-size:15px;font-weight:900;color:#ffffff;font-family:monospace;">$0</span>
                         </div>
@@ -4662,19 +4670,46 @@ Agregar
         const DB = {
 
     getInventario() {
-        return _sheetInventario || [];
+        try {
+            const raw = localStorage.getItem('natanael_inventario_v1');
+            if (raw) {
+                const datos = JSON.parse(raw);
+                if (Array.isArray(datos)) return datos;
+            }
+        } catch(e) {}
+        return _sheetProductos || [];
     },
 
     getHistorial() {
-        return _sheetVentas || [];
+        try {
+            const raw = localStorage.getItem('natanael_historial_v1');
+            if (raw) {
+                const datos = JSON.parse(raw);
+                if (Array.isArray(datos)) return datos;
+            }
+        } catch(e) {}
+        return (_sheetVentas && _sheetVentas.length ? _sheetVentas : historial) || [];
     },
 
     saveInventario() {
-        // ya no guarda en localStorage
+        try {
+            localStorage.setItem('natanael_inventario_v1', JSON.stringify(_sheetProductos || []));
+        } catch(e) {}
         return true;
     },
 
     saveHistorial() {
+        try {
+            const ventas = (historial && historial.length ? historial : _sheetVentas) || [];
+            localStorage.setItem('natanael_historial_v1', JSON.stringify(ventas));
+        } catch(e) {}
+        return true;
+    },
+
+    savePagoVentas() {
+        try {
+            localStorage.setItem('natanael_pago_ventas_v1', JSON.stringify(_pagoVentasSheet || []));
+        } catch(e) {}
         return true;
     }
 
@@ -6512,7 +6547,6 @@ _sheetEgresosNegocio.forEach(e => {
         // Al recuperar conexión se reenvían automáticamente.
         const _COLA_KEY = 'natanael_cola_pendientes_v1';
         const _TIPOS_SIN_LOCALSTORAGE = new Set([
-            'venta','eliminar_venta','pago_venta',
             'compra','eliminar_compra','pago_compra',
             'ingreso','pago_ingreso',
             'egreso','pago_egreso',
@@ -6797,6 +6831,7 @@ _sheetEgresosNegocio.forEach(e => {
             log('=== Esperá 3-5 seg los resultados ===', '#fbbf24');
         }
         let _syncInterval    = null;
+        let _syncSilenciosoEnCurso = false;
         let _sheetVentas     = []; // ventas traídas del sheet (no locales)
         let _sheetVentasRaw  = []; // filas crudas de la hoja VENTAS
         let _sheetCompras    = []; // compras traídas del sheet (fuente de verdad)
@@ -6983,7 +7018,7 @@ _sheetEgresosNegocio.forEach(e => {
             } finally {
                 if (btn) { btn.textContent = '📦'; btn.style.background = '#10b981'; btn.disabled = false; }
                 // Reanudar sync automático
-                _syncInterval = setInterval(() => sincronizarSheetsSilencioso(), 2000);
+                _syncInterval = setInterval(() => sincronizarSheetsSilencioso(), 30000);
             }
         };
 
@@ -6992,12 +7027,14 @@ _sheetEgresosNegocio.forEach(e => {
             const p = sincronizarSheets(); // sync inicial al cargar
             // Sync automático cada 5 segundos en segundo plano (Etapa 1 silenciosa)
             if (_syncInterval) clearInterval(_syncInterval);
-            _syncInterval = setInterval(() => sincronizarSheetsSilencioso(), 2000);
+            _syncInterval = setInterval(() => sincronizarSheetsSilencioso(), 30000);
             return p;
         }
 
         // Sync silencioso cada 5 segundos ? llama sincronizarSheets en modo silencioso
         async function sincronizarSheetsSilencioso() {
+            if (_syncSilenciosoEnCurso || document.hidden) return;
+            _syncSilenciosoEnCurso = true;
             try {
                 // Primero intentar vaciar cola de pendientes
                 await _colaFlush();
@@ -7008,6 +7045,7 @@ _sheetEgresosNegocio.forEach(e => {
                     renderStockProveedor();
                 }
             } catch(e) { /* silencioso */ }
+            finally { _syncSilenciosoEnCurso = false; }
         }
 
         // Todas las ventas: locales + sheet sin duplicar
@@ -7400,6 +7438,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     _sheetProductos = nuevaLista;
     console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
     indexarProductos();
+    if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
     recalcularTodosLosStocks();
     revisarVencimientos();
     if (typeof calcularWidgetGastoFamiliar === "function") calcularWidgetGastoFamiliar();
@@ -7501,6 +7540,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
 })).filter(p => p.monto > 0);
 
 window._pagoVentasSheet = _pagoVentasSheet;
+                    if (typeof DB !== 'undefined' && DB.savePagoVentas) DB.savePagoVentas();
                     _log('pagoVentas CARGADOS: ' + _pagoVentasSheet.length + ' registros', '#10b981');
                     if (_pagoVentasSheet.length > 0) {
                         _log('  Primer pago: idCliente=' + _pagoVentasSheet[0].idCliente + ' | idVenta=' + _pagoVentasSheet[0].idVenta + ' | monto=' + _pagoVentasSheet[0].monto, '#94a3b8');
@@ -8014,6 +8054,7 @@ if (indicator) indicator.classList.remove('hidden');
                         fotoProducto:String(r['IMAGEN DEL PRODUCTO'] || r['IMAGEN'] || '').trim()
                     })).filter(p => p.monto > 0);
                     window._pagoVentasSheet = _pagoVentasSheet;
+                    if (typeof DB !== 'undefined' && DB.savePagoVentas) DB.savePagoVentas();
                     console.log('[Sec] pagoVentas cargados:', _pagoVentasSheet.length);
                     renderClientes();
                     if (clienteDetalleId) {
@@ -8106,6 +8147,8 @@ if (indicator) indicator.classList.remove('hidden');
     });
 
     // Si la tabla de stock por proveedor está visible, refrescarla con los nuevos datos
+    if (typeof DB !== 'undefined' && DB.saveHistorial) DB.saveHistorial();
+    if (typeof _guardarCache === 'function') _guardarCache();
     const _provSel = document.getElementById('filtroProveedorStat')?.value || '';
     if (_provSel) setTimeout(() => renderStockProveedor(), 0);
 
@@ -11816,11 +11859,13 @@ console.log("FILTRADAS:", filtradas.length);
                             tickets: []
                         };
                     }
+                    const efectivoFila = parseSheetNum(val(row, ['PAGO EFECTIVO','Pago efectivo','Pago Efectivo']) || 0);
                     const creditoFilaRaw = val(row, ['PAGO CREDITO','Pago credito','Pago Credito']);
                     const creditoFila = parseSheetNum(creditoFilaRaw || 0);
-                    if (creditoFila <= 0) return;
-                    grupos[key].total += creditoFila;
+                    if (creditoFila <= 0 && efectivoFila <= 0) return;
+                    grupos[key].total += creditoFila + efectivoFila;
                     grupos[key].credito += creditoFila;
+                    grupos[key].pagado += efectivoFila;
                     const ticketVal = String(val(row, ['TICKET','Ticket']) || '').trim();
                     if (ticketVal) ticketVal.split('|').map(t => t.trim()).filter(Boolean).forEach(t => {
                         if (!grupos[key].tickets.includes(t)) grupos[key].tickets.push(t);
@@ -11830,16 +11875,18 @@ console.log("FILTRADAS:", filtradas.length);
                         nombre,
                         cantidad: parseSheetNum(val(row, ['CANTIDAD','Cantidad']) || 0) || 1,
                         costo: parseSheetNum(val(row, ['PRECIO DE COSTO','Precio de Costo','Precio Costo']) || 0),
-                        pagoTotal: creditoFila,
-                        subtotal: creditoFila,
+                        pagoTotal: creditoFila + efectivoFila,
+                        subtotal: creditoFila + efectivoFila,
+                        pagoEfectivo: efectivoFila,
+                        pagoCredito: creditoFila,
                         formaPago: fp
                     });
                 });
                 return Object.values(grupos).map(r => {
                     const idCompra = String(r.idSheet || r.id || '').trim();
                     const pagadoReal = idCompra ? Math.max(0, pagosComprasTarjetaMap[idCompra] || 0) : 0;
-                    r.pagado = Math.min(r.total, pagadoReal);
-                    r.credito = Math.max(0, r.total - r.pagado);
+                    r.pagado = Math.min(r.total, (r.pagado || 0) + pagadoReal);
+                    r.credito = Math.max(0, r.credito - pagadoReal);
                     return r;
                 }).filter(r => r.total > 0);
             };
@@ -11852,7 +11899,7 @@ console.log("FILTRADAS:", filtradas.length);
                 if (comprasRaw) {
                     comprasRaw.forEach(reg => {
                         if (_tcFiltro === 'credito' && reg.credito <= 0) return;
-                        if (_tcFiltro === 'pagado'  && reg.pagado < reg.total) return;
+                        if (_tcFiltro === 'pagado'  && reg.pagado <= 0) return;
                         compras.push(reg);
                     });
                 } else {
@@ -11871,7 +11918,7 @@ console.log("FILTRADAS:", filtradas.length);
                             tickets: c.tickets && c.tickets.length > 0 ? c.tickets : (c.ticket ? [c.ticket] : [])
                         };
                         if (_tcFiltro === 'credito' && reg.credito <= 0) return;
-                        if (_tcFiltro === 'pagado'  && reg.pagado < reg.total) return;
+                        if (_tcFiltro === 'pagado'  && reg.pagado <= 0) return;
                         compras.push(reg);
                     });
                 }
@@ -11957,7 +12004,10 @@ console.log("FILTRADAS:", filtradas.length);
             function buildSeccion(lista, color, titulo) {
                 if (lista.length === 0) return `<div style="background:#0f172a;border:1px solid #1e293b;border-top:3px solid ${color};border-radius:14px;padding:30px;text-align:center;color:#334155;font-size:10px;font-weight:900;text-transform:uppercase;">Sin registros</div>`;
 
-                const tot  = lista.reduce((s,r)=>s+r.total,0);
+                const valorMostrar = r => _tcFiltro === 'pagado'
+                    ? (Number(r.pagado) || 0)
+                    : (_tcFiltro === 'credito' ? (Number(r.credito) || 0) : (Number(r.total) || 0));
+                const tot  = lista.reduce((s,r)=>s+valorMostrar(r),0);
                 const cred = lista.reduce((s,r)=>s+r.credito,0);
                 const normalizarImgProveedorTarjeta = function(raw) {
                     const txt = String(raw || '').trim();
@@ -12027,7 +12077,7 @@ console.log("FILTRADAS:", filtradas.length);
                     </div>`;
 
                 Object.values(porProveedor).forEach(grupo => {
-                    const totalProv = grupo.registros.reduce((s,r)=>s+r.total,0);
+                    const totalProv = grupo.registros.reduce((s,r)=>s+valorMostrar(r),0);
                     const credProv  = grupo.registros.reduce((s,r)=>s+r.credito,0);
                     const provThumb = getProveedorThumbTarjeta(grupo.nombre);
 
@@ -12075,7 +12125,10 @@ console.log("FILTRADAS:", filtradas.length);
                             String(r.fecha || '').startsWith('21/04/2026 16:00') &&
                             Math.abs((Number(r.credito) || 0) - 435333.3) < 1
                         ) ? 15 : 1;
-                        const montoFila = cuotasTarjeta > 1 ? (r.credito / cuotasTarjeta) : r.credito;
+                        const montoBaseFila = _tcFiltro === 'pagado'
+                            ? r.pagado
+                            : (_tcFiltro === 'credito' ? r.credito : r.total);
+                        const montoFila = cuotasTarjeta > 1 ? (montoBaseFila / cuotasTarjeta) : montoBaseFila;
 
                         h += `<div style="background:#0f172a;border-bottom:1px solid #1e293b22;">
                             <div onclick="(function(){var b=document.getElementById('${uid}');var a=document.getElementById('${uid}_a');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';if(window._tcSetAbierto)window._tcSetAbierto('fechas','${fechaKey}',!open);})()"
@@ -12921,7 +12974,7 @@ console.log("FILTRADAS:", filtradas.length);
             const persona = _coordVal(row, ['PERSONA','CLIENTE','PROVEEDOR','A QUIEN','QUIEN','DESTINATARIO']);
             const tipo = _coordVal(row, ['TIPO','CATEGORIA','CATEGORÍA','CLASE','GRUPO']);
             const estado = _coordVal(row, ['ESTADO','STATUS','SITUACION','SITUACIÓN']);
-            const fecha = _coordVal(row, ['FECHA','VENCIMIENTO','FECHA DE PAGO','FECHA PAGO','HASTA']);
+            const fecha = _coordVal(row, ['FECHA DE PAGO','FECHA PAGO','FECHA','VENCIMIENTO','HASTA']);
             const monto = parseSheetNum(_coordVal(row, ['MONTO','IMPORTE','TOTAL','VALOR','PAGO TOTAL','SALDO']));
             const forma = _coordVal(row, ['FORMA DE PAGO','FORMA PAGO','MEDIO','METODO','MÉTODO']);
             const nota = _coordVal(row, ['NOTA','OBSERVACION','OBSERVACIÓN','COMENTARIO']);
@@ -12931,6 +12984,7 @@ console.log("FILTRADAS:", filtradas.length);
         function renderCoordinacionPagos() {
             const wrap = document.getElementById('coordPagosContenido') || document.getElementById('efCoordPagos');
             if (!wrap) return;
+            const coordFechaPago = r => String(r.fechaPago || r['FECHA DE PAGO'] || r.fecha || '').trim();
             const egresos = [
                 { concepto:'TARJETA VISA', monto:470513.22, fecha:'4/5/2026' },
                 { concepto:'DIEGO DEUDA', monto:200000, fecha:'8/5/2026' },
@@ -12956,10 +13010,11 @@ console.log("FILTRADAS:", filtradas.length);
             const balance = totalIngresos - totalEgresos;
             const fechas = {};
             [...egresos.map(r => ({...r, tipo:'egreso'})), ...ingresos.map(r => ({...r, tipo:'ingreso'}))].forEach(r => {
-                const k = r.fecha || 'Sin fecha';
-                if (!fechas[k]) fechas[k] = { fecha: k, ingresos: 0, egresos: 0, fechaNum: r.fechaNum || 0 };
+                const fechaPago = coordFechaPago(r);
+                const k = fechaPago || 'Sin fecha';
+                if (!fechas[k]) fechas[k] = { fecha: k, ingresos: 0, egresos: 0, fechaNum: _coordFechaNum(fechaPago) || r.fechaNum || 0 };
                 fechas[k][r.tipo === 'ingreso' ? 'ingresos' : 'egresos'] += Number(r.monto) || 0;
-                if (!fechas[k].fechaNum && r.fechaNum) fechas[k].fechaNum = r.fechaNum;
+                if (!fechas[k].fechaNum && (fechaPago || r.fechaNum)) fechas[k].fechaNum = _coordFechaNum(fechaPago) || r.fechaNum;
             });
             const resumenFechas = Object.values(fechas).sort((a,b)=>(a.fechaNum||99999999999999)-(b.fechaNum||99999999999999));
             const card = (label, val, color) => '<div style="padding:12px;border-radius:14px;background:#0f172a;border:1px solid '+color+'44;"><div style="font-size:9px;font-weight:900;color:'+color+';text-transform:uppercase;">'+label+'</div><div style="font-size:20px;font-weight:900;color:#f8fafc;font-family:monospace;">$'+Utils.fmt(Math.abs(val))+'</div></div>';
@@ -12967,7 +13022,7 @@ console.log("FILTRADAS:", filtradas.length);
                 return '<tr style="border-bottom:1px solid #0f172a;">'
                     + '<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#e2e8f0;text-transform:uppercase;">'+Utils.escHtml(r.concepto || '-')+'</td>'
                     + '<td style="padding:8px 10px;font-size:11px;font-weight:900;color:'+color+';font-family:monospace;text-align:right;">$'+Utils.fmt(r.monto || 0)+'</td>'
-                    + '<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#facc15;text-align:center;white-space:nowrap;">'+Utils.escHtml(r.fecha || '-')+'</td>'
+                    + '<td style="padding:8px 10px;font-size:10px;font-weight:900;color:#facc15;text-align:center;white-space:nowrap;">'+Utils.escHtml(coordFechaPago(r) || '-')+'</td>'
                     + '</tr>';
             };
             const tabla = (titulo, rows, color) => '<div style="overflow:hidden;border-radius:2px;border:1px solid #020617;background:#0b1220;">'
@@ -14600,7 +14655,7 @@ console.log("FILTRADAS:", filtradas.length);
             _saveRegChecks();
         }
 
-        window._PRESTAMO_IMG_GLOBAL = 'assets/images/prestamo_default.png';
+        window._PRESTAMO_IMG_GLOBAL = './assets/images/prestamo_default.png';
 
         // ↗↗ KPI CAJA MINI (Panel de Control) ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         function _fmtFechaCajaSheet(fechaBase) {
@@ -18335,7 +18390,7 @@ clienteDetalleId = null;
                     }
                     procesados++;
                     // Delay entre cada pago para no saturar el sheet
-                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 800));
+                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 50));
                 } catch(err) {
                     console.error('[PAGO RAPIDO] error en pago', procesados + 1, ':', err);
                 }
@@ -18463,7 +18518,7 @@ clienteDetalleId = null;
                     }
                     await fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'pago_compra', id: idPago, IDPAGOCOMPRAS: idPago, IDCOMPRAS: p.idCompra, fecha: fechaFmt, proveedor: p.proveedor, formaPago: 'EFECTIVO', monto: p.pagado, fechaOriginal: p.fecha }) });
                     procesados++;
-                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 800));
+                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 50));
                 } catch(err) {
                     console.error('[PAGO RAPIDO PROV] error en pago', procesados + 1, ':', err);
                 }
@@ -18607,7 +18662,7 @@ clienteDetalleId = null;
                         fechaOriginal: p.fecha
                     })});
                     procesados++;
-                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 800));
+                    if (procesados < pagos.length) await new Promise(r => setTimeout(r, 50));
                 } catch(err) {
                     console.error('[PAGO RAPIDO EGRESO] error en pago', procesados + 1, ':', err);
                 }
@@ -24005,6 +24060,8 @@ renderIngresos();
                 fechaOrig: r.fecha || ''
             });
             window._pagoVentasSheet = _pagoVentasSheet;
+            if (typeof DB !== 'undefined' && DB.savePagoVentas) DB.savePagoVentas();
+            if (typeof _guardarCache === 'function') _guardarCache();
             toggleModal('modalPagoVenta', false);
             _liberarPago('btnConfPagoVenta');
             mostrarToast(`✅ Pago de $${Utils.fmt(monto)} registrado`);
@@ -25398,8 +25455,6 @@ function calcularCajaEsperada() {
         function _limpiarLocalStorageNoPermitido() {
             try {
                 [
-                    'natanael_historial_v1',
-                    'natanael_pago_ventas_v1',
                     'natanael_ingneg_v1',
                     'natanael_pago_ingneg_v1',
                     'natanael_egrneg_v1',
@@ -25420,6 +25475,8 @@ function calcularCajaEsperada() {
                 const snapshot = {
                     ts:                  Date.now(),
                     inventario:          _sheetProductos          || [],
+                    ventas:              _sheetVentas             || historial || [],
+                    pagoVentas:          _pagoVentasSheet         || [],
                     clientes:            typeof clientesDB !== 'undefined' ? clientesDB : [],
                 };
                 localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
@@ -25451,7 +25508,24 @@ function calcularCajaEsperada() {
                     }
                 }
 
-                ['ventas','compras','ingresos','egresos','ingresosNegocio','egresosNegocio','pagoVentas','pagoIngresosNegocio','pagoCompras','pagoIngresos','pagoEgresos','pagoEgresosNegocio','pagoIngNeg','pagoEgrNeg','supercatsIng','supercatsEgr','generosIng','generosEgr'].forEach(function(k) {
+                ['ventas','pagoVentas'].forEach(function(k) {
+                    if (!Array.isArray(c[k])) return;
+                    const vistos = new Set();
+                    const limpio = [];
+                    for (let i = c[k].length - 1; i >= 0; i--) {
+                        const r = c[k][i] || {};
+                        const uid = String(r.idSheet || r.IDVENTAS || r.IDPAGODEVENTAS || r.id || '').trim();
+                        if (uid && vistos.has(uid)) continue;
+                        if (uid) vistos.add(uid);
+                        limpio.unshift(r);
+                    }
+                    if (limpio.length !== c[k].length) {
+                        console.log('[Cache] ' + k + ' saneado: ' + c[k].length + ' -> ' + limpio.length);
+                        c[k] = limpio; dirty = true;
+                    }
+                });
+
+                ['compras','ingresos','egresos','ingresosNegocio','egresosNegocio','pagoIngresosNegocio','pagoCompras','pagoIngresos','pagoEgresos','pagoEgresosNegocio','pagoIngNeg','pagoEgrNeg','supercatsIng','supercatsEgr','generosIng','generosEgr'].forEach(function(k) {
                     if (Object.prototype.hasOwnProperty.call(c, k)) { delete c[k]; dirty = true; }
                 });
 
@@ -25490,6 +25564,8 @@ function calcularCajaEsperada() {
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
                 if (Array.isArray(c.inventario)      && c.inventario.length)      { _sheetProductos = c.inventario; indexarProductos(); }
+                if (Array.isArray(c.ventas)          && c.ventas.length)          { _sheetVentas = c.ventas; historial = c.ventas; }
+                if (Array.isArray(c.pagoVentas)      && c.pagoVentas.length)      { _pagoVentasSheet = c.pagoVentas; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
                 return true;
             } catch(e) { console.warn('[Cache] Error al cargar:', e.message); return false; }
@@ -29769,20 +29845,15 @@ function lcImgGuardar(item, url, subidaOk) {
 }
 
 </script>
-<script src="./logo-data.js"></script>
 <script>
 function aplicarLogoNatanaelFallback() {
-    if (!window.__natanaelLogoData) return;
     document.querySelectorAll('.natanael-logo-img, img[alt="Almacen Natanael"]').forEach(function(img) {
-        var roto = img.complete && (!img.naturalWidth || img.naturalWidth < 2);
         img.onerror = function() {
-            if (window.__natanaelLogoData && img.src !== window.__natanaelLogoData) {
-                img.src = window.__natanaelLogoData;
+            if (!img.dataset.logoFallback && !img.src.includes('almacen_natanael_2026_logo.png')) {
+                img.dataset.logoFallback = '1';
+                img.src = './almacen_natanael_2026_logo.png';
             }
         };
-        if (roto) {
-            img.src = window.__natanaelLogoData;
-        }
     });
 }
 aplicarLogoNatanaelFallback();
