@@ -7737,6 +7737,7 @@ window._catsIngSheet = _catsIngSheet;
                             detalle:    String(row['DETALLE'] || row['Detalle'] || '').trim(),
                             estado:     String(row['ESTADO'] || row['Estado'] || '').trim(),
                             formaPago:  String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim(),
+                            fechaPago:  String(row['FECHA DE PAGO'] || row['Fecha de Pago'] || row['FECHA_DE_PAGO'] || '').trim(),
                             total:      pagoTotal,
                             efectivo:   parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']),
                             credito:    parseSheetNum(row['PAGO CREDITO'] || row['Pago Credito'] || row['Pago Crédito']),
@@ -7826,6 +7827,7 @@ window._catsEgrSheet = _catsEgrSheet;
                             detalle:    String(row['DETALLE'] || row['Detalle'] || '').trim(),
                             estado:     String(row['ESTADO'] || row['Estado'] || '').trim(),
                             formaPago:  String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim(),
+                            fechaPago:  String(row['FECHA DE PAGO'] || row['Fecha de Pago'] || row['FECHA_DE_PAGO'] || '').trim(),
                             total:      pagoTotal,
                             efectivo:   parseSheetNum(row['PAGO EFECTIVO'] || row['Pago Efectivo']),
                             credito:    parseSheetNum(row['PAGO CREDITO'] || row['Pago Credito'] || row['Pago Crédito']),
@@ -8028,6 +8030,7 @@ if (indicator) indicator.classList.remove('hidden');
                 // Egresos
                 if (Array.isArray(data.egresos||data.gastos)) {
                     const src = data.egresos||data.gastos;
+                    window._sheetEgresosRaw = src || [];
                     let ag=0,ac=0;
                     const normE = s=>String(s||'').trim().toUpperCase();
                     src.forEach((row, rowIdx) => {
@@ -8045,6 +8048,7 @@ if (indicator) indicator.classList.remove('hidden');
                             detalle:String(row['DETALLE']||row['Detalle']||'').trim(),
                             estado:String(row['ESTADO']||'').trim(),
                             formaPago:String(row['FORMA DE PAGO']||'').trim(),
+                            fechaPago:String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim(),
                             total:pagoTotal,efectivo:parseSheetNum(row['PAGO EFECTIVO']||0),
                             credito:parseSheetNum(row['PAGO CREDITO']||0),
                             ticket:String(row['TICKET']||'').trim()||null,
@@ -8096,8 +8100,8 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
                 if (Array.isArray(data.pagoIngresos))         { _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['ID_INGRESOS']||r['Id_Ingresos']||r['NUMERO DE INGRESOS']||r['NUMERO_DE_INGRESOS']||r['numeroIngreso']||'').trim(),ID_INGRESOS:String(r['ID_INGRESOS']||r['Id_Ingresos']||r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()})); window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(data.pagoEgresos))          { _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['ID_GASTOS']||r['Id_Gastos']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),ID_GASTOS:String(r['ID_GASTOS']||r['Id_Gastos']||r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim(),proveedor:String(r['SUPERCATEGORIA']||r['Supercategoria']||r['PROVEEDOR']||r['Proveedor']||'').trim(),categoria:String(r['CATEGORIA']||r['Categoria']||'').trim()})); window._sheetPagoEgresos = _sheetPagoEgresos; }
-                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim()})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; }
-                if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim()})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; window._sheetPagoEgrNeg = _sheetPagoEgrNeg; }
+                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; }
+                if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({IDPAGOEGRESOSNEGOCIO:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),IDEGRESOSNEGOCIO:String(r['IDEGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim(),fromSheet:true})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; window._sheetPagoEgrNeg = _sheetPagoEgrNeg; }
                 // Ingresos Negocio / Egresos Negocio
                 if (typeof window.syncIngEgrNeg === 'function') {
                     window.syncIngEgrNeg(data.ingresosNegocio, _sheetIngresosNegocio, saveIngresosNeg, 'ingresosNegocio', _supercatsIngNegSheet, _catsIngNegSheet);
@@ -13073,8 +13077,8 @@ console.log("FILTRADAS:", filtradas.length);
             (window._sheetCompras || []).forEach(function(c) {
                 var id = String(c.idSheet || c.id || '').trim();
                 var prov = String(c.proveedor || c.concepto || '-').trim().toUpperCase();
-                // Deuda real: campo credito si existe, si no pagoTotal
-                var deudaTotal = parseFloat(c.credito || c.pagoCredito || c.total || c.pagoTotal || 0);
+                // Deuda real: solo credito. Si fue PAGO EFECTIVO, no debe aparecer como deuda.
+                var deudaTotal = parseFloat(c.credito || c.pagoCredito || 0);
                 var yaPagado = id ? (pagoComprasPagadoMap[id] || 0) : 0;
                 var saldo = deudaTotal - yaPagado;
                 if (saldo <= 0.009) return; // ya saldada → no mostrar
@@ -13101,7 +13105,7 @@ console.log("FILTRADAS:", filtradas.length);
                 var fpRaw = String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim();
                 if (!fpRaw) return;
                 var fp = fmtF(fpRaw);
-                var montoTotal = parseSheetNum(row['PAGO TOTAL']||row['Pago Total']||0);
+                var montoTotal = parseSheetNum(row['PAGO CREDITO']||row['Pago Credito']||row['Pago credito']||row['Pago Crédito']||0);
                 var yaPagado = idRow ? (pagoComprasPagadoMap[idRow] || 0) : 0;
                 var saldo = montoTotal - yaPagado;
                 if (!fp || saldo <= 0.009) return;
@@ -13133,12 +13137,12 @@ console.log("FILTRADAS:", filtradas.length);
             var rawEg = Array.isArray(window._sheetEgresosRaw) ? window._sheetEgresosRaw : [];
             var egFPMap = {};
             rawEg.forEach(function(row) {
-                var id = String(row['Id_Gastos']||row['ID_GASTOS']||row['IDEGRESOS']||'').trim();
-                var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim());
+                var id = String(row['Id_Gastos']||row['ID_GASTOS']||row['IDEGRESOS']||row['NUMERO DE EGRESOS']||row['NUMERO_DE_EGRESOS']||'').trim();
+                var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim());
                 if (id && fp) egFPMap[id] = fp;
             });
             (window._sheetEgresos || []).forEach(function(e) {
-                var id = String(e.idSheet || '').trim();
+                var id = String(e.idSheet || e.IDEGRESOS || e.ID_GASTOS || e.id || '').trim();
                 var cat = String(e.concepto||e.categoria||e.proveedor||'-').trim().toUpperCase();
                 var montoTotal = Number(e.total || 0);
                 if (!montoTotal) return;
@@ -24735,6 +24739,46 @@ console.log("FUNCION TERMINADA"); }
 
     return id;
 }
+        function _pagosIngNegUnicosPorPrestamo(idSheet) {
+            const idRef = String(idSheet || '').trim();
+            const idsVistos = new Set();
+            const firmasVistas = new Set();
+            const montoVistos = new Set();
+            let pagos = (_sheetPagoIngNeg || []).filter(function(p) {
+                const idPrestamo = String(p.IDINGRESOSNEGOCIO || p.idIngresoNeg || '').trim();
+                return !!idRef && idPrestamo === idRef;
+            });
+            const haySheet = pagos.some(function(p) { return p.fromSheet || p.IDPAGOSINGRESOSNEGOCIO || p.IDPAGOINGRESOSNEGOCIO; });
+            if (haySheet) {
+                pagos = pagos.filter(function(p) { return p.fromSheet || p.IDPAGOSINGRESOSNEGOCIO || p.IDPAGOINGRESOSNEGOCIO; });
+            }
+            return pagos.filter(function(p) {
+                const idPrestamo = String(p.IDINGRESOSNEGOCIO || p.idIngresoNeg || '').trim();
+                const idPago = String(p.IDPAGOSINGRESOSNEGOCIO || p.IDPAGOINGRESOSNEGOCIO || p.id || '').trim();
+                const firma = [
+                    idPrestamo,
+                    String(p.FECHA || p.fecha || p.fechaISO || '').trim(),
+                    String(p['FECHA ORIGINAL'] || p.fechaOriginal || '').trim(),
+                    String(p.MONTO || p.monto || '').trim(),
+                    String(p.CLIENTE || p.cliente || '').trim().toUpperCase()
+                ].join('|');
+                const montoKey = [
+                    idPrestamo,
+                    String(parseSheetNum(p.MONTO || p.monto || 0))
+                ].join('|');
+                if (idPago && idsVistos.has(idPago)) return false;
+                if (firmasVistas.has(firma)) return false;
+                if (montoVistos.has(montoKey)) return false;
+                if (idPago) idsVistos.add(idPago);
+                firmasVistas.add(firma);
+                montoVistos.add(montoKey);
+                return true;
+            });
+        }
+        function _sumarPagosIngNegUnicos(idSheet) {
+            return _pagosIngNegUnicosPorPrestamo(idSheet)
+                .reduce((s,p)=>s+(parseFloat(p.MONTO || p.monto)||0),0);
+        }
         function abrirPagoIngNeg(id) {
 
     console.log("CLICK PAGO ING NEG:", id);
@@ -24751,9 +24795,7 @@ console.log("FUNCION TERMINADA"); }
 
     const idSheet = _getIdSheetNN(r);
 
-    const yaPagado = _sheetPagoIngNeg
-        .filter(p => String(p.IDINGRESOSNEGOCIO) === String(idSheet))
-        .reduce((s,p)=>s+(parseFloat(p.MONTO)||0),0);
+    const yaPagado = _sumarPagosIngNegUnicos(idSheet);
 
     const saldo = (r.total||0) - yaPagado;
 
@@ -24780,7 +24822,7 @@ console.log("FUNCION TERMINADA"); }
         function actualizarSaldoPagoIngNeg() {
             const r = _sheetIngresosNegocio.find(c => c.id===_pagoIngNegId); if(!r) return;
             const idSheet = _getIdSheetNN(r);
-            const yaPagado = _sheetPagoIngNeg.filter(p=>String(p.IDINGRESOSNEGOCIO)===String(idSheet)).reduce((s,p)=>s+(parseFloat(p.MONTO)||0),0);
+            const yaPagado = _sumarPagosIngNegUnicos(idSheet);
             const monto = parseFloat(document.getElementById('inputPagoIngNegMonto').value)||0;
             document.getElementById('pagoIngNegSaldo').textContent = '$'+Utils.fmt(Math.max(0,(r.total||0)-yaPagado-monto));
         }
@@ -24844,7 +24886,7 @@ mostrarToast('✅ Pago registrado');
         
         
 
-        function _getIdSheetEN(r) {
+function _getIdSheetEN(r) {
 
     if (r.idSheet) return r.idSheet;
 
@@ -24860,6 +24902,37 @@ mostrarToast('✅ Pago registrado');
 
     return id;
 }
+        function _pagosEgrNegUnicosPorPrestamo(idSheet) {
+            const idRef = String(idSheet || '').trim();
+            const idsVistos = new Set();
+            const firmasVistas = new Set();
+            const montoVistos = new Set();
+            const todos = [...(_sheetPagoEgrNeg || []), ...(_pagoEgrNegSheet || [])];
+            return todos.filter(function(p) {
+                const idPrestamo = String(p.IDEGRESOSNEGOCIO || p.idEgresoNeg || '').trim();
+                if (!idRef || idPrestamo !== idRef) return false;
+                const idPago = String(p.IDPAGOEGRESOSNEGOCIO || p.IDPAGOSINGRESOSNEGOCIO || p.id || '').trim();
+                const monto = parseSheetNum(p.MONTO || p.monto || 0);
+                const firma = [
+                    idPrestamo,
+                    String(p.FECHA || p.fecha || p.fechaISO || '').trim(),
+                    String(p['FECHA ORIGINAL'] || p.fechaOriginal || '').trim(),
+                    String(monto)
+                ].join('|');
+                const montoKey = idPrestamo + '|' + String(monto);
+                if (idPago && idsVistos.has(idPago)) return false;
+                if (firmasVistas.has(firma)) return false;
+                if (montoVistos.has(montoKey)) return false;
+                if (idPago) idsVistos.add(idPago);
+                firmasVistas.add(firma);
+                montoVistos.add(montoKey);
+                return true;
+            });
+        }
+        function _sumarPagosEgrNegUnicos(idSheet) {
+            return _pagosEgrNegUnicosPorPrestamo(idSheet)
+                .reduce((s,p) => s + parseSheetNum(p.MONTO || p.monto || 0), 0);
+        }
         function abrirPagoEgrNeg(id) {
             console.warn('[abrirPagoEgrNeg] id recibido:', id);
             console.warn('[abrirPagoEgrNeg] _sheetEgresosNegocio total:', _sheetEgresosNegocio.length);
@@ -24880,11 +24953,7 @@ mostrarToast('✅ Pago registrado');
 _pagoEgrNegFP = 'EFECTIVO';
             const idSheet = _getIdSheetEN(r);
             const creditoTotal = parseFloat(r.credito || r.total || 0);
-            // Usar tanto DB local como sheet para calcular ya pagado
-            const todosLosPagos = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])];
-            const yaPagado = todosLosPagos
-                .filter(p => String(p.IDEGRESOSNEGOCIO||p.idEgresoNeg||'') === String(idSheet))
-                .reduce((s,p) => s + (parseFloat(p.MONTO||p.monto)||0), 0);
+            const yaPagado = _sumarPagosEgrNegUnicos(idSheet);
             const saldo = Math.max(0, creditoTotal - yaPagado);
             document.getElementById('pagoEgrNegDesc').textContent       = r.cliente||r.proveedor||'';
             document.getElementById('pagoEgrNegTotal').textContent      = '$'+Utils.fmt(creditoTotal);
@@ -24909,10 +24978,7 @@ _pagoEgrNegFP = 'EFECTIVO';
             const creditoTotal = parseFloat(r.credito || r.total || 0);
 
 
-            const todosLosPagos = [...(_sheetPagoEgrNeg||[]), ...(_pagoEgrNegSheet||[])];
-            const yaPagado = todosLosPagos
-                .filter(p => String(p.IDEGRESOSNEGOCIO||p.idEgresoNeg||'') === String(idSheet))
-                .reduce((s,p) => s+(parseFloat(p.MONTO||p.monto)||0), 0);
+            const yaPagado = _sumarPagosEgrNegUnicos(idSheet);
             const monto = parseFloat(document.getElementById('inputPagoEgrNegMonto').value)||0;
             document.getElementById('pagoEgrNegSaldo').textContent = '$'+Utils.fmt(Math.max(0, creditoTotal - yaPagado - monto));
         }
