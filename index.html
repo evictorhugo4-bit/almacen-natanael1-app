@@ -2764,6 +2764,10 @@ GUARDAR PRODUCTO
                         style="width:100%;background:#0f172a;border:2px solid #7c1d4e;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
                         <option value="">– Elegir proveedor –</option>
                     </select>
+                    <select id="filtroDepartamentoStock" onchange="renderStockProveedor()"
+                        style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
+                        <option value="">- Todos los departamentos -</option>
+                    </select>
                     <!-- Desde / Hasta -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                         <div style="display:flex;flex-direction:column;gap:3px;">
@@ -2785,7 +2789,7 @@ GUARDAR PRODUCTO
                             style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">7D</button>
                         <button onclick="setRangoProductosRapido('stock','30d')"
                             style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">30D</button>
-                        <button onclick="document.getElementById('provStatDesde').value='';document.getElementById('provStatHasta').value='';renderStockProveedor();"
+                        <button onclick="document.getElementById('provStatDesde').value='';document.getElementById('provStatHasta').value='';document.getElementById('filtroDepartamentoStock').value='';renderStockProveedor();"
                             style="background:#1e293b;color:#94a3b8;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">↺</button>
                     </div>
                 </div>
@@ -2800,9 +2804,13 @@ GUARDAR PRODUCTO
                             <tr class="border-b border-slate-700">
                                 <th class="py-2 pr-3 text-center text-slate-400 font-black">INICIO</th>
                                 <th class="py-2 pr-3 text-left text-slate-400 font-black">PRODUCTO</th>
-                                <th class="py-2 pr-3 text-center text-slate-400 font-black">ACCI───────────────────────────────────────────────N</th>
+                                <th class="py-2 pr-3 text-center text-slate-400 font-black" style="width:120px;min-width:120px;">ACCIÓN</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VERIFICADO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">DIFERENCIA</th>
+                                <th class="py-2 pr-3 text-right text-slate-400 font-black">COMPRAR</th>
+                                <th class="py-2 pr-3 text-right text-slate-400 font-black">STOCK</th>
+                                <th class="py-2 pr-3 text-right text-slate-400 font-black">MINIMO</th>
+                                <th class="py-2 pr-3 text-right text-slate-400 font-black">VENDIDO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">STOCK INICIAL</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">COMPRAS</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VENTAS</th>
@@ -2814,75 +2822,6 @@ GUARDAR PRODUCTO
                     <div id="tablaStockProveedorTotales" class="mt-3 pt-3 border-t border-slate-700 grid grid-cols-2 md:grid-cols-4 gap-2"></div>
                 </div>
                 <p id="tablaStockProveedorPlaceholder" class="text-center text-slate-500 text-[10px] py-6">Elegí un proveedor para ver el detalle</p>
-            </div>
-
-            <!-- VENTAS POR PRODUCTO -->
-            <div class="glass-card rounded-2xl border border-emerald-500/20" style="overflow:hidden;">
-                <!-- Encabezado estilo calendario -->
-                <div style="background:#7c1d4e;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                    <span style="font-size:13px;font-weight:900;color:#fff;letter-spacing:.06em;text-transform:uppercase;">🏠 Ventas por Producto</span>
-                </div>
-                <!-- Cuerpo del filtro -->
-                <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
-                    <!-- Desde / Hasta -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <div style="display:flex;flex-direction:column;gap:3px;">
-                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Desde</label>
-                            <input type="datetime-local" id="ventasProdDesde" onchange="renderVentasPorProducto()"
-                                style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:3px;">
-                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Hasta</label>
-                            <input type="datetime-local" id="ventasProdHasta" onchange="renderVentasPorProducto()"
-                                style="background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;">
-                        </div>
-                    </div>
-                    <!-- Selector proveedor + departamento -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <div style="display:flex;flex-direction:column;gap:3px;">
-                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Proveedor</label>
-                            <select id="filtroProveedorVentas" onchange="renderVentasPorProducto()"
-                                style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
-                                <option value="">– Todos –</option>
-                            </select>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:3px;">
-                            <label style="font-size:9px;font-weight:900;color:#a8476e;text-transform:uppercase;letter-spacing:.08em;">Departamento</label>
-                            <select id="filtroDepartamentoVentas" onchange="renderVentasPorProducto()"
-                                style="width:100%;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:12px;font-weight:900;padding:9px 12px;outline:none;appearance:none;-webkit-appearance:none;">
-                                <option value="">– Todos –</option>
-                            </select>
-                        </div>
-                    </div>
-                    <!-- Botones rápidos estilo días de calendario -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;">
-                        <button onclick="setRangoProductosRapido('ventas','hoy')"
-                            style="background:#7c1d4e;color:#fff;border:none;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">HOY</button>
-                        <button onclick="setRangoProductosRapido('ventas','7d')"
-                            style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">7D</button>
-                        <button onclick="setRangoProductosRapido('ventas','30d')"
-                            style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">30D</button>
-                        <button onclick="document.getElementById('ventasProdDesde').value='';document.getElementById('ventasProdHasta').value='';document.getElementById('filtroDepartamentoVentas').value='';renderVentasPorProducto();"
-                            style="background:#1e293b;color:#94a3b8;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">↺</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-[10px]">
-                        <thead>
-                            <tr class="border-b border-slate-700">
-                                <th class="py-2 pr-3 text-left text-slate-400 font-black">#</th>
-                                <th class="py-2 pr-3 text-left text-slate-400 font-black">CATEGORÍA</th>
-                                <th class="py-2 px-3 text-center text-slate-400 font-black" style="width:120px;">DIFERENCIA</th>
-                                <th class="py-2 px-3 text-center text-slate-400 font-black" style="width:140px;">STOCK CATEGORÍA</th>
-                                <th class="py-2 px-3 text-center text-slate-400 font-black" style="width:170px;">STOCK MÍNIMO X CATEGORÍA</th>
-                                <th class="py-2 text-right text-slate-400 font-black">VENDIDO</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaVentasProductoBody" class="divide-y divide-slate-800">
-                            <tr><td colspan="7" class="py-6 text-center text-slate-500 font-bold uppercase">Aplicá un filtro de fechas para ver resultados</td></tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
 
             <!-- KARDEX -->
@@ -4693,22 +4632,22 @@ Agregar
 
     saveInventario() {
         try {
-            localStorage.setItem('natanael_inventario_v1', JSON.stringify(_sheetProductos || []));
+            if (_sheetProductos && _sheetProductos.length) localStorage.setItem('natanael_inventario_v1', JSON.stringify(_sheetProductos));
         } catch(e) {}
         return true;
     },
 
     saveHistorial() {
         try {
-            const ventas = (historial && historial.length ? historial : _sheetVentas) || [];
-            localStorage.setItem('natanael_historial_v1', JSON.stringify(ventas));
+            const ventas = (_sheetVentas && _sheetVentas.length ? _sheetVentas : historial) || [];
+            if (ventas.length) localStorage.setItem('natanael_historial_v1', JSON.stringify(ventas));
         } catch(e) {}
         return true;
     },
 
     savePagoVentas() {
         try {
-            localStorage.setItem('natanael_pago_ventas_v1', JSON.stringify(_pagoVentasSheet || []));
+            if (_pagoVentasSheet && _pagoVentasSheet.length) localStorage.setItem('natanael_pago_ventas_v1', JSON.stringify(_pagoVentasSheet));
         } catch(e) {}
         return true;
     }
@@ -5133,6 +5072,35 @@ _sheetProductos.forEach(p => {
             actualizarPosicionClearCliente();
             validarClienteVentaInput(false);
             renderCarrito();
+        }
+
+        function abrirVentaDesdeStockProveedor(index, diferencia) {
+            const prod = _sheetProductos[index];
+            const cantidad = Math.abs(parseFloat(diferencia) || 0);
+            if (!prod || cantidad <= 0) {
+                mostrarToast('No hay diferencia para cargar en venta', 'error');
+                return;
+            }
+
+            abrirNuevaVenta();
+
+            const esPeso = esTipoVenta(prod.tipoVenta);
+            const precio = esPeso ? (prod.precio || prod.precioVenta || 0) : (prod.precio || 0);
+            const cantidadVenta = esPeso ? cantidad : Math.max(1, Math.round(cantidad * 100) / 100);
+            carrito.push({
+                idx: index,
+                id: prod.id,
+                nombre: prod.nombre,
+                precio: precio,
+                tipoVenta: prod.tipoVenta,
+                foto: prod.foto || prod.imagen || '',
+                cantidad: cantidadVenta,
+                cantidadDisplay: esPeso ? (Utils.fmt(cantidadVenta) + 'gr') : undefined,
+                esPeso: esPeso,
+                itemId: Utils.genId()
+            });
+            renderCarrito();
+            mostrarToast('Venta lista: ' + prod.nombre + ' x ' + Utils.fmt(cantidadVenta), 'success');
         }
 
         let modoSelector = 'unidad'; // 'unidad' | 'gramos' | 'pesos'
@@ -7307,7 +7275,7 @@ _sheetEgresosNegocio.forEach(e => {
                     return;
                 }
                 // ↗↗ Procesar VENTAS ↗↗
-                if (Array.isArray(data.ventas)) {
+                if (Array.isArray(data.ventas) && data.ventas.length > 0) {
                     _sheetVentas = [];
                     _sheetVentasRaw = data.ventas || [];
                     window._sheetVentasRaw = _sheetVentasRaw;
@@ -7389,6 +7357,7 @@ _sheetEgresosNegocio.forEach(e => {
                     });
                     _sheetVentas = Object.values(ventasMap);
                     window._sheetVentas = _sheetVentas;
+                    if (typeof _guardarCache === 'function') _guardarCache();
                     // Debug: verificar efectivo en primeras ventas del día actual
                     const _hoy = new Date(); const _hoyStr = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')+'-'+String(_hoy.getDate()).padStart(2,'0');
                     const _ventasHoy = _sheetVentas.filter(v => (v.fechaISO||v.fecha||'').startsWith(_hoyStr) || parseFechaNum(v.fechaISO||v.fecha||'') >= parseFechaNum(_hoyStr+'T00:00'));
@@ -7465,9 +7434,11 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     });
 
     _sheetProductos = nuevaLista;
+    window._sheetProductos = _sheetProductos;
     console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
     indexarProductos();
     if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
+    if (typeof _guardarCache === 'function') _guardarCache();
     recalcularTodosLosStocks();
     revisarVencimientos();
     if (typeof calcularWidgetGastoFamiliar === "function") calcularWidgetGastoFamiliar();
@@ -7556,10 +7527,10 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                     const prevLen = _pagoVentasSheet.length;
                     _pagoVentasSheet = data.pagoVentas.map(row => ({
     id:          String(row['IDPAGODEVENTAS'] || row['ID'] || '').trim(),
-    idVenta:     String(row['IDVENTAS'] || row['IDVENTA'] || '').trim(),
+    idVenta:     String(row['IDVENTAS'] || row['IDVENTA'] || row['ID VENTAS'] || row['ID VENTA'] || row['NUMERO DE VENTAS'] || row['NUMERO_DE_VENTAS'] || '').trim(),
     idCliente:   String(row['IDCLIENTE'] || row['ID_CLIENTE'] || '').trim(),
     cliente:     String(row['CLIENTE'] || '').trim().toUpperCase(),
-    monto:       parseFloat(row['MONTO']) || 0,
+    monto:       parseSheetNum(row['MONTO'] || 0),
     fecha:       String(row['FECHA'] || '').trim(),
     producto:    String(row['PRODUCTO'] || '').trim(),
     formaPago:   String(row['FORMA DE PAGO'] || '').trim(),
@@ -7570,6 +7541,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
 
 window._pagoVentasSheet = _pagoVentasSheet;
                     if (typeof DB !== 'undefined' && DB.savePagoVentas) DB.savePagoVentas();
+                    if (typeof _guardarCache === 'function') _guardarCache();
                     _log('pagoVentas CARGADOS: ' + _pagoVentasSheet.length + ' registros', '#10b981');
                     if (_pagoVentasSheet.length > 0) {
                         _log('  Primer pago: idCliente=' + _pagoVentasSheet[0].idCliente + ' | idVenta=' + _pagoVentasSheet[0].idVenta + ' | monto=' + _pagoVentasSheet[0].monto, '#94a3b8');
@@ -7915,6 +7887,18 @@ if (indicator) indicator.classList.remove('hidden');
         window.syncIngEgrNeg = function syncIngEgrNeg(rows, db, saveFn, renderTipo, supercatsRef, catsRef) {
             if (!Array.isArray(rows) || !rows.length) return;
 
+            function _sheetValExact(row, names) {
+                for (const n of names) {
+                    if (Object.prototype.hasOwnProperty.call(row, n) && row[n] !== '' && row[n] != null) return row[n];
+                }
+                const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+                const wanted = new Set(names.map(norm));
+                for (const k of Object.keys(row || {})) {
+                    if (wanted.has(norm(k)) && row[k] !== '' && row[k] != null) return row[k];
+                }
+                return 0;
+            }
+
             // Construir set de todos los idRow que vienen del sheet
             const sheetIds = new Set();
             rows.forEach(row => {
@@ -7946,7 +7930,9 @@ if (indicator) indicator.classList.remove('hidden');
                 let fechaDisplay = fechaRaw;
                 try { if (fechaRaw&&(fechaRaw.includes('T')||fechaRaw.includes('-'))) { const d=new Date(fechaRaw); if(!isNaN(d)) fechaDisplay=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); } } catch(e){}
                 const idRow = String(row['IDINGRESOSNEGOCIO']||row['IDEGRESOSNEGOCIO']||row['NUMERO DE INGRESOS NEGOCIO']||row['NUMERO DE EGRESOS']||row['ID_INGRESOS']||row['Id_Gastos']||'').trim();
-                const total = parseFloat(row['PAGO TOTAL']||row['Pago Total'])||0;
+                const total = parseSheetNum(_sheetValExact(row, ['PAGO TOTAL','Pago Total','Pago total']));
+                const efectivoReal = parseSheetNum(_sheetValExact(row, ['PAGO EFECTIVO','Pago Efectivo','Pago efectivo']));
+                const creditoReal = parseSheetNum(_sheetValExact(row, ['PAGO CREDITO','PAGO CRÉDITO','Pago Credito','Pago Crédito','Pago credito']));
                 const key = idRow||(fechaRaw+'|'+String(row['Supercategoria']||'').trim()+'|'+total);
                 const id = 'sheet_NN_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
                 const reg = { id, idSheet: idRow, fecha:fechaDisplay, fechaISO:fechaRaw,
@@ -7955,8 +7941,13 @@ if (indicator) indicator.classList.remove('hidden');
                     proveedor: String(row['CLIENTE']||row['Cliente']||'').trim(),
                     estado:    String(row['ESTADO']||row['Estado']||'').trim(),
                     formaPago: String(row['FORMA DE PAGO']||row['Forma de Pago']||'').trim(),
-                    total, efectivo: parseFloat(row['PAGO EFECTIVO']||row['Pago Efectivo'])||0,
-                    credito: parseFloat(row['PAGO CREDITO']||row['Pago Credito']||row['PAGO CR??DITO'])||0,
+                    total,
+                    efectivo: efectivoReal,
+                    pagoEfectivo: efectivoReal,
+                    credito: creditoReal,
+                    pagoCredito: creditoReal,
+                    _coordEfectivoReal: efectivoReal,
+                    _coordCreditoReal: creditoReal,
                     fechaPago: String(row['FECHA DE PAGO']||row['Fecha de Pago']||'').trim(),
                     fromSheet: true, items:[] };
                 // Buscar por id generado O por idSheet para evitar duplicar registros locales + sheet
@@ -8072,11 +8063,11 @@ if (indicator) indicator.classList.remove('hidden');
                     if(ag>0||ac>0){const v=document.getElementById('vistaEgresos');if(v&&!v.classList.contains('hidden'))renderIngEgr('egreso');}
                 }
                 // Pagos
-                if (Array.isArray(data.pagoVentas)) {
+                if (Array.isArray(data.pagoVentas) && data.pagoVentas.length > 0) {
                     _pagoVentasSheet = data.pagoVentas.map(r=>({
                         id:          String(r['IDPAGODEVENTAS'] || r['ID'] || '').trim(),
-                        idVenta:     String(r['IDVENTAS'] || r['IDVENTA'] || '').trim(),
-                        IDVENTAS:    String(r['IDVENTAS'] || r['IDVENTA'] || '').trim(),
+                        idVenta:     String(r['IDVENTAS'] || r['IDVENTA'] || r['ID VENTAS'] || r['ID VENTA'] || r['NUMERO DE VENTAS'] || r['NUMERO_DE_VENTAS'] || '').trim(),
+                        IDVENTAS:    String(r['IDVENTAS'] || r['IDVENTA'] || r['ID VENTAS'] || r['ID VENTA'] || r['NUMERO DE VENTAS'] || r['NUMERO_DE_VENTAS'] || '').trim(),
                         idCliente:   String(r['IDCLIENTE'] || '').trim(),
                         cliente:     String(r['CLIENTE'] || '').trim().toUpperCase(),
                         monto:       parseSheetNum(r['MONTO'] || 0),
@@ -8817,6 +8808,14 @@ console.log("FILTRADAS:", filtradas.length);
                 if (!catMap.has(cat)) catMap.set(cat, []);
                 catMap.get(cat).push(p);
             });
+            const _ordenDiffStock = (a, b) => {
+                const pa = a < 0 ? 0 : a > 0 ? 1 : 2;
+                const pb = b < 0 ? 0 : b > 0 ? 1 : 2;
+                if (pa !== pb) return pa - pb;
+                if (pa === 0) return a - b;
+                if (pa === 1) return b - a;
+                return 0;
+            };
 
             if (catMap.size === 0) {
                 contenedor.style.display = 'block';
@@ -8885,7 +8884,9 @@ console.log("FILTRADAS:", filtradas.length);
                 return txt;
             };
 
-            if (!proveedor) {
+            const deptoFiltroStock = (document.getElementById('filtroDepartamentoStock')?.value || '').trim().toUpperCase();
+
+            if (!proveedor && !deptoFiltroStock) {
                 resetFotoProveedorStat('-');
                 if (wrap) wrap.classList.add('hidden');
                 if (placeholder) { placeholder.style.display='block'; placeholder.textContent='Elegí un proveedor para ver el detalle'; }
@@ -8907,7 +8908,8 @@ console.log("FILTRADAS:", filtradas.length);
             }
 
             const productos = _sheetProductos.filter(p =>
-                String(p.proveedor||'').trim().toUpperCase() === proveedor.toUpperCase()
+                (!proveedor || String(p.proveedor||'').trim().toUpperCase() === proveedor.toUpperCase())
+                && (!deptoFiltroStock || String(p.depto||'').trim().toUpperCase() === deptoFiltroStock)
             );
 
             if (!productos.length) {
@@ -9037,7 +9039,14 @@ console.log("FILTRADAS:", filtradas.length);
                 cItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totCE += it.cantidad; });
                 const stockEsperado = Math.round((_siEsperado + _totCE - _totVE) * 100) / 100;
 
-                return { stockInicial: _siEsperado, compras: totalCompras, ventas: totalVentas, stockActual: Math.round(saldo*100)/100, stockEsperado };
+                return {
+                    stockInicial: _siEsperado,
+                    compras: Math.round(_totCE * 100) / 100,
+                    ventas: Math.round(_totVE * 100) / 100,
+                    vendido: Math.round(totalVentas * 100) / 100,
+                    stockActual: stockEsperado,
+                    stockEsperado
+                };
             }
 
             let totSI=0, totC=0, totV=0, totSA=0;
@@ -9053,12 +9062,44 @@ console.log("FILTRADAS:", filtradas.length);
                 catMap.get(cat).push(p);
             });
             // Ordenar categorías: cualquier diff != 0 primero (neg antes pos), luego cero, luego sin verificar
+            const _ordenDiffStockProv = (a, b) => {
+                const pa = a < 0 ? 0 : a > 0 ? 1 : 2;
+                const pb = b < 0 ? 0 : b > 0 ? 1 : 2;
+                if (pa !== pb) return pa - pb;
+                if (pa === 0) return a - b;
+                if (pa === 1) return b - a;
+                return 0;
+            };
             const _catPriority = d => {
                 if (d === Infinity) return 2; // sin verificar ? último
                 if (d === 0)        return 1; // exacto ? penúltimo
                 return 0;                      // cualquier diff != 0 ? primero
             };
             const catKeys = [...catMap.keys()].sort((catA, catB) => {
+                const diffVentaCat = cat => {
+                    let stock = 0, minimo = 0, vendido = 0;
+                    catMap.get(cat).forEach(p => {
+                        const r = calcKardexProd(p);
+                        stock += parseFloat(r.stockActual) || 0;
+                        minimo = Math.max(minimo, Math.max(0, parseFloat(p.stockMin) || 0));
+                        vendido += parseFloat(r.vendido) || 0;
+                    });
+                    return Math.max(0, stock) - Math.max(minimo, vendido);
+                };
+                const dAStock = diffVentaCat(catA);
+                const dBStock = diffVentaCat(catB);
+                const ordenStock = _ordenDiffStockProv(dAStock, dBStock);
+                if (ordenStock !== 0) return ordenStock;
+                return catA.localeCompare(catB);
+                const ventasCat = cat => {
+                    return catMap.get(cat).reduce((s, p) => {
+                        const r = calcKardexProd(p);
+                        return s + (parseFloat(r.ventas) || 0);
+                    }, 0);
+                };
+                const vA = ventasCat(catA), vB = ventasCat(catB);
+                if (vA !== vB) return vB - vA;
+                return catA.localeCompare(catB);
                 const diffCat = cat => {
                     let bestDiff = Infinity;
                     catMap.get(cat).forEach(p => {
@@ -9090,14 +9131,17 @@ console.log("FILTRADAS:", filtradas.length);
             let rowsHtml = '';
             catKeysFiltrados.forEach(cat => {
                 const prods = catMap.get(cat);
-                let catSI=0, catC=0, catV=0, catSA=0, catSE=0;
+                let catSI=0, catC=0, catV=0, catVendido=0, catSA=0, catSAVisible=0, catSE=0, catMin=0, catVerif=0, catTieneVerif=false;
 
                 // Pre-calcular kardex para poder ordenar por diferencia (negativos primero)
                 const prodsConKardex = prods.map(p => {
                     const r = calcKardexProd(p);
                     const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
                     const diff = (stockVerif !== null && !isNaN(stockVerif)) ? (stockVerif - r.stockEsperado) : Infinity;
-                    return { p, r, stockVerif, diff };
+                    const stockMinProd = Math.max(0, parseFloat(p.stockMin) || 0);
+                    const requeridoVenta = Math.max(stockMinProd, parseFloat(r.vendido) || 0);
+                    const diffVenta = (parseFloat(r.stockActual) || 0) - requeridoVenta;
+                    return { p, r, stockVerif, diff, diffVenta };
                 });
                 // Ordenar: cualquier diferencia != 0 primero (negativas antes positivas), luego cero (?), luego sin verificar
                 const diffPriority = d => {
@@ -9106,29 +9150,46 @@ console.log("FILTRADAS:", filtradas.length);
                     return 0;                      // cualquier diff != 0 ? primero
                 };
                 prodsConKardex.sort((a, b) => {
+                    const ordenStock = _ordenDiffStockProv(a.diffVenta, b.diffVenta);
+                    if (ordenStock !== 0) return ordenStock;
+                    return String(a.p.nombre || '').localeCompare(String(b.p.nombre || ''));
+                    const va = parseFloat(a.r.ventas) || 0;
+                    const vb = parseFloat(b.r.ventas) || 0;
+                    if (va !== vb) return vb - va;
+                    return String(a.p.nombre || '').localeCompare(String(b.p.nombre || ''));
                     const pa = diffPriority(a.diff), pb = diffPriority(b.diff);
                     if (pa !== pb) return pa - pb;
                     if (a.diff === Infinity || a.diff === 0) return 0;
                     return a.diff - b.diff; // negativos antes que positivos
                 });
 
-                const prodRows = prodsConKardex.map(({ p, r, stockVerif }) => {
+                const prodRows = prodsConKardex.map(({ p, r, stockVerif, diff }) => {
                     totSI += r.stockInicial; totC += r.compras; totV += r.ventas; totSA += r.stockActual;
-                    catSI += r.stockInicial; catC += r.compras; catV += r.ventas; catSA += r.stockActual; catSE += r.stockEsperado;
+                    catSI += r.stockInicial; catC += r.compras; catV += r.ventas; catVendido += r.vendido; catSA += r.stockActual; catSAVisible += Math.max(0, parseFloat(r.stockActual) || 0); catSE += r.stockEsperado;
+                    if (stockVerif !== null && !isNaN(stockVerif)) {
+                        catVerif += stockVerif;
+                        catTieneVerif = true;
+                    }
+                    const stockMinProd = Math.max(0, parseFloat(p.stockMin) || 0);
+                    catMin = Math.max(catMin, stockMinProd);
+                    const requeridoVenta = Math.max(stockMinProd, parseFloat(r.vendido) || 0);
+                    const diffVenta = (parseFloat(r.stockActual) || 0) - requeridoVenta;
+                    const diffVentaColor = diffVenta < 0 ? '#f87171' : diffVenta < stockMinProd ? '#fbbf24' : '#34d399';
+                    const diffFisica = (stockVerif !== null && !isNaN(stockVerif)) ? (stockVerif - (parseFloat(r.stockEsperado) || 0)) : null;
+                    const diffFisicaColor = diffFisica === null ? '#64748b' : diffFisica > 0 ? '#34d399' : diffFisica < 0 ? '#f87171' : '#fbbf24';
                     const saColor = r.stockEsperado <= 0 ? '#f87171' : r.stockEsperado < 5 ? '#fbbf24' : '#34d399';
                     const fechaVerif = p.fechaStockFisico ? String(p.fechaStockFisico).substring(0,10) : '';
                     let verifHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">-</td>';
                     if (stockVerif !== null && !isNaN(stockVerif)) {
                         verifHtml = `<td class="py-2 pr-3 text-right font-black"><span class="text-white">${Utils.fmt(stockVerif)}</span>${fechaVerif?`<br><span class="text-slate-500 text-[8px]">${fechaVerif}</span>`:''}</td>`;
                     }
-                    let difHtml = '<td class="py-2 pr-3 text-right text-slate-600 font-bold">-</td>';
-                    if (stockVerif !== null && !isNaN(stockVerif)) {
-                        const diff = stockVerif - r.stockEsperado;
-                        const diffColor = diff === 0 ? '#34d399' : diff > 0 ? '#60a5fa' : '#f87171';
-                        const diffTxt = diff === 0 ? '-' : diff > 0 ? `+${Utils.fmt(diff)}` : Utils.fmt(diff);
-                        difHtml = `<td class="py-2 pr-3 text-right font-black" style="color:${diffColor}">${diffTxt}</td>`;
-                    }
                     const _idxProd = _sheetProductos.findIndex(x => x.nombre === p.nombre);
+                    const _diffVenta = (diffFisica !== null && !isNaN(diffFisica) && diffFisica < 0)
+                        ? Math.abs(diffFisica)
+                        : 0;
+                    const _btnVentaDiff = _diffVenta > 0
+                        ? `<button onclick="abrirVentaDesdeStockProveedor(${_idxProd}, ${_diffVenta})" style="background:#10b981;color:#06130d;border:none;border-radius:8px;padding:4px 9px;font-size:9px;font-weight:900;cursor:pointer;letter-spacing:.04em;white-space:nowrap;text-transform:uppercase;" title="Abrir venta con ${Utils.fmt(Math.abs(_diffVenta))}">VENTA ${Utils.fmt(Math.abs(_diffVenta))}</button>`
+                        : `<span style="font-size:9px;color:#475569;font-weight:900;">-</span>`;
                     const _fotoUrl = p.foto || p.imagen || '';
                     const _fotoHtml = _fotoUrl
                         ? `<img src="${driveUrl(_fotoUrl)}" style="width:36px;height:36px;object-fit:contain;border-radius:8px;background:#0f172a;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:36px;height:36px;border-radius:8px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">??</div>`
@@ -9138,13 +9199,26 @@ console.log("FILTRADAS:", filtradas.length);
                             <button onclick="ejecutarInicioProd(${_idxProd})" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:9px;font-weight:900;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">🚀 INICIO</button>
                         </td>
                         <td class="py-2 pr-3 font-bold text-slate-200" style="padding-left:20px;">
-                            <div style="display:flex;align-items:center;gap:8px;">${_fotoHtml}<span>${Utils.escHtml(p.nombre)}</span></div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                ${_fotoHtml}
+                                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                                    <span>${Utils.escHtml(p.nombre)}</span>
+                                    <span style="font-size:8px;color:#38bdf8;font-weight:900;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escHtml(p.proveedor || '-')}</span>
+                                </div>
+                            </div>
                         </td>
-                        <td class="py-2 pr-3 text-center">
-                            <button onclick="abrirVerificarStock(${_idxProd})" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg">- STOCK</button>
+                        <td class="py-2 pr-3 text-center" style="width:120px;min-width:120px;">
+                            <div style="display:flex;align-items:center;justify-content:center;gap:6px;width:120px;">
+                                ${_btnVentaDiff}
+                                <button onclick="abrirVerificarStock(${_idxProd})" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg">- STOCK</button>
+                            </div>
                         </td>
                         ${verifHtml}
-                        ${difHtml}
+                        <td class="py-2 pr-3 text-right font-black" style="color:${diffFisicaColor}">${diffFisica===null?'-':`${diffFisica>=0?'+':''}${Utils.fmt(diffFisica)}`}</td>
+                        <td class="py-2 pr-3 text-right font-black" style="color:${diffVentaColor}">${diffVenta>=0?'+':''}${Utils.fmt(diffVenta)}</td>
+                        <td class="py-2 pr-3 text-right text-blue-400 font-black">${Utils.fmt(r.stockActual)}</td>
+                        <td class="py-2 pr-3 text-right text-yellow-400 font-black">${Utils.fmt(stockMinProd)}</td>
+                        <td class="py-2 pr-3 text-right text-orange-400 font-black">${Utils.fmt(r.vendido)}</td>
                         <td class="py-2 pr-3 text-right text-slate-300">${Utils.fmt(r.stockInicial)}</td>
                         <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras>0?'cursor:pointer;':''}" onclick="${r.compras>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdTs||'null'},${fhTs||'null'})`:''}">
                             ${r.compras>0?`<span style="text-decoration:underline dotted;">${Utils.fmt(r.compras)}</span>`:Utils.fmt(r.compras)}
@@ -9159,6 +9233,12 @@ console.log("FILTRADAS:", filtradas.length);
                 const catId = 'catrow_' + cat.replace(/[^a-z0-9]/gi,'_');
                 const isOpen = window._stockProvCatOpen[cat] === true; // cerrado por defecto
                 const seColor = catSE <= 0 ? '#f87171' : catSE < 10 ? '#fbbf24' : '#34d399';
+                const catStockCategoria = catSAVisible;
+                const catReqVenta = Math.max(catMin || 0, catVendido || 0);
+                const catDiffVenta = catStockCategoria - catReqVenta;
+                const catDiffVentaColor = catDiffVenta < 0 ? '#f87171' : catDiffVenta < catMin ? '#fbbf24' : '#34d399';
+                const catDiffFisica = catTieneVerif ? (catVerif - catSE) : null;
+                const catDiffFisicaColor = catDiffFisica === null ? '#64748b' : catDiffFisica > 0 ? '#34d399' : catDiffFisica < 0 ? '#f87171' : '#fbbf24';
 
                 rowsHtml += `
                 <!-- FILA CATEGORÍA -->
@@ -9173,7 +9253,11 @@ console.log("FILTRADAS:", filtradas.length);
                     </td>
                     <td style="padding:10px 12px;text-align:center;"><span style="font-size:9px;color:#64748b;font-weight:700;">-</span></td>
                     <td style="padding:10px 12px;text-align:right;"><span style="font-size:9px;color:#64748b;">-</span></td>
-                    <td style="padding:10px 12px;text-align:right;"><span style="font-size:9px;color:#64748b;">-</span></td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:${catDiffFisicaColor};">${catDiffFisica===null?'-':`${catDiffFisica>=0?'+':''}${Utils.fmt(catDiffFisica)}`}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:${catDiffVentaColor};">${catDiffVenta>=0?'+':''}${Utils.fmt(catDiffVenta)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#60a5fa;">${Utils.fmt(catStockCategoria)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#facc15;">${Utils.fmt(catMin)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#fb923c;">${Utils.fmt(catVendido)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#94a3b8;">${Utils.fmt(catSI)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#60a5fa;">+${Utils.fmt(catC)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#fb923c;">-${Utils.fmt(catV)}</td>
@@ -13046,6 +13130,99 @@ console.log("FILTRADAS:", filtradas.length);
                 return id;
             }
 
+            function _coordValExact(row, names) {
+                for (var n = 0; n < names.length; n++) {
+                    if (Object.prototype.hasOwnProperty.call(row || {}, names[n]) && row[names[n]] !== '' && row[names[n]] != null) return row[names[n]];
+                }
+                var norm = function(s) {
+                    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+                };
+                var wanted = names.map(norm);
+                var keys = Object.keys(row || {});
+                for (var k = 0; k < keys.length; k++) {
+                    if (wanted.indexOf(norm(keys[k])) >= 0 && row[keys[k]] !== '' && row[keys[k]] != null) return row[keys[k]];
+                }
+                return 0;
+            }
+
+            function _coordCreditoIngNeg(row) {
+                var rawCredito = _coordValExact(row, ['PAGO CREDITO','PAGO CRÉDITO','Pago Credito','Pago Crédito','Pago credito']);
+                var rawEfectivo = _coordValExact(row, ['PAGO EFECTIVO','Pago Efectivo','Pago efectivo']);
+                var credito = rawCredito ? parseSheetNum(rawCredito) : parseSheetNum(row._coordCreditoReal || row.pagoCredito || row.credito || 0);
+                var efectivo = rawEfectivo ? parseSheetNum(rawEfectivo) : parseSheetNum(row._coordEfectivoReal || row.pagoEfectivo || row.efectivo || 0);
+                var forma = String(row.formaPago || row['FORMA DE PAGO'] || row['Forma de Pago'] || '').toUpperCase();
+
+                // ING.NEG en coordinacion es deuda: PAGO EFECTIVO no cuenta.
+                if (forma.indexOf('EFECTIVO') >= 0 && efectivo > 0 && (credito <= 0 || Math.abs(credito - efectivo) <= 0.009)) return 0;
+                if (efectivo > 0 && credito > 0 && Math.abs(credito - efectivo) <= 0.009) return 0;
+                return credito;
+            }
+
+            function _coordFirst(row, names, props) {
+                var v = _coordValExact(row, names || []);
+                if (v !== 0 && v !== '' && v != null) return v;
+                (props || []).some(function(p) {
+                    if (row && row[p] !== '' && row[p] != null) { v = row[p]; return true; }
+                    return false;
+                });
+                return v || '';
+            }
+
+            function _coordPaymentMap(rows, idNames, idProps) {
+                var map = {};
+                (rows || []).forEach(function(row) {
+                    var id = String(_coordFirst(row, idNames, idProps)).trim();
+                    var monto = parseSheetNum(_coordFirst(row, ['MONTO','Monto'], ['monto','MONTO']));
+                    if (!id || !monto) return;
+                    map[id] = (map[id] || 0) + monto;
+                });
+                return map;
+            }
+
+            function _coordAddSource(outMap, rows, opts) {
+                var pagos = opts.pagos || {};
+                var porId = {};
+                (rows || []).forEach(function(row, idx) {
+                    var fp = fmtF(String(_coordFirst(row, ['FECHA DE PAGO','Fecha de Pago','FECHA_DE_PAGO'], ['fechaPago'])).trim());
+                    if (!fp) return;
+                    var id = String(_coordFirst(row, opts.idNames, opts.idProps)).trim();
+                    var credito = parseSheetNum(_coordFirst(row, ['PAGO CREDITO','PAGO CRÉDITO','Pago Credito','Pago Crédito','Pago credito'], ['credito','pagoCredito','_coordCreditoReal']));
+                    if (!credito) return;
+                    var label = String(_coordFirst(row, opts.labelNames, opts.labelProps) || '-').trim().toUpperCase();
+                    var key = (id || ('_row_' + idx)) + '|' + fp + '|' + label + '|' + opts.fuente;
+                    if (!porId[key]) porId[key] = { id: id, fp: fp, label: label, credito: 0 };
+                    porId[key].credito += credito;
+                });
+                Object.keys(porId).forEach(function(k) {
+                    var it = porId[k];
+                    var saldo = it.credito - (it.id ? parseSheetNum(pagos[it.id] || 0) : 0);
+                    if (saldo <= 0.009) return;
+                    if (!outMap[it.fp]) outMap[it.fp] = { fecha: it.fp, items: [] };
+                    outMap[it.fp].items.push({ fuente: opts.fuente, label: it.label, monto: saldo });
+                });
+            }
+
+            function _coordBuildRuleGroups() {
+                var eg = {};
+                var ing = {};
+                var pagoCompras = _coordPaymentMap(window._sheetPagoCompras || [], ['IDCOMPRAS','NUMERO DE COMPRAS','NUMERO_DE_COMPRAS','Numero de Compras'], ['idCompra','IDCOMPRAS']);
+                var pagoEgresos = _coordPaymentMap(window._sheetPagoEgresos || [], ['IDEGRESOS','ID_GASTOS','Id_Gastos','NUMERO DE EGRESOS','NUMERO_DE_EGRESOS'], ['IDEGRESOS','ID_GASTOS']);
+                var pagoEgrNeg = _coordPaymentMap([].concat(window._sheetPagoEgrNeg || [], window._pagoEgrNegSheet || []), ['IDEGRESOSNEGOCIO'], ['idEgresoNeg','IDEGRESOSNEGOCIO']);
+                var pagoVentas = _coordPaymentMap(window._pagoVentasSheet || [], ['IDVENTAS','IDVENTA','ID VENTAS','ID VENTA','NUMERO DE VENTAS','NUMERO_DE_VENTAS'], ['idVenta','IDVENTAS']);
+                var pagoIngresos = _coordPaymentMap(window._sheetPagoIngresos || [], ['IDINGRESOS','ID_INGRESOS','Id_Ingresos','NUMERO DE INGRESOS','NUMERO_DE_INGRESOS'], ['IDINGRESOS','ID_INGRESOS']);
+                var pagoIngNeg = _coordPaymentMap([].concat(window._sheetPagoIngNeg || [], window._pagoIngNegSheet || []), ['IDINGRESOSNEGOCIO','ID_INGRESOS_NEGOCIO','NUMERO DE INGRESOS NEGOCIO'], ['idIngresoNeg','IDINGRESOSNEGOCIO']);
+
+                _coordAddSource(eg, window._sheetComprasRaw || window._sheetCompras || [], { fuente:'compra', pagos:pagoCompras, idNames:['IDCOMPRAS','NUMERO DE COMPRAS','NUMERO_DE_COMPRAS','Numero de Compras'], idProps:['idSheet','id','IDCOMPRAS'], labelNames:['PROVEEDOR','Proveedor'], labelProps:['proveedor','concepto'] });
+                _coordAddSource(eg, window._sheetEgresosRaw || window._sheetEgresos || [], { fuente:'egreso', pagos:pagoEgresos, idNames:['IDEGRESOS','ID_GASTOS','Id_Gastos','NUMERO DE EGRESOS','NUMERO_DE_EGRESOS'], idProps:['idSheet','id','IDEGRESOS','ID_GASTOS'], labelNames:['CATEGORIA','Categoria','PROVEEDOR','Proveedor'], labelProps:['concepto','categoria','proveedor'] });
+                _coordAddSource(eg, window._sheetEgresosNegocio || [], { fuente:'egrNeg', pagos:pagoEgrNeg, idNames:['IDEGRESOSNEGOCIO'], idProps:['idSheet','id','IDEGRESOSNEGOCIO'], labelNames:['CATEGORIA','Categoria','CLIENTE','Cliente'], labelProps:['concepto','categoria','cliente','proveedor'] });
+                _coordAddSource(ing, window._sheetVentasRaw || window._sheetVentas || [], { fuente:'venta', pagos:pagoVentas, idNames:['IDVENTAS','IDVENTA','ID VENTAS','ID VENTA','NUMERO DE VENTAS','NUMERO_DE_VENTAS'], idProps:['idSheet','id','idVenta','IDVENTAS'], labelNames:['CLIENTE','Cliente'], labelProps:['cliente','nombreCliente'] });
+                _coordAddSource(ing, window._sheetIngresosRaw || window._sheetIngresos || [], { fuente:'ingreso', pagos:pagoIngresos, idNames:['IDINGRESOS','ID_INGRESOS','Id_Ingresos','NUMERO DE INGRESOS','NUMERO_DE_INGRESOS'], idProps:['idSheet','id','IDINGRESOS','ID_INGRESOS'], labelNames:['CATEGORIA','Categoria','SUPER CATEGORIA','Supercategoria'], labelProps:['concepto','categoria','proveedor'] });
+                _coordAddSource(ing, window._sheetIngresosNegocio || [], { fuente:'ingNeg', pagos:pagoIngNeg, idNames:['IDINGRESOSNEGOCIO','ID_INGRESOS_NEGOCIO','NUMERO DE INGRESOS NEGOCIO'], idProps:['idSheet','id','IDINGRESOSNEGOCIO'], labelNames:['CLIENTE','Cliente','CATEGORIA','Categoria'], labelProps:['cliente','proveedor','concepto','categoria'] });
+
+                var sortFn = function(a,b) { return (_coordFechaNum(a.fecha)||99999999999999) - (_coordFechaNum(b.fecha)||99999999999999); };
+                return { egGrupos: Object.values(eg).sort(sortFn), inGrupos: Object.values(ing).sort(sortFn) };
+            }
+
             var egMapFecha = {};
 
             // ══════════════════════════════════════════════
@@ -13213,39 +13390,89 @@ console.log("FILTRADAS:", filtradas.length);
             // 4) VENTAS  → PAGO VENTAS
             var pagoVentasMap = {};
             var pagoVentasPagadoMap = {};
+            var pagoVentasPagadoAltMap = {};
+            function _coordIdVenta(row) {
+                return String(
+                    _coordValExact(row, ['IDVENTAS','IDVENTA','ID VENTAS','ID VENTA','NUMERO DE VENTAS','NUMERO_DE_VENTAS','Numero de Ventas'])
+                    || row.idVenta || row.IDVENTAS || row.IDVENTA || ''
+                ).trim();
+            }
+            function _coordVentaAltKey(cliente, fecha) {
+                var c = String(cliente || '').trim().toUpperCase();
+                var f = fmtF(String(fecha || '').trim());
+                return c && f ? (c + '|' + f) : '';
+            }
             var _pvSheet = window._pagoVentasSheet || [];
             try { if (typeof _pagoVentasSheet !== 'undefined' && _pagoVentasSheet.length) _pvSheet = _pagoVentasSheet; } catch(e) {}
             _pvSheet.forEach(function(p) {
-                var id = String(p.idVenta || p.IDVENTAS || '').trim();
-                var fp = fmtF(String(p.fechaOrig || p.fecha || '').trim());
-                var monto = Number(p.monto || p.MONTO || 0);
-                if (!id || !fp || !monto) return;
-                if (!pagoVentasMap[id]) pagoVentasMap[id] = [];
-                pagoVentasMap[id].push({ fp: fp, monto: monto, cliente: String(p.cliente||'').trim().toUpperCase() });
-                pagoVentasPagadoMap[id] = (pagoVentasPagadoMap[id] || 0) + monto;
+                var id = _coordIdVenta(p);
+                var fp = fmtF(String(p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || p.fecha || p.FECHA || '').trim());
+                var monto = parseSheetNum(p.monto || p.MONTO || p['MONTO'] || 0);
+                if (!monto) return;
+                if (id && fp) {
+                    if (!pagoVentasMap[id]) pagoVentasMap[id] = [];
+                    pagoVentasMap[id].push({ fp: fp, monto: monto, cliente: String(p.cliente||p.CLIENTE||'').trim().toUpperCase() });
+                    pagoVentasPagadoMap[id] = (pagoVentasPagadoMap[id] || 0) + monto;
+                }
+                var altKey = _coordVentaAltKey(p.cliente || p.CLIENTE, p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || p.fecha || p.FECHA);
+                if (altKey) pagoVentasPagadoAltMap[altKey] = (pagoVentasPagadoAltMap[altKey] || 0) + monto;
             });
             var rawVt = Array.isArray(window._sheetVentasRaw) ? window._sheetVentasRaw : [];
-            var vtFPMap = {};
+            var ventasRawPorId = {};
             rawVt.forEach(function(row) {
-                var id = String(row['IDVENTAS']||row['IDVENTA']||'').trim();
                 var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim());
-                if (id && fp) vtFPMap[id] = fp;
-            });
-            (window._sheetVentas || []).forEach(function(v) {
-                var id = String(v.idSheet || v.IDVENTAS || v.id || '').trim();
-                var cli = String(v.cliente || v.nombreCliente || '-').trim().toUpperCase();
-                var creditoVal = Number(v.deuda || v.credito || v.pagoCredito || 0);
-                var totalVal = Number(v.total || v.totalFinal || 0);
-                var monto = creditoVal > 0 ? creditoVal : totalVal;
-                var yaPagado = id ? (pagoVentasPagadoMap[id] || 0) : 0;
-                var saldo = monto - yaPagado;
-                if (saldo <= 0.009) return;
-                // REGLA: solo mostrar si tiene FECHA DE PAGO registrada
-                var fp = (id && vtFPMap[id]) ? vtFPMap[id] : fmtF(String(v.fechaPago||'').trim());
                 if (!fp) return;
-                if (!inMapFecha[fp]) inMapFecha[fp] = { fecha: fp, items: [] };
-                inMapFecha[fp].items.push({ fuente:'venta', label: cli, monto: saldo });
+                var cli = String(row['CLIENTE']||row['Cliente']||'-').trim().toUpperCase();
+                var monto = parseSheetNum(_coordValExact(row, ['PAGO CREDITO','PAGO CRÉDITO','Pago Credito','Pago Crédito','Pago credito']));
+                if (!monto) return;
+                var idVenta = _coordIdVenta(row);
+                var fechaVenta = String(row['FECHA']||row['Fecha']||row['fecha']||row['FECHA CORTA']||row['Fecha Corta']||'').trim();
+                var altKeyVenta = _coordVentaAltKey(cli, fechaVenta);
+                var keyId = idVenta || ('_sin_id_' + altKeyVenta + '|' + fp);
+                if (!ventasRawPorId[keyId]) ventasRawPorId[keyId] = { id: idVenta, fp: fp, cli: cli, fechaVenta: fechaVenta, altKey: altKeyVenta, credito: 0 };
+                ventasRawPorId[keyId].credito += monto;
             });
+            var ventasRawCoord = {};
+            Object.keys(ventasRawPorId).forEach(function(k) {
+                var venta = ventasRawPorId[k];
+                var pagado = venta.id ? parseSheetNum(pagoVentasPagadoMap[venta.id] || 0) : 0;
+                if (!pagado && venta.altKey) pagado = parseSheetNum(pagoVentasPagadoAltMap[venta.altKey] || 0);
+                var saldo = venta.credito - pagado;
+                if (saldo <= 0.009) return;
+                var key = venta.fp + '|' + venta.cli;
+                if (!ventasRawCoord[key]) ventasRawCoord[key] = { fp: venta.fp, cli: venta.cli, monto: 0 };
+                ventasRawCoord[key].monto += saldo;
+            });
+            var usoVentasRaw = Object.keys(ventasRawPorId).length > 0;
+            if (usoVentasRaw) {
+                Object.keys(ventasRawCoord).forEach(function(k) {
+                    var it = ventasRawCoord[k];
+                    if (!inMapFecha[it.fp]) inMapFecha[it.fp] = { fecha: it.fp, items: [] };
+                    inMapFecha[it.fp].items.push({ fuente:'venta', label: it.cli, monto: it.monto });
+                });
+            } else {
+                var vtFPMap = {};
+                rawVt.forEach(function(row) {
+                    var id = String(row['IDVENTAS']||row['IDVENTA']||'').trim();
+                    var fp = fmtF(String(row['FECHA DE PAGO']||row['Fecha de Pago']||row['FECHA_DE_PAGO']||'').trim());
+                    if (id && fp) vtFPMap[id] = fp;
+                });
+                (window._sheetVentas || []).forEach(function(v) {
+                    var id = String(v.idSheet || v.IDVENTAS || v.id || '').trim();
+                    var cli = String(v.cliente || v.nombreCliente || '-').trim().toUpperCase();
+                    var creditoVal = Number(v.deuda || v.credito || v.pagoCredito || 0);
+                    var totalVal = Number(v.total || v.totalFinal || 0);
+                    var monto = creditoVal > 0 ? creditoVal : totalVal;
+                    var yaPagado = id ? (pagoVentasPagadoMap[id] || 0) : 0;
+                    var saldo = monto - yaPagado;
+                    if (saldo <= 0.009) return;
+                    // REGLA: solo mostrar si tiene FECHA DE PAGO registrada
+                    var fp = (id && vtFPMap[id]) ? vtFPMap[id] : fmtF(String(v.fechaPago||'').trim());
+                    if (!fp) return;
+                    if (!inMapFecha[fp]) inMapFecha[fp] = { fecha: fp, items: [] };
+                    inMapFecha[fp].items.push({ fuente:'venta', label: cli, monto: saldo });
+                });
+            }
 
             // 5) INGRESOS  → PAGO INGRESOS
             var pagoIngresosMap = {};
@@ -13286,25 +13513,51 @@ console.log("FILTRADAS:", filtradas.length);
             var pagoIngNegPagadoMap = {};
             var _wIN = window._sheetPagoIngNeg || window._pagoIngNegSheet || [];
             _wIN.forEach(function(p) {
-                var id = String(p.idIngresoNeg || p.IDINGRESOSNEGOCIO || '').trim();
+                var idsPago = [
+                    p.idIngresoNeg,
+                    p.IDINGRESOSNEGOCIO,
+                    p.ID_INGRESOS_NEGOCIO,
+                    p.IDINGNEG,
+                    p.idSheetIngresoNegocio
+                ].map(function(v){ return String(v || '').trim(); }).filter(Boolean);
                 var fp = fmtF(String(p.fechaOriginal || p['FECHA ORIGINAL'] || p.fecha || '').trim());
                 var monto = Number(p.monto || p.MONTO || 0);
-                if (!id || !fp || !monto) return;
-                if (!pagoIngNegMap[id]) pagoIngNegMap[id] = [];
-                pagoIngNegMap[id].push({ fp: fp, monto: monto, cliente: String(p.cliente||'').trim().toUpperCase() });
-                pagoIngNegPagadoMap[id] = (pagoIngNegPagadoMap[id] || 0) + monto;
+                if (!idsPago.length || !fp || !monto) return;
+                Array.from(new Set(idsPago)).forEach(function(id) {
+                    if (!pagoIngNegMap[id]) pagoIngNegMap[id] = [];
+                    pagoIngNegMap[id].push({ fp: fp, monto: monto, cliente: String(p.cliente||'').trim().toUpperCase() });
+                    pagoIngNegPagadoMap[id] = (pagoIngNegPagadoMap[id] || 0) + monto;
+                });
             });
             (window._sheetIngresosNegocio || []).forEach(function(i) {
                 var idIN = _coordGetIdEN(i);
+                var idsIN = [
+                    idIN,
+                    i.id,
+                    i.idSheet,
+                    i.IDINGRESOSNEGOCIO,
+                    i.ID_INGRESOS_NEGOCIO
+                ].map(function(v){
+                    var s = String(v || '').trim();
+                    if (s.startsWith('sheet_NN_')) s = s.replace('sheet_NN_', '');
+                    if (s.startsWith('sheet_EN_')) s = s.replace('sheet_EN_', '');
+                    return s;
+                }).filter(Boolean);
                 var cat = String(i.cliente||i.proveedor||i.concepto||i.categoria||'-').trim().toUpperCase();
-                var creditoVal = parseFloat(i.credito || 0);
-                var totalVal   = parseFloat(i.total || 0);
-                var montoTotal = (creditoVal > 0) ? creditoVal : totalVal;
+                var creditoVal = _coordCreditoIngNeg(i);
+                var montoTotal = creditoVal;
                 if (!montoTotal) return;
                 // REGLA: solo mostrar si tiene FECHA DE PAGO registrada
                 var fp = fmtF(String(i.fechaPago || '').trim());
                 if (!fp) return; // sin fecha de pago → no aparece
-                var yaPagado = idIN ? (pagoIngNegPagadoMap[idIN] || 0) : 0;
+                var yaPagado = idsIN.reduce(function(max, id) {
+                    return Math.max(max, Number(pagoIngNegPagadoMap[id] || 0));
+                }, 0);
+                if (typeof _sumarPagosIngNegUnicos === 'function') {
+                    idsIN.forEach(function(id) {
+                        yaPagado = Math.max(yaPagado, Number(_sumarPagosIngNegUnicos(id) || 0));
+                    });
+                }
                 var saldo = montoTotal - yaPagado;
                 if (saldo <= 0.009) return; // ya cobrado → no mostrar
                 if (!inMapFecha[fp]) inMapFecha[fp] = { fecha: fp, items: [] };
@@ -13316,6 +13569,9 @@ console.log("FILTRADAS:", filtradas.length);
             });
 
             // ─── Totales y Resumen ───────────────────────
+            var _coordReglaFinal = _coordBuildRuleGroups();
+            egGrupos = _coordReglaFinal.egGrupos;
+            inGrupos = _coordReglaFinal.inGrupos;
             var totalEgresos = egGrupos.reduce(function(s,g){ return s+g.items.reduce(function(ss,it){ return ss+it.monto; },0); },0);
             var totalIngresos = inGrupos.reduce(function(s,g){ return s+g.items.reduce(function(ss,it){ return ss+it.monto; },0); },0);
             var balance = totalIngresos - totalEgresos;
@@ -25905,6 +26161,35 @@ function calcularCajaEsperada() {
         // ============================================================
         const _CACHE_KEY = 'natanael_sheet_cache_v1';
 
+        function _cacheLeerArrayKey(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return [];
+                const val = JSON.parse(raw);
+                return Array.isArray(val) ? val : [];
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function _cacheLeerSnapshotActual() {
+            try {
+                const raw = localStorage.getItem(_CACHE_KEY);
+                if (!raw) return {};
+                const snap = JSON.parse(raw);
+                return snap && typeof snap === 'object' ? snap : {};
+            } catch(e) {
+                return {};
+            }
+        }
+
+        function _cacheElegirArray(actual, cacheActual, legacy) {
+            if (Array.isArray(actual) && actual.length) return actual;
+            if (Array.isArray(cacheActual) && cacheActual.length) return cacheActual;
+            if (Array.isArray(legacy) && legacy.length) return legacy;
+            return Array.isArray(actual) ? actual : [];
+        }
+
         function _limpiarLocalStorageNoPermitido() {
             try {
                 [
@@ -25925,14 +26210,22 @@ function calcularCajaEsperada() {
 
         function _guardarCache() {
             try {
+                const previo = _cacheLeerSnapshotActual();
+                const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
+                const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
+                const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
+                const ventasActuales = (_sheetVentas && _sheetVentas.length) ? _sheetVentas : ((historial && historial.length) ? historial : []);
                 const snapshot = {
                     ts:                  Date.now(),
-                    inventario:          _sheetProductos          || [],
-                    ventas:              _sheetVentas             || historial || [],
-                    pagoVentas:          _pagoVentasSheet         || [],
+                    inventario:          _cacheElegirArray(_sheetProductos, previo.inventario, legacyInventario),
+                    ventas:              _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas),
+                    pagoVentas:          _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas),
                     clientes:            typeof clientesDB !== 'undefined' ? clientesDB : [],
                 };
                 localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
+                if (snapshot.inventario.length) localStorage.setItem('natanael_inventario_v1', JSON.stringify(snapshot.inventario));
+                if (snapshot.ventas.length) localStorage.setItem('natanael_historial_v1', JSON.stringify(snapshot.ventas));
+                if (snapshot.pagoVentas.length) localStorage.setItem('natanael_pago_ventas_v1', JSON.stringify(snapshot.pagoVentas));
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
         }
 
@@ -26008,27 +26301,53 @@ function calcularCajaEsperada() {
 
         function _cargarCache() {
             try {
-                const raw = localStorage.getItem(_CACHE_KEY);
-                if (!raw) return false;
-                const c = JSON.parse(raw);
-                if (!c || !c.ts) return false;
+                const c = _cacheLeerSnapshotActual();
+                const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
+                const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
+                const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
+                const inventarioCache = _cacheElegirArray(c.inventario, null, legacyInventario);
+                const ventasCache = _cacheElegirArray(c.ventas, null, legacyVentas);
+                const pagoVentasCache = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
                 // Mostrar aviso de antigüedad
-                const mins = Math.round((Date.now() - c.ts) / 60000);
+                const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
-                if (Array.isArray(c.inventario)      && c.inventario.length)      { _sheetProductos = c.inventario; indexarProductos(); }
-                if (Array.isArray(c.ventas)          && c.ventas.length)          { _sheetVentas = c.ventas; window._sheetVentas = _sheetVentas; historial = c.ventas; }
-                if (Array.isArray(c.pagoVentas)      && c.pagoVentas.length)      { _pagoVentasSheet = c.pagoVentas; window._pagoVentasSheet = _pagoVentasSheet; }
+                if (inventarioCache.length) { _sheetProductos = inventarioCache; window._sheetProductos = _sheetProductos; indexarProductos(); }
+                if (ventasCache.length)     { _sheetVentas = ventasCache; window._sheetVentas = _sheetVentas; historial = ventasCache; }
+                if (pagoVentasCache.length) { _pagoVentasSheet = pagoVentasCache; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
+                _guardarCache();
                 return true;
             } catch(e) { console.warn('[Cache] Error al cargar:', e.message); return false; }
         }
 
         // Guardar caché al salir / cambiar de app
+        function _renderCacheInicial() {
+            if (window._cacheInicialRenderizado) return true;
+            const ok = _cargarCache();
+            if (!ok) return false;
+            window._cacheInicialRenderizado = true;
+            try {
+                renderHistorial();
+                renderInventario();
+                renderClientes();
+                renderCompras();
+                const _vistaIng = document.getElementById('vistaIngresos');
+                const _vistaEgr = document.getElementById('vistaEgresos');
+                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
+                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+            } catch(e) {
+                console.warn('[Cache] Error al renderizar cache inicial:', e.message);
+            }
+            return true;
+        }
+
         window.addEventListener('pagehide',       _guardarCache);
         window.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'hidden') _guardarCache();
         });
+        document.addEventListener('DOMContentLoaded', _renderCacheInicial);
 
         // ============================================================
         // INICIALIZACI───────────────────────────────────────────────N
@@ -26037,7 +26356,7 @@ function calcularCajaEsperada() {
             _aplicarCajaDesdeLocal();
 
             // 1) Cargar caché instantáneo ANTES de ir al sheet
-            const tuvimosCachee = _cargarCache();
+            const tuvimosCachee = _renderCacheInicial();
             if (tuvimosCachee) {
                 // Renderizar con datos del caché al toque
                 renderHistorial();
@@ -26060,6 +26379,25 @@ function calcularCajaEsperada() {
             setTimeout(function(){
                 if (typeof kpiCajaCargarDesdeSheet === 'function') kpiCajaCargarDesdeSheet();
             }, 400);
+
+            if (tuvimosCachee) {
+                mostrarToast('Datos locales cargados. Sincronizando en segundo plano...', 'success');
+                setTimeout(() => {
+                    const syncPromise = iniciarSyncSheets();
+                    Promise.resolve(syncPromise).then(() => {
+                        setTimeout(() => {
+                            if (_sheetVentas && _sheetVentas.length > 0) {
+                                renderHistorialConSheet();
+                            }
+                            if (typeof kpiCajaCargarDesdeSheet === 'function') {
+                                kpiCajaCargarDesdeSheet();
+                            }
+                            _guardarCache();
+                        }, 300);
+                    }).catch(() => {});
+                }, 5000);
+                return;
+            }
 
             // 2) Sincronizar con sheet en segundo plano
             const syncPromise = iniciarSyncSheets();
@@ -27711,9 +28049,19 @@ function verDetalleProveedor(tipo, id){
                     _sheetProductos.map(p => String(p.proveedor||'').trim()).filter(Boolean)
                 )].sort();
                 const prevProv = selProv.value;
-                selProv.innerHTML = '<option value="">- Elegir proveedor -</option>' +
+                selProv.innerHTML = '<option value="">- Todos los proveedores -</option>' +
                     proveedores.map(pr => `<option value="${pr}" ${pr===prevProv?'selected':''}>${pr}</option>`).join('');
                 if (prevProv) renderStockProveedor();
+            }
+
+            const selDepStock = document.getElementById('filtroDepartamentoStock');
+            if (selDepStock) {
+                const departamentos = [...new Set(
+                    _sheetProductos.map(p => String(p.depto||'').trim()).filter(Boolean)
+                )].sort();
+                const prevDepStock = selDepStock.value;
+                selDepStock.innerHTML = '<option value="">- Todos los departamentos -</option>' +
+                    departamentos.map(dep => `<option value="${Utils.escHtml(dep)}" ${dep===prevDepStock?'selected':''}>${Utils.escHtml(dep)}</option>`).join('');
             }
 
             // Poblar select proveedor (ventas por producto)
@@ -27747,7 +28095,6 @@ function verDetalleProveedor(tipo, id){
                     .join('');
             if (prev) renderKardex();
 
-            renderVentasPorProducto();
         }
 
         function setRangoProductosRapido(tipo, rango) {
@@ -27795,12 +28142,12 @@ function verDetalleProveedor(tipo, id){
         }
 
         function renderVentasPorProducto() {
-            const desde = document.getElementById('ventasProdDesde').value;
-            const hasta = document.getElementById('ventasProdHasta').value;
-            const provFiltro = (document.getElementById('filtroProveedorVentas')?.value || '').trim().toUpperCase();
-            const deptoFiltro = (document.getElementById('filtroDepartamentoVentas')?.value || '').trim().toUpperCase();
             const tbody = document.getElementById('tablaVentasProductoBody');
             if (!tbody) return;
+            const desde = document.getElementById('ventasProdDesde')?.value || '';
+            const hasta = document.getElementById('ventasProdHasta')?.value || '';
+            const provFiltro = (document.getElementById('filtroProveedorVentas')?.value || '').trim().toUpperCase();
+            const deptoFiltro = (document.getElementById('filtroDepartamentoVentas')?.value || '').trim().toUpperCase();
 
             const fd = desde ? parseFechaNum(desde) : null;
             const fh = hasta ? parseFechaNum(hasta) : null;
