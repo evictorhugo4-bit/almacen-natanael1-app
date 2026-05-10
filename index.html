@@ -3020,6 +3020,24 @@ GUARDAR PRODUCTO
                 <div id="ddClientesEditIngNeg" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
             </div>
             <div>
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Supercategoria</label>
+                <input type="text" id="editIngNegSupercategoria"
+                    class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase"
+                    autocomplete="off">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Categoria</label>
+                <input type="text" id="editIngNegCategoria"
+                    class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase"
+                    autocomplete="off">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Subcategoria</label>
+                <input type="text" id="editIngNegSubcategoria"
+                    class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase"
+                    autocomplete="off">
+            </div>
+            <div>
                 <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Forma de Pago</label>
                 <select id="editIngNegFormaPago" class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm">
                     <option value="Efectivo">Efectivo</option>
@@ -3082,6 +3100,22 @@ GUARDAR PRODUCTO
                         onblur="setTimeout(()=>document.getElementById('ddClientesIngNeg').classList.add('hidden'),150)"
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
                     <div id="ddClientesIngNeg" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Supercategoria</label>
+                    <input type="text" id="inputIngNegSupercategoria" placeholder="Supercategoria..."
+                        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Categoria</label>
+                    <input type="text" id="inputIngNegCategoria" placeholder="Categoria..."
+                        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Subcategoria</label>
+                    <input type="text" id="inputIngNegSubcategoria" placeholder="Subcategoria..."
+                        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
                 </div>
 
                 <!-- Forma de pago -->
@@ -3152,6 +3186,11 @@ GUARDAR PRODUCTO
                         onblur="setTimeout(()=>document.getElementById('ddCatIngEgr').classList.add('hidden'),300)"
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-xs">
                     <div id="ddCatIngEgr" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Subcategoria</label>
+                    <input type="text" id="inputIngEgrSubcategoria" placeholder="Subcategoria..."
+                        class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Detalle</label>
@@ -3680,6 +3719,12 @@ CONFIRMAR PAGO
                     class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm"
                     autocomplete="off">
                 <div id="ddEditIngEgrConcepto" class="hidden" style="position:absolute;left:0;right:0;top:100%;z-index:99999;background:#1e293b;border:1.5px solid #334155;border-radius:12px;max-height:180px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 32px #0008;"></div>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Subcategoria</label>
+                <input type="text" id="editIngEgrSubcategoria"
+                    class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none text-sm uppercase"
+                    autocomplete="off">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
@@ -6533,8 +6578,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzXj_S0IM58h18dUSzpeUG60y-l_Rlyi63EQcgBMm05qedJOLtIZWNG40oM_sHG0gHi/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzXj_S0IM58h18dUSzpeUG60y-l_Rlyi63EQcgBMm05qedJOLtIZWNG40oM_sHG0gHi/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzi7UzBDfUGsz1QQHKANRwYAWfuLgpnXRpLvWRBKoZMgFVJ87x5fFcvAY8wR65rULB9/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzi7UzBDfUGsz1QQHKANRwYAWfuLgpnXRpLvWRBKoZMgFVJ87x5fFcvAY8wR65rULB9/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -7706,6 +7751,7 @@ window._catsIngSheet = _catsIngSheet;
                             fechaISO:   fechaRaw,
                             proveedor:  String(row['SUPER CATEGORIA'] || row['Supercategoria'] || '').trim(),
                             concepto:   String(row['CATEGORIA'] || row['Categoria'] || '').trim(),
+                            subcategoria:String(row['SUBCATEGORIA'] || row['Subcategoria'] || row['SUB CATEGORIA'] || row['Sub Categoria'] || row['Sub Categoría'] || '').trim().toUpperCase(),
                             detalle:    String(row['DETALLE'] || row['Detalle'] || '').trim(),
                             estado:     String(row['ESTADO'] || row['Estado'] || '').trim(),
                             formaPago:  String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim(),
@@ -7796,6 +7842,7 @@ window._catsEgrSheet = _catsEgrSheet;
                             fechaISO:   fechaRaw,
                             proveedor:  String(row['SUPER CATEGORIA'] || row['Supercategoria'] || row['Supercategoría'] || '').trim(),
                             concepto:   String(row['CATEGORIA'] || row['Categoria'] || row['Categoría'] || '').trim(),
+                            subcategoria:String(row['SUBCATEGORIA'] || row['Subcategoria'] || row['SUB CATEGORIA'] || row['Sub Categoria'] || row['Sub Categoría'] || '').trim().toUpperCase(),
                             detalle:    String(row['DETALLE'] || row['Detalle'] || '').trim(),
                             estado:     String(row['ESTADO'] || row['Estado'] || '').trim(),
                             formaPago:  String(row['FORMA DE PAGO'] || row['Forma de Pago'] || '').trim(),
@@ -7939,6 +7986,10 @@ if (indicator) indicator.classList.remove('hidden');
                     idCliente: String(row['IDCLIENTE']||row['IdCliente']||'').trim(),
                     cliente:   String(row['CLIENTE']||row['Cliente']||'').trim(),
                     proveedor: String(row['CLIENTE']||row['Cliente']||'').trim(),
+                    supercategoria: String(row['SUPER CATEGORIA']||row['Supercategoria']||row['Supercategoría']||'').trim().toUpperCase(),
+                    concepto: String(row['CATEGORIA']||row['Categoria']||row['Categoría']||'').trim().toUpperCase(),
+                    categoria: String(row['CATEGORIA']||row['Categoria']||row['Categoría']||'').trim().toUpperCase(),
+                    subcategoria: String(row['SUBCATEGORIA']||row['Subcategoria']||row['SUB CATEGORIA']||row['Sub Categoria']||row['Sub Categoría']||'').trim().toUpperCase(),
                     estado:    String(row['ESTADO']||row['Estado']||'').trim(),
                     formaPago: String(row['FORMA DE PAGO']||row['Forma de Pago']||'').trim(),
                     total,
@@ -7994,6 +8045,7 @@ if (indicator) indicator.classList.remove('hidden');
                         const reg = { id, idSheet:idIngreso, fecha:fechaDisplay, fechaISO:fechaRaw,
                             proveedor:String(row['SUPER CATEGORIA']||row['Supercategoria']||'').trim(),
                             concepto:String(row['CATEGORIA']||row['Categoria']||'').trim(),
+                            subcategoria:String(row['SUBCATEGORIA']||row['Subcategoria']||row['SUB CATEGORIA']||row['Sub Categoria']||row['Sub Categoría']||'').trim().toUpperCase(),
                             genero:String(row['GENERO']||row['Genero']||row['Género']||'').trim().toUpperCase(),
                             detalle:String(row['DETALLE']||row['Detalle']||'').trim(),
                             estado:String(row['ESTADO']||'').trim(),
@@ -8035,6 +8087,7 @@ if (indicator) indicator.classList.remove('hidden');
                         const reg={id,idSheet:idGasto,fecha:fechaDisplay,fechaISO:fechaRaw,
                             proveedor:String(row['SUPER CATEGORIA']||row['Supercategoria']||'').trim(),
                             concepto:String(row['CATEGORIA']||row['Categoria']||'').trim(),
+                            subcategoria:String(row['SUBCATEGORIA']||row['Subcategoria']||row['SUB CATEGORIA']||row['Sub Categoria']||row['Sub Categoría']||'').trim().toUpperCase(),
                             genero:String(row['GENERO']||row['Genero']||row['Género']||'').trim().toUpperCase(),
                             detalle:String(row['DETALLE']||row['Detalle']||'').trim(),
                             estado:String(row['ESTADO']||'').trim(),
@@ -9763,23 +9816,56 @@ console.log("FILTRADAS:", filtradas.length);
             const epTabla=filas=>'<div style="overflow-x:auto;border-radius:16px;border:1.5px solid #1e293b;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;min-width:340px;"><thead><tr>'+epThCell('CONCEPTO','#0f172a','#64748b','text-align:left;min-width:160px;')+epThCell('INGRESOS',EP_C_HEAD,EP_C_ING,'')+epThCell('EGRESOS',EP_C_HEGR,EP_C_EGR,'')+epThCell('BALANCE',EP_C_HBAL,EP_C_BAL,'')+'</tr></thead><tbody>'+filas+'</tbody></table></div>';
 
             const filtroLabelEP=_epFiltro==='efectivo'?'EFECTIVO':_epFiltro==='credito'?'CR??DITO':'TOTAL';
+            const epCatName = r => String(r.categoria || r.concepto || r.CATEGORIA || r.detalle || r.motivo || 'SIN CATEGORIA').trim().toUpperCase();
+            const epSubName = r => String(r.subcategoria || r.SUBCATEGORIA || r['SUBCATEGORIA'] || '').trim().toUpperCase();
+            const epVal = r => Number(r[campoEP] || r[campoFil] || 0);
+            const epBloques = {};
+            const epAddDyn = (rows, tipo) => {
+                (rows||[]).forEach(r => {
+                    if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
+                    const sub = epSubName(r);
+                    if(!/^BLOQUE\s*\d+/i.test(sub)) return;
+                    const cat = epCatName(r);
+                    const val = epVal(r);
+                    if(!val) return;
+                    if(!epBloques[sub]) epBloques[sub] = {};
+                    if(!epBloques[sub][cat]) epBloques[sub][cat] = { ing:0, egr:0 };
+                    epBloques[sub][cat][tipo] += val;
+                });
+            };
+            epAddDyn(_sheetIngresos, 'ing');
+            epAddDyn(_sheetIngresosNegocio, 'ing');
+            epAddDyn(_sheetEgresos, 'egr');
+            epAddDyn(_sheetEgresosNegocio, 'egr');
+            const epSortBloques = (a,b) => {
+                const na = Number((a.match(/\d+/)||[])[0] || 9999);
+                const nb = Number((b.match(/\d+/)||[])[0] || 9999);
+                return na !== nb ? na - nb : a.localeCompare(b);
+            };
+            const epBloquesOrden = Object.keys(epBloques).sort(epSortBloques);
+            if(!epBloquesOrden.includes('BLOQUE 1')) epBloquesOrden.unshift('BLOQUE 1');
+            const epFilaDyn = (label, vals) => epFila(label, vals.ing || 0, vals.egr || 0, vals.ing > 0 ? '#86efac' : '#fca5a5');
+            const epBloqueFilas = bloque => Object.keys(epBloques[bloque]||{}).sort((a,b)=>a.localeCompare(b)).map(cat => epFilaDyn(cat, epBloques[bloque][cat])).join('');
+            const epBloqueTotal = bloque => Object.values(epBloques[bloque]||{}).reduce((a,v)=>({ ing:a.ing+(v.ing||0), egr:a.egr+(v.egr||0) }), { ing:0, egr:0 });
+            const epBloque1Total = epBloqueTotal('BLOQUE 1');
+            const epBloquesExtraFilas = epBloquesOrden.filter(b=>b!=='BLOQUE 1').map(b => {
+                const t = epBloqueTotal(b);
+                return epBloqueFilas(b) + epFilaBal('INGRESOS '+b,t.ing,'EGRESOS '+b,t.egr,t.ing-t.egr);
+            }).join('');
+            const epIngDinamico = epBloquesOrden.reduce((s,b)=>s+epBloqueTotal(b).ing,0);
+            const epEgrDinamico = epBloquesOrden.reduce((s,b)=>s+epBloqueTotal(b).egr,0);
+            const epIngTotalDinamico = ganFiltroEP + epIngDinamico;
+            const epEgrTotalDinamico = egrConsumoNeg + egrComidaFam + epEgrDinamico;
+            const epBalTotalDinamico = epIngTotalDinamico - epEgrTotalDinamico;
             html+='<div style="margin-bottom:10px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">🛒?Š ESTADO PERSONAL / '+filtroLabelEP+'</span></div>';
             html+=epTabla(
                 epFila('GANANCIAS TOTALES',ganFiltroEP,0,'#fbbf24')+
                 epFila('CONSUMO DEL NEGOCIO',0,egrConsumoNeg,'#fb923c')+
                 epFila('COMIDA FAMILIAR',0,egrComidaFam,'#f87171')+
-                epFila('DIEZMO Y OFRENDA MARIA JESUS',0,egrDiezmo,'#fda4af')+
-                epFilaBal('GANANCIAS TOTALES',ganFiltroEP,'CONSUMO + COMIDA + DIEZMO',egrConsumoNeg+egrComidaFam+egrDiezmo,epBal1)+
-                epFila('INGRESOS PROPIOS EXTRA',ingPropiosExtra,0,'#86efac')+
-                epFila('EGRESOS PROPIOS EXTRA',0,egrPropiosExtra,'#fca5a5')+
-                epFilaBal('INGRESOS PROPIOS EXTRA',ingPropiosExtra,'EGRESOS PROPIOS EXTRA',egrPropiosExtra,epBal2)+
-                epFila('INGRESOS AJENOS EXTRA',ingAjenosExtra,0,'#67e8f9')+
-                epFila('EGRESOS AJENOS EXTRA',0,egrAjenosExtra,'#fca5a5')+
-                epFilaBal('INGRESOS AJENOS EXTRA',ingAjenosExtra,'EGRESOS AJENOS EXTRA',egrAjenosExtra,epBal3)+
-                epFila('INGRESOS PARA NATANAEL ESCUELA/IGLESIA',ingNatanael,0,'#c4b5fd')+
-                epFila('EGRESOS PARA NATANAEL ESCUELA/IGLESIA',0,egrNatanael,'#fca5a5')+
-                epFilaBal('NATANAEL ESCUELA / IGLESIA',ingNatanael,'NATANAEL ESCUELA / IGLESIA',egrNatanael,epBal4)+
-                epFilaTot('INGRESOS TOTALES / EGRESOS TOTALES',epIngTot,epEgrTot,epBalTot)
+                epBloqueFilas('BLOQUE 1')+
+                epFilaBal('TOTAL BLOQUE 1',ganFiltroEP+epBloque1Total.ing,'EGRESOS BLOQUE 1',egrConsumoNeg+egrComidaFam+epBloque1Total.egr,(ganFiltroEP+epBloque1Total.ing)-(egrConsumoNeg+egrComidaFam+epBloque1Total.egr))+
+                epBloquesExtraFilas+
+                epFilaTot('INGRESOS TOTALES / EGRESOS TOTALES',epIngTotalDinamico,epEgrTotalDinamico,epBalTotalDinamico)
             );
 
             html += tablaIng + tablaEgr;
@@ -20001,6 +20087,9 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             document.getElementById('btnConfirmarIngNeg').style.background = isIng ? '#10b981' : '#ef4444';
             document.getElementById('btnConfirmarIngNeg').style.color = isIng ? '#000' : '#fff';
             document.getElementById('inputIngNegCliente').value = '';
+            if (document.getElementById('inputIngNegSupercategoria')) document.getElementById('inputIngNegSupercategoria').value = '';
+            if (document.getElementById('inputIngNegCategoria')) document.getElementById('inputIngNegCategoria').value = '';
+            if (document.getElementById('inputIngNegSubcategoria')) document.getElementById('inputIngNegSubcategoria').value = '';
             document.getElementById('selectIngNegFormaPago').value = 'Efectivo';
             document.getElementById('inputIngNegEfectivo').value = '';
             document.getElementById('inputIngNegCredito').value = '';
@@ -20053,6 +20142,9 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
        function confirmarIngNeg() {
 
     const cliente   = document.getElementById('inputIngNegCliente').value.trim() || 'Sin especificar';
+    const supercategoria = document.getElementById('inputIngNegSupercategoria')?.value.trim().toUpperCase() || '';
+    const categoria = document.getElementById('inputIngNegCategoria')?.value.trim().toUpperCase() || '';
+    const subcategoria = document.getElementById('inputIngNegSubcategoria')?.value.trim().toUpperCase() || '';
     const formaPago = document.getElementById('selectIngNegFormaPago').value;
     const efectivo  = parseFloat(document.getElementById('inputIngNegEfectivo').value) || 0;
     const credito   = parseFloat(document.getElementById('inputIngNegCredito').value) || 0;
@@ -20076,6 +20168,10 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         fechaISO: ahora.toISOString(),
         cliente,
         proveedor: cliente,
+        supercategoria,
+        concepto: categoria,
+        categoria,
+        subcategoria,
         estado,
         formaPago,
         efectivo,
@@ -20117,6 +20213,12 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             fecha: fechaSheet(ahora),
             fechaISO: ahora.toISOString(),
             cliente,
+            supercategoria,
+            categoria,
+            subcategoria,
+            'SUPER CATEGORIA': supercategoria,
+            CATEGORIA: categoria,
+            SUBCATEGORIA: subcategoria,
             estado,
             formaPago,
             pagoEfectivo: efectivo,
@@ -20147,6 +20249,9 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             const isIng = tipo === 'ingresosNegocio';
             document.getElementById('tituloEditarIngNeg').textContent = isIng ? 'Editar Ingreso Negocio' : 'Editar Egreso Negocio';
             document.getElementById('editIngNegCliente').value    = r.cliente || r.proveedor || '';
+            if (document.getElementById('editIngNegSupercategoria')) document.getElementById('editIngNegSupercategoria').value = r.supercategoria || r['SUPER CATEGORIA'] || '';
+            if (document.getElementById('editIngNegCategoria')) document.getElementById('editIngNegCategoria').value = r.categoria || r.concepto || r.CATEGORIA || '';
+            if (document.getElementById('editIngNegSubcategoria')) document.getElementById('editIngNegSubcategoria').value = r.subcategoria || r.SUBCATEGORIA || '';
             document.getElementById('editIngNegFormaPago').value  = r.formaPago || 'Efectivo';
             document.getElementById('editIngNegEfectivo').value   = r.efectivo || '';
             document.getElementById('editIngNegCredito').value    = r.credito || '';
@@ -20170,6 +20275,14 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
     r.cliente = document.getElementById('editIngNegCliente').value.trim() || r.cliente;
 
     r.proveedor = r.cliente;
+
+    r.supercategoria = document.getElementById('editIngNegSupercategoria')?.value.trim().toUpperCase() || '';
+
+    r.categoria = document.getElementById('editIngNegCategoria')?.value.trim().toUpperCase() || '';
+
+    r.concepto = r.categoria;
+
+    r.subcategoria = document.getElementById('editIngNegSubcategoria')?.value.trim().toUpperCase() || '';
 
     r.formaPago = document.getElementById('editIngNegFormaPago').value;
 
@@ -20195,6 +20308,12 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         tipo: ingNegAccionTipo === 'ingresosNegocio' ? 'actualizar_ingneg' : 'actualizar_egrneg',
         id: idParaSheet,
         cliente: r.cliente,
+        supercategoria: r.supercategoria,
+        categoria: r.categoria,
+        subcategoria: r.subcategoria,
+        'SUPER CATEGORIA': r.supercategoria,
+        CATEGORIA: r.categoria,
+        SUBCATEGORIA: r.subcategoria,
         formaPago: r.formaPago,
         efectivo: r.efectivo,
         credito: r.credito,
@@ -23637,6 +23756,7 @@ function filtrarGeneroEgr(query) {
             document.getElementById('btnConfirmarIngEgr').style.background = tipo === 'ingreso' ? '#10b981' : '#ef4444';
             document.getElementById('inputIngEgrProveedor').value = '';
             document.getElementById('inputIngEgrConcepto').value = '';
+            if (document.getElementById('inputIngEgrSubcategoria')) document.getElementById('inputIngEgrSubcategoria').value = '';
             if (document.getElementById('inputIngEgrDetalle')) document.getElementById('inputIngEgrDetalle').value = '';
             if (document.getElementById('inputIngEgrGenero')) document.getElementById('inputIngEgrGenero').value = '';
             document.getElementById('inputIngEgrEfectivo').value = '';
@@ -23718,6 +23838,7 @@ function filtrarGeneroEgr(query) {
 
         function agregarItemIngEgrDesdeFormulario() {
             const categoria = document.getElementById('inputIngEgrConcepto').value.trim();
+            const subcategoria = document.getElementById('inputIngEgrSubcategoria')?.value.trim().toUpperCase() || '';
             const detalle = document.getElementById('inputIngEgrDetalle')?.value.trim() || '';
             const efectivo = parseFloat(document.getElementById('inputIngEgrEfectivo').value) || 0;
             const credito = parseFloat(document.getElementById('ingEgrCredito').value) || 0;
@@ -23731,6 +23852,7 @@ function filtrarGeneroEgr(query) {
                 tipoItem: 'categoria',
                 nombre: categoria,
                 concepto: categoria,
+                subcategoria,
                 detalle,
                 cantidad: 1,
                 efectivo,
@@ -23741,6 +23863,7 @@ function filtrarGeneroEgr(query) {
             });
 
             document.getElementById('inputIngEgrConcepto').value = '';
+            if (document.getElementById('inputIngEgrSubcategoria')) document.getElementById('inputIngEgrSubcategoria').value = '';
             if (document.getElementById('inputIngEgrDetalle')) document.getElementById('inputIngEgrDetalle').value = '';
             document.getElementById('inputIngEgrEfectivo').value = '';
             document.getElementById('ingEgrCredito').value = '';
@@ -23927,11 +24050,13 @@ function eliminarProductoCompra(itemId) {
                     : `<div class="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0" style="background:${color}22;color:${color}">${initials}</div>`;
                 if (item.tipoItem === 'categoria') {
                     const totalItem = Number(item.total) || 0;
+                    const subcategoriaItem = item.subcategoria ? `<span class="block text-[9px] text-cyan-400 font-black uppercase truncate">${Utils.escHtml(item.subcategoria)}</span>` : '';
                     const detalleItem = item.detalle ? `<span class="block text-[9px] text-slate-500 italic truncate">${Utils.escHtml(item.detalle)}</span>` : '';
                     return `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center gap-2">
                         ${thumb}
                         <div class="flex-1 min-w-0">
                             <span class="block text-xs font-black text-slate-300 uppercase truncate">${Utils.escHtml(item.nombre || 'Sin nombre')}</span>
+                            ${subcategoriaItem}
                             ${detalleItem}
                             <span class="text-[10px] text-slate-500 font-mono">Item</span>
                         </div>
@@ -23995,6 +24120,7 @@ function eliminarItemIngEgr(itemId){
             if (confirmarIngEgr._guardando) return;
             const supercategoria = document.getElementById('inputIngEgrProveedor').value.trim() || 'Sin especificar';
             const categoria      = document.getElementById('inputIngEgrConcepto').value.trim() || '';
+            const subcategoria   = document.getElementById('inputIngEgrSubcategoria')?.value.trim().toUpperCase() || '';
             const detalle        = document.getElementById('inputIngEgrDetalle')?.value.trim() || '';
             const efectivo       = parseFloat(document.getElementById('inputIngEgrEfectivo').value) || 0;
             const credito        = parseFloat(document.getElementById('ingEgrCredito').value) || 0;
@@ -24003,6 +24129,7 @@ function eliminarItemIngEgr(itemId){
                 if (item.tipoItem === 'categoria') {
                     return {
                         categoria: item.concepto || item.nombre || '',
+                        subcategoria: item.subcategoria || '',
                         detalle: item.detalle || '',
                         efectivo: Number(item.efectivo) || 0,
                         credito: Number(item.credito) || 0,
@@ -24015,6 +24142,7 @@ function eliminarItemIngEgr(itemId){
                 const esCredito = ingEgrFormaPago === 'TARJETA';
                 return {
                     categoria: item.nombre || '',
+                    subcategoria,
                     detalle: `${Number(item.cantidad) || 1}x ${item.nombre || ''}`,
                     efectivo: esCredito ? 0 : totalItem,
                     credito: esCredito ? totalItem : 0,
@@ -24024,6 +24152,7 @@ function eliminarItemIngEgr(itemId){
                 };
             }) : [{
                 categoria,
+                subcategoria,
                 detalle,
                 efectivo,
                 credito,
@@ -24054,7 +24183,7 @@ function eliminarItemIngEgr(itemId){
                 mostrarToast('Subiendo ticket...');
                 ticketFinalIngEgr = await subirTicketConReintentos(ticketFinalIngEgr, 2);
             }
-            const registro = { id: idIngreso, fecha, fechaISO: ahora.toISOString(), proveedor: supercategoria, concepto: categoria, detalle, total, efectivo, credito, estado, formaPago, proveedorTarjeta, ticket: ticketFinalIngEgr, items: [] };
+            const registro = { id: idIngreso, fecha, fechaISO: ahora.toISOString(), proveedor: supercategoria, concepto: categoria, subcategoria, detalle, total, efectivo, credito, estado, formaPago, proveedorTarjeta, ticket: ticketFinalIngEgr, items: [] };
            
 
 
@@ -24086,6 +24215,8 @@ const genero = document.getElementById('inputIngEgrGenero')?.value.trim() || '';
                         genero:         genero,
                         supercategoria: supercategoria,
                         categoria:      item.categoria,
+                        subcategoria:   item.subcategoria || '',
+                        SUBCATEGORIA:   item.subcategoria || '',
                         detalle:        item.detalle,
                         formaPago:      item.formaPago,
                         proveedorTarjeta: item.proveedorTarjeta,
@@ -25329,6 +25460,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             document.getElementById('editIngEgrTotalBase').value = Number(r.total || 0);
             document.getElementById('editIngEgrProveedor').value = r.proveedor || '';
             document.getElementById('editIngEgrConcepto').value  = r.concepto  || '';
+            if (document.getElementById('editIngEgrSubcategoria')) document.getElementById('editIngEgrSubcategoria').value = r.subcategoria || r.SUBCATEGORIA || '';
             document.getElementById('editIngEgrEfectivo').value  = r.efectivo  || '';
             recalcularEditarIngEgr();
             // Ticket ? solo para egresos
@@ -25410,6 +25542,8 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
 
     r.concepto = document.getElementById('editIngEgrConcepto').value.trim();
 
+    r.subcategoria = document.getElementById('editIngEgrSubcategoria')?.value.trim().toUpperCase() || '';
+
     r.total    = parseFloat(document.getElementById('editIngEgrTotalBase').value) || r.total;
 
     r.efectivo = parseFloat(document.getElementById('editIngEgrEfectivo').value) || 0;
@@ -25447,6 +25581,8 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
                 ID_GASTOS: r.idSheet || r.id,
                 proveedor: r.proveedor,
                 concepto: r.concepto,
+                subcategoria: r.subcategoria,
+                SUBCATEGORIA: r.subcategoria,
                 efectivo: r.efectivo,
                 credito: r.credito,
                 total: r.total,
@@ -25465,6 +25601,8 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
             ID_GASTOS: r.idSheet || r.id,
             proveedor: r.proveedor,
             concepto: r.concepto,
+            subcategoria: r.subcategoria,
+            SUBCATEGORIA: r.subcategoria,
             efectivo: r.efectivo,
             credito: r.credito,
             total: r.total,
@@ -29265,6 +29403,9 @@ renderIngNeg = function(tipo) {
                 <div class="flex-1 min-w-0">
                     <p class="text-[9px] font-black text-emerald-500 uppercase">${Utils.escHtml(r.fecha||'')}</p>
                     <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(r.cliente||r.proveedor||'-')}</p>
+                    ${r.supercategoria ? `<p class="text-[9px] text-purple-300 font-black uppercase truncate">SC: ${Utils.escHtml(r.supercategoria)}</p>` : ''}
+                    ${r.categoria || r.concepto ? `<p class="text-[9px] text-sky-400 font-black uppercase truncate">CAT: ${Utils.escHtml(r.categoria || r.concepto)}</p>` : ''}
+                    ${r.subcategoria ? `<p class="text-[9px] text-cyan-400 font-black uppercase truncate">SUB: ${Utils.escHtml(r.subcategoria)}</p>` : ''}
                     <div class="flex items-center gap-2 mt-1 flex-wrap">
                         <span class="text-[9px] font-black px-2 py-0.5 rounded-full border" style="color:${colorEstado};border-color:${colorEstado}55;background:${colorEstado}18;">${infoEstado.estado}</span>
                         ${r.formaPago ? `<span class="text-[9px] text-slate-500">${Utils.escHtml(r.formaPago)}</span>` : ''}
@@ -29308,6 +29449,7 @@ renderIngEgr = function(tipo) {
         const g = grupos[key];
         const filaKey = [
             String(r.concepto || '').trim().toUpperCase(),
+            String(r.subcategoria || r.SUBCATEGORIA || '').trim().toUpperCase(),
             String(r.detalle || '').trim().toUpperCase(),
             Number(r.total) || 0,
             Number(r.efectivo) || 0,
@@ -29320,12 +29462,14 @@ renderIngEgr = function(tipo) {
         g.efectivo += Number(r.efectivo) || 0;
         g.credito += Number(r.credito) || 0;
         if (r.ticket && !g.ticket) g.ticket = r.ticket;
+        if ((r.subcategoria || r.SUBCATEGORIA) && !g.subcategoria) g.subcategoria = r.subcategoria || r.SUBCATEGORIA;
         if (r.fechaISO && (!g.fechaISO || new Date(r.fechaISO) > new Date(g.fechaISO))) {
             g.fecha = r.fecha;
             g.fechaISO = r.fechaISO;
         }
         g.items.push({
             nombre: r.concepto || r.detalle || r.proveedor || '',
+            subcategoria: r.subcategoria || r.SUBCATEGORIA || '',
             detalle: r.detalle || '',
             total: Number(r.total) || 0,
             efectivo: Number(r.efectivo) || 0,
@@ -29337,6 +29481,7 @@ renderIngEgr = function(tipo) {
         g.items = (g.items || []).filter(function(i) {
             const k = [
                 String(i.nombre || '').trim().toUpperCase(),
+                String(i.subcategoria || '').trim().toUpperCase(),
                 String(i.detalle || '').trim().toUpperCase(),
                 Number(i.total || 0) || 0,
                 Number(i.efectivo || 0) || 0,
@@ -29380,7 +29525,8 @@ renderIngEgr = function(tipo) {
     const searchTxt = (searchInput ? searchInput.value : '').toLowerCase().trim();
     const dbFiltrado = searchTxt ? db.filter(function(c) {
         const itemTxt = (c.items || []).map(i => [i.nombre || '', i.detalle || ''].join(' ')).join(' ');
-        const haystack = [c.proveedor||'', c.concepto||'', c.genero||'', c.formaPago||'', c.fecha||'', itemTxt].join(' ').toLowerCase();
+        const itemSubcatTxt = (c.items || []).map(i => i.subcategoria || '').join(' ');
+        const haystack = [c.proveedor||'', c.concepto||'', c.subcategoria||'', c.genero||'', c.formaPago||'', c.fecha||'', itemTxt, itemSubcatTxt].join(' ').toLowerCase();
         return haystack.includes(searchTxt);
     }) : db;
     if (!dbFiltrado.length) {
@@ -29409,6 +29555,7 @@ renderIngEgr = function(tipo) {
         (c.items || []).forEach(function(i) {
             const itemKey = [
                 String(i.nombre || '').trim().toUpperCase(),
+                String(i.subcategoria || '').trim().toUpperCase(),
                 String(i.detalle || '').trim().toUpperCase(),
                 Number(i.total || 0) || 0
             ].join('|');
@@ -29441,6 +29588,7 @@ renderIngEgr = function(tipo) {
                         </div>
                         <div style="min-width:0;">
                             <div class="text-[10px] font-black text-slate-200 uppercase truncate">${Utils.escHtml(i.nombre || '')}</div>
+                            ${i.subcategoria ? `<div class="text-[8px] text-cyan-400 font-black uppercase truncate">${Utils.escHtml(i.subcategoria)}</div>` : ''}
                             ${i.detalle ? `<div class="text-[8px] text-slate-500 italic truncate">${Utils.escHtml(i.detalle)}</div>` : ''}
                         </div>
                         <span class="font-mono text-[11px] font-black text-white shrink-0">$${Utils.fmt(i.total || 0)}</span>
@@ -29461,6 +29609,7 @@ renderIngEgr = function(tipo) {
                     <p class="text-[9px] font-black text-emerald-500 uppercase">${c.fecha}</p>
                     <p class="font-black text-white uppercase text-sm truncate">${Utils.escHtml(c.proveedor)}</p>
                     ${c.genero ? `<div style="display:flex;align-items:center;gap:4px;">${imgGN ? `<img src="${imgGN}" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">` : ''}<span class="text-[9px] text-sky-400 font-black uppercase">${Utils.escHtml(c.genero)}</span></div>` : ''}
+                    ${c.subcategoria ? `<p class="text-[9px] text-cyan-400 font-black uppercase">${Utils.escHtml(c.subcategoria)}</p>` : ''}
                     ${itemsGrupoHtml || (c.concepto ? `<p class="text-[9px] text-slate-400 italic">${Utils.escHtml(c.concepto)}</p>` : '')}
                     <div class="flex items-center gap-2 mt-1 flex-wrap">
                         ${c.formaPago ? `<span class="inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-0.5 ${c.formaPago==='TARJETA'?'bg-blue-500/20 text-blue-400':c.formaPago==='TRANSFERENCIA'?'bg-purple-500/20 text-purple-400':'bg-emerald-500/20 text-emerald-400'}">${Utils.escHtml(c.formaPago)}</span>` : ''}
