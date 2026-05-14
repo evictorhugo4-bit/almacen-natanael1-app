@@ -419,6 +419,31 @@ img, video { max-width: 100%; height: auto; }
         }
         #tabProveedor > div:has(#cajaProveedores) { display: none !important; }
         #statsChartsRow1 > div:first-child { display: block !important; }
+        .inventario-product-card {
+            min-height: 382px;
+        }
+        .inventario-product-imgbox {
+            height: 156px !important;
+            min-height: 156px !important;
+            max-height: 156px !important;
+            width: 100%;
+            background: #fff !important;
+        }
+        .inventario-product-img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            padding: 10px !important;
+            background: #fff !important;
+        }
+        @media (max-width: 767px) {
+            .inventario-product-card { min-height: 336px; }
+            .inventario-product-imgbox {
+                height: 140px !important;
+                min-height: 140px !important;
+                max-height: 140px !important;
+            }
+        }
         .product-voice-search { display: flex; align-items: center; gap: 8px; width: 100%; }
         .product-voice-search .search-input { flex: 1; min-width: 0; }
         .btn-voice-search {
@@ -476,6 +501,132 @@ img, video { max-width: 100%; height: auto; }
                 width: 100% !important;
                 flex: 0 0 auto !important;
             }
+        }
+        .mobile-datetime-picker {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            background: rgba(2, 6, 23, .72);
+            backdrop-filter: blur(3px);
+        }
+        .mobile-datetime-picker.is-open { display: flex; }
+        .mobile-datetime-panel {
+            width: min(92vw, 430px);
+            max-height: 86vh;
+            overflow: hidden;
+            border-radius: 18px;
+            background: #f8fafc;
+            color: #0f172a;
+            box-shadow: 0 24px 70px rgba(0,0,0,.45);
+            border: 1px solid #cbd5e1;
+        }
+        .mobile-datetime-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px 14px 8px;
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: lowercase;
+        }
+        .mobile-datetime-nav {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .mobile-datetime-nav button,
+        .mobile-datetime-actions button {
+            border: 0;
+            background: transparent;
+            color: #0f172a;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .mobile-datetime-body {
+            display: grid;
+            grid-template-columns: 1fr 130px;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            min-height: 300px;
+        }
+        .mobile-date-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            padding: 8px 12px 10px;
+        }
+        .mobile-date-cell {
+            min-height: 34px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            border: 1px solid transparent;
+        }
+        .mobile-date-cell.is-muted { color: #94a3b8; }
+        .mobile-date-cell.is-selected {
+            background: #0f7de8;
+            color: #fff;
+            border-color: #0f172a;
+        }
+        .mobile-date-week {
+            font-size: 12px;
+            font-weight: 800;
+            color: #0f172a;
+            text-align: center;
+            padding: 4px 0;
+        }
+        .mobile-time-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-left: 1px solid #cbd5e1;
+            background: #fff;
+        }
+        .mobile-time-col {
+            max-height: 330px;
+            overflow-y: auto;
+            padding: 8px 4px;
+        }
+        .mobile-time-col + .mobile-time-col { border-left: 1px solid #e2e8f0; }
+        .mobile-time-btn {
+            width: 100%;
+            padding: 8px 4px;
+            border-radius: 4px;
+            color: #111827;
+            font-size: 16px;
+            font-weight: 800;
+            text-align: center;
+            background: transparent;
+            border: 0;
+        }
+        .mobile-time-btn.is-selected {
+            background: #0f7de8;
+            color: #fff;
+        }
+        .mobile-datetime-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 14px;
+        }
+        .mobile-datetime-actions button {
+            color: #0f766e;
+            font-size: 14px;
+            padding: 8px 6px;
+        }
+        @media (max-width: 430px) {
+            .mobile-datetime-panel { width: 96vw; }
+            .mobile-datetime-body { grid-template-columns: 1fr 116px; }
+            .mobile-date-cell { min-height: 31px; font-size: 13px; }
+            .mobile-time-btn { font-size: 15px; }
         }
     </style>
     <!-- CSS de Tailwind ya esta inline para evitar cargar CDN duplicado -->
@@ -2887,6 +3038,24 @@ GUARDAR PRODUCTO
                     <div style="padding:8px 14px 0;">
                         <input type="text" id="buscadorCatStock" placeholder="🔍 Buscar categoría..." oninput="renderStockProveedor()"
                             style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #7c1d4e;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;outline:none;">
+                    </div>
+                    <div style="padding:8px 14px 0;display:grid;grid-template-columns:1fr 160px;gap:8px;">
+                        <select id="stockProvOrdenCampo" onchange="renderStockProveedor()"
+                            style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:900;padding:8px 10px;outline:none;text-transform:uppercase;">
+                            <option value="">Orden actual</option>
+                            <option value="stock">Stock</option>
+                            <option value="minimo">Minimo</option>
+                            <option value="diffcv">Dif. C/V</option>
+                            <option value="comprar">Comprar</option>
+                            <option value="vendido">Vendido</option>
+                            <option value="compras">Compras</option>
+                            <option value="ventas">Ventas</option>
+                        </select>
+                        <select id="stockProvOrdenDir" onchange="renderStockProveedor()"
+                            style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:900;padding:8px 10px;outline:none;text-transform:uppercase;">
+                            <option value="desc">Descendente</option>
+                            <option value="asc">Ascendente</option>
+                        </select>
                     </div>
                     <table class="w-full text-[10px]">
                         <thead>
@@ -6988,6 +7157,19 @@ _sheetEgresosNegocio.forEach(e => {
         // Cache de arranque: en Android debe aparecer lo ultimo guardado antes de esperar Sheets.
         function _natBootReadArray(key) {
             try {
+                const chunksRaw = localStorage.getItem(key + '__chunks');
+                if (chunksRaw) {
+                    const n = parseInt(chunksRaw, 10) || 0;
+                    const parts = [];
+                    for (let i = 0; i < n; i++) {
+                        const part = localStorage.getItem(key + '__chunk_' + i);
+                        if (part) parts.push(part);
+                    }
+                    if (parts.length === n) {
+                        const chunked = JSON.parse(parts.join(''));
+                        if (Array.isArray(chunked)) return chunked;
+                    }
+                }
                 const raw = localStorage.getItem(key);
                 if (!raw) return [];
                 const value = JSON.parse(raw);
@@ -9393,7 +9575,36 @@ console.log("FILTRADAS:", filtradas.length);
                 if (d === 0)        return 1; // exacto ? penúltimo
                 return 0;                      // cualquier diff != 0 ? primero
             };
+            const _stockProvOrdenCampo = (document.getElementById('stockProvOrdenCampo')?.value || '').trim();
+            const _stockProvOrdenDir = (document.getElementById('stockProvOrdenDir')?.value || 'desc') === 'asc' ? 'asc' : 'desc';
+            const _stockProvCmp = (a, b, nombreA, nombreB) => {
+                const va = Number.isFinite(a) ? a : 0;
+                const vb = Number.isFinite(b) ? b : 0;
+                if (va !== vb) return _stockProvOrdenDir === 'asc' ? va - vb : vb - va;
+                return String(nombreA || '').localeCompare(String(nombreB || ''));
+            };
+            const _stockProvMetricCat = cat => {
+                let stock = 0, minimo = 0, vendido = 0, diffcv = 0, compras = 0, ventas = 0;
+                catMap.get(cat).forEach(p => {
+                    const r = calcKardexProd(p);
+                    const stockProd = parseFloat(r.stockActual) || 0;
+                    const minProd = Math.max(0, parseFloat(p.stockMin) || 0);
+                    const vendidoProd = parseFloat(r.vendido) || 0;
+                    stock += Math.max(0, stockProd);
+                    minimo = Math.max(minimo, minProd);
+                    vendido += vendidoProd;
+                    diffcv += parseFloat(r.diffCompraVenta) || 0;
+                    compras += parseFloat(r.compras) || 0;
+                    ventas += parseFloat(r.ventas) || 0;
+                });
+                const comprar = stock - Math.max(minimo, vendido);
+                const mapa = { stock, minimo, vendido, diffcv, comprar, compras, ventas };
+                return mapa[_stockProvOrdenCampo] ?? 0;
+            };
             const catKeys = [...catMap.keys()].sort((catA, catB) => {
+                if (_stockProvOrdenCampo) {
+                    return _stockProvCmp(_stockProvMetricCat(catA), _stockProvMetricCat(catB), catA, catB);
+                }
                 const diffVentaCat = cat => {
                     let stock = 0, minimo = 0, vendido = 0;
                     catMap.get(cat).forEach(p => {
@@ -9468,6 +9679,24 @@ console.log("FILTRADAS:", filtradas.length);
                     return 0;                      // cualquier diff != 0 ? primero
                 };
                 prodsConKardex.sort((a, b) => {
+                    if (_stockProvOrdenCampo) {
+                        const metricProd = item => {
+                            const stockProd = parseFloat(item.r.stockActual) || 0;
+                            const minProd = Math.max(0, parseFloat(item.p.stockMin) || 0);
+                            const vendidoProd = parseFloat(item.r.vendido) || 0;
+                            const mapa = {
+                                stock: stockProd,
+                                minimo: minProd,
+                                vendido: vendidoProd,
+                                diffcv: parseFloat(item.r.diffCompraVenta) || 0,
+                                comprar: item.diffVenta,
+                                compras: parseFloat(item.r.compras) || 0,
+                                ventas: parseFloat(item.r.ventas) || 0
+                            };
+                            return mapa[_stockProvOrdenCampo] ?? 0;
+                        };
+                        return _stockProvCmp(metricProd(a), metricProd(b), a.p.nombre, b.p.nombre);
+                    }
                     const ordenStock = _ordenDiffStockProv(a.diffVenta, b.diffVenta);
                     if (ordenStock !== 0) return ordenStock;
                     return String(a.p.nombre || '').localeCompare(String(b.p.nombre || ''));
@@ -17614,12 +17843,12 @@ container.innerHTML = productosVisibles.map((p) => {
                 const color    = colors[p.nombre.charCodeAt(0) % colors.length];
 
                 return `
-                <div class="glass-card rounded-2xl overflow-hidden flex flex-col group hover:border-emerald-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/5">
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col group hover:border-emerald-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/5 inventario-product-card">
                     <!-- Foto / placeholder -->
-                    <div class="relative h-32 flex items-center justify-center overflow-hidden"
+                    <div class="relative flex items-center justify-center overflow-hidden inventario-product-imgbox"
                          style="background: linear-gradient(135deg, #0d1420 0%, #1e293b 100%);">
                         ${p.foto
-                            ? `<img src="${driveUrl(p.foto)}" alt="${Utils.escHtml(p.nombre)}" class="w-full h-full object-contain p-1">`
+                            ? `<img src="${driveUrl(p.foto)}" alt="${Utils.escHtml(p.nombre)}" class="inventario-product-img">`
                             : `<div class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black"
                                  style="background:${color}22; color:${color}; border: 1.5px solid ${color}44">${initials}</div>`
                         }
@@ -26695,6 +26924,19 @@ function calcularCajaEsperada() {
 
         function _cacheLeerArrayKey(key) {
             try {
+                const chunksRaw = localStorage.getItem(key + '__chunks');
+                if (chunksRaw) {
+                    const n = parseInt(chunksRaw, 10) || 0;
+                    const parts = [];
+                    for (let i = 0; i < n; i++) {
+                        const part = localStorage.getItem(key + '__chunk_' + i);
+                        if (part) parts.push(part);
+                    }
+                    if (parts.length === n) {
+                        const chunked = JSON.parse(parts.join(''));
+                        if (Array.isArray(chunked)) return chunked;
+                    }
+                }
                 const raw = localStorage.getItem(key);
                 if (!raw) return [];
                 const val = JSON.parse(raw);
@@ -26722,6 +26964,117 @@ function calcularCajaEsperada() {
             return Array.isArray(actual) ? actual : [];
         }
 
+        function _cacheCompactProducto(p) {
+            return {
+                id: p.id || p.numeroProd || '',
+                numeroProd: p.numeroProd || p.id || '',
+                nombre: p.nombre || '',
+                stock: Number(p.stock) || 0,
+                stockCalculado: p.stockCalculado,
+                costo: Number(p.costo) || 0,
+                precio: Number(p.precio) || 0,
+                margenBruto: p.margenBruto || 0,
+                categoria: p.categoria || '',
+                tipoVenta: p.tipoVenta || '',
+                depto: p.depto || p.departamento || '',
+                proveedor: p.proveedor || '',
+                imagen: p.imagen || p.foto || '',
+                foto: p.foto || p.imagen || '',
+                codigos: p.codigos || '',
+                vencimiento: p.vencimiento || '',
+                stockMin: Number(p.stockMin) || 0,
+                stockFisico: p.stockFisico,
+                fechaStockFisico: p.fechaStockFisico || '',
+                stockInicio: p.stockInicio,
+                fechaStockInicio: p.fechaStockInicio || '',
+                fechaVerif: p.fechaVerif || '',
+                fromSheet: !!p.fromSheet
+            };
+        }
+
+        function _cacheCompactVenta(v) {
+            return {
+                id: v.id || v.idSheet || v.IDVENTAS || '',
+                idSheet: v.idSheet || v.IDVENTAS || v.id || '',
+                fecha: v.fecha || '',
+                fechaISO: v.fechaISO || '',
+                fechaPago: v.fechaPago || '',
+                cliente: v.cliente || '',
+                idCliente: v.idCliente || '',
+                total: Number(v.total) || 0,
+                efectivo: Number(v.efectivo) || 0,
+                deuda: Number(v.deuda || v.credito) || 0,
+                credito: Number(v.credito || v.deuda) || 0,
+                fromSheet: !!v.fromSheet,
+                items: (Array.isArray(v.items) ? v.items : []).map(function(i) {
+                    return {
+                        nombre: i.nombre || '',
+                        cantidad: Number(i.cantidad) || 0,
+                        precio: Number(i.precio) || 0,
+                        precioFinal: Number(i.precioFinal) || 0,
+                        cantidadDisplay: i.cantidadDisplay || '',
+                        esPeso: !!i.esPeso,
+                        tipoVenta: i.tipoVenta || '',
+                        proveedor: i.proveedor || '',
+                        categoria: i.categoria || '',
+                        depto: i.depto || '',
+                        costo: Number(i.costo) || 0,
+                        dineroRecuperado: Number(i.dineroRecuperado) || 0,
+                        pagoEfectivo: Number(i.pagoEfectivo) || 0,
+                        pagoCredito: Number(i.pagoCredito) || 0
+                    };
+                })
+            };
+        }
+
+        function _cacheCompactPagoVenta(p) {
+            return {
+                id: p.id || p.IDPAGODEVENTAS || '',
+                idVenta: p.idVenta || p.IDVENTAS || '',
+                idCliente: p.idCliente || p.IDCLIENTE || '',
+                cliente: p.cliente || '',
+                monto: Number(p.monto || p.MONTO) || 0,
+                fecha: p.fecha || p.FECHA || '',
+                producto: p.producto || p.PRODUCTO || '',
+                formaPago: p.formaPago || p['FORMA DE PAGO'] || '',
+                proveedor: p.proveedor || p.PROVEEDOR || '',
+                fechaOrig: p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '',
+                imagen: p.imagen || p.fotoProducto || '',
+                fotoProducto: p.fotoProducto || p.imagen || ''
+            };
+        }
+
+        function _cacheLimpiarChunks(key) {
+            const prev = parseInt(localStorage.getItem(key + '__chunks') || '0', 10) || 0;
+            for (let i = 0; i < prev; i++) localStorage.removeItem(key + '__chunk_' + i);
+            localStorage.removeItem(key + '__chunks');
+        }
+
+        function _cacheGuardarArray(key, arr) {
+            try {
+                if (!Array.isArray(arr) || !arr.length) return false;
+                const json = JSON.stringify(arr);
+                _cacheLimpiarChunks(key);
+                localStorage.removeItem(key);
+                try {
+                    localStorage.setItem(key, json);
+                    return true;
+                } catch(e) {
+                    localStorage.removeItem(key);
+                    const size = 250000;
+                    const n = Math.ceil(json.length / size);
+                    for (let i = 0; i < n; i++) {
+                        localStorage.setItem(key + '__chunk_' + i, json.slice(i * size, (i + 1) * size));
+                    }
+                    localStorage.setItem(key + '__chunks', String(n));
+                    return true;
+                }
+            } catch(e) {
+                console.warn('[Cache] No se pudo guardar ' + key + ':', e.message);
+                return false;
+            }
+        }
+
         function _limpiarLocalStorageNoPermitido() {
             try {
                 [
@@ -26747,17 +27100,27 @@ function calcularCajaEsperada() {
                 const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
                 const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
                 const ventasActuales = (_sheetVentas && _sheetVentas.length) ? _sheetVentas : ((historial && historial.length) ? historial : []);
+                const inventarioCompacto = _cacheElegirArray(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
+                const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
+                const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
+
+                // Guardar separado primero. Si el snapshot grande falla por cuota, igual queda cache util.
+                localStorage.removeItem(_CACHE_KEY);
+                const guardados = {
+                    inventario: _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto),
+                    ventas: _cacheGuardarArray('natanael_historial_v1', ventasCompactas),
+                    pagoVentas: _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCompacto)
+                };
+
                 const snapshot = {
                     ts:                  Date.now(),
-                    inventario:          _cacheElegirArray(_sheetProductos, previo.inventario, legacyInventario),
-                    ventas:              _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas),
-                    pagoVentas:          _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas),
-                    clientes:            typeof clientesDB !== 'undefined' ? clientesDB : [],
+                    inventarioCount:     inventarioCompacto.length,
+                    ventasCount:         ventasCompactas.length,
+                    pagoVentasCount:     pagoVentasCompacto.length,
+                    guardados:           guardados,
+                    clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
                 };
                 localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
-                if (snapshot.inventario.length) localStorage.setItem('natanael_inventario_v1', JSON.stringify(snapshot.inventario));
-                if (snapshot.ventas.length) localStorage.setItem('natanael_historial_v1', JSON.stringify(snapshot.ventas));
-                if (snapshot.pagoVentas.length) localStorage.setItem('natanael_pago_ventas_v1', JSON.stringify(snapshot.pagoVentas));
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
         }
 
@@ -30280,6 +30643,193 @@ function setFiltroCompra(filtro) {
         if (e.key === 'Enter') guardarPrecioVenta();
         if (e.key === 'Escape') cerrarModalPrecioVenta();
     });
+
+    (function() {
+        const pickerIds = ['provStatDesde', 'provStatHasta'];
+        const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        const dias = ['LU','MA','MI','JU','VI','SA','DO'];
+        let pickerEl = null;
+        let activeInput = null;
+        let selectedDate = new Date();
+        let viewYear = selectedDate.getFullYear();
+        let viewMonth = selectedDate.getMonth();
+
+        const pad2 = n => String(n).padStart(2, '0');
+        const toInputValue = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        const parseInputValue = value => {
+            const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+            if (m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5]), 0);
+            const d = new Date(value || Date.now());
+            return isNaN(d.getTime()) ? new Date() : d;
+        };
+        const isMobilePicker = () => window.Capacitor || window.matchMedia('(max-width: 768px)').matches;
+
+        function ensurePicker() {
+            if (pickerEl) return pickerEl;
+            pickerEl = document.createElement('div');
+            pickerEl.id = 'mobileDateTimePicker';
+            pickerEl.className = 'mobile-datetime-picker';
+            pickerEl.addEventListener('click', function(e) {
+                if (e.target === pickerEl) cerrarMobileDateTimePicker();
+            });
+            document.body.appendChild(pickerEl);
+            return pickerEl;
+        }
+
+        function moverMes(delta) {
+            viewMonth += delta;
+            if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+            if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+            renderPicker();
+        }
+
+        function setDia(y, m, d) {
+            selectedDate = new Date(y, m, d, selectedDate.getHours(), selectedDate.getMinutes(), 0);
+            viewYear = selectedDate.getFullYear();
+            viewMonth = selectedDate.getMonth();
+            renderPicker();
+        }
+
+        function setHora(h) {
+            selectedDate.setHours(h);
+            renderPicker();
+            setTimeout(function() {
+                const el = document.querySelector(`#mobileDateTimePicker [data-hour="${pad2(h)}"]`);
+                if (el) el.scrollIntoView({ block: 'center' });
+            }, 0);
+        }
+
+        function setMinuto(m) {
+            selectedDate.setMinutes(m);
+            renderPicker();
+            setTimeout(function() {
+                const el = document.querySelector(`#mobileDateTimePicker [data-minute="${pad2(m)}"]`);
+                if (el) el.scrollIntoView({ block: 'center' });
+            }, 0);
+        }
+
+        function aplicarPicker() {
+            if (!activeInput) return;
+            activeInput.value = toInputValue(selectedDate);
+            activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+            cerrarMobileDateTimePicker();
+        }
+
+        function borrarPicker() {
+            if (!activeInput) return;
+            activeInput.value = '';
+            activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+            cerrarMobileDateTimePicker();
+        }
+
+        function hoyPicker() {
+            selectedDate = new Date();
+            viewYear = selectedDate.getFullYear();
+            viewMonth = selectedDate.getMonth();
+            renderPicker();
+        }
+
+        function renderPicker() {
+            const el = ensurePicker();
+            const first = new Date(viewYear, viewMonth, 1);
+            const startOffset = (first.getDay() + 6) % 7;
+            const gridStart = new Date(viewYear, viewMonth, 1 - startOffset);
+            let daysHtml = dias.map(d => `<div class="mobile-date-week">${d}</div>`).join('');
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+                const muted = d.getMonth() !== viewMonth ? ' is-muted' : '';
+                const same = d.getFullYear() === selectedDate.getFullYear() && d.getMonth() === selectedDate.getMonth() && d.getDate() === selectedDate.getDate();
+                daysHtml += `<button class="mobile-date-cell${muted}${same ? ' is-selected' : ''}" onclick="setMobileDateTimeDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})">${d.getDate()}</button>`;
+            }
+            const hoursHtml = Array.from({ length: 24 }, (_, h) => {
+                const sel = h === selectedDate.getHours() ? ' is-selected' : '';
+                return `<button class="mobile-time-btn${sel}" data-hour="${pad2(h)}" onclick="setMobileDateTimeHour(${h})">${pad2(h)}</button>`;
+            }).join('');
+            const minutesHtml = Array.from({ length: 60 }, (_, m) => {
+                const sel = m === selectedDate.getMinutes() ? ' is-selected' : '';
+                return `<button class="mobile-time-btn${sel}" data-minute="${pad2(m)}" onclick="setMobileDateTimeMinute(${m})">${pad2(m)}</button>`;
+            }).join('');
+
+            el.innerHTML = `
+                <div class="mobile-datetime-panel" onclick="event.stopPropagation()">
+                    <div class="mobile-datetime-head">
+                        <span>${meses[viewMonth]} de ${viewYear}</span>
+                        <div class="mobile-datetime-nav">
+                            <button type="button" onclick="moveMobileDateTimeMonth(-1)" aria-label="Mes anterior" style="font-size:26px;line-height:1;">↑</button>
+                            <button type="button" onclick="moveMobileDateTimeMonth(1)" aria-label="Mes siguiente" style="font-size:26px;line-height:1;">↓</button>
+                        </div>
+                    </div>
+                    <div class="mobile-datetime-body">
+                        <div class="mobile-date-grid">${daysHtml}</div>
+                        <div class="mobile-time-cols">
+                            <div class="mobile-time-col">${hoursHtml}</div>
+                            <div class="mobile-time-col">${minutesHtml}</div>
+                        </div>
+                    </div>
+                    <div class="mobile-datetime-actions">
+                        <button type="button" onclick="clearMobileDateTimePicker()">Borrar</button>
+                        <div style="display:flex;gap:14px;">
+                            <button type="button" onclick="todayMobileDateTimePicker()">Hoy</button>
+                            <button type="button" onclick="applyMobileDateTimePicker()" style="color:#0f7de8;">Aplicar</button>
+                        </div>
+                    </div>
+                </div>`;
+
+            setTimeout(function() {
+                const hEl = el.querySelector(`[data-hour="${pad2(selectedDate.getHours())}"]`);
+                const mEl = el.querySelector(`[data-minute="${pad2(selectedDate.getMinutes())}"]`);
+                if (hEl) hEl.scrollIntoView({ block: 'center' });
+                if (mEl) mEl.scrollIntoView({ block: 'center' });
+            }, 0);
+        }
+
+        window.abrirMobileDateTimePicker = function(input) {
+            activeInput = input;
+            selectedDate = parseInputValue(input.value);
+            viewYear = selectedDate.getFullYear();
+            viewMonth = selectedDate.getMonth();
+            ensurePicker().classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+            renderPicker();
+        };
+        window.cerrarMobileDateTimePicker = function() {
+            if (pickerEl) pickerEl.classList.remove('is-open');
+            document.body.style.overflow = '';
+            activeInput = null;
+        };
+        window.moveMobileDateTimeMonth = moverMes;
+        window.setMobileDateTimeDay = setDia;
+        window.setMobileDateTimeHour = setHora;
+        window.setMobileDateTimeMinute = setMinuto;
+        window.applyMobileDateTimePicker = aplicarPicker;
+        window.clearMobileDateTimePicker = borrarPicker;
+        window.todayMobileDateTimePicker = hoyPicker;
+
+        function attachPickerInputs() {
+            pickerIds.forEach(id => {
+                const input = document.getElementById(id);
+                if (!input || input.dataset.mobilePickerReady === '1') return;
+                input.dataset.mobilePickerReady = '1';
+                input.addEventListener('pointerdown', function(e) {
+                    if (!isMobilePicker()) return;
+                    e.preventDefault();
+                    input.blur();
+                    window.abrirMobileDateTimePicker(input);
+                });
+                input.addEventListener('focus', function() {
+                    if (!isMobilePicker()) return;
+                    input.blur();
+                });
+                input.addEventListener('click', function(e) {
+                    if (!isMobilePicker()) return;
+                    e.preventDefault();
+                    window.abrirMobileDateTimePicker(input);
+                });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', attachPickerInputs);
+        window.addEventListener('natanael-ready', attachPickerInputs);
+    })();
 
 // modales ocultos al cargar ? fusionado con window.onload principal arriba
 document.addEventListener('DOMContentLoaded', function () {
