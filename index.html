@@ -6104,7 +6104,7 @@ setTimeout(() => {
         const esPeso = i.esPeso || esTipoVenta(prod.tipoVenta);
 
 
-        const precioUnitario = esPeso ? prod.precio : i.precio;
+        const precioUnitario = i.precioModificado ? (Number(i.precio) || 0) : (esPeso ? prod.precio : i.precio);
 const costo = prod.costo || 0;
 
 const costoTotal = esPeso
@@ -30604,35 +30604,8 @@ function setFiltroCompra(filtro) {
         if (!item) { cerrarModalPrecioVenta(); return; }
         item.precio = nuevoPrecio;
         item.precioModificado = true;
-        var producto = _sheetProductos.find(function(p){ return String(p.id) === String(item.id); });
-        if (producto) {
-            producto.precio = nuevoPrecio;
-            /* [cache unificado] */
-           if (typeof DB !== 'undefined' && typeof DB.saveInventario === 'function') {
-    DB.saveInventario();
-}
-            var ganancia = nuevoPrecio - (producto.costo || 0);
-            var margen = producto.costo > 0 ? ((ganancia / producto.costo) * 100).toFixed(2) : 0;
-            var payload = {
-                tipo: 'producto',
-                id: producto.id,
-                numeroProd: producto.numeroProd || producto.id,
-                nombre: producto.nombre,
-                costo: producto.costo || 0,
-                precioVenta: nuevoPrecio,
-
-
-                ganancia: ganancia,
-                margenBruto: margen,
-                proveedor: producto.proveedor || '',
-                categoria: producto.categoria || '',
-                tipoVenta: producto.tipoVenta || '',
-                departamento: producto.depto || '',
-                vencimiento: producto.vencimiento || '',
-                minimoCategoria: producto.minimo || 0,
-                cantidad: producto.stockCalculado || 0
-            };
-            fetchSheets({ method: 'POST', body: JSON.stringify(payload) });
+        if (item.esPeso) {
+            item.precioFinal = Math.round((Number(item.cantidad) || 0) * nuevoPrecio);
         }
         cerrarModalPrecioVenta();
         renderCarrito();
