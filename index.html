@@ -6078,6 +6078,14 @@ function confirmarVenta() {
     };
 
     historial = [nuevaVenta, ...historial];
+    if (Array.isArray(_sheetVentas)) {
+        _sheetVentas = [nuevaVenta, ..._sheetVentas.filter(function(v) {
+            return String(v.id || '') !== String(nuevaVenta.id || '');
+        })];
+        window._sheetVentas = _sheetVentas;
+    }
+    if (typeof DB !== 'undefined' && DB.saveHistorial) DB.saveHistorial();
+    if (typeof _guardarCache === 'function') _guardarCache();
 
     // Guardado local en background
    
@@ -6174,9 +6182,11 @@ ganancia:     ganancia
     // Envío en background (el payload ya está capturado arriba, no depende del carrito)
   setTimeout(() => {
     fetchSheets({ method: 'POST', body: JSON.stringify(ventaPayload) })
+        .then(() => {
+            if (typeof sincronizarSheets === 'function') return sincronizarSheets();
+        })
         .finally(() => { confirmarVenta._guardando = false; });
     syncStockSheet(_prodsVendidos);
-    sincronizarSheets();
 }, 0);
 }
 
@@ -6185,6 +6195,7 @@ ganancia:     ganancia
         // ============================================================
         let filtroHistorial = '';
         let ventaAccionId = null;
+        window._ventasEditandoSheet = window._ventasEditandoSheet || {};
 
         function renderHistorial() {
             if (_sheetVentas && _sheetVentas.length > 0) {
@@ -6990,7 +7001,18 @@ _sheetEgresosNegocio.forEach(e => {
                     const p = JSON.parse(payload);
                     const tipoDedup = String(p.tipo || '').toLowerCase();
                     idEnvioUnico = _getIdUnicoEnvioSheet(p, tipoDedup);
-                    if (idEnvioUnico) {
+                    const tiposSinBloqueoId = new Set([
+                        'eliminar_venta',
+                        'eliminar_compra',
+                        'eliminar',
+                        'actualizar_venta',
+                        'actualizar_compra',
+                        'actualizar_ingreso',
+                        'actualizar_egreso',
+                        'actualizar_ingneg',
+                        'actualizar_egrneg'
+                    ]);
+                    if (idEnvioUnico && !tiposSinBloqueoId.has(tipoDedup)) {
                         if (!_tomarIdEnvioSheet(idEnvioUnico)) {
                             console.warn('[Sheet] ID duplicado bloqueado:', idEnvioUnico);
                             mostrarToast('Registro duplicado bloqueado', 'error');
@@ -8586,7 +8608,7 @@ if (indicator) indicator.classList.remove('hidden');
                         if (_md && !_md.classList.contains('hidden')) abrirDetalleCliente(clienteDetalleId);
                     }
                 }
-                if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
+                if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), producto:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), PRODUCTO:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), imagen:String(r['IMAGEN DE LA COMPRA']||r['IMAGEN']||'').trim(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
                 if (Array.isArray(data.pagoIngresos))         { _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['ID_INGRESOS']||r['Id_Ingresos']||r['NUMERO DE INGRESOS']||r['NUMERO_DE_INGRESOS']||r['numeroIngreso']||'').trim(),ID_INGRESOS:String(r['ID_INGRESOS']||r['Id_Ingresos']||r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()})); window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(data.pagoEgresos))          { _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['ID_GASTOS']||r['Id_Gastos']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),ID_GASTOS:String(r['ID_GASTOS']||r['Id_Gastos']||r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim(),proveedor:String(r['SUPERCATEGORIA']||r['Supercategoria']||r['PROVEEDOR']||r['Proveedor']||'').trim(),categoria:String(r['CATEGORIA']||r['Categoria']||'').trim()})); window._sheetPagoEgresos = _sheetPagoEgresos; }
                 if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; }
@@ -15967,21 +15989,59 @@ console.log("FILTRADAS:", filtradas.length);
             renderRegistros();
         }
 
-        // Estado de checks: idx ? 'ok' | 'err' | null
-        // Cargar checks desde localStorage al iniciar
-        const _regChecks = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}');
+        // Estado de checks en Registros: 'ok' | 'err' | null.
+        const _REG_CHECKS_KEY = 'natanael_reg_checks';
+        const _REG_CHECKS_CACHE_KEY = 'natanael_reg_checks_cache_v1';
 
-        function _regCheckKey(r) {
-            // Normalizar fecha con parseFechaNum para que sea consistente entre sesiones
+        function _loadRegChecks() {
+            try {
+                const directo = JSON.parse(localStorage.getItem(_REG_CHECKS_KEY) || '{}') || {};
+                if (Object.keys(directo).length) return directo;
+            } catch(e) {}
+
+            try {
+                const respaldo = JSON.parse(localStorage.getItem(_REG_CHECKS_CACHE_KEY) || '{}') || {};
+                if (respaldo && respaldo.checks && Object.keys(respaldo.checks).length) return respaldo.checks;
+            } catch(e) {}
+
+            try {
+                if (typeof _cacheLeerSnapshotActual === 'function') {
+                    const snap = _cacheLeerSnapshotActual();
+                    if (snap && snap.registroChecks && Object.keys(snap.registroChecks).length) return snap.registroChecks;
+                }
+            } catch(e) {}
+
+            return {};
+        }
+
+        const _regChecks = _loadRegChecks();
+        window._regChecks = _regChecks;
+
+        function _regCheckLegacyKey(r) {
             const fn = parseFechaNum(r.fecha) || r.fecha || '';
             return [r.tipo, String(fn), r.quien, r.detalle].join('|').replace(/\s+/g,'').toUpperCase().slice(0,80);
+        }
+
+        function _regCheckKey(r) {
+            const fn = parseFechaNum(r.fechaISO || r.fecha) || r.ts || r.fecha || '';
+            const id = r.regId || r.id || r.idSheet || r.IDVENTAS || r.IDCOMPRAS || r.IDINGRESOS || r.IDEGRESOS || r.IDPAGODEVENTAS || r.IDPAGOCOMPRAS || '';
+            const montos = [
+                Number(r.ef || 0).toFixed(2),
+                Number(r.cr || 0).toFixed(2),
+                Number(r.tot || 0).toFixed(2)
+            ].join(':');
+            return [r.tipo, id, String(fn), r.quien, r.detalle, montos].join('|').replace(/\s+/g,'').toUpperCase();
         }
 
         function _saveRegChecks() {
             // Limpiar claves null para no acumular basura
             const limpio = {};
             Object.entries(_regChecks).forEach(([k,v]) => { if (v && v !== null) limpio[k] = v; });
-            localStorage.setItem('natanael_reg_checks', JSON.stringify(limpio));
+            localStorage.setItem(_REG_CHECKS_KEY, JSON.stringify(limpio));
+            localStorage.setItem(_REG_CHECKS_CACHE_KEY, JSON.stringify({ ts: Date.now(), checks: limpio }));
+            try {
+                if (typeof _guardarCache === 'function') setTimeout(_guardarCache, 0);
+            } catch(e) {}
         }
 
         function toggleRegCheck(idx) {
@@ -15989,7 +16049,9 @@ console.log("FILTRADAS:", filtradas.length);
             const icon = document.getElementById('reg-check-icon-'+idx);
             if (!btn || !icon) return;
             const key = btn.dataset.checkKey || String(idx);
-            const estado = _regChecks[key];
+            const legacyKey = btn.dataset.checkLegacyKey || '';
+            const estado = _regChecks[key] || (legacyKey ? _regChecks[legacyKey] : null);
+            if (legacyKey && legacyKey !== key && _regChecks[legacyKey]) delete _regChecks[legacyKey];
             if (!estado) {
                 _regChecks[key] = 'ok';
                 btn.style.background  = '#10b981';
@@ -16010,6 +16072,11 @@ console.log("FILTRADAS:", filtradas.length);
             }
             _saveRegChecks();
         }
+
+        window.addEventListener('pagehide', _saveRegChecks);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') _saveRegChecks();
+        });
 
         window._PRESTAMO_IMG_GLOBAL = './assets/images/prestamo_default.png';
 
@@ -16163,24 +16230,56 @@ console.log("FILTRADAS:", filtradas.length);
             if (idx < 0 || idx >= historial.length) return;
             if (tipo === 'eliminar') {
                 const ventaElim = historial[idx];
+                const detalleVenta = ventaElim
+                    ? ((ventaElim.cliente || 'Venta') + ' - $' + Utils.fmt(ventaElim.total || 0))
+                    : 'esta venta';
+                if (!confirm('¿Seguro que querés borrar ' + detalleVenta + '?')) return;
+                const idVentaElim = ventaElim
+                    ? String(ventaElim.idSheet || ventaElim.IDVENTAS || ventaElim.id || '').replace('sheet_V_', '').trim()
+                    : '';
                 // 1. Eliminar visualmente al instante
                 historial.splice(idx, 1);
-                if (ventaElim && window._sheetVentas) {
-                    const idx2 = window._sheetVentas.findIndex(function(v){ return String(v.id) === String(ventaElim.id); });
-                    if (idx2 !== -1) window._sheetVentas.splice(idx2, 1);
+                if (ventaElim && _sheetVentas) {
+                    _sheetVentas = _sheetVentas.filter(function(v) {
+                        const vid = String(v.idSheet || v.IDVENTAS || v.id || '').replace('sheet_V_', '').trim();
+                        return vid !== idVentaElim && String(v.id || '') !== String(ventaElim.id || '');
+                    });
+                    window._sheetVentas = _sheetVentas;
                 }
+                if (ventaElim && _sheetVentasRaw) {
+                    _sheetVentasRaw = _sheetVentasRaw.filter(function(v) {
+                        const vid = String(v.IDVENTAS || v.idVenta || v.id || '').replace('sheet_V_', '').trim();
+                        return vid !== idVentaElim;
+                    });
+                    window._sheetVentasRaw = _sheetVentasRaw;
+                }
+                if (typeof DB !== 'undefined' && DB.saveHistorial) DB.saveHistorial();
+                if (typeof _guardarCache === 'function') _guardarCache();
                 renderHistorial();
                 mostrarToast('✅ Venta eliminada');
                 // 2. Enviar al Sheet en segundo plano (sin esperar respuesta)
                 if (ventaElim) {
-                    const idSheet = ventaElim.idSheet
-                        ? String(ventaElim.idSheet).trim()
-                        : String(ventaElim.id || '').replace('sheet_V_', '').trim();
+                    const idSheet = idVentaElim;
                     if (idSheet) {
-                        fetchSheets({ method: 'POST', body: JSON.stringify({
-                            tipo: 'eliminar_venta',
-                            IDVENTAS: idSheet
-                        })});
+                        (async function() {
+                            try {
+                                if (window._ventasEditandoSheet && window._ventasEditandoSheet[idSheet]) {
+                                    await window._ventasEditandoSheet[idSheet];
+                                }
+                            } catch(e) {
+                                console.warn('[Eliminar venta] No se pudo esperar edicion previa:', e);
+                            }
+                            const respEliminarSheet = await fetchSheets({ method: 'POST', body: JSON.stringify({
+                                tipo: 'eliminar_venta',
+                                IDVENTAS: idSheet
+                            })});
+                            if (!respEliminarSheet || respEliminarSheet.ok === false) {
+                                console.error('[Eliminar venta] Respuesta invalida del Sheet:', respEliminarSheet);
+                                mostrarToast('La venta se borro de la app, pero no se pudo borrar del Sheet', 'error');
+                            } else if (typeof sincronizarSheetsSilencioso === 'function') {
+                                setTimeout(() => sincronizarSheetsSilencioso(), 500);
+                            }
+                        })();
                     }
                 }
             } else if (tipo === 'editar') {
@@ -17159,11 +17258,23 @@ console.log("FILTRADAS:", filtradas.length);
         async function confirmarEditarVenta() {
             const btnGuardar = document.getElementById('btnGuardarEditarVenta');
             if (btnGuardar && btnGuardar.disabled) return;
+            const restaurarBotonEditarVenta = function() {
+                if (!btnGuardar) return;
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = btnGuardar.dataset.prevHtml || 'Guardar';
+                btnGuardar.style.opacity = '';
+                if (btnGuardar._resetEditarTimer) {
+                    clearTimeout(btnGuardar._resetEditarTimer);
+                    btnGuardar._resetEditarTimer = null;
+                }
+            };
             if (btnGuardar) {
                 btnGuardar.disabled = true;
                 btnGuardar.dataset.prevHtml = btnGuardar.innerHTML;
                 btnGuardar.innerHTML = 'Guardando...';
                 btnGuardar.style.opacity = '0.7';
+                if (btnGuardar._resetEditarTimer) clearTimeout(btnGuardar._resetEditarTimer);
+                btnGuardar._resetEditarTimer = setTimeout(restaurarBotonEditarVenta, 12000);
             }
             // Buscar en historial local primero, luego en sheetVentas
             let v = historial.find(function(v){ return String(v.id) === String(ventaAccionId); });
@@ -17178,7 +17289,11 @@ console.log("FILTRADAS:", filtradas.length);
                     esDeSheet = true;
                 }
             }
-            if (!v) return;
+            if (!v) {
+                restaurarBotonEditarVenta();
+                mostrarToast('No se encontro la venta para editar', 'error');
+                return;
+            }
             const calc = _recalcularItemsEditVenta();
             const nuevoCliente = calc.cliente;
             const nuevaFecha = document.getElementById('editarVentaFecha')?.value || '';
@@ -17251,6 +17366,11 @@ console.log("FILTRADAS:", filtradas.length);
                 }
             }
             const idVentaSheet = String(v.idSheet || v.IDVENTAS || v.id || '').replace('sheet_V_', '').trim();
+            if (idVentaSheet) {
+                v.id = idVentaSheet;
+                v.idSheet = idVentaSheet;
+                v.IDVENTAS = idVentaSheet;
+            }
             const fechaVentaSheet = fmtFechaSheet(v.fecha || v.fechaISO || '');
             const formaPagoEdit = (calc.esClienteEspecial || calc.esPublicoGeneral)
                 ? 'Efectivo'
@@ -17273,21 +17393,23 @@ console.log("FILTRADAS:", filtradas.length);
             DB.saveHistorial();
             renderHistorial();
             mostrarToast('✅ Venta actualizada localmente');
-            (async function() {
+            restaurarBotonEditarVenta();
+            const _promesaEditarVenta = (async function() {
                 try {
                     if (idVentaSheet) {
                         await fetchSheets({ method: 'POST', body: JSON.stringify({ tipo: 'eliminar_venta', IDVENTAS: idVentaSheet }) });
                     }
                     await editarEnSheet(ventaPayloadEdit);
                     if (typeof sincronizarSheetsSilencioso === 'function') setTimeout(() => sincronizarSheetsSilencioso(), 800);
+                } catch (err) {
+                    console.error('[Editar venta] No se pudo sincronizar con Sheets:', err);
+                    mostrarToast('Venta guardada en la app. No se pudo sincronizar todavia.', 'error');
                 } finally {
-                    if (btnGuardar) {
-                        btnGuardar.disabled = false;
-                        if (btnGuardar.dataset.prevHtml) btnGuardar.innerHTML = btnGuardar.dataset.prevHtml;
-                        btnGuardar.style.opacity = '';
-                    }
+                    restaurarBotonEditarVenta();
+                    if (idVentaSheet && window._ventasEditandoSheet) delete window._ventasEditandoSheet[idVentaSheet];
                 }
             })();
+            if (idVentaSheet && window._ventasEditandoSheet) window._ventasEditandoSheet[idVentaSheet] = _promesaEditarVenta;
         }
 
         function filtrarClientesEditVenta(query) {
@@ -27103,13 +27225,19 @@ function calcularCajaEsperada() {
                 const inventarioCompacto = _cacheElegirArray(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
                 const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
                 const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
+                let registroChecksCache = {};
+                try {
+                    registroChecksCache = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}') || {};
+                    localStorage.setItem('natanael_reg_checks_cache_v1', JSON.stringify({ ts: Date.now(), checks: registroChecksCache }));
+                } catch(e) { registroChecksCache = {}; }
 
                 // Guardar separado primero. Si el snapshot grande falla por cuota, igual queda cache util.
                 localStorage.removeItem(_CACHE_KEY);
                 const guardados = {
                     inventario: _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto),
                     ventas: _cacheGuardarArray('natanael_historial_v1', ventasCompactas),
-                    pagoVentas: _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCompacto)
+                    pagoVentas: _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCompacto),
+                    registroChecks: true
                 };
 
                 const snapshot = {
@@ -27117,6 +27245,8 @@ function calcularCajaEsperada() {
                     inventarioCount:     inventarioCompacto.length,
                     ventasCount:         ventasCompactas.length,
                     pagoVentasCount:     pagoVentasCompacto.length,
+                    registroChecksCount: Object.keys(registroChecksCache).length,
+                    registroChecks:      registroChecksCache,
                     guardados:           guardados,
                     clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
                 };
@@ -28570,10 +28700,30 @@ function verDetalleProveedor(tipo, id){
             });
 
             // ↗↗ PAGO COMPRAS ↗↗
+            const _comprasPorIdReg = {};
+            (_sheetCompras||[]).forEach(c => {
+                const id = String(c.idSheet||c.IDCOMPRAS||c.idCompra||c.id||'').trim();
+                if (id) _comprasPorIdReg[id] = c;
+            });
+
             (_sheetPagoCompras||[]).forEach(p => {
                 if (!enRango(p.fecha)) return;
                 const m = Number(p.monto||p.MONTO||0);
-                rows.push({ tipo:'PAGO COMPRAS', color:'#fb923c', quien: p.proveedor||'?', fecha: p.fecha, detalle: '?', prodFotoKey:'', ef: m, cr: 0, tot: m, ts: _parseFechaReg(p.fecha), esEgreso: true });
+                const idC = String(p.IDCOMPRAS||p.idCompra||'').trim();
+                const compraRef = idC ? _comprasPorIdReg[idC] : null;
+                const productoPago = String(p.producto||p.PRODUCTO||'').trim();
+                const itemsCompra = compraRef && Array.isArray(compraRef.items) ? compraRef.items : [];
+                const nombres = productoPago
+                    ? [productoPago]
+                    : itemsCompra.map(it => String(it.nombre||it.producto||it.PRODUCTO||'').trim()).filter(Boolean);
+                const detalle = nombres.length
+                    ? (nombres.length <= 2 ? nombres.join(' + ') : nombres.slice(0,2).join(' + ') + ' (+' + (nombres.length - 2) + ')')
+                    : '?';
+                const primerNombre = nombres[0] || '';
+                const primerItem = itemsCompra.find(it => String(it.nombre||it.producto||it.PRODUCTO||'').trim().toUpperCase() === primerNombre.toUpperCase()) || itemsCompra[0] || {};
+                const prodRef = prodPorNombre.get(primerNombre.trim().toUpperCase()) || {};
+                const fotoPago = p.imagen || primerItem.foto || primerItem.imagen || prodRef.foto || prodRef.imagen || '';
+                rows.push({ tipo:'PAGO COMPRAS', color:'#fb923c', quien: p.proveedor||'?', fecha: p.fecha, detalle, prodFotoKey:primerNombre.trim().toUpperCase(), prodFotoUrl:fotoPago, ef: m, cr: 0, tot: m, ts: _parseFechaReg(p.fecha), esEgreso: true });
             });
 
             // ↗↗ PAGO INGRESOS ↗↗
@@ -28746,7 +28896,12 @@ function verDetalleProveedor(tipo, id){
 
                 // Estado del check persistido
                 const ckKey = _regCheckKey(r);
-                const ckEstado = _regChecks[ckKey];
+                const ckLegacyKey = _regCheckLegacyKey(r);
+                const ckEstado = _regChecks[ckKey] || _regChecks[ckLegacyKey];
+                if (!_regChecks[ckKey] && _regChecks[ckLegacyKey]) {
+                    _regChecks[ckKey] = _regChecks[ckLegacyKey];
+                    delete _regChecks[ckLegacyKey];
+                }
                 const ckBg    = ckEstado==='ok' ? '#10b981' : ckEstado==='err' ? '#ef4444' : 'transparent';
                 const ckBord  = ckEstado==='ok' ? '#10b981' : ckEstado==='err' ? '#ef4444' : '#334155';
                 const ckIcon  = ckEstado==='ok' ? '✅' : ckEstado==='err' ? '✅' : '';
@@ -28787,6 +28942,7 @@ function verDetalleProveedor(tipo, id){
                         <div style="display:flex;align-items:center;gap:8px;">
                             <button onclick="toggleRegCheck(${idx})" id="reg-check-${idx}"
                                 data-check-key="${ckKey.replace(/"/g,'&quot;')}"
+                                data-check-legacy-key="${ckLegacyKey.replace(/"/g,'&quot;')}"
                                 style="width:20px;height:20px;border-radius:5px;border:2px solid ${ckBord};background:${ckBg};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;">
                                 <span id="reg-check-icon-${idx}" style="font-size:11px;line-height:1;font-weight:900;color:${ckColor};">${ckIcon}</span>
                             </button>
