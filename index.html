@@ -7627,7 +7627,7 @@ _sheetEgresosNegocio.forEach(e => {
 
                     if (data && data.ok) {
                         mostrarToast('✅ Eliminado en Sheet', 'success');
-                        return;
+                        return { ok: true, payload: payloadObj };
                     }
 
                     const msg = (data && (data.error || data.message)) ? String(data.error || data.message) : txt;
@@ -7641,6 +7641,7 @@ _sheetEgresosNegocio.forEach(e => {
                         return { ok: false, error: msg || 'No se pudo eliminar', backendSinSoporte, payload: payloadObj };
                     }
                     mostrarToast('X Sheet error: ' + (msg || 'No se pudo eliminar'), 'error');
+                    return { ok: false, error: msg || 'No se pudo eliminar', payload: payloadObj };
                 } catch (e) {
                     if (idx + 1 < intentosPayload.length) return intentar(idx + 1);
                     return { ok: false, error: e && e.message ? e.message : 'Error eliminando en Sheet', payload: payloadObj };
@@ -16382,9 +16383,25 @@ console.log("FILTRADAS:", filtradas.length);
             const nombre = String(nombreProducto || '').trim().toUpperCase();
             if (!nombre) return '';
             const prod = (_sheetProductos || []).find(function(p) {
-                return String(p.nombre || '').trim().toUpperCase() === nombre;
+                return String(p.nombre || p.NOMBRE || '').trim().toUpperCase() === nombre;
             });
-            return prod ? (prod.foto || prod.imagen || prod.fotoProducto || '') : '';
+            return prod ? (prod.foto || prod.imagen || prod.fotoProducto || prod.IMAGEN || '') : '';
+        }
+
+        function obtenerFotoProductoParaPDF(item) {
+            const it = item || {};
+            const directa = it.fotoProducto || it.imagenProducto || it.foto || it.imagen || it.IMAGEN || '';
+            if (directa) return directa;
+
+            const idItem = String(it.id || it.idProducto || it.IDPRODUCTOS || it.idSheet || '').trim();
+            const nombreItem = String(it.nombre || it.producto || it.PRODUCTO || '').replace(/^\s*\d+\s*x\s+/i, '').trim().toUpperCase();
+            const prod = (_sheetProductos || []).find(function(p) {
+                const idProd = String(p.id || p.idSheet || p.IDPRODUCTOS || '').trim();
+                const nomProd = String(p.nombre || p.NOMBRE || p.producto || '').trim().toUpperCase();
+                return (idItem && idProd && idProd === idItem) || (nombreItem && nomProd === nombreItem);
+            });
+
+            return prod ? (prod.foto || prod.imagen || prod.fotoProducto || prod.IMAGEN || '') : '';
         }
 
         function cargarImagenParaPDF(url) {
@@ -16392,7 +16409,7 @@ console.log("FILTRADAS:", filtradas.length);
                 const src = String(url || '').trim();
                 if (!src) { resolve(null); return; }
                 if (src.startsWith('data:image/')) {
-                    resolve({ dataUrl: src, format: 'JPEG' });
+                    resolve({ dataUrl: src, format: src.indexOf('image/png') !== -1 ? 'PNG' : 'JPEG' });
                     return;
                 }
                 const img = new Image();
@@ -23594,22 +23611,40 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
             const idx = _sheetCompras.findIndex(c => String(c.id) === String(id));
             if (idx === -1) return;
             const compra = _sheetCompras[idx];
-            const resultado = await eliminarEnSheet('compra', id);
-            if (!resultado || !resultado.ok) return;
+
+            _sheetCompras.splice(idx, 1);
+            if (Array.isArray(window._comprasFirebase)) {
+                window._comprasFirebase = window._comprasFirebase.filter(c => String(c.id || c.idSheet || '') !== String(id));
+                _comprasFirebase = window._comprasFirebase;
+            }
             // Revertir stock solo despues de que Sheet confirme la eliminacion.
             (compra.items || []).forEach(item => {
                 const prod = _sheetProductos.find(p => p.nombre === item.nombre);
                 if (prod) prod.stock = Math.max(0, (prod.stock || 0) - (item.cantidad || 0));
             });
 
-            _sheetCompras.splice(idx, 1);
-
             const prodsAfectadosC = [...new Set((compra.items||[]).map(i=>i.nombre))]
                 .map(nom => _sheetProductos.find(p=>p.nombre===nom)).filter(Boolean);
-            syncStockSheet(prodsAfectadosC);
             if (window._vistaActual === 'compras')    renderCompras();
             if (window._vistaActual === 'inventario') renderInventario();
-            mostrarToast('✅ Compra eliminada y stock sincronizado');
+            mostrarToast('Compra eliminada');
+
+            const resultado = await eliminarEnSheet('compra', id);
+            if (!resultado || !resultado.ok) {
+                _sheetCompras.splice(Math.min(idx, _sheetCompras.length), 0, compra);
+                (compra.items || []).forEach(item => {
+                    const prod = _sheetProductos.find(p => p.nombre === item.nombre);
+                    if (prod) prod.stock = (prod.stock || 0) + (item.cantidad || 0);
+                });
+                if (window._vistaActual === 'compras')    renderCompras();
+                if (window._vistaActual === 'inventario') renderInventario();
+                mostrarToast('No se pudo borrar en Sheet, se repuso la compra', 'error');
+                return;
+            }
+
+            syncStockSheet(prodsAfectadosC);
+            if (typeof sincronizarSheetsSilencioso === 'function') setTimeout(() => sincronizarSheetsSilencioso(), 500);
+            mostrarToast('Compra eliminada y Sheet actualizado');
         }
 
         let _editandoCompraIdx = -1;
