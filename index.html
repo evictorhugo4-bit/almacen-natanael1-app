@@ -3055,6 +3055,7 @@ GUARDAR PRODUCTO
                             <option value="">Orden actual</option>
                             <option value="stock">Stock</option>
                             <option value="minimo">Minimo</option>
+                            <option value="diferencia">Diferencia</option>
                             <option value="diffcv">Dif. C/V</option>
                             <option value="comprar">Comprar</option>
                             <option value="vendido">Vendido</option>
@@ -3080,6 +3081,7 @@ GUARDAR PRODUCTO
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">MINIMO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VENDIDO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">DIF. C/V</th>
+                                <th class="py-2 pr-3 text-right text-slate-400 font-black">STOCK INICIAL</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">COMPRAS</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VENTAS</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">STOCK ESPERADO</th>
@@ -9608,7 +9610,7 @@ console.log("FILTRADAS:", filtradas.length);
                 };
             }
 
-            let totCV=0, totC=0, totV=0, totSA=0;
+            let totCV=0, totC=0, totV=0, totSA=0, totSI=0;
 
             if (wrap) wrap.classList.remove('hidden');
             if (placeholder) placeholder.style.display = 'none';
@@ -9643,21 +9645,23 @@ console.log("FILTRADAS:", filtradas.length);
                 return String(nombreA || '').localeCompare(String(nombreB || ''));
             };
             const _stockProvMetricCat = cat => {
-                let stock = 0, minimo = 0, vendido = 0, diffcv = 0, compras = 0, ventas = 0;
+                let stock = 0, minimo = 0, vendido = 0, diferencia = 0, diffcv = 0, compras = 0, ventas = 0;
                 catMap.get(cat).forEach(p => {
                     const r = calcKardexProd(p);
+                    const stockVerif = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '') ? parseFloat(p.stockFisico) : null;
                     const stockProd = parseFloat(r.stockActual) || 0;
                     const minProd = Math.max(0, parseFloat(p.stockMin) || 0);
                     const vendidoProd = parseFloat(r.vendido) || 0;
                     stock += Math.max(0, stockProd);
                     minimo = Math.max(minimo, minProd);
                     vendido += vendidoProd;
+                    if (stockVerif !== null && !isNaN(stockVerif)) diferencia += stockVerif - (parseFloat(r.stockEsperado) || 0);
                     diffcv += parseFloat(r.diffCompraVenta) || 0;
                     compras += parseFloat(r.compras) || 0;
                     ventas += parseFloat(r.ventas) || 0;
                 });
                 const comprar = stock - Math.max(minimo, vendido);
-                const mapa = { stock, minimo, vendido, diffcv, comprar, compras, ventas };
+                const mapa = { stock, minimo, vendido, diferencia, diffcv, comprar, compras, ventas };
                 return mapa[_stockProvOrdenCampo] ?? 0;
             };
             const catKeys = [...catMap.keys()].sort((catA, catB) => {
@@ -9719,7 +9723,7 @@ console.log("FILTRADAS:", filtradas.length);
             let rowsHtml = '';
             catKeysFiltrados.forEach(cat => {
                 const prods = catMap.get(cat);
-                let catCV=0, catC=0, catV=0, catVendido=0, catSA=0, catSAVisible=0, catSE=0, catMin=0, catVerif=0, catTieneVerif=false;
+                let catCV=0, catC=0, catV=0, catVendido=0, catSA=0, catSAVisible=0, catSI=0, catSE=0, catMin=0, catVerif=0, catTieneVerif=false;
 
                 // Pre-calcular kardex para poder ordenar por diferencia (negativos primero)
                 const prodsConKardex = prods.map(p => {
@@ -9747,6 +9751,7 @@ console.log("FILTRADAS:", filtradas.length);
                                 stock: stockProd,
                                 minimo: minProd,
                                 vendido: vendidoProd,
+                                diferencia: item.diff === Infinity ? 0 : item.diff,
                                 diffcv: parseFloat(item.r.diffCompraVenta) || 0,
                                 comprar: item.diffVenta,
                                 compras: parseFloat(item.r.compras) || 0,
@@ -9770,8 +9775,8 @@ console.log("FILTRADAS:", filtradas.length);
                 });
 
                 const prodRows = prodsConKardex.map(({ p, r, stockVerif, diff }) => {
-                    totCV += r.diffCompraVenta; totC += r.compras; totV += r.ventas; totSA += r.stockActual;
-                    catCV += r.diffCompraVenta; catC += r.compras; catV += r.ventas; catVendido += r.vendido; catSA += r.stockActual; catSAVisible += Math.max(0, parseFloat(r.stockActual) || 0); catSE += r.stockEsperado;
+                    totCV += r.diffCompraVenta; totC += r.compras; totV += r.ventas; totSA += r.stockActual; totSI += r.stockInicial;
+                    catCV += r.diffCompraVenta; catC += r.compras; catV += r.ventas; catVendido += r.vendido; catSA += r.stockActual; catSAVisible += Math.max(0, parseFloat(r.stockActual) || 0); catSI += r.stockInicial; catSE += r.stockEsperado;
                     if (stockVerif !== null && !isNaN(stockVerif)) {
                         catVerif += stockVerif;
                         catTieneVerif = true;
@@ -9827,6 +9832,7 @@ console.log("FILTRADAS:", filtradas.length);
                         <td class="py-2 pr-3 text-right text-yellow-400 font-black">${Utils.fmt(stockMinProd)}</td>
                         <td class="py-2 pr-3 text-right text-orange-400 font-black">${Utils.fmt(r.vendido)}</td>
                         <td class="py-2 pr-3 text-right font-black" style="color:${diffCVColor}" title="Comprado en el rango - vendido en el rango">${r.diffCompraVenta>=0?'+':''}${Utils.fmt(r.diffCompraVenta)}</td>
+                        <td class="py-2 pr-3 text-right text-slate-300 font-black">${Utils.fmt(r.stockInicial)}</td>
                         <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras>0?'cursor:pointer;':''}" onclick="${r.compras>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdTs||'null'},${fhTs||'null'})`:''}">
                             ${r.compras>0?`<span style="text-decoration:underline dotted;">${Utils.fmt(r.compras)}</span>`:Utils.fmt(r.compras)}
                         </td>
@@ -9867,6 +9873,7 @@ console.log("FILTRADAS:", filtradas.length);
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#facc15;">${Utils.fmt(catMin)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#fb923c;">${Utils.fmt(catVendido)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:${catDiffCVColor};" title="Comprado en el rango - vendido en el rango">${catCV>=0?'+':''}${Utils.fmt(catCV)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#cbd5e1;">${Utils.fmt(catSI)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#60a5fa;">+${Utils.fmt(catC)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#fb923c;">-${Utils.fmt(catV)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;color:${seColor};">${Utils.fmt(catSE)}</td>
