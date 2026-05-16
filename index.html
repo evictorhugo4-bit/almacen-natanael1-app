@@ -929,6 +929,8 @@ z-index:999999999;
             <!-- WIDGET VENCIMIENTOS -->
             <div id="widgetVencimientos" class="hidden"></div>
 
+            <div id="widgetComprarStock7d" class="hidden"></div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="ventasMainGrid">
                 <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500" id="colVentasRecientes">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
@@ -2563,6 +2565,14 @@ GUARDAR PRODUCTO
                     <label class="text-[9px] font-black text-emerald-500 uppercase">Hasta</label>
                     <input type="datetime-local" id="ceHasta" class="text-xs px-2 py-1.5 rounded-lg" style="background:#0f172a;border:1px solid #334155;color:white;">
                 </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-black text-emerald-500 uppercase">Productos</label>
+                    <select id="ceTipoProducto" onchange="renderCasaErazoStats()" class="text-xs px-2 py-1.5 rounded-lg font-black" style="background:#0f172a;border:1px solid #334155;color:white;min-width:130px;">
+                        <option value="todos">Todos</option>
+                        <option value="unidad">Unidad</option>
+                        <option value="gramos">Gramos</option>
+                    </select>
+                </div>
                 <button onclick="renderCasaErazoStats()" class="px-4 py-2 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 btn-action">FILTRAR</button>
                 <button onclick="ceSetPeriodo(1)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">HOY</button>
                 <button onclick="ceSetPeriodo(7)"  class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-black text-[10px] rounded-xl btn-action">7D</button>
@@ -3360,15 +3370,29 @@ GUARDAR PRODUCTO
                     <div id="ddClientesIngNeg" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl"></div>
                 </div>
 
-                <div>
+                <div class="relative">
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Supercategoria</label>
                     <input type="text" id="inputIngNegSupercategoria" placeholder="Supercategoria..."
+                        autocomplete="off"
+                        list="dlIngNegSupercategorias"
+                        oninput="filtrarSupercatIngNeg(this.value)"
+                        onfocus="filtrarSupercatIngNeg(this.value)"
+                        onblur="setTimeout(()=>document.getElementById('ddSupercatIngNeg').classList.add('hidden'),300)"
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
+                    <datalist id="dlIngNegSupercategorias"></datalist>
+                    <div id="ddSupercatIngNeg" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
-                <div>
+                <div class="relative">
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Categoria</label>
                     <input type="text" id="inputIngNegCategoria" placeholder="Categoria..."
+                        autocomplete="off"
+                        list="dlIngNegCategorias"
+                        oninput="filtrarCatIngNeg(this.value)"
+                        onfocus="filtrarCatIngNeg(this.value)"
+                        onblur="setTimeout(()=>document.getElementById('ddCatIngNeg').classList.add('hidden'),300)"
                         class="w-full bg-slate-900 border-2 border-slate-800 p-3 rounded-xl text-white font-bold focus:border-emerald-500 outline-none uppercase text-xs">
+                    <datalist id="dlIngNegCategorias"></datalist>
+                    <div id="ddCatIngNeg" class="hidden absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-xl mt-1 max-h-40 overflow-y-auto custom-scrollbar shadow-xl" onmousedown="event.preventDefault()"></div>
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Subcategoria</label>
@@ -7954,6 +7978,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     if (typeof _guardarCache === 'function') _guardarCache();
     recalcularTodosLosStocks();
     revisarVencimientos();
+    if (typeof revisarAlertasCompra7Dias === 'function') revisarAlertasCompra7Dias();
     if (typeof calcularWidgetGastoFamiliar === "function") calcularWidgetGastoFamiliar();
     setTimeout(() => { filtrarInventario(); }, 300);
 
@@ -8413,6 +8438,10 @@ if (indicator) indicator.classList.remove('hidden');
                 }
                 return 0;
             }
+            const _negText = (row, names) => String(_sheetValExact(row, names) || '').trim().toUpperCase();
+            const _negSuper = row => _negText(row, ['SUPER CATEGORIA','SUPER CATEGORÍA','SUPERCATEGORIA','SUPERCATEGORÍA','Supercategoria','Supercategoría','SupercategorÃ­a']);
+            const _negCat = row => _negText(row, ['CATEGORIA','CATEGORÍA','Categoria','Categoría','CategorÃ­a']);
+            const _negSub = row => _negText(row, ['SUBCATEGORIA','SUB CATEGORIA','SUB CATEGORÍA','Subcategoria','Sub Categoría','Sub CategorÃ­a']);
 
             // Construir set de todos los idRow que vienen del sheet
             const sheetIds = new Set();
@@ -8432,8 +8461,8 @@ if (indicator) indicator.classList.remove('hidden');
             }
             const supercatsSet = new Set(); const catsMap = {};
             rows.forEach(row => {
-                const sc = String(row['SUPER CATEGORIA']||row['Supercategoria']||row['Supercategoría']||'').trim().toUpperCase();
-                const ca = String(row['CATEGORIA']||row['Categoria']||row['Categoría']||'').trim().toUpperCase();
+                const sc = _negSuper(row);
+                const ca = _negCat(row);
                 if (sc) supercatsSet.add(sc);
                 if (sc && ca) { if (!catsMap[sc]) catsMap[sc] = new Set(); catsMap[sc].add(ca); }
             });
@@ -8448,16 +8477,16 @@ if (indicator) indicator.classList.remove('hidden');
                 const total = parseSheetNum(_sheetValExact(row, ['PAGO TOTAL','Pago Total','Pago total']));
                 const efectivoReal = parseSheetNum(_sheetValExact(row, ['PAGO EFECTIVO','Pago Efectivo','Pago efectivo']));
                 const creditoReal = parseSheetNum(_sheetValExact(row, ['PAGO CREDITO','PAGO CRÉDITO','Pago Credito','Pago Crédito','Pago credito']));
-                const key = idRow||(fechaRaw+'|'+String(row['Supercategoria']||'').trim()+'|'+total);
+                const key = idRow||(fechaRaw+'|'+_negSuper(row)+'|'+total);
                 const id = 'sheet_NN_'+key.replace(/[^a-z0-9]/gi,'_').substring(0,40);
                 const reg = { id, idSheet: idRow, fecha:fechaDisplay, fechaISO:fechaRaw,
                     idCliente: String(row['IDCLIENTE']||row['IdCliente']||'').trim(),
                     cliente:   String(row['CLIENTE']||row['Cliente']||'').trim(),
                     proveedor: String(row['CLIENTE']||row['Cliente']||'').trim(),
-                    supercategoria: String(row['SUPER CATEGORIA']||row['Supercategoria']||row['Supercategoría']||'').trim().toUpperCase(),
-                    concepto: String(row['CATEGORIA']||row['Categoria']||row['Categoría']||'').trim().toUpperCase(),
-                    categoria: String(row['CATEGORIA']||row['Categoria']||row['Categoría']||'').trim().toUpperCase(),
-                    subcategoria: String(row['SUBCATEGORIA']||row['Subcategoria']||row['SUB CATEGORIA']||row['Sub Categoria']||row['Sub Categoría']||'').trim().toUpperCase(),
+                    supercategoria: _negSuper(row),
+                    concepto: _negCat(row),
+                    categoria: _negCat(row),
+                    subcategoria: _negSub(row),
                     estado:    String(row['ESTADO']||row['Estado']||'').trim(),
                     formaPago: String(row['FORMA DE PAGO']||row['Forma de Pago']||'').trim(),
                     total,
@@ -8645,7 +8674,10 @@ if (indicator) indicator.classList.remove('hidden');
                             id:     String(r['IDLISTADEINGRESOS'] || r['IDLISTA'] || '').trim(),
                             nombre: String(r['NOMBRE'] || '').trim().toUpperCase(),
                             monto:  parseFloat(r['MONTO'] || 0),
-                            imagen: String(r['IMAGEN'] || '').trim()
+                            imagen: String(r['IMAGEN'] || '').trim(),
+                            supercategoria: String(r['SUPER CATEGORIA'] || r['SUPERCATEGORIA'] || r['Supercategoria'] || '').trim().toUpperCase(),
+                            categoria: String(r['CATEGORIA'] || r['Categoria'] || r['NOMBRE'] || '').trim().toUpperCase(),
+                            subcategoria: String(r['SUBCATEGORIA'] || r['SUB CATEGORIA'] || r['Subcategoria'] || '').trim().toUpperCase()
                         });
                     });
                     window._listaIngresos = _listaIngresos;
@@ -8658,7 +8690,10 @@ if (indicator) indicator.classList.remove('hidden');
                             id:     String(r['IDLISTADEGASTOS'] || r['IDLISTA'] || '').trim(),
                             nombre: String(r['NOMBRE'] || '').trim().toUpperCase(),
                             monto:  parseFloat(r['MONTO'] || 0),
-                            imagen: String(r['IMAGEN'] || '').trim()
+                            imagen: String(r['IMAGEN'] || '').trim(),
+                            supercategoria: String(r['SUPER CATEGORIA'] || r['SUPERCATEGORIA'] || r['Supercategoria'] || '').trim().toUpperCase(),
+                            categoria: String(r['CATEGORIA'] || r['Categoria'] || r['NOMBRE'] || '').trim().toUpperCase(),
+                            subcategoria: String(r['SUBCATEGORIA'] || r['SUB CATEGORIA'] || r['Subcategoria'] || '').trim().toUpperCase()
                         });
                     });
                     window._listaEgresos = _listaEgresos;
@@ -8707,6 +8742,7 @@ if (indicator) indicator.classList.remove('hidden');
     if (typeof actualizarResumenCaja === 'function') actualizarResumenCaja();
     // Actualizar KPIs del día en el panel
     actualizarKPIsDia();
+    if (typeof revisarAlertasCompra7Dias === 'function') revisarAlertasCompra7Dias();
 }
 
         function actualizarKPIsDia() {
@@ -10740,6 +10776,7 @@ console.log("FILTRADAS:", filtradas.length);
 
             const desdeVal = document.getElementById('ceDesde')?.value || '';
             const hastaVal = document.getElementById('ceHasta')?.value || '';
+            const filtroTipoProducto = String(document.getElementById('ceTipoProducto')?.value || 'todos').toLowerCase();
             const fdNum = desdeVal ? parseFechaNum(desdeVal) : null;
             const fhNum = hastaVal ? parseFechaNum(hastaVal) : null;
             const enRango = fn => { if(!fn) return false; if(fdNum && fn < fdNum) return false; if(fhNum && fn > fhNum) return false; return true; };
@@ -10747,6 +10784,20 @@ console.log("FILTRADAS:", filtradas.length);
             const num = v => Number(v || 0) || 0;
             const esc = v => Utils.escHtml(String(v ?? ''));
             const fotoProducto = n => (typeof obtenerFotoProductoPorNombre === 'function' ? obtenerFotoProductoPorNombre(n) : '') || '';
+            const tipoProductoCasa = item => {
+                const directo = item?.tipoVenta || item?.['TIPO DE VENTA'] || item?.formaVenta || item?.['FORMA DE VENTA'] || '';
+                if (directo) return directo;
+                const nombreBuscado = norm(item?.nombre || item?.producto || '');
+                const prod = (window._productos || _productos || []).find(p => norm(p.nombre || p.NOMBRE || '') === nombreBuscado);
+                return prod?.tipoVenta || prod?.['FORMA DE VENTA'] || prod?.formaVenta || prod?.tipo || 'Unidad';
+            };
+            const unidadCasa = tipo => (typeof esTipoVenta === 'function' && esTipoVenta(tipo)) ? 'gr' : 'u';
+            const fmtCantidadCasa = (cantidad, tipo) => `${Utils.fmt(cantidad || 0)} ${unidadCasa(tipo)}`;
+            const pasaFiltroTipoCasa = tipo => {
+                if (filtroTipoProducto === 'gramos') return unidadCasa(tipo) === 'gr';
+                if (filtroTipoProducto === 'unidad') return unidadCasa(tipo) === 'u';
+                return true;
+            };
             const thumb = (src, txt, color = '#10b981') => {
                 if (src) return `<img src="${esc(src)}" style="width:46px;height:46px;border-radius:14px;object-fit:cover;background:#fff;border:1px solid rgba(255,255,255,.18);">`;
                 return `<div style="width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.7);border:1px solid rgba(148,163,184,.25);color:${color};font-weight:1000;">${esc(String(txt || '-').slice(0,1).toUpperCase())}</div>`;
@@ -10771,16 +10822,42 @@ console.log("FILTRADAS:", filtradas.length);
                     const costoUnit = num(it.costo || it.precioCosto || it.costoUnitario || it.dinRecUnit || 0);
                     const monto = num(it.dineroRecuperado || it.dinRecuperado || (costoUnit * cantidad));
                     const foto = it.imagen || it.img || fotoProducto(nombre);
-                    casaDetalle.push({ fecha, nombre, cantidad, monto, foto });
-                    if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto };
+                    const tipoVenta = tipoProductoCasa(it);
+                    if (!pasaFiltroTipoCasa(tipoVenta)) return;
+                    casaDetalle.push({ fecha, nombre, cantidad, monto, foto, tipoVenta });
+                    if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta };
                     consumoPorProducto[nombre].cantidad += cantidad;
                     consumoPorProducto[nombre].monto += monto;
+                    if (!consumoPorProducto[nombre].tipoVenta && tipoVenta) consumoPorProducto[nombre].tipoVenta = tipoVenta;
                 });
             });
 
             const egresos = (_sheetEgresos || []).filter(e => enRango(parseFechaNum(e.fechaISO || e.fecha || e.FECHA || '')));
             const comidaDetalle = [];
             const comidaPorCategoria = {};
+            const imagenCategoriaEgreso = (...nombres) => {
+                const lista = window._listaEgresos || _listaEgresos || [];
+                const mapa = {};
+                (lista || []).forEach(it => {
+                    const key = norm(it.nombre || it.NOMBRE || '');
+                    const img = String(it.imagen || it.foto || it.IMAGEN || '').trim();
+                    if (key && img) mapa[key] = img;
+                });
+                for (const nombreRaw of nombres) {
+                    const nombre = String(nombreRaw || '').trim();
+                    const key = norm(nombre);
+                    if (!key) continue;
+                    if (mapa[key]) return mapa[key];
+                    try {
+                        if (typeof window._getCatImg === 'function') {
+                            const img = window._getCatImg('categoria', nombre)
+                                || window._getCatImg('supercat', nombre);
+                            if (img) return img;
+                        }
+                    } catch(_) {}
+                }
+                return '';
+            };
             egresos.forEach(e => {
                 const valores = [e.categoria, e.concepto, e.detalle, e.descripcion, e.supercategoria, e.proveedor].map(norm);
                 const esComida = valores.some(v => v === 'COMIDA FAMILIAR' || v.includes('COMIDA FAMILIAR'));
@@ -10788,9 +10865,19 @@ console.log("FILTRADAS:", filtradas.length);
                 const nombre = String(e.detalle || e.descripcion || e.concepto || e.categoria || 'COMIDA FAMILIAR').trim();
                 const monto = num(e.pagoEfectivo || e.efectivo || e.monto || e.total || e.MONTO || 0);
                 const fecha = fechaLabel(e.fechaISO || e.fecha || e.FECHA || '');
-                let foto = '';
+                let foto = String(e.imagen || e.foto || e.IMAGEN || '').trim()
+                    || imagenCategoriaEgreso(
+                        e.categoria,
+                        e.concepto,
+                        e.detalle,
+                        e.descripcion,
+                        e.supercategoria,
+                        e.supercat,
+                        e.proveedor,
+                        'COMIDA FAMILIAR'
+                    );
                 try {
-                    if (typeof window._getCatImg === 'function') {
+                    if (!foto && typeof window._getCatImg === 'function') {
                         foto = window._getCatImg('categoria', e.categoria || '')
                             || window._getCatImg('categoria', e.concepto || '')
                             || window._getCatImg('categoria', e.detalle || '')
@@ -10801,26 +10888,40 @@ console.log("FILTRADAS:", filtradas.length);
                 } catch(_) {}
                 comidaDetalle.push({ fecha, nombre, monto, foto });
                 if (!comidaPorCategoria[nombre]) comidaPorCategoria[nombre] = { monto:0, foto };
+                if (!comidaPorCategoria[nombre].foto && foto) comidaPorCategoria[nombre].foto = foto;
                 comidaPorCategoria[nombre].monto += monto;
             });
 
             const totalCasa = casaDetalle.reduce((a,x)=>a+x.monto,0);
             const totalComida = comidaDetalle.reduce((a,x)=>a+x.monto,0);
             const total = totalCasa + totalComida;
+            const ceFechaNumADia = n => {
+                const s = String(n || '').padStart(14, '0');
+                const y = Number(s.slice(0, 4));
+                const m = Number(s.slice(4, 6));
+                const d = Number(s.slice(6, 8));
+                return y && m && d ? new Date(y, m - 1, d) : null;
+            };
+            const ceDiaDesde = ceFechaNumADia(fdNum);
+            const ceDiaHasta = ceFechaNumADia(fhNum);
+            const ceDiasFiltro = (ceDiaDesde && ceDiaHasta)
+                ? Math.max(1, Math.floor((ceDiaHasta - ceDiaDesde) / 86400000) + 1)
+                : 1;
+            const cePromedioDia = total / ceDiasFiltro;
             const topConsumo = Object.entries(consumoPorProducto).sort((a,b)=>b[1].monto-a[1].monto).slice(0,8);
             const topCantidad = Object.entries(consumoPorProducto).sort((a,b)=>b[1].cantidad-a[1].cantidad).slice(0,8);
             const topComida = Object.entries(comidaPorCategoria).sort((a,b)=>b[1].monto-a[1].monto).slice(0,8);
             const detalleConsumoOrdenado = Object.entries(consumoPorProducto)
                 .sort((a,b) => (b[1].cantidad - a[1].cantidad) || (b[1].monto - a[1].monto))
                 .slice(0, 12)
-                .map(([nombre, data]) => ({ nombre, cantidad: data.cantidad, monto: data.monto, foto: data.foto }));
+                .map(([nombre, data]) => ({ nombre, cantidad: data.cantidad, monto: data.monto, foto: data.foto, tipoVenta: data.tipoVenta }));
             const rowConsumo = detalleConsumoOrdenado.map(x => `
                 <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid rgba(51,65,85,.8);border-radius:16px;padding:10px;">
                     ${thumb(x.foto, x.nombre, '#38bdf8')}
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:9px;color:#34d399;font-weight:900;">TOTAL DEL PER?ODO</div>
                         <div style="font-size:12px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(x.nombre)}</div>
-                        <div style="font-size:10px;color:#94a3b8;font-weight:800;">Cantidad: ${Utils.fmt(x.cantidad)}</div>
+                        <div style="font-size:10px;color:#94a3b8;font-weight:800;">Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
                     </div>
                     <div style="font-size:14px;color:#34d399;font-weight:1000;">$${Utils.fmt(x.monto)}</div>
                 </div>`).join('') || '<div class="text-slate-500 text-xs font-bold">Sin consumos de CASA ERAZO en el período.</div>';
@@ -10842,6 +10943,17 @@ console.log("FILTRADAS:", filtradas.length);
                             <h3 style="font-size:22px;font-weight:1000;color:#fff;text-transform:uppercase;margin:0;">CASA ERAZO</h3>
                             <p style="font-size:10px;color:#94a3b8;font-weight:800;margin:3px 0 0;text-transform:uppercase;">Consumo del negocio + comida familiar</p>
                         </div>
+                        <div style="flex:1;min-width:280px;max-width:760px;border:1.5px solid rgba(251,113,133,.35);border-radius:18px;background:rgba(15,23,42,.42);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+                            <div>
+                                <div style="font-size:9px;font-weight:1000;color:#fda4af;text-transform:uppercase;letter-spacing:.08em;">Dias comprendidos</div>
+                                <div style="font-size:24px;font-weight:1000;color:#f8fafc;font-family:monospace;line-height:1;">${ceDiasFiltro}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:9px;font-weight:1000;color:#94a3b8;text-transform:uppercase;">Promedio por dia</div>
+                                <div style="font-size:24px;font-weight:1000;color:#fb7185;font-family:monospace;line-height:1;">$${Utils.fmt(cePromedioDia)}</div>
+                                <div style="font-size:9px;font-weight:800;color:#64748b;">$${Utils.fmt(total)} / ${ceDiasFiltro} dias</div>
+                            </div>
+                        </div>
                         <div style="font-size:26px;font-weight:1000;color:#fb7185;font-family:monospace;">$${Utils.fmt(total)}</div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -10859,6 +10971,16 @@ console.log("FILTRADAS:", filtradas.length);
                             <div class="text-[10px] font-black text-amber-300 uppercase">Total hogar</div>
                             <div class="text-3xl font-black text-white font-mono">$${Utils.fmt(total)}</div>
                             <div class="text-[10px] text-slate-400 font-bold">Suma de consumo + comida familiar</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+                        <div class="rounded-2xl p-4 bg-slate-950/40 border border-cyan-500/20">
+                            <h4 class="text-xs font-black text-cyan-300 uppercase mb-3">Detalle consumo del negocio</h4>
+                            <div class="space-y-2 max-h-[420px] overflow-auto pr-1">${rowConsumo}</div>
+                        </div>
+                        <div class="rounded-2xl p-4 bg-slate-950/40 border border-rose-500/20">
+                            <h4 class="text-xs font-black text-rose-300 uppercase mb-3">Detalle comida familiar</h4>
+                            <div class="space-y-2 max-h-[420px] overflow-auto pr-1">${rowComida}</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -10879,21 +11001,27 @@ console.log("FILTRADAS:", filtradas.length);
                             <canvas id="chartCasaErazoComida" height="180"></canvas>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
-                        <div class="rounded-2xl p-4 bg-slate-950/40 border border-cyan-500/20">
-                            <h4 class="text-xs font-black text-cyan-300 uppercase mb-3">Detalle consumo del negocio</h4>
-                            <div class="space-y-2 max-h-[420px] overflow-auto pr-1">${rowConsumo}</div>
-                        </div>
-                        <div class="rounded-2xl p-4 bg-slate-950/40 border border-rose-500/20">
-                            <h4 class="text-xs font-black text-rose-300 uppercase mb-3">Detalle comida familiar</h4>
-                            <div class="space-y-2 max-h-[420px] overflow-auto pr-1">${rowComida}</div>
-                        </div>
-                    </div>
                 </div>`;
 
             if (typeof statsChart === 'function') {
                 statsChart('chartCasaErazoMonto', 'bar', topConsumo.map(x=>x[0]), [{ label:'Monto consumido', data: topConsumo.map(x=>x[1].monto), backgroundColor:'rgba(56,189,248,.75)', borderColor:'#38bdf8', borderWidth:1 }]);
-                statsChart('chartCasaErazoCantidad', 'bar', topCantidad.map(x=>x[0]), [{ label:'Cantidad', data: topCantidad.map(x=>x[1].cantidad), backgroundColor:'rgba(52,211,153,.75)', borderColor:'#34d399', borderWidth:1 }]);
+                statsChart('chartCasaErazoCantidad', 'bar', topCantidad.map(x=>x[0]), [{ label:'Cantidad consumida', data: topCantidad.map(x=>x[1].cantidad), backgroundColor:'rgba(52,211,153,.75)', borderColor:'#34d399', borderWidth:1 }], {
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1', font: { size: 10, weight: '800' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const item = topCantidad[ctx.dataIndex]?.[1] || {};
+                                    return ' Cantidad: ' + fmtCantidadCasa(ctx.parsed.y ?? ctx.raw, item.tipoVenta);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } },
+                        y: { ticks: { color: '#64748b', font: { size: 9 }, callback: v => Utils.fmt(v) }, grid: { color: '#1e293b' } }
+                    }
+                });
                 statsChart('chartCasaErazoVs', 'doughnut', ['Consumo negocio','Comida familiar'], [{ data:[totalCasa,totalComida], backgroundColor:['#38bdf8','#fb7185'], borderColor:'#0f172a', borderWidth:3 }]);
                 statsChart('chartCasaErazoComida', 'bar', topComida.map(x=>x[0]), [{ label:'Monto', data: topComida.map(x=>x[1].monto), backgroundColor:'rgba(251,191,36,.75)', borderColor:'#fbbf24', borderWidth:1 }]);
             }
@@ -11740,6 +11868,21 @@ console.log("FILTRADAS:", filtradas.length);
                 return vals.some(v => v === 'COMIDA FAMILIAR' || v.includes('COMIDA FAMILIAR'));
             };
             const _numCasa = v => Number(v || 0) || 0;
+            const _filtroTipoCasa = String(document.getElementById('ceTipoProducto')?.value || 'todos').toLowerCase();
+            const _tipoProductoCasa = item => {
+                const directo = item?.tipoVenta || item?.['TIPO DE VENTA'] || item?.formaVenta || item?.['FORMA DE VENTA'] || '';
+                if (directo) return directo;
+                const nombreBuscado = _normCasa(item?.nombre || item?.producto || '');
+                const prod = (window._productos || _productos || []).find(p => _normCasa(p.nombre || p.NOMBRE || '') === nombreBuscado);
+                return prod?.tipoVenta || prod?.['FORMA DE VENTA'] || prod?.formaVenta || prod?.tipo || 'Unidad';
+            };
+            const _unidadCasa = tipo => (typeof esTipoVenta === 'function' && esTipoVenta(tipo)) ? 'gr' : 'u';
+            const _fmtCantidadCasa = (cantidad, tipo) => `${Utils.fmt(cantidad || 0)} ${_unidadCasa(tipo)}`;
+            const _pasaFiltroTipoCasa = tipo => {
+                if (_filtroTipoCasa === 'gramos') return _unidadCasa(tipo) === 'gr';
+                if (_filtroTipoCasa === 'unidad') return _unidadCasa(tipo) === 'u';
+                return true;
+            };
 
             const casaErazoDetalle = [];
             const casaErazoTopMonto = {};
@@ -11754,16 +11897,21 @@ console.log("FILTRADAS:", filtradas.length);
                     const cantidad = _numCasa(it.cantidad || 1) || 1;
                     const dineroRec = _numCasa(it.dineroRecuperado || (it.costo ? _numCasa(it.costo) * cantidad : 0));
                     const foto = it.foto || it.imagen || _productoFotoEN(nombre);
+                    const tipoVenta = _tipoProductoCasa(it);
+                    if (!_pasaFiltroTipoCasa(tipoVenta)) return;
                     casaErazoDetalle.push({
                         fecha: fechaTxt,
                         producto: nombre,
                         cantidad,
                         monto: dineroRec,
                         fotoProducto: foto,
-                        fotoCliente: clienteFoto
+                        fotoCliente: clienteFoto,
+                        tipoVenta
                     });
                     casaErazoTopMonto[nombre] = (casaErazoTopMonto[nombre] || 0) + dineroRec;
-                    casaErazoTopCantidad[nombre] = (casaErazoTopCantidad[nombre] || 0) + cantidad;
+                    if (!casaErazoTopCantidad[nombre]) casaErazoTopCantidad[nombre] = { cantidad: 0, tipoVenta };
+                    casaErazoTopCantidad[nombre].cantidad += cantidad;
+                    if (!casaErazoTopCantidad[nombre].tipoVenta && tipoVenta) casaErazoTopCantidad[nombre].tipoVenta = tipoVenta;
                 });
             });
             casaErazoDetalle.sort((a, b) => b.monto - a.monto || b.cantidad - a.cantidad || a.producto.localeCompare(b.producto));
@@ -11792,7 +11940,7 @@ console.log("FILTRADAS:", filtradas.length);
             comidaFamiliarDetalle.sort((a, b) => b.monto - a.monto || a.producto.localeCompare(b.producto));
 
             const casaErazoTopMontoArr = Object.entries(casaErazoTopMonto).sort((a, b) => b[1] - a[1]).slice(0, 7);
-            const casaErazoTopCantArr = Object.entries(casaErazoTopCantidad).sort((a, b) => b[1] - a[1]).slice(0, 7);
+            const casaErazoTopCantArr = Object.entries(casaErazoTopCantidad).sort((a, b) => b[1].cantidad - a[1].cantidad).slice(0, 7);
             const comidaTopArr = Object.entries(comidaTopMonto).sort((a, b) => b[1] - a[1]).slice(0, 7);
             const totalComidaFamiliar = comidaFamiliarDetalle.reduce((s, x) => s + x.monto, 0);
             const totalCasaCantidad = casaErazoDetalle.reduce((s, x) => s + x.cantidad, 0);
@@ -11807,7 +11955,7 @@ console.log("FILTRADAS:", filtradas.length);
                         <div style="min-width:0;">
                             <div style="font-size:10px;font-weight:900;color:#94a3b8;letter-spacing:.04em;">${Utils.escHtml(r.fecha)}</div>
                             <div style="font-size:12px;font-weight:900;color:#f8fafc;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escHtml(r.producto)}</div>
-                            <div style="font-size:10px;font-weight:800;color:#64748b;">Cantidad ${Utils.fmt(r.cantidad || 0)}</div>
+                            <div style="font-size:10px;font-weight:800;color:#64748b;">Cantidad ${_fmtCantidadCasa(r.cantidad || 0, r.tipoVenta)}</div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:15px;font-weight:900;color:${color};font-family:monospace;">$${Utils.fmt(r.monto || 0)}</div>
@@ -12098,9 +12246,20 @@ console.log("FILTRADAS:", filtradas.length);
 
                 if (!proveedores.length) return;
 
+                window._enCmpProvModo = window._enCmpProvModo || 'cantidad';
+                window._enCmpProvOrden = window._enCmpProvOrden || 'cantidad_desc';
+                const ordenItemsCmpProv = arr => {
+                    const modo = window._enCmpProvOrden || 'cantidad_desc';
+                    return arr.slice().sort((a, b) => {
+                        if (modo === 'producto_asc') return a.nombre.localeCompare(b.nombre, 'es');
+                        if (modo === 'producto_desc') return b.nombre.localeCompare(a.nombre, 'es');
+                        if (modo === 'cantidad_asc') return (Number(a.cantidad || 0) - Number(b.cantidad || 0)) || a.nombre.localeCompare(b.nombre, 'es');
+                        return (Number(b.cantidad || 0) - Number(a.cantidad || 0)) || a.nombre.localeCompare(b.nombre, 'es');
+                    });
+                };
+
                 const renderLado = (titulo, color, items, vacio, totalLado) => {
-                    const filas = Object.values(items)
-                        .sort((a, b) => b.cantidad - a.cantidad || a.nombre.localeCompare(b.nombre, 'es'))
+                    const filas = ordenItemsCmpProv(Object.values(items))
                         .map(r => `
                             <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:#0f172a;border:1px solid #1e293b;">
                                 ${_thumbEN(r.foto, r.nombre || '-', color, 34)}
@@ -12133,10 +12292,112 @@ console.log("FILTRADAS:", filtradas.length);
                     `;
                 };
 
-                const cards = proveedores.map((prov, idx) => {
+                const renderComparativoProductos = prov => {
+                    const keys = [...new Set([
+                        ...Object.keys(prov.compras || {}),
+                        ...Object.keys(prov.ventas || {})
+                    ])];
+                    const filas = keys.map(k => {
+                        const c = prov.compras[k] || {};
+                        const v = prov.ventas[k] || {};
+                        const nombre = c.nombre || v.nombre || k;
+                        const compraCant = Number(c.cantidad || 0);
+                        const ventaCant = Number(v.cantidad || 0);
+                        return {
+                            nombre,
+                            foto: c.foto || v.foto || '',
+                            compraCant,
+                            ventaCant,
+                            dif: ventaCant - compraCant,
+                            compraTotal: Number(c.total || 0),
+                            ventaTotal: Number(v.total || 0)
+                        };
+                    }).sort((a, b) => {
+                        return a.dif - b.dif || a.nombre.localeCompare(b.nombre, 'es');
+                    });
+
+                    const body = filas.map(r => {
+                        const difColor = r.dif < 0 ? '#f87171' : r.dif > 0 ? '#34d399' : '#fbbf24';
+                        const difTxt = (r.dif > 0 ? '+' : '') + Utils.fmt(r.dif);
+                        return `
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;background:#0f172a;border:1px solid #1e293b;min-width:520px;">
+                                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                                    ${_thumbEN(r.foto, r.nombre || '-', '#38bdf855', 34)}
+                                    <div style="min-width:0;">
+                                        <div style="font-size:11px;font-weight:900;color:#f8fafc;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escHtml(r.nombre || '-')}</div>
+                                        <div style="font-size:9px;font-weight:700;color:#64748b;">Compra ${fmt$(r.compraTotal)} · Venta ${fmt$(r.ventaTotal)}</div>
+                                    </div>
+                                </div>
+                                <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                                    <div style="min-width:82px;text-align:center;padding:7px 9px;border-radius:10px;background:#60a5fa18;border:1px solid #60a5fa33;">
+                                        <div style="font-size:8px;font-weight:900;color:#60a5fa;text-transform:uppercase;">Compra</div>
+                                        <div style="font-size:15px;font-weight:900;color:#dbeafe;font-family:monospace;">${Utils.fmt(r.compraCant)}</div>
+                                    </div>
+                                    <div style="min-width:82px;text-align:center;padding:7px 9px;border-radius:10px;background:#34d39918;border:1px solid #34d39933;">
+                                        <div style="font-size:8px;font-weight:900;color:#34d399;text-transform:uppercase;">Venta</div>
+                                        <div style="font-size:15px;font-weight:900;color:#bbf7d0;font-family:monospace;">${Utils.fmt(r.ventaCant)}</div>
+                                    </div>
+                                    <div style="min-width:96px;text-align:center;padding:7px 9px;border-radius:10px;background:${r.dif < 0 ? '#ef444418' : r.dif > 0 ? '#22c55e18' : '#f59e0b18'};border:1px solid ${difColor}44;">
+                                        <div style="font-size:8px;font-weight:900;color:${difColor};text-transform:uppercase;">Diferencia</div>
+                                        <div style="font-size:15px;font-weight:900;color:${difColor};font-family:monospace;">${difTxt}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div style="background:linear-gradient(180deg,#111827,#0f172a);border:1.5px solid #38bdf822;border-radius:16px;padding:12px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                                <div>
+                                    <div style="font-size:11px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:.06em;">Comparativo por producto</div>
+                                    <div style="font-size:9px;font-weight:800;color:#64748b;">Un solo panel con compra, venta y diferencia del mismo producto</div>
+                                </div>
+                                <div style="font-size:9px;font-weight:800;color:#94a3b8;">${filas.length} productos</div>
+                            </div>
+                            <div style="display:grid;gap:8px;max-height:360px;overflow:auto;padding-right:2px;">
+                                ${body || '<div style="padding:16px 10px;text-align:center;font-size:10px;font-weight:800;color:#64748b;">Sin productos para comparar</div>'}
+                            </div>
+                        </div>
+                    `;
+                };
+
+                const grafProvs = proveedores.slice(0, 12);
+                const totalProv = {
+                    nombre: 'TOTAL',
+                    foto: '',
+                    totalCompras: 0,
+                    totalVentas: 0,
+                    compras: {},
+                    ventas: {}
+                };
+                const sumarProductoCmp = (dest, src) => {
+                    Object.entries(src || {}).forEach(([key, item]) => {
+                        if (!dest[key]) {
+                            dest[key] = {
+                                nombre: item.nombre || key,
+                                cantidad: 0,
+                                monto: 0,
+                                foto: item.foto || ''
+                            };
+                        }
+                        dest[key].cantidad += Number(item.cantidad || 0);
+                        dest[key].monto += Number(item.monto || 0);
+                        if (!dest[key].foto && item.foto) dest[key].foto = item.foto;
+                    });
+                };
+                proveedores.forEach(prov => {
+                    totalProv.totalCompras += Number(prov.totalCompras || 0);
+                    totalProv.totalVentas += Number(prov.totalVentas || 0);
+                    sumarProductoCmp(totalProv.compras, prov.compras);
+                    sumarProductoCmp(totalProv.ventas, prov.ventas);
+                });
+                const proveedoresConTotal = [totalProv, ...proveedores];
+                const cards = proveedoresConTotal.map((prov, idx) => {
                     const bodyId = `en_prov_cmp_${idx}`;
                     const arrId = `en_arr_cmp_${idx}`;
                     const diferencia = Number(prov.totalVentas || 0) - Number(prov.totalCompras || 0);
+                    const detalleHTML = renderComparativoProductos(prov);
                     return `
                         <div style="border:1.5px solid #334155;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#1e293b,#111827);">
                             <div onclick="(function(){var b=document.getElementById('${bodyId}');var a=document.getElementById('${arrId}');var open=b.style.display==='block';b.style.display=open?'none':'block';a.style.transform=open?'rotate(-90deg)':'rotate(0deg)';})();" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;">
@@ -12164,10 +12425,7 @@ console.log("FILTRADAS:", filtradas.length);
                                 </div>
                             </div>
                             <div id="${bodyId}" style="display:none;padding:0 14px 14px;">
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                                    ${renderLado('Compras del proveedor', '#60a5fa', prov.compras, 'Sin compras en este rango', prov.totalCompras)}
-                                    ${renderLado('Ventas de ese proveedor', '#34d399', prov.ventas, 'Sin ventas en este rango', prov.totalVentas)}
-                                </div>
+                                ${detalleHTML}
                             </div>
                         </div>
                     `;
@@ -12180,11 +12438,41 @@ console.log("FILTRADAS:", filtradas.length);
                                 <div style="font-size:11px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:.06em;">Comparativo por proveedor</div>
                                 <div style="font-size:9px;font-weight:800;color:#64748b;">A la izquierda compras y a la derecha ventas sin ganancias, para contrastar valor real por proveedor</div>
                             </div>
-                            <div style="font-size:9px;font-weight:800;color:#94a3b8;">${proveedores.length} proveedores</div>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <label style="font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Comparar</label>
+                                <select onchange="window._enCmpProvModo=this.value;renderEstadoNegocio();" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:8px 10px;font-size:10px;font-weight:900;outline:none;">
+                                    <option value="cantidad" ${window._enCmpProvModo === 'cantidad' ? 'selected' : ''}>Por cantidad</option>
+                                    <option value="producto" ${window._enCmpProvModo === 'producto' ? 'selected' : ''}>Por producto</option>
+                                </select>
+                                <label style="font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Orden</label>
+                                <select onchange="window._enCmpProvOrden=this.value;renderEstadoNegocio();" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:8px 10px;font-size:10px;font-weight:900;outline:none;">
+                                    <option value="cantidad_desc" ${window._enCmpProvOrden === 'cantidad_desc' ? 'selected' : ''}>Cantidad decreciente</option>
+                                    <option value="cantidad_asc" ${window._enCmpProvOrden === 'cantidad_asc' ? 'selected' : ''}>Cantidad creciente</option>
+                                    <option value="producto_asc" ${window._enCmpProvOrden === 'producto_asc' ? 'selected' : ''}>Producto A-Z</option>
+                                    <option value="producto_desc" ${window._enCmpProvOrden === 'producto_desc' ? 'selected' : ''}>Producto Z-A</option>
+                                </select>
+                                <div style="font-size:9px;font-weight:800;color:#94a3b8;">${proveedores.length} proveedores</div>
+                            </div>
+                        </div>
+                        <div style="padding:12px 14px;border-bottom:1px solid #1e293b;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+                            <div style="padding:12px;border-radius:16px;background:#0f172a;border:1px solid #38bdf833;">
+                                <div style="font-size:10px;font-weight:900;color:#38bdf8;text-transform:uppercase;margin-bottom:8px;">Compras vs ventas por proveedor</div>
+                                <canvas id="chartComparativoProveedorBarras" height="210"></canvas>
+                            </div>
+                            <div style="padding:12px;border-radius:16px;background:#0f172a;border:1px solid #f8717133;">
+                                <div style="font-size:10px;font-weight:900;color:#f87171;text-transform:uppercase;margin-bottom:8px;">Diferencia por proveedor</div>
+                                <canvas id="chartComparativoProveedorDif" height="210"></canvas>
+                            </div>
                         </div>
                         <div style="padding:10px;display:grid;gap:10px;">${cards}</div>
                     </div>
                 `;
+                window._enCmpProvGraf = grafProvs.map(p => ({
+                    nombre: p.nombre || '-',
+                    compras: Number(p.totalCompras || 0),
+                    ventas: Number(p.totalVentas || 0),
+                    dif: Number(p.totalVentas || 0) - Number(p.totalCompras || 0)
+                }));
             })();
 
             const enGraficosBalanceColor = enGraficos.balance >= 0 ? '#34d399' : '#f87171';
@@ -12286,6 +12574,74 @@ console.log("FILTRADAS:", filtradas.length);
             };
             window.enSetComparador(window._enComparadorModo);
 
+            if (document.getElementById('chartComparativoProveedorBarras') && Array.isArray(window._enCmpProvGraf)) {
+                const cmpProv = window._enCmpProvGraf;
+                statsChart('chartComparativoProveedorBarras', 'bar',
+                    cmpProv.map(p => String(p.nombre || '-').substring(0, 18)),
+                    [
+                        {
+                            label: 'Compras',
+                            data: cmpProv.map(p => p.compras),
+                            backgroundColor: 'rgba(96,165,250,.72)',
+                            borderColor: '#60a5fa',
+                            borderWidth: 1,
+                            borderRadius: 9
+                        },
+                        {
+                            label: 'Ventas',
+                            data: cmpProv.map(p => p.ventas),
+                            backgroundColor: 'rgba(52,211,153,.72)',
+                            borderColor: '#34d399',
+                            borderWidth: 1,
+                            borderRadius: 9
+                        }
+                    ],
+                    {
+                        onClick: function(evt, elements) {
+                            if (!elements || !elements.length) return;
+                            const i = elements[0].index;
+                            const card = document.getElementById('en_prov_cmp_' + i);
+                            const arr = document.getElementById('en_arr_cmp_' + i);
+                            if (card) { card.style.display = 'block'; card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                            if (arr) arr.style.transform = 'rotate(0deg)';
+                        },
+                        scales: {
+                            x: { ticks: { color: '#cbd5e1', font: { size: 9, weight: '800' } }, grid: { display: false } },
+                            y: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } }
+                        }
+                    }
+                );
+            }
+            if (document.getElementById('chartComparativoProveedorDif') && Array.isArray(window._enCmpProvGraf)) {
+                const cmpProv = window._enCmpProvGraf;
+                statsChart('chartComparativoProveedorDif', 'bar',
+                    cmpProv.map(p => String(p.nombre || '-').substring(0, 18)),
+                    [{
+                        label: 'Diferencia',
+                        data: cmpProv.map(p => p.dif),
+                        backgroundColor: cmpProv.map(p => p.dif >= 0 ? 'rgba(52,211,153,.76)' : 'rgba(248,113,113,.76)'),
+                        borderColor: cmpProv.map(p => p.dif >= 0 ? '#34d399' : '#f87171'),
+                        borderWidth: 1,
+                        borderRadius: 9
+                    }],
+                    {
+                        plugins: { legend: { display: false } },
+                        onClick: function(evt, elements) {
+                            if (!elements || !elements.length) return;
+                            const i = elements[0].index;
+                            const card = document.getElementById('en_prov_cmp_' + i);
+                            const arr = document.getElementById('en_arr_cmp_' + i);
+                            if (card) { card.style.display = 'block'; card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                            if (arr) arr.style.transform = 'rotate(0deg)';
+                        },
+                        scales: {
+                            x: { ticks: { color: '#cbd5e1', font: { size: 9, weight: '800' } }, grid: { display: false } },
+                            y: { ticks: { color: '#94a3b8', callback: v => '$' + Utils.fmt(v) }, grid: { color: 'rgba(148,163,184,.12)' } }
+                        }
+                    }
+                );
+            }
+
             if (document.getElementById('chartEstadoNegocioFlujo')) {
                 statsChart('chartEstadoNegocioFlujo', 'bar',
                     enGraficos.labels,
@@ -12376,13 +12732,21 @@ console.log("FILTRADAS:", filtradas.length);
                     casaErazoTopCantArr.map(x => x[0].substring(0, 18)),
                     [{
                         label: 'Cantidad',
-                        data: casaErazoTopCantArr.map(x => x[1]),
+                        data: casaErazoTopCantArr.map(x => x[1].cantidad),
                         backgroundColor: ['#22c55e','#16a34a','#10b981','#14b8a6','#06b6d4','#0ea5e9','#6366f1'],
                         borderWidth: 0
                     }],
                     {
                         plugins: {
-                            legend: { labels: { color: '#cbd5e1', boxWidth: 10, padding: 12, font: { size: 10, weight: '800' } } }
+                            legend: { labels: { color: '#cbd5e1', boxWidth: 10, padding: 12, font: { size: 10, weight: '800' } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const item = casaErazoTopCantArr[ctx.dataIndex]?.[1] || {};
+                                        return ' Cantidad: ' + _fmtCantidadCasa(ctx.parsed ?? ctx.raw, item.tipoVenta);
+                                    }
+                                }
+                            }
                         }
                     }
                 );
@@ -17847,6 +18211,8 @@ function recalcularTodosLosStocks() {
         p.stockCalculado = mapaBase[nombre] ?? 0;
     });
 
+    if (typeof revisarAlertasCompra7Dias === 'function') revisarAlertasCompra7Dias();
+
     // DEBUG AVENA
     const pAvena = _sheetProductos.find(p => p.nombre && p.nombre.toUpperCase().includes('AVENA') && p.nombre.toUpperCase().includes('X300'));
 }
@@ -20486,7 +20852,7 @@ clienteDetalleId = null;
         // ============================================================
         // M───────────────────────────────────────────────DULO PDF CLIENTE
         // ============================================================
-        function descargarPDFCliente() {
+        async function descargarPDFCliente() {
             const fmtPDF = n => Number(n).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:2});
             const c = clientesDB.find(c => c.id === clienteDetalleId);
             if (!c) return;
@@ -20649,8 +21015,8 @@ clienteDetalleId = null;
                     {txt:'DEBE',       x:W-12, opts:{align:'right'}}
                 ]);
                 let rowIdx = 0;
-                ventasPendientesPDF.forEach((v) => {
-                    v.items.forEach((item) => {
+                for (const v of ventasPendientesPDF) {
+                    for (const item of v.items) {
                         if (y > 265) { doc.addPage(); y = 15; }
 
                         const interesItem = 0;
@@ -20664,6 +21030,24 @@ clienteDetalleId = null;
                         // FECHA
                         doc.setTextColor(148,163,184); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
                         doc.text(v.fecha||'-', 13, y+5.5);
+
+                        const fotoProductoPDF = obtenerFotoProductoParaPDF(item);
+                        const imgProductoPDF = await cargarImagenParaPDF(fotoProductoPDF);
+                        if (imgProductoPDF && imgProductoPDF.dataUrl) {
+                            try {
+                                doc.addImage(imgProductoPDF.dataUrl, imgProductoPDF.format || 'JPEG', 42, y + 0.4, 6, 6, '', 'FAST');
+                            } catch(e) {
+                                doc.setFillColor(30,41,59);
+                                doc.roundedRect(42, y + 0.4, 6, 6, 1, 1, 'F');
+                            }
+                        } else {
+                            doc.setFillColor(30,41,59);
+                            doc.roundedRect(42, y + 0.4, 6, 6, 1, 1, 'F');
+                            doc.setTextColor(148,163,184);
+                            doc.setFont('helvetica','bold');
+                            doc.setFontSize(5);
+                            doc.text(String(item.nombre || '?').trim().charAt(0).toUpperCase() || '?', 45, y + 4.7, {align:'center'});
+                        }
 
                         // NOMBRE
                         doc.setTextColor(226,232,240); doc.setFontSize(7); doc.setFont('helvetica','normal');
@@ -20683,11 +21067,11 @@ clienteDetalleId = null;
 
                         y += filH;
                         rowIdx++;
-                    });
+                    }
                     doc.setDrawColor(30,41,59); doc.setLineWidth(0.2);
                     doc.line(10, y, W-10, y);
                     y += 2;
-                });
+                }
             }
             y += 5;
 
@@ -20751,6 +21135,10 @@ clienteDetalleId = null;
         let _catsIngNegSheet = {};
         let _supercatsEgrNegSheet = [];
         let _catsEgrNegSheet = {};
+        window._supercatsIngNegSheet = _supercatsIngNegSheet;
+        window._catsIngNegSheet = _catsIngNegSheet;
+        window._supercatsEgrNegSheet = _supercatsEgrNegSheet;
+        window._catsEgrNegSheet = _catsEgrNegSheet;
 
         function saveIngresosNeg() {}
         function saveEgresosNeg()  {}
@@ -20858,6 +21246,8 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             document.getElementById('inputIngNegMotivo').value = '';
             document.getElementById('ingNegTotal').textContent = '$0';
             toggleModal('modalIngNeg', true);
+            actualizarDatalistsIngNeg();
+            setTimeout(actualizarDatalistsIngNeg, 400);
             lucide.createIcons();
         }
 
@@ -20883,6 +21273,118 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         function selClienteIngNeg(val) {
             document.getElementById('inputIngNegCliente').value = val;
             document.getElementById('ddClientesIngNeg').classList.add('hidden');
+        }
+
+        function _getListasIngNegActuales() {
+            const esEgr = ingNegTipo === 'egresosNegocio';
+            try {
+                if ((!window._listaIngresos || !window._listaIngresos.length) && localStorage.getItem('natanael_lista_ingresos')) {
+                    window._listaIngresos = JSON.parse(localStorage.getItem('natanael_lista_ingresos')) || [];
+                    _listaIngresos = window._listaIngresos;
+                }
+                if ((!window._listaEgresos || !window._listaEgresos.length) && localStorage.getItem('natanael_lista_egresos')) {
+                    window._listaEgresos = JSON.parse(localStorage.getItem('natanael_lista_egresos')) || [];
+                    _listaEgresos = window._listaEgresos;
+                }
+            } catch(e) {}
+            const supercats = esEgr ? (_supercatsEgrNegSheet || []) : (_supercatsIngNegSheet || []);
+            const catsMap = esEgr ? (_catsEgrNegSheet || {}) : (_catsIngNegSheet || {});
+            const db = esEgr ? (_sheetEgresosNegocio || []) : (_sheetIngresosNegocio || []);
+            return { esEgr, supercats, catsMap, db };
+        }
+
+        function _opcionesSupercatIngNeg() {
+            const { esEgr, supercats, db } = _getListasIngNegActuales();
+            const listaRef = esEgr ? (window._listaEgresos || []) : (window._listaIngresos || []);
+            const fromSheet = (supercats || []).map(s => String(s || '').trim().toUpperCase()).filter(Boolean);
+            const fromHistSheet = esEgr ? (window._supercatsEgrSheet || []) : (window._supercatsIngSheet || []);
+            const fromDB = (db || []).map(r => String(r.supercategoria || r['SUPER CATEGORIA'] || r.SUPERCATEGORIA || '').trim().toUpperCase()).filter(Boolean);
+            const fromLista = (listaRef || []).map(r => String(r.supercategoria || r['SUPER CATEGORIA'] || r.SUPERCATEGORIA || r.categoria || r.nombre || r.NOMBRE || '').trim().toUpperCase()).filter(Boolean);
+            let opciones = [...new Set([...fromSheet, ...fromHistSheet, ...fromDB, ...fromLista].map(x => String(x || '').trim().toUpperCase()).filter(Boolean))].sort();
+            if (!opciones.length) {
+                const allListas = [...(window._listaIngresos || []), ...(window._listaEgresos || [])];
+                opciones = [...new Set(allListas.map(r => String(r.supercategoria || r.categoria || r.nombre || r.NOMBRE || '').trim().toUpperCase()).filter(Boolean))].sort();
+            }
+            return opciones;
+        }
+
+        function _opcionesCatIngNeg() {
+            const { esEgr, catsMap, db } = _getListasIngNegActuales();
+            const sc = String(document.getElementById('inputIngNegSupercategoria')?.value || '').trim().toUpperCase();
+            const histCatsMap = esEgr ? (window._catsEgrSheet || {}) : (window._catsIngSheet || {});
+            const listaRef = esEgr ? (window._listaEgresos || []) : (window._listaIngresos || []);
+            const fromMap = sc && catsMap && catsMap[sc] ? catsMap[sc] : Object.values(catsMap || {}).flat();
+            const fromHistMap = sc && histCatsMap && histCatsMap[sc] ? histCatsMap[sc] : Object.values(histCatsMap || {}).flat();
+            const fromLista = (listaRef || [])
+                .filter(r => !sc || String(r.supercategoria || r['SUPER CATEGORIA'] || r.SUPERCATEGORIA || r.categoria || r.nombre || '').trim().toUpperCase() === sc)
+                .map(r => String(r.categoria || r.nombre || r.NOMBRE || '').trim().toUpperCase())
+                .filter(Boolean);
+            const fromDB = (db || [])
+                .filter(r => !sc || String(r.supercategoria || r['SUPER CATEGORIA'] || r.SUPERCATEGORIA || '').trim().toUpperCase() === sc)
+                .map(r => String(r.categoria || r.concepto || r.CATEGORIA || r.Categoria || '').trim().toUpperCase())
+                .filter(Boolean);
+            let opciones = [...new Set([...(fromMap || []), ...(fromHistMap || []), ...fromDB, ...fromLista].map(c => String(c || '').trim().toUpperCase()).filter(Boolean))].sort();
+            if (!opciones.length) {
+                const allListas = [...(window._listaIngresos || []), ...(window._listaEgresos || [])];
+                opciones = [...new Set(allListas.map(r => String(r.categoria || r.nombre || r.NOMBRE || '').trim().toUpperCase()).filter(Boolean))].sort();
+            }
+            return opciones;
+        }
+
+        function actualizarDatalistsIngNeg() {
+            const dlSC = document.getElementById('dlIngNegSupercategorias');
+            const dlCat = document.getElementById('dlIngNegCategorias');
+            if (dlSC) dlSC.innerHTML = _opcionesSupercatIngNeg().map(o => `<option value="${Utils.escHtml(o)}"></option>`).join('');
+            if (dlCat) dlCat.innerHTML = _opcionesCatIngNeg().map(o => `<option value="${Utils.escHtml(o)}"></option>`).join('');
+        }
+
+        function filtrarSupercatIngNeg(query) {
+            const dd = document.getElementById('ddSupercatIngNeg');
+            if (!dd) return;
+            const { esEgr } = _getListasIngNegActuales();
+            const q = String(query || '').trim().toUpperCase();
+            actualizarDatalistsIngNeg();
+            const opciones = _opcionesSupercatIngNeg();
+            const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
+            if (!filtradas.length) { dd.classList.add('hidden'); return; }
+            const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
+            dd.innerHTML = filtradas.map(o =>
+                `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase" onmousedown="selSupercatIngNeg('${o.replace(/'/g,"\\'")}')">${Utils.escHtml(o)}</div>`
+            ).join('');
+            dd.classList.remove('hidden');
+        }
+
+        function selSupercatIngNeg(val) {
+            const input = document.getElementById('inputIngNegSupercategoria');
+            const dd = document.getElementById('ddSupercatIngNeg');
+            const catInput = document.getElementById('inputIngNegCategoria');
+            if (input) input.value = val;
+            if (catInput) catInput.value = '';
+            if (dd) dd.classList.add('hidden');
+            actualizarDatalistsIngNeg();
+        }
+
+        function filtrarCatIngNeg(query) {
+            const dd = document.getElementById('ddCatIngNeg');
+            if (!dd) return;
+            const { esEgr } = _getListasIngNegActuales();
+            const q = String(query || '').trim().toUpperCase();
+            actualizarDatalistsIngNeg();
+            const opciones = _opcionesCatIngNeg();
+            const filtradas = q ? opciones.filter(o => o.includes(q)) : opciones;
+            if (!filtradas.length) { dd.classList.add('hidden'); return; }
+            const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
+            dd.innerHTML = filtradas.map(o =>
+                `<div class="px-3 py-2 text-xs font-bold text-white ${color} cursor-pointer uppercase" onmousedown="selCatIngNeg('${o.replace(/'/g,"\\'")}')">${Utils.escHtml(o)}</div>`
+            ).join('');
+            dd.classList.remove('hidden');
+        }
+
+        function selCatIngNeg(val) {
+            const input = document.getElementById('inputIngNegCategoria');
+            const dd = document.getElementById('ddCatIngNeg');
+            if (input) input.value = val;
+            if (dd) dd.classList.add('hidden');
         }
 
         function filtrarClientesEditIngNeg(query) {
@@ -21357,6 +21859,11 @@ function selCatIngEgr(val){
 window.filtrarSupercatIngEgr = filtrarSupercatIngEgr;
 window.filtrarGeneroIngEgr   = filtrarGeneroIngEgr;
 window.filtrarCatIngEgr      = filtrarCatIngEgr;
+window.filtrarSupercatIngNeg = filtrarSupercatIngNeg;
+window.filtrarCatIngNeg = filtrarCatIngNeg;
+window.selSupercatIngNeg = selSupercatIngNeg;
+window.selCatIngNeg = selCatIngNeg;
+window.actualizarDatalistsIngNeg = actualizarDatalistsIngNeg;
 
  function filtrarProveedoresCompra(query) {
             const dd = document.getElementById('dropdownProveedores');
@@ -22755,6 +23262,167 @@ function revisarVencimientos(){
 
 
 // ↗↗↗ Widget Gasto Familiar del Día (Casa Erazo + Comida Familiar) ↗↗↗↗↗↗↗↗↗↗↗↗↗
+function revisarAlertasCompra7Dias(){
+    const widget = document.getElementById('widgetComprarStock7d');
+    if (!widget) return;
+
+    const productos = Array.isArray(_sheetProductos) ? _sheetProductos : [];
+    const ventas = (typeof ventasParaCalculo === 'function')
+        ? ventasParaCalculo()
+        : (Array.isArray(_sheetVentas) ? _sheetVentas : []);
+
+    if (!productos.length || !ventas.length) {
+        widget.classList.add('hidden');
+        widget.innerHTML = '';
+        return;
+    }
+
+    const normalizar = val => String(val || '')
+        .trim()
+        .toUpperCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ');
+
+    const hoy = new Date();
+    const desde = new Date(hoy);
+    desde.setDate(hoy.getDate() - 6);
+    desde.setHours(0, 0, 0, 0);
+    const hasta = new Date(hoy);
+    hasta.setHours(23, 59, 59, 999);
+    const desdeNum = parseFechaNum(desde.toISOString());
+    const hastaNum = parseFechaNum(hasta.toISOString());
+
+    const productosPorId = new Map();
+    const productosPorNombre = new Map();
+    const categorias = new Map();
+
+    productos.forEach(p => {
+        const id = String(p.id || p.IDPRODUCTOS || '').trim();
+        const nombreKey = normalizar(p.nombre || p.NOMBRE || '');
+        const categoria = String(p.categoria || p.CATEGORIA || '').trim();
+        if (!categoria) return;
+
+        if (id) productosPorId.set(id, p);
+        if (nombreKey) productosPorNombre.set(nombreKey, p);
+
+        const catKey = normalizar(categoria);
+        if (!catKey) return;
+
+        const stockActual = Number.isFinite(Number(p.stockCalculado))
+            ? Number(p.stockCalculado)
+            : (parseFloat(p.stock || p['STOCK ACTUAL'] || 0) || 0);
+
+        const actual = categorias.get(catKey) || {
+            categoria,
+            foto: p.foto || p.imagen || p.IMAGEN || '',
+            stockActual: 0,
+            vendido7: 0,
+            productos: 0
+        };
+
+        actual.stockActual += stockActual;
+        actual.productos += 1;
+        if (!actual.foto) actual.foto = p.foto || p.imagen || p.IMAGEN || '';
+        categorias.set(catKey, actual);
+    });
+
+    ventas.forEach(v => {
+        const fnum = parseFechaNum(v.fechaISO || v.fecha || '');
+        if (!fnum || fnum < desdeNum || fnum > hastaNum) return;
+
+        (v.items || []).forEach(it => {
+            const cantidad = Math.abs(parseFloat(it.cantidad) || 0);
+            if (!cantidad) return;
+
+            const id = String(it.id || it.IDPRODUCTOS || it.idProducto || '').trim();
+            const nombreKey = normalizar(it.nombre || it.producto || it.PRODUCTO || '');
+            const prodRef = (id && productosPorId.get(id)) || productosPorNombre.get(nombreKey) || null;
+            const categoria = String(it.categoria || it.CATEGORIA || prodRef?.categoria || prodRef?.CATEGORIA || '').trim();
+            const catKey = normalizar(categoria);
+            if (!catKey) return;
+
+            const actual = categorias.get(catKey) || {
+                categoria,
+                foto: prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '',
+                stockActual: 0,
+                vendido7: 0,
+                productos: 0
+            };
+
+            actual.vendido7 += cantidad;
+            if (!actual.foto && prodRef) actual.foto = prodRef.foto || prodRef.imagen || prodRef.IMAGEN || '';
+            categorias.set(catKey, actual);
+        });
+    });
+
+    const alertas = Array.from(categorias.values())
+    .filter(x => x.categoria && x.vendido7 > 0 && x.stockActual <= x.vendido7)
+    .map(x => ({ ...x, faltante: x.vendido7 - x.stockActual }))
+    .sort((a, b) => (b.faltante - a.faltante) || (b.vendido7 - a.vendido7) || String(a.categoria).localeCompare(String(b.categoria)))
+    .slice(0, 12);
+
+    const alertaKey = alertas.map(a => [
+        a.categoria,
+        Math.round(a.stockActual * 100) / 100,
+        Math.round(a.vendido7 * 100) / 100,
+        a.productos
+    ].join(':')).join('|');
+
+    if (!alertas.length) {
+        widget.classList.add('hidden');
+        widget.innerHTML = '';
+        widget.dataset.alertaKey = '';
+        return;
+    }
+
+    if (widget.dataset.alertaKey === alertaKey && !widget.classList.contains('hidden')) return;
+
+    const scrollAnterior = widget.querySelector('[data-alerta-compra-scroll]')?.scrollLeft || 0;
+
+    widget.classList.remove('hidden');
+    widget.dataset.alertaKey = alertaKey;
+    widget.innerHTML = `
+        <div class="glass-card rounded-[1.5rem] border border-red-500/30 bg-red-500/5 p-4">
+            <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <span class="text-red-400 text-sm">&#9888;&#65039;</span>
+                    <h3 class="text-xs font-black uppercase text-red-400 tracking-widest">Alerta Comprar</h3>
+                    <span class="text-[9px] font-black uppercase text-slate-500">Stock categoria <= vendido ultimos 7 dias</span>
+                </div>
+                <span class="text-[10px] font-black uppercase text-amber-300">${alertas.length} categorias</span>
+            </div>
+            <div data-alerta-compra-scroll class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                ${alertas.map(a => {
+                    const foto = a.foto
+                        ? `<img src="${driveUrl(a.foto)}" class="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-slate-700 flex-shrink-0" onerror="this.outerHTML='<div class=&quot;w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0&quot;>!</div>'">`
+                        : `<div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0">!</div>`;
+                    return `
+                        <div class="min-w-[230px] max-w-[280px] text-left rounded-xl border border-red-500/25 bg-slate-950/70 p-3 flex items-center gap-3">
+                            ${foto}
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-[10px] font-black text-white uppercase truncate">${Utils.escHtml(a.categoria)}</span>
+                                <span class="block text-[9px] font-bold text-slate-400">Stock ${Utils.fmt(a.stockActual)} - Vendido 7d ${Utils.fmt(a.vendido7)}</span>
+                                <span class="block text-[8px] font-black text-slate-500 uppercase">${Utils.fmt(a.productos)} productos</span>
+                            </span>
+                            <span class="px-2 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase flex-shrink-0">Comprar</span>
+                        </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+    const scroller = widget.querySelector('[data-alerta-compra-scroll]');
+    if (scroller) scroller.scrollLeft = scrollAnterior;
+}
+
+if (!window._alertaCompra7dTimer) {
+    window._alertaCompra7dTimer = setInterval(function() {
+        if (document.getElementById('vistaVentas')?.classList.contains('hidden')) return;
+        if (typeof recalcularTodosLosStocks === 'function') recalcularTodosLosStocks();
+    }, 15000);
+}
+
 function calcularWidgetGastoFamiliar() {
     const widget = document.getElementById('widgetGastoFamiliar');
     if (!widget) return;
