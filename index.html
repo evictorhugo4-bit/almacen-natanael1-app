@@ -6913,8 +6913,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzi7UzBDfUGsz1QQHKANRwYAWfuLgpnXRpLvWRBKoZMgFVJ87x5fFcvAY8wR65rULB9/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzi7UzBDfUGsz1QQHKANRwYAWfuLgpnXRpLvWRBKoZMgFVJ87x5fFcvAY8wR65rULB9/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyml9pkUl2CIWCWDwgLQ7EgJ6QlxRjyt681pMw2HcvN-YZp2qXAJYAH1NWEp2Fg02rd/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbyml9pkUl2CIWCWDwgLQ7EgJ6QlxRjyt681pMw2HcvN-YZp2qXAJYAH1NWEp2Fg02rd/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -7224,6 +7224,8 @@ _sheetEgresosNegocio.forEach(e => {
         window._comprasSheetCargadas = false;
         let _pagoVentasSheet = []; // pagos de PAGO VENTAS del sheet
         window._pagoVentasSheet = _pagoVentasSheet;
+        let _sheetAlertaCompra = [];
+        window._sheetAlertaCompra = _sheetAlertaCompra;
         // Exponer al scope global para debug
         window._pagoVentasSheet = _pagoVentasSheet;
 
@@ -7791,8 +7793,10 @@ _sheetEgresosNegocio.forEach(e => {
                     pagoIngresosNegocio: [], pagoEgresosNegocio: [],
                     ingresosNegocio: [], egresosNegocio: [],
                     proveedoresNegocio: [], proveedoresGastos: [],
-                    pagosClientes: [], proveedores: []
+                    pagosClientes: [], proveedores: [],
+                    alertaCompra: dataRapido.alertaCompra || []
                 };
+                procesarAlertaCompraSheet(data.alertaCompra);
 
                 // ↗↗ ETAPA 2: resto de hojas en background (no bloquea la UI) ↗↗
                 fetch(SHEETS_URL2 + '?modo=secundario&_ts=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(dataSecundario => {
@@ -7816,6 +7820,8 @@ _sheetEgresosNegocio.forEach(e => {
                     data.listaEgresos        = dataSecundario.listaEgresos        || [];
                     data.pagosClientes       = dataSecundario.pagosClientes       || [];
                     data.proveedores         = dataSecundario.proveedores         || [];
+                    data.alertaCompra        = dataSecundario.alertaCompra        || data.alertaCompra || [];
+                    procesarAlertaCompraSheet(data.alertaCompra);
                     // Reprocesar solo datos secundarios
                     _procesarDatosSecundarios(data);
                 }).catch(e => _log('? Etapa 2 falló: ' + e.message, '#f87171'));
@@ -23294,6 +23300,100 @@ function revisarVencimientos(){
 
 
 // ↗↗↗ Widget Gasto Familiar del Día (Casa Erazo + Comida Familiar) ↗↗↗↗↗↗↗↗↗↗↗↗↗
+const ALERTA_COMPRA_FECHA_KEY = 'natanael_alerta_compra_fecha_v1';
+
+function procesarAlertaCompraSheet(rows) {
+    if (!Array.isArray(rows)) return;
+    _sheetAlertaCompra = rows;
+    window._sheetAlertaCompra = _sheetAlertaCompra;
+    const fecha = obtenerUltimaFechaAlertaCompraSheet();
+    if (fecha) {
+        try { localStorage.setItem(ALERTA_COMPRA_FECHA_KEY, fecha); } catch(e) {}
+    }
+}
+
+function obtenerUltimaFechaAlertaCompraSheet() {
+    const rows = Array.isArray(_sheetAlertaCompra) ? _sheetAlertaCompra : [];
+    for (let i = rows.length - 1; i >= 0; i--) {
+        const r = rows[i] || {};
+        const fecha = String(r.FECHA || r.Fecha || r.fecha || '').trim();
+        if (fecha) return fecha;
+    }
+    return '';
+}
+
+function obtenerFechaAlertaCompra() {
+    const sheetFecha = obtenerUltimaFechaAlertaCompraSheet();
+    if (sheetFecha) return sheetFecha;
+    try { return String(localStorage.getItem(ALERTA_COMPRA_FECHA_KEY) || '').trim(); } catch(e) { return ''; }
+}
+
+function fechaAlertaCompraInputValue(fecha) {
+    const n = parseFechaNum(fecha);
+    if (!n) return dateToISO(new Date()).slice(0, 16);
+    const s = String(n).padStart(14, '0');
+    return s.slice(0,4) + '-' + s.slice(4,6) + '-' + s.slice(6,8) + 'T' + s.slice(8,10) + ':' + s.slice(10,12);
+}
+
+function asegurarModalAlertaCompra() {
+    let modal = document.getElementById('modalAlertaCompraFecha');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'modalAlertaCompraFecha';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '999999999';
+    modal.innerHTML = `
+        <div class="glass-card w-full max-w-md rounded-[1.25rem] p-5">
+            <div class="flex items-center justify-between gap-3 mb-5">
+                <div>
+                    <h3 class="text-lg font-black uppercase text-white">Alerta Compra</h3>
+                    <p class="text-[10px] font-black uppercase text-slate-500">Tabla ALERTA COMPRA: ID y FECHA</p>
+                </div>
+                <button onclick="cerrarModalAlertaCompra()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-black">X</button>
+            </div>
+            <label class="block text-[10px] font-black uppercase text-emerald-400 mb-2">Fecha desde</label>
+            <input id="inputAlertaCompraFecha" type="datetime-local" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-black outline-none focus:border-emerald-500">
+            <p class="mt-3 text-[10px] font-bold text-slate-400">La alerta va a tomar ventas desde esta fecha hasta hoy. Si la hoja tiene varias fechas, se usa la ultima fila.</p>
+            <button onclick="guardarModalAlertaCompra()" class="mt-5 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase">Guardar fecha</button>
+        </div>`;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function abrirModalAlertaCompra() {
+    const modal = asegurarModalAlertaCompra();
+    const input = document.getElementById('inputAlertaCompraFecha');
+    if (input) input.value = fechaAlertaCompraInputValue(obtenerFechaAlertaCompra());
+    modal.classList.add('modal-active');
+}
+
+function cerrarModalAlertaCompra() {
+    const modal = document.getElementById('modalAlertaCompraFecha');
+    if (modal) modal.classList.remove('modal-active');
+}
+
+function guardarModalAlertaCompra() {
+    const input = document.getElementById('inputAlertaCompraFecha');
+    const raw = input ? input.value : '';
+    if (!raw) {
+        mostrarToast('Elegi una fecha para ALERTA COMPRA', 'error');
+        return;
+    }
+    const fecha = fechaSheet(new Date(raw));
+    const id = 'alerta_' + Date.now();
+    try { localStorage.setItem(ALERTA_COMPRA_FECHA_KEY, fecha); } catch(e) {}
+    _sheetAlertaCompra.push({ ID: id, FECHA: fecha });
+    window._sheetAlertaCompra = _sheetAlertaCompra;
+    cerrarModalAlertaCompra();
+    revisarAlertasCompra7Dias();
+    if (typeof fetchSheets === 'function') {
+        fetchSheets({
+            method: 'POST',
+            body: JSON.stringify({ tipo: 'alerta_compra', id: id, ID: id, fecha: fecha, FECHA: fecha })
+        });
+    }
+}
+
 function revisarAlertasCompra7Dias(){
     const widget = document.getElementById('widgetComprarStock7d');
     if (!widget) return;
@@ -23303,7 +23403,7 @@ function revisarAlertasCompra7Dias(){
         ? ventasParaCalculo()
         : (Array.isArray(_sheetVentas) ? _sheetVentas : []);
 
-    if (!productos.length || !ventas.length) {
+    if (!productos.length) {
         widget.classList.add('hidden');
         widget.innerHTML = '';
         return;
@@ -23318,12 +23418,19 @@ function revisarAlertasCompra7Dias(){
         .replace(/\s+/g, ' ');
 
     const hoy = new Date();
-    const desde = new Date(hoy);
-    desde.setDate(hoy.getDate() - 6);
-    desde.setHours(0, 0, 0, 0);
+    const fechaConfigAlerta = obtenerFechaAlertaCompra();
+    let desdeNum = parseFechaNum(fechaConfigAlerta);
+    let textoRangoAlerta = 'Stock categoria <= vendido ultimos 7 dias';
+    if (!desdeNum) {
+        const desde = new Date(hoy);
+        desde.setDate(hoy.getDate() - 6);
+        desde.setHours(0, 0, 0, 0);
+        desdeNum = parseFechaNum(desde.toISOString());
+    } else {
+        textoRangoAlerta = 'Stock categoria <= vendido desde ' + fmtFecha(fechaConfigAlerta);
+    }
     const hasta = new Date(hoy);
     hasta.setHours(23, 59, 59, 999);
-    const desdeNum = parseFechaNum(desde.toISOString());
     const hastaNum = parseFechaNum(hasta.toISOString());
 
     const productosPorId = new Map();
@@ -23395,19 +23502,13 @@ function revisarAlertasCompra7Dias(){
     .sort((a, b) => (b.faltante - a.faltante) || (b.vendido7 - a.vendido7) || String(a.categoria).localeCompare(String(b.categoria)))
     .slice(0, 12);
 
-    const alertaKey = alertas.map(a => [
+    const alertaKey = [fechaConfigAlerta || '7d', alertas.map(a => [
         a.categoria,
         Math.round(a.stockActual * 100) / 100,
         Math.round(a.vendido7 * 100) / 100,
+        Math.round(a.faltante * 100) / 100,
         a.productos
-    ].join(':')).join('|');
-
-    if (!alertas.length) {
-        widget.classList.add('hidden');
-        widget.innerHTML = '';
-        widget.dataset.alertaKey = '';
-        return;
-    }
+    ].join(':')).join('|')].join('::');
 
     if (widget.dataset.alertaKey === alertaKey && !widget.classList.contains('hidden')) return;
 
@@ -23415,18 +23516,23 @@ function revisarAlertasCompra7Dias(){
 
     widget.classList.remove('hidden');
     widget.dataset.alertaKey = alertaKey;
+    const vendidoLabel = fechaConfigAlerta ? 'Vendido' : 'Vendido 7d';
+
     widget.innerHTML = `
         <div class="glass-card rounded-[1.5rem] border border-red-500/30 bg-red-500/5 p-4">
             <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
                 <div class="flex items-center gap-2">
                     <span class="text-red-400 text-sm">&#9888;&#65039;</span>
                     <h3 class="text-xs font-black uppercase text-red-400 tracking-widest">Alerta Comprar</h3>
-                    <span class="text-[9px] font-black uppercase text-slate-500">Stock categoria <= vendido ultimos 7 dias</span>
+                    <span class="text-[9px] font-black uppercase text-slate-500">${Utils.escHtml(textoRangoAlerta)}</span>
                 </div>
-                <span class="text-[10px] font-black uppercase text-amber-300">${alertas.length} categorias</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="abrirModalAlertaCompra()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-[9px] font-black uppercase text-slate-200 border border-slate-700">Fecha</button>
+                    <span class="text-[10px] font-black uppercase text-amber-300">${alertas.length} categorias</span>
+                </div>
             </div>
             <div data-alerta-compra-scroll class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                ${alertas.map(a => {
+                ${alertas.length ? alertas.map(a => {
                     const foto = a.foto
                         ? `<img src="${driveUrl(a.foto)}" class="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-slate-700 flex-shrink-0" onerror="this.outerHTML='<div class=&quot;w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0&quot;>!</div>'">`
                         : `<div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0">!</div>`;
@@ -23435,12 +23541,13 @@ function revisarAlertasCompra7Dias(){
                             ${foto}
                             <span class="min-w-0 flex-1">
                                 <span class="block text-[10px] font-black text-white uppercase truncate">${Utils.escHtml(a.categoria)}</span>
-                                <span class="block text-[9px] font-bold text-slate-400">Stock ${Utils.fmt(a.stockActual)} - Vendido 7d ${Utils.fmt(a.vendido7)}</span>
+                                <span class="block text-[9px] font-bold text-slate-400">Stock ${Utils.fmt(a.stockActual)} - ${vendidoLabel} ${Utils.fmt(a.vendido7)}</span>
+                                <span class="block text-[9px] font-black text-red-300 uppercase">Comprar ${Utils.fmt(a.faltante)}</span>
                                 <span class="block text-[8px] font-black text-slate-500 uppercase">${Utils.fmt(a.productos)} productos</span>
                             </span>
                             <span class="px-2 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase flex-shrink-0">Comprar</span>
                         </div>`;
-                }).join('')}
+                }).join('') : `<div class="w-full rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-center text-[10px] font-black uppercase text-slate-400">Sin categorias para comprar en este rango</div>`}
             </div>
         </div>`;
 
