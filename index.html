@@ -491,6 +491,23 @@ img, video { max-width: 100%; height: auto; }
             flex: 0 0 300px !important;
             width: 300px !important;
         }
+        #modalEditarCompra.modal-active {
+            align-items: flex-start !important;
+            justify-content: center !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
+            padding: 12px !important;
+        }
+        #modalEditarCompra > .glass-card {
+            max-height: none !important;
+            height: auto !important;
+            margin: 0 auto 28px !important;
+            overflow: visible !important;
+        }
+        #modalEditarCompra #editCompraItemsVisual {
+            max-height: none !important;
+            overflow: visible !important;
+        }
         @media (max-width: 767px) {
             #modalCompra .compra-modal-body {
                 flex-direction: column !important;
@@ -500,6 +517,14 @@ img, video { max-width: 100%; height: auto; }
             #modalCompra .compra-side-panel {
                 width: 100% !important;
                 flex: 0 0 auto !important;
+            }
+            #modalEditarCompra.modal-active {
+                padding: 8px !important;
+            }
+            #modalEditarCompra > .glass-card {
+                width: min(100%, 430px) !important;
+                border-radius: 18px !important;
+                padding: 16px !important;
             }
         }
         .mobile-datetime-picker {
@@ -27882,10 +27907,44 @@ function calcularCajaEsperada() {
             localStorage.removeItem(key + '__chunks');
         }
 
+        function _cachePluginNativo() {
+            try {
+                return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NatanaelSpeech
+                    ? window.Capacitor.Plugins.NatanaelSpeech
+                    : null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        function _cacheGuardarNativo(key, value) {
+            try {
+                const plugin = _cachePluginNativo();
+                if (plugin && typeof plugin.setCache === 'function') {
+                    plugin.setCache({ key: key, value: value || '' }).catch(function(){});
+                }
+            } catch(e) {}
+        }
+
+        async function _cacheLeerArrayNativo(key) {
+            try {
+                const plugin = _cachePluginNativo();
+                if (!plugin || typeof plugin.getCache !== 'function') return [];
+                const ret = await plugin.getCache({ key: key });
+                const raw = ret && ret.value ? String(ret.value) : '';
+                if (!raw) return [];
+                const value = JSON.parse(raw);
+                return Array.isArray(value) ? value : [];
+            } catch(e) {
+                return [];
+            }
+        }
+
         function _cacheGuardarArray(key, arr) {
             try {
                 if (!Array.isArray(arr) || !arr.length) return false;
                 const json = JSON.stringify(arr);
+                _cacheGuardarNativo(key, json);
                 _cacheLimpiarChunks(key);
                 localStorage.removeItem(key);
                 try {
@@ -28058,6 +28117,65 @@ function calcularCajaEsperada() {
         }
 
         // Guardar caché al salir / cambiar de app
+        async function _cargarCacheNativoAndroid() {
+            try {
+                const plugin = _cachePluginNativo();
+                if (!plugin || typeof plugin.getCache !== 'function') return false;
+
+                const inventarioCache = await _cacheLeerArrayNativo('natanael_inventario_v1');
+                const ventasCache = await _cacheLeerArrayNativo('natanael_historial_v1');
+                const pagoVentasCache = await _cacheLeerArrayNativo('natanael_pago_ventas_v1');
+
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
+
+                if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
+                    _sheetProductos = inventarioCache;
+                    window._sheetProductos = _sheetProductos;
+                    try { _cacheGuardarArray('natanael_inventario_v1', inventarioCache); } catch(e) {}
+                    if (typeof indexarProductos === 'function') indexarProductos();
+                }
+
+                if (ventasCache.length && (!_sheetVentas || !_sheetVentas.length)) {
+                    _sheetVentas = ventasCache;
+                    window._sheetVentas = _sheetVentas;
+                    historial = ventasCache;
+                    try { _cacheGuardarArray('natanael_historial_v1', ventasCache); } catch(e) {}
+                }
+
+                if (pagoVentasCache.length && (!_pagoVentasSheet || !_pagoVentasSheet.length)) {
+                    _pagoVentasSheet = pagoVentasCache;
+                    window._pagoVentasSheet = _pagoVentasSheet;
+                    try { _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCache); } catch(e) {}
+                }
+
+                console.log('[Cache] Android nativo aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length);
+                return true;
+            } catch(e) {
+                console.warn('[Cache] Error leyendo cache nativo Android:', e.message);
+                return false;
+            }
+        }
+
+        async function _renderCacheNativoInicial() {
+            if (window._cacheNativoInicialRenderizado) return false;
+            const ok = await _cargarCacheNativoAndroid();
+            if (!ok) return false;
+            window._cacheNativoInicialRenderizado = true;
+            try {
+                renderHistorial();
+                renderInventario();
+                renderClientes();
+                renderCompras();
+                const _vistaIng = document.getElementById('vistaIngresos');
+                const _vistaEgr = document.getElementById('vistaEgresos');
+                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
+                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+            } catch(e) {
+                console.warn('[Cache] Error al renderizar cache nativo:', e.message);
+            }
+            return true;
+        }
+
         function _renderCacheInicial() {
             if (window._cacheInicialRenderizado) return true;
             const ok = _cargarCache();
@@ -28093,6 +28211,11 @@ function calcularCajaEsperada() {
 
             // 1) Cargar caché instantáneo ANTES de ir al sheet
             const tuvimosCachee = _renderCacheInicial();
+            _renderCacheNativoInicial().then(function(aplicoNativo) {
+                if (aplicoNativo && !tuvimosCachee) {
+                    mostrarToast('Datos locales de la app cargados. Sincronizando en segundo plano...', 'success');
+                }
+            }).catch(function(){});
             if (tuvimosCachee) {
                 // Renderizar con datos del caché al toque
                 renderHistorial();
