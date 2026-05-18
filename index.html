@@ -933,6 +933,9 @@ z-index:999999999;
             <div class="flex flex-wrap justify-between items-center gap-3">
                 <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic">Panel de Control</h1>
                 <div class="flex gap-2 flex-wrap">
+                    <button id="btnBackupSheet" onclick="crearBackupSheet()" class="bg-sky-500 text-black px-5 py-3 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-sky-400 btn-action uppercase">
+                        <i data-lucide="copy" class="w-5 h-5"></i> Backup Sheet
+                    </button>
                     <button onclick="abrirNuevaVenta()" class="bg-emerald-500 text-black px-6 py-3 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-emerald-400 btn-action">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="plus-circle" aria-hidden="true" class="lucide lucide-plus-circle w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg> NUEVA VENTA
                     </button>
@@ -6924,7 +6927,8 @@ _sheetEgresosNegocio.forEach(e => {
             'ingreso','pago_ingreso',
             'egreso','pago_egreso',
             'ingresosegocio','ingresonegocio','actualizar_ingneg','pago_ingneg',
-            'egresosegocio','egresonegocio','actualizar_egrneg','pago_egrneg'
+            'egresosegocio','egresonegocio','actualizar_egrneg','pago_egrneg',
+            'backup_sheet'
         ]);
 
         function _payloadUsaLocalStorageProhibido(payload) {
@@ -7172,6 +7176,62 @@ _sheetEgresosNegocio.forEach(e => {
         }
 
         // TEST: botón en panel debug para probar GET y POST al sheet
+        async function crearBackupSheet() {
+            const btn = document.getElementById('btnBackupSheet');
+            const textoOriginal = btn ? btn.innerHTML : '';
+            if (btn && btn.disabled) return;
+
+            try {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-70', 'cursor-wait');
+                    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Creando backup';
+                    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+                }
+
+                mostrarToast('Creando copia del Sheet...', 'success');
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 45000);
+
+                const res = await fetch(SHEETS_URL2, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ tipo: 'backup_sheet', ts: Date.now() }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+
+                const txt = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(txt);
+                } catch(e) {
+                    throw new Error('Respuesta no valida del Apps Script');
+                }
+
+                if (!data.ok) throw new Error(data.error || 'No se pudo crear el backup');
+
+                mostrarToast('Backup creado: ' + (data.nombre || 'copia del Sheet'), 'success');
+                if (data.backupUrl) {
+                    try { window.open(data.backupUrl, '_blank'); } catch(e) {}
+                }
+                return data;
+            } catch(e) {
+                const msg = e && e.name === 'AbortError'
+                    ? 'Tiempo agotado creando backup'
+                    : (e.message || 'Error creando backup');
+                mostrarToast(msg, 'error');
+                console.error('[Backup Sheet]', e);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-70', 'cursor-wait');
+                    btn.innerHTML = textoOriginal;
+                    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+                }
+            }
+        }
+
         function testConexionSheet() {
             const panel = document.getElementById('syncDebugPanel');
             const log = (msg, color='#94a3b8') => {
