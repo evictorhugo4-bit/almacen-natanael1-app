@@ -6913,8 +6913,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyml9pkUl2CIWCWDwgLQ7EgJ6QlxRjyt681pMw2HcvN-YZp2qXAJYAH1NWEp2Fg02rd/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbyml9pkUl2CIWCWDwgLQ7EgJ6QlxRjyt681pMw2HcvN-YZp2qXAJYAH1NWEp2Fg02rd/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbw3Mip-Mgt6rI-1BBpZY1mxGy1DZ8jBbQcGwueMSj43z7e7vsmx9WRbPWEdUDgxL-L3/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbw3Mip-Mgt6rI-1BBpZY1mxGy1DZ8jBbQcGwueMSj43z7e7vsmx9WRbPWEdUDgxL-L3/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -23314,12 +23314,36 @@ function procesarAlertaCompraSheet(rows) {
 
 function obtenerUltimaFechaAlertaCompraSheet() {
     const rows = Array.isArray(_sheetAlertaCompra) ? _sheetAlertaCompra : [];
-    for (let i = rows.length - 1; i >= 0; i--) {
+    let mejorFecha = '';
+    let mejorRegistroNum = 0;
+    let mejorIndice = -1;
+
+    for (let i = 0; i < rows.length; i++) {
         const r = rows[i] || {};
         const fecha = String(r.FECHA || r.Fecha || r.fecha || '').trim();
-        if (fecha) return fecha;
+        if (!fecha) continue;
+
+        const fechaRegistro = String(
+            r['FECHA DE REGISTRO'] ||
+            r['Fecha de Registro'] ||
+            r['fecha de registro'] ||
+            r.fechaRegistro ||
+            r.FECHA_REGISTRO ||
+            ''
+        ).trim();
+        const registroNum = parseFechaNum(fechaRegistro) || 0;
+
+        if (
+            registroNum > mejorRegistroNum ||
+            (registroNum === mejorRegistroNum && i > mejorIndice)
+        ) {
+            mejorFecha = fecha;
+            mejorRegistroNum = registroNum;
+            mejorIndice = i;
+        }
     }
-    return '';
+
+    return mejorFecha;
 }
 
 function obtenerFechaAlertaCompra() {
@@ -23347,7 +23371,7 @@ function asegurarModalAlertaCompra() {
             <div class="flex items-center justify-between gap-3 mb-5">
                 <div>
                     <h3 class="text-lg font-black uppercase text-white">Alerta Compra</h3>
-                    <p class="text-[10px] font-black uppercase text-slate-500">Tabla ALERTA COMPRA: ID y FECHA</p>
+                    <p class="text-[10px] font-black uppercase text-slate-500">Tabla ALERTA COMPRA: ID, FECHA y FECHA DE REGISTRO</p>
                 </div>
                 <button onclick="cerrarModalAlertaCompra()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-black">X</button>
             </div>
@@ -23380,16 +23404,25 @@ function guardarModalAlertaCompra() {
         return;
     }
     const fecha = fechaSheet(new Date(raw));
+    const fechaRegistro = fechaSheet(new Date());
     const id = 'alerta_' + Date.now();
     try { localStorage.setItem(ALERTA_COMPRA_FECHA_KEY, fecha); } catch(e) {}
-    _sheetAlertaCompra.push({ ID: id, FECHA: fecha });
+    _sheetAlertaCompra.push({ ID: id, FECHA: fecha, 'FECHA DE REGISTRO': fechaRegistro });
     window._sheetAlertaCompra = _sheetAlertaCompra;
     cerrarModalAlertaCompra();
     revisarAlertasCompra7Dias();
     if (typeof fetchSheets === 'function') {
         fetchSheets({
             method: 'POST',
-            body: JSON.stringify({ tipo: 'alerta_compra', id: id, ID: id, fecha: fecha, FECHA: fecha })
+            body: JSON.stringify({
+                tipo: 'alerta_compra',
+                id: id,
+                ID: id,
+                fecha: fecha,
+                FECHA: fecha,
+                fechaRegistro: fechaRegistro,
+                'FECHA DE REGISTRO': fechaRegistro
+            })
         });
     }
 }
