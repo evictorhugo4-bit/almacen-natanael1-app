@@ -10907,28 +10907,48 @@ console.log("FILTRADAS:", filtradas.length);
                 return `${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)}`;
             };
 
-            const ventas = (typeof ventasParaCalculo === 'function' ? ventasParaCalculo() : (_sheetVentas || [])).filter(v => enRango(parseFechaNum(v.fechaISO || v.fecha || v.FECHA || '')));
             const casaDetalle = [];
             const consumoPorProducto = {};
-            ventas.forEach(v => {
-                if (norm(v.cliente) !== 'CASA ERAZO') return;
-                const fecha = fechaLabel(v.fechaISO || v.fecha || v.FECHA || '');
-                (v.items || []).forEach(it => {
-                    const nombre = String(it.nombre || it.producto || 'PRODUCTO').trim();
-                    if (!nombre || norm(nombre) === 'FLETE') return;
-                    const cantidad = num(it.cantidad || 1) || 1;
-                    const costoUnit = num(it.costo || it.precioCosto || it.costoUnitario || it.dinRecUnit || 0);
-                    const monto = num(it.dineroRecuperado || it.dinRecuperado || (costoUnit * cantidad));
-                    const foto = it.imagen || it.img || fotoProducto(nombre);
-                    const tipoVenta = tipoProductoCasa(it);
-                    if (!pasaFiltroTipoCasa(tipoVenta)) return;
-                    casaDetalle.push({ fecha, nombre, cantidad, monto, foto, tipoVenta });
-                    if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta };
-                    consumoPorProducto[nombre].cantidad += cantidad;
-                    consumoPorProducto[nombre].monto += monto;
-                    if (!consumoPorProducto[nombre].tipoVenta && tipoVenta) consumoPorProducto[nombre].tipoVenta = tipoVenta;
+            const sheetNumCasa = v => (typeof parseSheetNum === 'function' ? parseSheetNum(v) : num(v));
+            const addConsumoCasa = (rawFecha, it) => {
+                const nombre = String(it.nombre || it.producto || it.PRODUCTO || it.Producto || 'PRODUCTO').trim();
+                if (!nombre) return;
+                const cantidad = sheetNumCasa(it.cantidad || it.CANTIDAD || it.Cantidad || 1) || 1;
+                const costoUnit = sheetNumCasa(it.costo || it.precioCosto || it.costoUnitario || it.dinRecUnit || it['PRECIO DE COSTO'] || it['Precio de Costo'] || it.COSTO || 0);
+                const monto = sheetNumCasa(it.dineroRecuperado || it.dinRecuperado || it['DINERO RECUPERADO'] || it['Dinero Recuperado'] || (costoUnit * cantidad));
+                const foto = it.imagen || it.img || it.IMAGEN || it.foto || fotoProducto(nombre);
+                const tipoVenta = tipoProductoCasa(it);
+                if (!pasaFiltroTipoCasa(tipoVenta)) return;
+                casaDetalle.push({ fecha: fechaLabel(rawFecha), nombre, cantidad, monto, foto, tipoVenta });
+                if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta };
+                consumoPorProducto[nombre].cantidad += cantidad;
+                consumoPorProducto[nombre].monto += monto;
+                if (!consumoPorProducto[nombre].tipoVenta && tipoVenta) consumoPorProducto[nombre].tipoVenta = tipoVenta;
+            };
+
+            const ventasRawCasa = Array.isArray(window._sheetVentasRaw) ? window._sheetVentasRaw : [];
+            if (ventasRawCasa.length) {
+                ventasRawCasa.forEach(row => {
+                    if (norm(row.CLIENTE || row.Cliente || row.cliente) !== 'CASA ERAZO') return;
+                    const fechaRaw = row.FECHA || row.Fecha || row.fecha || row['FECHA CORTA'] || row['Fecha Corta'] || '';
+                    if (!enRango(parseFechaNum(fechaRaw))) return;
+                    addConsumoCasa(fechaRaw, {
+                        nombre: row.PRODUCTO || row.Producto || row.producto,
+                        producto: row.PRODUCTO || row.Producto || row.producto,
+                        cantidad: row.CANTIDAD || row.Cantidad || row['Cantidad Introducida'],
+                        tipoVenta: row['TIPO DE VENTA'] || row['Tipo de Venta'] || row.tipoVenta,
+                        costo: row['PRECIO DE COSTO'] || row['Precio de Costo'] || row['Precio Costo'] || row.COSTO,
+                        dineroRecuperado: row['DINERO RECUPERADO'] || row['Dinero Recuperado'],
+                        imagen: row.IMAGEN || row.Imagen || row.imagen
+                    });
                 });
-            });
+            } else {
+                const ventas = (typeof ventasParaCalculo === 'function' ? ventasParaCalculo() : (_sheetVentas || [])).filter(v => enRango(parseFechaNum(v.fechaISO || v.fecha || v.FECHA || '')));
+                ventas.forEach(v => {
+                    if (norm(v.cliente) !== 'CASA ERAZO') return;
+                    (v.items || []).forEach(it => addConsumoCasa(v.fechaISO || v.fecha || v.FECHA || '', it));
+                });
+            }
 
             const egresos = (_sheetEgresos || []).filter(e => enRango(parseFechaNum(e.fechaISO || e.fecha || e.FECHA || '')));
             const comidaDetalle = [];
@@ -11058,7 +11078,7 @@ console.log("FILTRADAS:", filtradas.length);
                         <div class="rounded-2xl p-4 border border-cyan-500/25 bg-cyan-950/20">
                             <div class="text-[10px] font-black text-cyan-300 uppercase">Consumo del negocio</div>
                             <div class="text-3xl font-black text-white font-mono">$${Utils.fmt(totalCasa)}</div>
-                            <div class="text-[10px] text-slate-400 font-bold">${casaDetalle.length} productos consumidos por CASA ERAZO</div>
+                            <div class="text-[10px] text-slate-400 font-bold">${casaDetalle.length} registros consumidos por CASA ERAZO</div>
                         </div>
                         <div class="rounded-2xl p-4 border border-rose-500/25 bg-rose-950/20">
                             <div class="text-[10px] font-black text-rose-300 uppercase">Comida familiar</div>
