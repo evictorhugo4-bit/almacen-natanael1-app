@@ -23290,7 +23290,7 @@ function mostrarAlertasVencimiento(porVencer, vencidos){
         .map(p => ({...p}))
         .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0)); // más cercano primero
 
-    const todos = [...vencidosOrdenados, ...porVencerOrdenados].slice(0, 10);
+    const todos = [...vencidosOrdenados, ...porVencerOrdenados];
 
     if (!todos.length) { widget.classList.add('hidden'); return; }
 
