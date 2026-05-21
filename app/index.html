@@ -5060,6 +5060,9 @@ let itemEnEdicion = null;
 let itemEditandoId = null;
         
        let _sheetProductos = [];
+let _inventarioSheetCompleto = false;
+let _inventarioDesdeCachePendienteSheet = false;
+let _inventarioCacheInicialCount = 0;
 let productosPorCodigo = {};
 let productosPorNombre = {};
 
@@ -7341,6 +7344,9 @@ _sheetEgresosNegocio.forEach(e => {
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
                     window._sheetProductos = _sheetProductos;
+                    _inventarioSheetCompleto = false;
+                    _inventarioDesdeCachePendienteSheet = true;
+                    _inventarioCacheInicialCount = inventarioCache.length;
                     if (typeof indexarProductos === 'function') indexarProductos();
                 }
 
@@ -8066,6 +8072,10 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
 
     _sheetProductos = normalizarVencimientosProductos(nuevaLista);
     window._sheetProductos = _sheetProductos;
+    _inventarioSheetCompleto = true;
+    _inventarioDesdeCachePendienteSheet = false;
+    _inventarioCacheInicialCount = 0;
+    try { localStorage.setItem('natanael_inventario_full_count_v1', String(_sheetProductos.length)); } catch(e) {}
     console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
     indexarProductos();
     if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
@@ -18457,6 +18467,19 @@ window.debugStockProducto = function(nombreBuscado) {
 }
 
 
+function _inventarioDebeEsperarListaCompleta() {
+    const totalActual = Array.isArray(_sheetProductos) ? _sheetProductos.length : 0;
+    let totalEsperado = 0;
+    try {
+        totalEsperado = parseInt(localStorage.getItem('natanael_inventario_full_count_v1') || '0', 10) || 0;
+    } catch(e) {}
+    return !!_inventarioDesdeCachePendienteSheet
+        && !_inventarioSheetCompleto
+        && totalActual > 0
+        && ((totalEsperado > 0 && totalActual < totalEsperado) || totalActual <= 60);
+}
+
+
 
 
 
@@ -18473,6 +18496,22 @@ if (sinFiltrosInventario || inventarioFiltrado.length === 0) {
 }
 
 const container = document.getElementById('gridInventario');
+if (!container) return;
+
+if (_inventarioDebeEsperarListaCompleta()) {
+    container.innerHTML = `
+        <div class="col-span-full glass-card rounded-2xl p-8 text-center border border-emerald-500/30">
+            <div class="inline-flex items-center gap-2 text-emerald-400 font-black uppercase text-xs">
+                <i data-lucide="refresh-cw" class="w-4 h-4 animate-spin"></i>
+                Cargando inventario completo...
+            </div>
+            <p class="text-slate-400 text-xs mt-2 font-bold">Esperando todos los productos del Sheet para mostrarlos juntos.</p>
+        </div>`;
+    const countEl = document.getElementById('countInventario');
+    if (countEl) countEl.textContent = 'Cargando todos los productos...';
+    setTimeout(() => lucide.createIcons(), 0);
+    return;
+}
 
 // 🥗 Calculamos stock UNA sola vez y ordenamos
 const productosOrdenados = [...inventarioFiltrado].sort((a, b) => {
@@ -28402,7 +28441,14 @@ function calcularCajaEsperada() {
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
-                if (inventarioCache.length) { _sheetProductos = normalizarVencimientosProductos(inventarioCache); window._sheetProductos = _sheetProductos; indexarProductos(); }
+                if (inventarioCache.length) {
+                    _sheetProductos = normalizarVencimientosProductos(inventarioCache);
+                    window._sheetProductos = _sheetProductos;
+                    _inventarioSheetCompleto = false;
+                    _inventarioDesdeCachePendienteSheet = true;
+                    _inventarioCacheInicialCount = inventarioCache.length;
+                    indexarProductos();
+                }
                 if (ventasCache.length)     { _sheetVentas = ventasCache; window._sheetVentas = _sheetVentas; historial = ventasCache; }
                 if (pagoVentasCache.length) { _pagoVentasSheet = pagoVentasCache; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
@@ -28426,6 +28472,9 @@ function calcularCajaEsperada() {
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
                     window._sheetProductos = _sheetProductos;
+                    _inventarioSheetCompleto = false;
+                    _inventarioDesdeCachePendienteSheet = true;
+                    _inventarioCacheInicialCount = inventarioCache.length;
                     try { _cacheGuardarArray('natanael_inventario_v1', inventarioCache); } catch(e) {}
                     if (typeof indexarProductos === 'function') indexarProductos();
                 }
