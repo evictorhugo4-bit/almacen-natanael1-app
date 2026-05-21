@@ -8074,7 +8074,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     revisarVencimientos();
     if (typeof revisarAlertasCompra7Dias === 'function') revisarAlertasCompra7Dias();
     if (typeof calcularWidgetGastoFamiliar === "function") calcularWidgetGastoFamiliar();
-    setTimeout(() => { filtrarInventario(); }, 300);
+    filtrarInventario();
 
 } else {
     console.log('Inventario: sheet vacío, manteniendo ' + _sheetProductos.length + ' productos locales');
@@ -18461,8 +18461,14 @@ window.debugStockProducto = function(nombreBuscado) {
 
 
                 function renderInventario() {
-            
-if (inventarioFiltrado.length === 0) {
+
+const queryInv = (document.getElementById('inputFiltroInv')?.value || '').trim();
+const provInv = (document.getElementById('filtroInvProveedor')?.value || '').trim();
+const catInv = (document.getElementById('filtroInvCategoria')?.value || '').trim();
+const deptoInv = (document.getElementById('filtroInvDepto')?.value || '').trim();
+const sinFiltrosInventario = !queryInv && !provInv && !catInv && !deptoInv;
+
+if (sinFiltrosInventario || inventarioFiltrado.length === 0) {
     inventarioFiltrado = [..._sheetProductos];
 }
 
