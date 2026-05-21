@@ -23578,17 +23578,20 @@ function revisarAlertasCompra7Dias(){
     const productosPorId = new Map();
     const productosPorNombre = new Map();
     const categorias = new Map();
+    const tipoAlertaProducto = val => (typeof esTipoVenta === 'function' && esTipoVenta(val)) ? 'gramos' : 'unidad';
+    const tituloTipoAlerta = tipo => tipo === 'gramos' ? 'Gramos' : 'Unidad';
 
     productos.forEach(p => {
         const id = String(p.id || p.IDPRODUCTOS || '').trim();
         const nombreKey = normalizar(p.nombre || p.NOMBRE || '');
         const categoria = String(p.categoria || p.CATEGORIA || '').trim();
         if (!categoria) return;
+        const tipoGrupo = tipoAlertaProducto(p.tipoVenta || p['FORMA DE VENTA'] || p['TIPO DE VENTA'] || p.formaVenta || '');
 
         if (id) productosPorId.set(id, p);
         if (nombreKey) productosPorNombre.set(nombreKey, p);
 
-        const catKey = normalizar(categoria);
+        const catKey = normalizar(categoria) + '|' + tipoGrupo;
         if (!catKey) return;
 
         const stockActual = Number.isFinite(Number(p.stockCalculado))
@@ -23598,6 +23601,7 @@ function revisarAlertasCompra7Dias(){
         const actual = categorias.get(catKey) || {
             categoria,
             foto: p.foto || p.imagen || p.IMAGEN || '',
+            tipoGrupo,
             stockActual: 0,
             vendido7: 0,
             productos: 0
@@ -23621,12 +23625,14 @@ function revisarAlertasCompra7Dias(){
             const nombreKey = normalizar(it.nombre || it.producto || it.PRODUCTO || '');
             const prodRef = (id && productosPorId.get(id)) || productosPorNombre.get(nombreKey) || null;
             const categoria = String(it.categoria || it.CATEGORIA || prodRef?.categoria || prodRef?.CATEGORIA || '').trim();
-            const catKey = normalizar(categoria);
+            const tipoGrupo = tipoAlertaProducto(it.tipoVenta || it['TIPO DE VENTA'] || prodRef?.tipoVenta || prodRef?.['FORMA DE VENTA'] || prodRef?.['TIPO DE VENTA'] || '');
+            const catKey = normalizar(categoria) + '|' + tipoGrupo;
             if (!catKey) return;
 
             const actual = categorias.get(catKey) || {
                 categoria,
                 foto: prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '',
+                tipoGrupo,
                 stockActual: 0,
                 vendido7: 0,
                 productos: 0
@@ -23638,27 +23644,57 @@ function revisarAlertasCompra7Dias(){
         });
     });
 
-    const alertas = Array.from(categorias.values())
+    const alertasTodas = Array.from(categorias.values())
     .filter(x => x.categoria && x.vendido7 > 0 && x.stockActual <= x.vendido7)
     .map(x => ({ ...x, faltante: x.vendido7 - x.stockActual }))
-    .sort((a, b) => (b.faltante - a.faltante) || (b.vendido7 - a.vendido7) || String(a.categoria).localeCompare(String(b.categoria)))
-    .slice(0, 12);
+    .sort((a, b) => (b.faltante - a.faltante) || (b.vendido7 - a.vendido7) || String(a.categoria).localeCompare(String(b.categoria)));
+
+    const alertasGramos = alertasTodas.filter(a => a.tipoGrupo === 'gramos').slice(0, 12);
+    const alertasUnidad = alertasTodas.filter(a => a.tipoGrupo !== 'gramos').slice(0, 12);
+    const alertas = [...alertasGramos, ...alertasUnidad];
 
     const alertaKey = [fechaConfigAlerta || '7d', alertas.map(a => [
         a.categoria,
         Math.round(a.stockActual * 100) / 100,
         Math.round(a.vendido7 * 100) / 100,
         Math.round(a.faltante * 100) / 100,
+        a.tipoGrupo,
         a.productos
     ].join(':')).join('|')].join('::');
 
     if (widget.dataset.alertaKey === alertaKey && !widget.classList.contains('hidden')) return;
 
-    const scrollAnterior = widget.querySelector('[data-alerta-compra-scroll]')?.scrollLeft || 0;
+    const scrollGramosAnterior = widget.querySelector('[data-alerta-compra-scroll="gramos"]')?.scrollLeft || 0;
+    const scrollUnidadAnterior = widget.querySelector('[data-alerta-compra-scroll="unidad"]')?.scrollLeft || 0;
 
     widget.classList.remove('hidden');
     widget.dataset.alertaKey = alertaKey;
     const vendidoLabel = fechaConfigAlerta ? 'Vendido' : 'Vendido 7d';
+    const renderFilaAlertas = (tipo, items) => `
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest ${tipo === 'gramos' ? 'text-cyan-300' : 'text-emerald-300'}">${tituloTipoAlerta(tipo)}</span>
+                    <span class="text-[9px] font-black uppercase text-slate-500">${items.length} categorias</span>
+                </div>
+                <div data-alerta-compra-scroll="${tipo}" class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar min-h-[118px]">
+                    ${items.length ? items.map(a => {
+                        const foto = a.foto
+                            ? `<img src="${driveUrl(a.foto)}" class="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-slate-700 flex-shrink-0" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=&quot;w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0&quot;>!</div>'">`
+                            : `<div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0">!</div>`;
+                        return `
+                            <div class="min-w-[230px] max-w-[280px] text-left rounded-xl border border-red-500/25 bg-slate-950/70 p-3 flex items-center gap-3">
+                                ${foto}
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-[10px] font-black text-white uppercase truncate">${Utils.escHtml(a.categoria)}</span>
+                                    <span class="block text-[9px] font-bold text-slate-400">Stock ${Utils.fmt(a.stockActual)} - ${vendidoLabel} ${Utils.fmt(a.vendido7)}</span>
+                                    <span class="block text-[9px] font-black text-red-300 uppercase">Comprar ${Utils.fmt(a.faltante)}</span>
+                                    <span class="block text-[8px] font-black text-slate-500 uppercase">${Utils.fmt(a.productos)} productos</span>
+                                </span>
+                                <span class="px-2 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase flex-shrink-0">Comprar</span>
+                            </div>`;
+                    }).join('') : `<div class="w-full rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-center text-[10px] font-black uppercase text-slate-400">Sin categorias de ${tituloTipoAlerta(tipo).toLowerCase()} para comprar</div>`}
+                </div>
+            </div>`;
 
     widget.innerHTML = `
         <div class="glass-card rounded-[1.5rem] border border-red-500/30 bg-red-500/5 p-4">
@@ -23673,28 +23709,16 @@ function revisarAlertasCompra7Dias(){
                     <span class="text-[10px] font-black uppercase text-amber-300">${alertas.length} categorias</span>
                 </div>
             </div>
-            <div data-alerta-compra-scroll class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                ${alertas.length ? alertas.map(a => {
-                    const foto = a.foto
-                        ? `<img src="${driveUrl(a.foto)}" class="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-slate-700 flex-shrink-0" onerror="this.outerHTML='<div class=&quot;w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0&quot;>!</div>'">`
-                        : `<div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs text-red-300 flex-shrink-0">!</div>`;
-                    return `
-                        <div class="min-w-[230px] max-w-[280px] text-left rounded-xl border border-red-500/25 bg-slate-950/70 p-3 flex items-center gap-3">
-                            ${foto}
-                            <span class="min-w-0 flex-1">
-                                <span class="block text-[10px] font-black text-white uppercase truncate">${Utils.escHtml(a.categoria)}</span>
-                                <span class="block text-[9px] font-bold text-slate-400">Stock ${Utils.fmt(a.stockActual)} - ${vendidoLabel} ${Utils.fmt(a.vendido7)}</span>
-                                <span class="block text-[9px] font-black text-red-300 uppercase">Comprar ${Utils.fmt(a.faltante)}</span>
-                                <span class="block text-[8px] font-black text-slate-500 uppercase">${Utils.fmt(a.productos)} productos</span>
-                            </span>
-                            <span class="px-2 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase flex-shrink-0">Comprar</span>
-                        </div>`;
-                }).join('') : `<div class="w-full rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-center text-[10px] font-black uppercase text-slate-400">Sin categorias para comprar en este rango</div>`}
+            <div class="space-y-3">
+                ${renderFilaAlertas('gramos', alertasGramos)}
+                ${renderFilaAlertas('unidad', alertasUnidad)}
             </div>
         </div>`;
 
-    const scroller = widget.querySelector('[data-alerta-compra-scroll]');
-    if (scroller) scroller.scrollLeft = scrollAnterior;
+    const scrollerGramos = widget.querySelector('[data-alerta-compra-scroll="gramos"]');
+    const scrollerUnidad = widget.querySelector('[data-alerta-compra-scroll="unidad"]');
+    if (scrollerGramos) scrollerGramos.scrollLeft = scrollGramosAnterior;
+    if (scrollerUnidad) scrollerUnidad.scrollLeft = scrollUnidadAnterior;
 }
 
 if (!window._alertaCompra7dTimer) {
