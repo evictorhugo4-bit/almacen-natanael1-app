@@ -11075,8 +11075,8 @@ console.log("FILTRADAS:", filtradas.length);
                     || (b.cantidad - a.cantidad)
                     || (b.monto - a.monto)
                     || a.nombre.localeCompare(b.nombre);
-            }).splice(12);
-            const rowConsumo = detalleConsumoOrdenado.map(x => `
+            });
+            let rowConsumo = detalleConsumoOrdenado.map(x => `
                 <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid rgba(51,65,85,.8);border-radius:16px;padding:10px;">
                     ${thumb(x.foto, x.nombre, '#38bdf8')}
                     <div style="flex:1;min-width:0;">
@@ -11086,6 +11086,47 @@ console.log("FILTRADAS:", filtradas.length);
                     </div>
                     <div style="font-size:14px;color:#34d399;font-weight:1000;">$${Utils.fmt(x.monto)}</div>
                 </div>`).join('') || '<div class="text-slate-500 text-xs font-bold">Sin consumos de CASA ERAZO en el período.</div>';
+            const gruposConsumoCategoria = detalleConsumoOrdenado.reduce((acc, x) => {
+                const cat = x.categoria || 'SIN CATEGORIA';
+                if (!acc[cat]) acc[cat] = { cantidad: 0, monto: 0, items: [] };
+                acc[cat].cantidad += x.cantidad || 0;
+                acc[cat].monto += x.monto || 0;
+                acc[cat].items.push(x);
+                return acc;
+            }, {});
+            const categoriasConsumoOrdenadas = Object.entries(gruposConsumoCategoria)
+                .sort((a, b) => (b[1].cantidad - a[1].cantidad) || (b[1].monto - a[1].monto) || a[0].localeCompare(b[0]))
+                .slice(0, 12);
+            rowConsumo = categoriasConsumoOrdenadas.map(([categoria, data]) => {
+                const tipoPrincipal = data.items.find(i => i.tipoVenta)?.tipoVenta || data.items[0]?.tipoVenta || 'Unidad';
+                const detalleItems = data.items
+                    .sort((a, b) => (b.cantidad - a.cantidad) || (b.monto - a.monto) || a.nombre.localeCompare(b.nombre))
+                    .map(x => `
+                        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-top:1px solid rgba(51,65,85,.65);">
+                            ${thumb(x.foto, x.nombre, '#38bdf8')}
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:12px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(x.nombre)}</div>
+                                <div style="font-size:10px;color:#94a3b8;font-weight:800;">Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
+                            </div>
+                            <div style="font-size:13px;color:#34d399;font-weight:1000;">$${Utils.fmt(x.monto)}</div>
+                        </div>`)
+                    .join('');
+                return `
+                    <div style="background:#0f172a;border:1px solid rgba(51,65,85,.8);border-radius:16px;overflow:hidden;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;background:rgba(56,189,248,.08);">
+                            <div style="min-width:0;">
+                                <div style="font-size:9px;color:#34d399;font-weight:900;">TOTAL POR CATEGORIA</div>
+                                <div style="font-size:13px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(categoria)}</div>
+                                <div style="font-size:10px;color:#94a3b8;font-weight:800;">${data.items.length} productos en detalle</div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-size:15px;color:#34d399;font-weight:1000;">${fmtCantidadCasa(data.cantidad, tipoPrincipal)}</div>
+                                <div style="font-size:12px;color:#94a3b8;font-weight:900;">$${Utils.fmt(data.monto)}</div>
+                            </div>
+                        </div>
+                        ${detalleItems}
+                    </div>`;
+            }).join('') || '<div class="text-slate-500 text-xs font-bold">Sin consumos de CASA ERAZO en el periodo.</div>';
             const rowComida = comidaDetalle.slice(0,12).map(x => `
                 <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid rgba(127,29,29,.55);border-radius:16px;padding:10px;">
                     ${thumb(x.foto, x.nombre, '#fb7185')}
