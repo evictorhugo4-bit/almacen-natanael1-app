@@ -21322,7 +21322,10 @@ clienteDetalleId = null;
             const container = el(listaId);
             if (!container) return;
             if (db.length === 0) { container.innerHTML = `<div class="glass-card p-10 rounded-2xl text-center text-slate-600 text-xs font-black uppercase">Sin registros</div>`; return; }
-            const dbOrdenado = [...db].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0));
+            const dbOrdenado = [...db].sort((a,b) =>
+                (parseFechaNum(b.fechaISO || b.fecha || b.FECHA || '') || 0) -
+                (parseFechaNum(a.fechaISO || a.fecha || a.FECHA || '') || 0)
+            );
             const isIng = tipo === 'ingresosNegocio';
             const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
             const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
@@ -30473,7 +30476,7 @@ function verDetalleProveedor(tipo, id){
                 const todasC = _sheetCompras || [];
                 const movs = [];
                 todasC.forEach(cp => {
-                    const ts = new Date(cp.fechaISO || cp.fecha || '').getTime() || 0;
+                    const ts = parseFechaNum(cp.fechaISO || cp.fecha || '') || 0;
                     if (fdTs && ts < fdTs) return;
                     if (fhTs && ts > fhTs) return;
                     (cp.items||[]).forEach(it => {
@@ -30481,7 +30484,7 @@ function verDetalleProveedor(tipo, id){
                         movs.push({ fecha: cp.fecha||cp.fechaISO||'', detalle: cp.proveedor||'?', cantidad: parseFloat(it.cantidad)||0, id: cp.id||'' });
                     });
                 });
-                movs.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                movs.sort((a,b) => (parseFechaNum(b.fecha) || 0) - (parseFechaNum(a.fecha) || 0));
                 if (!movs.length) { listaEl.innerHTML = '<p style="font-size:10px;color:#475569;text-align:center;padding:12px;">Sin compras en este período</p>'; }
                 else listaEl.innerHTML = movs.map(m => `
                     <div onclick="verDetalleCompraKardex('${String(m.id).replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;cursor:pointer;" class="hover:border-blue-500/50">
@@ -30498,7 +30501,7 @@ function verDetalleProveedor(tipo, id){
                 const todasV = ventasParaCalculo();
                 const movs = [];
                 todasV.forEach(v => {
-                    const ts = new Date(v.fechaISO || v.fecha || '').getTime() || 0;
+                    const ts = parseFechaNum(v.fechaISO || v.fecha || '') || 0;
                     if (fdTs && ts < fdTs) return;
                     if (fhTs && ts > fhTs) return;
                     (v.items||[]).forEach(it => {
@@ -30506,7 +30509,7 @@ function verDetalleProveedor(tipo, id){
                         movs.push({ fecha: v.fecha||v.fechaISO||'', detalle: v.cliente||'Consumidor Final', cantidad: parseFloat(it.cantidad)||0, id: v.id||'' });
                     });
                 });
-                movs.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                movs.sort((a,b) => (parseFechaNum(b.fecha) || 0) - (parseFechaNum(a.fecha) || 0));
                 if (!movs.length) { listaEl.innerHTML = '<p style="font-size:10px;color:#475569;text-align:center;padding:12px;">Sin ventas en este período</p>'; }
                 else listaEl.innerHTML = movs.map(m => `
                     <div onclick="verDetalleVentaKardex('${String(m.id).replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;cursor:pointer;" class="hover:border-orange-500/50">
@@ -31419,7 +31422,10 @@ renderIngNeg = function(tipo) {
     }
     const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     const SVG_DEL  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-    container.innerHTML = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0)).map(function(r) {
+    container.innerHTML = [...dbFiltrado].sort((a,b) =>
+        (parseFechaNum(b.fechaISO || b.fecha || b.FECHA || '') || 0) -
+        (parseFechaNum(a.fechaISO || a.fecha || a.FECHA || '') || 0)
+    ).map(function(r) {
         const infoEstado = calcEstado(r);
         const colorEstado = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
         const clienteNombreUpper = String(r.cliente || r.proveedor || '').trim().toUpperCase();
@@ -31499,7 +31505,7 @@ renderIngEgr = function(tipo) {
         g.credito += Number(r.credito) || 0;
         if (r.ticket && !g.ticket) g.ticket = r.ticket;
         if ((r.subcategoria || r.SUBCATEGORIA) && !g.subcategoria) g.subcategoria = r.subcategoria || r.SUBCATEGORIA;
-        if (r.fechaISO && (!g.fechaISO || new Date(r.fechaISO) > new Date(g.fechaISO))) {
+        if (r.fechaISO && ((parseFechaNum(r.fechaISO) || 0) > (parseFechaNum(g.fechaISO || g.fecha || '') || 0))) {
             g.fecha = r.fecha;
             g.fechaISO = r.fechaISO;
         }
@@ -31581,7 +31587,10 @@ renderIngEgr = function(tipo) {
             || imgMapLista[p]
             || ((typeof window._getCatImg === 'function') ? (window._getCatImg('categoria', nombre) || window._getCatImg('supercat', proveedor) || '') : '');
     };
-    container.innerHTML = [...dbFiltrado].sort((a,b) => new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0)).map(function(c) {
+    container.innerHTML = [...dbFiltrado].sort((a,b) =>
+        (parseFechaNum(b.fechaISO || b.fecha || b.FECHA || '') || 0) -
+        (parseFechaNum(a.fechaISO || a.fecha || a.FECHA || '') || 0)
+    ).map(function(c) {
         const infoEstado = calcEstado(c);
         const badgeColor = infoEstado.estado === 'FINALIZADO' ? '#22c55e' : '#ef4444';
         const provKey = (c.proveedor || '').toUpperCase().trim();
