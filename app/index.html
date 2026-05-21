@@ -10893,12 +10893,27 @@ console.log("FILTRADAS:", filtradas.length);
             const num = v => Number(v || 0) || 0;
             const esc = v => Utils.escHtml(String(v ?? ''));
             const fotoProducto = n => (typeof obtenerFotoProductoPorNombre === 'function' ? obtenerFotoProductoPorNombre(n) : '') || '';
+            const productosCasaLista = () => {
+                if (Array.isArray(window._sheetProductos) && window._sheetProductos.length) return window._sheetProductos;
+                if (Array.isArray(_sheetProductos) && _sheetProductos.length) return _sheetProductos;
+                if (Array.isArray(window._productos) && window._productos.length) return window._productos;
+                try { return Array.isArray(_productos) ? _productos : []; } catch(e) { return []; }
+            };
+            const productoCasaPorNombre = nombre => {
+                const nombreBuscado = norm(nombre);
+                return productosCasaLista().find(p => norm(p.nombre || p.NOMBRE || p.producto || '') === nombreBuscado) || null;
+            };
             const tipoProductoCasa = item => {
                 const directo = item?.tipoVenta || item?.['TIPO DE VENTA'] || item?.formaVenta || item?.['FORMA DE VENTA'] || '';
                 if (directo) return directo;
-                const nombreBuscado = norm(item?.nombre || item?.producto || '');
-                const prod = (window._productos || _productos || []).find(p => norm(p.nombre || p.NOMBRE || '') === nombreBuscado);
+                const prod = productoCasaPorNombre(item?.nombre || item?.producto || '');
                 return prod?.tipoVenta || prod?.['FORMA DE VENTA'] || prod?.formaVenta || prod?.tipo || 'Unidad';
+            };
+            const categoriaProductoCasa = (item, nombre) => {
+                const directo = item?.categoria || item?.CATEGORIA || item?.depto || item?.DEPTO || item?.departamento || item?.DEPARTAMENTO || '';
+                if (directo) return String(directo).trim();
+                const prod = productoCasaPorNombre(nombre || item?.nombre || item?.producto || '');
+                return String(prod?.categoria || prod?.CATEGORIA || prod?.depto || prod?.DEPTO || prod?.departamento || prod?.DEPARTAMENTO || 'SIN CATEGORIA').trim();
             };
             const unidadCasa = tipo => (typeof esTipoVenta === 'function' && esTipoVenta(tipo)) ? 'gr' : 'u';
             const fmtCantidadCasa = (cantidad, tipo) => `${Utils.fmt(cantidad || 0)} ${unidadCasa(tipo)}`;
@@ -10929,12 +10944,14 @@ console.log("FILTRADAS:", filtradas.length);
                 const monto = sheetNumCasa(it.dineroRecuperado || it.dinRecuperado || it['DINERO RECUPERADO'] || it['Dinero Recuperado'] || (costoUnit * cantidad));
                 const foto = it.imagen || it.img || it.IMAGEN || it.foto || fotoProducto(nombre);
                 const tipoVenta = tipoProductoCasa(it);
+                const categoria = categoriaProductoCasa(it, nombre);
                 if (!pasaFiltroTipoCasa(tipoVenta)) return;
-                casaDetalle.push({ fecha: fechaLabel(rawFecha), nombre, cantidad, monto, foto, tipoVenta });
-                if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta };
+                casaDetalle.push({ fecha: fechaLabel(rawFecha), nombre, cantidad, monto, foto, tipoVenta, categoria });
+                if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta, categoria };
                 consumoPorProducto[nombre].cantidad += cantidad;
                 consumoPorProducto[nombre].monto += monto;
                 if (!consumoPorProducto[nombre].tipoVenta && tipoVenta) consumoPorProducto[nombre].tipoVenta = tipoVenta;
+                if (!consumoPorProducto[nombre].categoria && categoria) consumoPorProducto[nombre].categoria = categoria;
             };
 
             const ventasRawCasa = Array.isArray(window._sheetVentasRaw) ? window._sheetVentasRaw : [];
@@ -11042,15 +11059,30 @@ console.log("FILTRADAS:", filtradas.length);
             const topComida = Object.entries(comidaPorCategoria).sort((a,b)=>b[1].monto-a[1].monto).slice(0,8);
             const detalleConsumoOrdenado = Object.entries(consumoPorProducto)
                 .sort((a,b) => (b[1].cantidad - a[1].cantidad) || (b[1].monto - a[1].monto))
-                .slice(0, 12)
-                .map(([nombre, data]) => ({ nombre, cantidad: data.cantidad, monto: data.monto, foto: data.foto, tipoVenta: data.tipoVenta }));
+                .map(([nombre, data]) => ({ nombre, cantidad: data.cantidad, monto: data.monto, foto: data.foto, tipoVenta: data.tipoVenta, categoria: data.categoria || 'SIN CATEGORIA' }));
+            const cantidadCategoriaCasa = detalleConsumoOrdenado.reduce((acc, x) => {
+                const cat = x.categoria || 'SIN CATEGORIA';
+                if (!acc[cat]) acc[cat] = { cantidad: 0, monto: 0 };
+                acc[cat].cantidad += x.cantidad || 0;
+                acc[cat].monto += x.monto || 0;
+                return acc;
+            }, {});
+            detalleConsumoOrdenado.sort((a, b) => {
+                const ca = cantidadCategoriaCasa[a.categoria || 'SIN CATEGORIA'] || {};
+                const cb = cantidadCategoriaCasa[b.categoria || 'SIN CATEGORIA'] || {};
+                return (cb.cantidad - ca.cantidad)
+                    || String(a.categoria || '').localeCompare(String(b.categoria || ''))
+                    || (b.cantidad - a.cantidad)
+                    || (b.monto - a.monto)
+                    || a.nombre.localeCompare(b.nombre);
+            }).splice(12);
             const rowConsumo = detalleConsumoOrdenado.map(x => `
                 <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid rgba(51,65,85,.8);border-radius:16px;padding:10px;">
                     ${thumb(x.foto, x.nombre, '#38bdf8')}
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:9px;color:#34d399;font-weight:900;">TOTAL DEL PER?ODO</div>
                         <div style="font-size:12px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(x.nombre)}</div>
-                        <div style="font-size:10px;color:#94a3b8;font-weight:800;">Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
+                        <div style="font-size:10px;color:#94a3b8;font-weight:800;">${esc(x.categoria || 'SIN CATEGORIA')} · Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
                     </div>
                     <div style="font-size:14px;color:#34d399;font-weight:1000;">$${Utils.fmt(x.monto)}</div>
                 </div>`).join('') || '<div class="text-slate-500 text-xs font-bold">Sin consumos de CASA ERAZO en el período.</div>';
