@@ -4985,7 +4985,7 @@ Agregar
             const raw = localStorage.getItem('natanael_inventario_v1');
             if (raw) {
                 const datos = JSON.parse(raw);
-                if (Array.isArray(datos)) return datos;
+                if (Array.isArray(datos)) return normalizarVencimientosProductos(datos);
             }
         } catch(e) {}
         return _sheetProductos || [];
@@ -7339,7 +7339,7 @@ _sheetEgresosNegocio.forEach(e => {
                 const pagoVentasCache = _natBootPick(snap.pagoVentas, _natBootReadArray('natanael_pago_ventas_v1'));
 
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
-                    _sheetProductos = inventarioCache;
+                    _sheetProductos = normalizarVencimientosProductos(inventarioCache);
                     window._sheetProductos = _sheetProductos;
                     if (typeof indexarProductos === 'function') indexarProductos();
                 }
@@ -8051,7 +8051,8 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
             imagen:           String(row['IMAGEN'] || '').trim(),
             foto:             String(row['IMAGEN'] || '').trim(),
             codigos:          String(row['CODIGOS'] || '').trim(),
-            vencimiento:      String(row['VENCIMIENTO'] || '').trim(),
+            vencimiento:      String(row['VENCIMIENTO'] || row['FECHA VENCIMIENTO'] || '').trim(),
+            fechaVencimiento: String(row['FECHA VENCIMIENTO'] || row['FECHA_VENCIMIENTO'] || row['VENCIMIENTO'] || '').trim(),
             stockMin:         parseFloat(row['STOCK MINIMO X CATEGORIA'] || 0) || 0,
             stockFisico:      (_sfRaw !== undefined && _sfRaw !== '' && _sfRaw !== null) ? parseFloat(_sfRaw) : null,
             fechaStockFisico: String(row['FECHA STOCK FISICO'] || '').trim(),
@@ -8063,7 +8064,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
         });
     });
 
-    _sheetProductos = nuevaLista;
+    _sheetProductos = normalizarVencimientosProductos(nuevaLista);
     window._sheetProductos = _sheetProductos;
     console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
     indexarProductos();
@@ -18181,6 +18182,47 @@ function poblarSelectsInv() {
                    String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
         }
 
+        function fechaSheetToInputValue(val, withTime = true) {
+            if (!val) return '';
+            const s = String(val).trim();
+            if (!s) return '';
+            const pad = n => String(n).padStart(2, '0');
+            let m;
+
+            // Google Sheets usa DD/MM/YYYY. No usar new Date("05/10/2026")
+            // porque el navegador lo interpreta como MM/DD/YYYY.
+            m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+            if (m) {
+                const y = m[3], mo = pad(m[2]), d = pad(m[1]);
+                const h = pad(m[4] || 0), mi = pad(m[5] || 0);
+                return withTime ? `${y}-${mo}-${d}T${h}:${mi}` : `${y}-${mo}-${d}`;
+            }
+
+            m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+            if (m) return withTime ? `${m[1]}-${m[2]}-${m[3]}T${m[4] || '00'}:${m[5] || '00'}` : `${m[1]}-${m[2]}-${m[3]}`;
+
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return s;
+            return withTime
+                ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                : `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        }
+
+        function normalizarVencimientoProducto(p) {
+            if (!p || typeof p !== 'object') return p;
+            const raw = p.fechaVencimiento || p['FECHA VENCIMIENTO'] || p['FECHA_VENCIMIENTO'] || p.vencimiento || p['VENCIMIENTO'] || '';
+            const input = fechaSheetToInputValue(raw, true);
+            if (input) {
+                p.vencimiento = input;
+                p.fechaVencimiento = input;
+            }
+            return p;
+        }
+
+        function normalizarVencimientosProductos(lista) {
+            return Array.isArray(lista) ? lista.map(normalizarVencimientoProducto) : [];
+        }
+
         // Date ? "DD/MM/YYYY HH:mm:ss" ? mismo formato que el Sheet
         function fechaSheet(f){
 
@@ -18712,20 +18754,9 @@ cargarOpcionesProducto();
                 setVal('pFechaVerif',       p.fechaVerif);
                 setVal('pStockCorrecto',    p.stockCorrecto);
                 setVal('pFechaCantidad',    p.fechaCantidad);
-                // Cargar vencimiento ? convertir ISO a formato datetime-local
-                const _vencRaw = p.vencimiento || '';
-                if (_vencRaw) {
-                    const _d = new Date(_vencRaw);
-                    if (!isNaN(_d.getTime())) {
-                        const pad = n => String(n).padStart(2,'0');
-                        const _vencLocal = _d.getFullYear()+'-'+pad(_d.getMonth()+1)+'-'+pad(_d.getDate())+'T'+pad(_d.getHours())+':'+pad(_d.getMinutes());
-                        setVal('pVencimiento', _vencLocal);
-                    } else {
-                        setVal('pVencimiento', _vencRaw);
-                    }
-                } else {
-                    setVal('pVencimiento', '');
-                }
+                // Cargar vencimiento desde Sheets como DD/MM/YYYY.
+                const _vencRaw = p.fechaVencimiento || p.vencimiento || '';
+                setVal('pVencimiento', fechaSheetToInputValue(_vencRaw, true));
                 actualizarGanancia();
                 // Mostrar foto existente en preview
                 const imgEl = document.getElementById('fotoPreviewImg');
@@ -24269,6 +24300,7 @@ function renderCompras() {
             const txt    = (_filtroCompraTexto||'').toLowerCase().trim();
             const desde  = document.getElementById('filtroCompraDesde')?.value || '';
             const hasta  = document.getElementById('filtroCompraHasta')?.value || '';
+            const fechaNumCompra = c => parseFechaNum(c?.fechaISO || c?.fecha || c?.FECHA || '') || 0;
 
             const filtradas = comprasVista.filter(c => {
 
@@ -24279,9 +24311,11 @@ function renderCompras() {
                     if (!hayProv && !hayProd) return false;
                 }
                 if (desde || hasta) {
-                    const fd = c.fechaISO ? c.fechaISO.substring(0,10) : (c.fecha||'').substring(0,10);
-                    if (desde && fd < desde) return false;
-                    if (hasta && fd > hasta) return false;
+                    const fn = fechaNumCompra(c);
+                    const fd = desde ? parseFechaNum(desde + 'T00:00:00') : null;
+                    const fh = hasta ? parseFechaNum(hasta + 'T23:59:59') : null;
+                    if (fd && fn && fn < fd) return false;
+                    if (fh && fn && fn > fh) return false;
                 }
                 return true;
             });
@@ -24307,7 +24341,7 @@ filtradas.forEach((c, realIdx) => {
     }
 });
 const grupos = Array.from(gruposMap.values())
-    .sort((a,b) => new Date(b.c.fechaISO||b.c.fecha||0) - new Date(a.c.fechaISO||a.c.fecha||0));
+    .sort((a,b) => fechaNumCompra(b.c) - fechaNumCompra(a.c));
 
 container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
     const idx = realIdx;
@@ -28058,7 +28092,8 @@ function calcularCajaEsperada() {
                 imagen: p.imagen || p.foto || '',
                 foto: p.foto || p.imagen || '',
                 codigos: p.codigos || '',
-                vencimiento: p.vencimiento || '',
+                vencimiento: fechaSheetToInputValue(p.fechaVencimiento || p.vencimiento || '', true),
+                fechaVencimiento: fechaSheetToInputValue(p.fechaVencimiento || p.vencimiento || '', true),
                 stockMin: Number(p.stockMin) || 0,
                 stockFisico: p.stockFisico,
                 fechaStockFisico: p.fechaStockFisico || '',
@@ -28327,7 +28362,7 @@ function calcularCajaEsperada() {
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
-                if (inventarioCache.length) { _sheetProductos = inventarioCache; window._sheetProductos = _sheetProductos; indexarProductos(); }
+                if (inventarioCache.length) { _sheetProductos = normalizarVencimientosProductos(inventarioCache); window._sheetProductos = _sheetProductos; indexarProductos(); }
                 if (ventasCache.length)     { _sheetVentas = ventasCache; window._sheetVentas = _sheetVentas; historial = ventasCache; }
                 if (pagoVentasCache.length) { _pagoVentasSheet = pagoVentasCache; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
@@ -28349,7 +28384,7 @@ function calcularCajaEsperada() {
                 if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
 
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
-                    _sheetProductos = inventarioCache;
+                    _sheetProductos = normalizarVencimientosProductos(inventarioCache);
                     window._sheetProductos = _sheetProductos;
                     try { _cacheGuardarArray('natanael_inventario_v1', inventarioCache); } catch(e) {}
                     if (typeof indexarProductos === 'function') indexarProductos();
