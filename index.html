@@ -5060,6 +5060,9 @@ let itemEnEdicion = null;
 let itemEditandoId = null;
         
        let _sheetProductos = [];
+let _inventarioSheetCompleto = false;
+let _inventarioDesdeCachePendienteSheet = false;
+let _inventarioCacheInicialCount = 0;
 let productosPorCodigo = {};
 let productosPorNombre = {};
 
@@ -7341,6 +7344,9 @@ _sheetEgresosNegocio.forEach(e => {
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
                     window._sheetProductos = _sheetProductos;
+                    _inventarioSheetCompleto = false;
+                    _inventarioDesdeCachePendienteSheet = true;
+                    _inventarioCacheInicialCount = inventarioCache.length;
                     if (typeof indexarProductos === 'function') indexarProductos();
                 }
 
@@ -8066,6 +8072,10 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
 
     _sheetProductos = normalizarVencimientosProductos(nuevaLista);
     window._sheetProductos = _sheetProductos;
+    _inventarioSheetCompleto = true;
+    _inventarioDesdeCachePendienteSheet = false;
+    _inventarioCacheInicialCount = 0;
+    try { localStorage.setItem('natanael_inventario_full_count_v1', String(_sheetProductos.length)); } catch(e) {}
     console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
     indexarProductos();
     if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
@@ -8074,7 +8084,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     revisarVencimientos();
     if (typeof revisarAlertasCompra7Dias === 'function') revisarAlertasCompra7Dias();
     if (typeof calcularWidgetGastoFamiliar === "function") calcularWidgetGastoFamiliar();
-    setTimeout(() => { filtrarInventario(); }, 300);
+    filtrarInventario();
 
 } else {
     console.log('Inventario: sheet vacío, manteniendo ' + _sheetProductos.length + ' productos locales');
@@ -10883,12 +10893,27 @@ console.log("FILTRADAS:", filtradas.length);
             const num = v => Number(v || 0) || 0;
             const esc = v => Utils.escHtml(String(v ?? ''));
             const fotoProducto = n => (typeof obtenerFotoProductoPorNombre === 'function' ? obtenerFotoProductoPorNombre(n) : '') || '';
+            const productosCasaLista = () => {
+                if (Array.isArray(window._sheetProductos) && window._sheetProductos.length) return window._sheetProductos;
+                if (Array.isArray(_sheetProductos) && _sheetProductos.length) return _sheetProductos;
+                if (Array.isArray(window._productos) && window._productos.length) return window._productos;
+                try { return Array.isArray(_productos) ? _productos : []; } catch(e) { return []; }
+            };
+            const productoCasaPorNombre = nombre => {
+                const nombreBuscado = norm(nombre);
+                return productosCasaLista().find(p => norm(p.nombre || p.NOMBRE || p.producto || '') === nombreBuscado) || null;
+            };
             const tipoProductoCasa = item => {
                 const directo = item?.tipoVenta || item?.['TIPO DE VENTA'] || item?.formaVenta || item?.['FORMA DE VENTA'] || '';
                 if (directo) return directo;
-                const nombreBuscado = norm(item?.nombre || item?.producto || '');
-                const prod = (window._productos || _productos || []).find(p => norm(p.nombre || p.NOMBRE || '') === nombreBuscado);
+                const prod = productoCasaPorNombre(item?.nombre || item?.producto || '');
                 return prod?.tipoVenta || prod?.['FORMA DE VENTA'] || prod?.formaVenta || prod?.tipo || 'Unidad';
+            };
+            const categoriaProductoCasa = (item, nombre) => {
+                const directo = item?.categoria || item?.CATEGORIA || item?.depto || item?.DEPTO || item?.departamento || item?.DEPARTAMENTO || '';
+                if (directo) return String(directo).trim();
+                const prod = productoCasaPorNombre(nombre || item?.nombre || item?.producto || '');
+                return String(prod?.categoria || prod?.CATEGORIA || prod?.depto || prod?.DEPTO || prod?.departamento || prod?.DEPARTAMENTO || 'SIN CATEGORIA').trim();
             };
             const unidadCasa = tipo => (typeof esTipoVenta === 'function' && esTipoVenta(tipo)) ? 'gr' : 'u';
             const fmtCantidadCasa = (cantidad, tipo) => `${Utils.fmt(cantidad || 0)} ${unidadCasa(tipo)}`;
@@ -10919,12 +10944,14 @@ console.log("FILTRADAS:", filtradas.length);
                 const monto = sheetNumCasa(it.dineroRecuperado || it.dinRecuperado || it['DINERO RECUPERADO'] || it['Dinero Recuperado'] || (costoUnit * cantidad));
                 const foto = it.imagen || it.img || it.IMAGEN || it.foto || fotoProducto(nombre);
                 const tipoVenta = tipoProductoCasa(it);
+                const categoria = categoriaProductoCasa(it, nombre);
                 if (!pasaFiltroTipoCasa(tipoVenta)) return;
-                casaDetalle.push({ fecha: fechaLabel(rawFecha), nombre, cantidad, monto, foto, tipoVenta });
-                if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta };
+                casaDetalle.push({ fecha: fechaLabel(rawFecha), nombre, cantidad, monto, foto, tipoVenta, categoria });
+                if (!consumoPorProducto[nombre]) consumoPorProducto[nombre] = { cantidad:0, monto:0, foto, tipoVenta, categoria };
                 consumoPorProducto[nombre].cantidad += cantidad;
                 consumoPorProducto[nombre].monto += monto;
                 if (!consumoPorProducto[nombre].tipoVenta && tipoVenta) consumoPorProducto[nombre].tipoVenta = tipoVenta;
+                if (!consumoPorProducto[nombre].categoria && categoria) consumoPorProducto[nombre].categoria = categoria;
             };
 
             const ventasRawCasa = Array.isArray(window._sheetVentasRaw) ? window._sheetVentasRaw : [];
@@ -11032,18 +11059,74 @@ console.log("FILTRADAS:", filtradas.length);
             const topComida = Object.entries(comidaPorCategoria).sort((a,b)=>b[1].monto-a[1].monto).slice(0,8);
             const detalleConsumoOrdenado = Object.entries(consumoPorProducto)
                 .sort((a,b) => (b[1].cantidad - a[1].cantidad) || (b[1].monto - a[1].monto))
-                .slice(0, 12)
-                .map(([nombre, data]) => ({ nombre, cantidad: data.cantidad, monto: data.monto, foto: data.foto, tipoVenta: data.tipoVenta }));
-            const rowConsumo = detalleConsumoOrdenado.map(x => `
+                .map(([nombre, data]) => ({ nombre, cantidad: data.cantidad, monto: data.monto, foto: data.foto, tipoVenta: data.tipoVenta, categoria: data.categoria || 'SIN CATEGORIA' }));
+            const cantidadCategoriaCasa = detalleConsumoOrdenado.reduce((acc, x) => {
+                const cat = x.categoria || 'SIN CATEGORIA';
+                if (!acc[cat]) acc[cat] = { cantidad: 0, monto: 0 };
+                acc[cat].cantidad += x.cantidad || 0;
+                acc[cat].monto += x.monto || 0;
+                return acc;
+            }, {});
+            detalleConsumoOrdenado.sort((a, b) => {
+                const ca = cantidadCategoriaCasa[a.categoria || 'SIN CATEGORIA'] || {};
+                const cb = cantidadCategoriaCasa[b.categoria || 'SIN CATEGORIA'] || {};
+                return (cb.cantidad - ca.cantidad)
+                    || String(a.categoria || '').localeCompare(String(b.categoria || ''))
+                    || (b.cantidad - a.cantidad)
+                    || (b.monto - a.monto)
+                    || a.nombre.localeCompare(b.nombre);
+            });
+            let rowConsumo = detalleConsumoOrdenado.map(x => `
                 <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid rgba(51,65,85,.8);border-radius:16px;padding:10px;">
                     ${thumb(x.foto, x.nombre, '#38bdf8')}
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:9px;color:#34d399;font-weight:900;">TOTAL DEL PER?ODO</div>
                         <div style="font-size:12px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(x.nombre)}</div>
-                        <div style="font-size:10px;color:#94a3b8;font-weight:800;">Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
+                        <div style="font-size:10px;color:#94a3b8;font-weight:800;">${esc(x.categoria || 'SIN CATEGORIA')} · Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
                     </div>
                     <div style="font-size:14px;color:#34d399;font-weight:1000;">$${Utils.fmt(x.monto)}</div>
                 </div>`).join('') || '<div class="text-slate-500 text-xs font-bold">Sin consumos de CASA ERAZO en el período.</div>';
+            const gruposConsumoCategoria = detalleConsumoOrdenado.reduce((acc, x) => {
+                const cat = x.categoria || 'SIN CATEGORIA';
+                if (!acc[cat]) acc[cat] = { cantidad: 0, monto: 0, items: [] };
+                acc[cat].cantidad += x.cantidad || 0;
+                acc[cat].monto += x.monto || 0;
+                acc[cat].items.push(x);
+                return acc;
+            }, {});
+            const categoriasConsumoOrdenadas = Object.entries(gruposConsumoCategoria)
+                .sort((a, b) => (b[1].cantidad - a[1].cantidad) || (b[1].monto - a[1].monto) || a[0].localeCompare(b[0]))
+                .slice(0, 12);
+            rowConsumo = categoriasConsumoOrdenadas.map(([categoria, data]) => {
+                const tipoPrincipal = data.items.find(i => i.tipoVenta)?.tipoVenta || data.items[0]?.tipoVenta || 'Unidad';
+                const detalleItems = data.items
+                    .sort((a, b) => (b.cantidad - a.cantidad) || (b.monto - a.monto) || a.nombre.localeCompare(b.nombre))
+                    .map(x => `
+                        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-top:1px solid rgba(51,65,85,.65);">
+                            ${thumb(x.foto, x.nombre, '#38bdf8')}
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:12px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(x.nombre)}</div>
+                                <div style="font-size:10px;color:#94a3b8;font-weight:800;">Cantidad: ${fmtCantidadCasa(x.cantidad, x.tipoVenta)}</div>
+                            </div>
+                            <div style="font-size:13px;color:#34d399;font-weight:1000;">$${Utils.fmt(x.monto)}</div>
+                        </div>`)
+                    .join('');
+                return `
+                    <div style="background:#0f172a;border:1px solid rgba(51,65,85,.8);border-radius:16px;overflow:hidden;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;background:rgba(56,189,248,.08);">
+                            <div style="min-width:0;">
+                                <div style="font-size:9px;color:#34d399;font-weight:900;">TOTAL POR CATEGORIA</div>
+                                <div style="font-size:13px;color:#f8fafc;font-weight:1000;text-transform:uppercase;">${esc(categoria)}</div>
+                                <div style="font-size:10px;color:#94a3b8;font-weight:800;">${data.items.length} productos en detalle</div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-size:15px;color:#34d399;font-weight:1000;">${fmtCantidadCasa(data.cantidad, tipoPrincipal)}</div>
+                                <div style="font-size:12px;color:#94a3b8;font-weight:900;">$${Utils.fmt(data.monto)}</div>
+                            </div>
+                        </div>
+                        ${detalleItems}
+                    </div>`;
+            }).join('') || '<div class="text-slate-500 text-xs font-bold">Sin consumos de CASA ERAZO en el periodo.</div>';
             const rowComida = comidaDetalle.slice(0,12).map(x => `
                 <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid rgba(127,29,29,.55);border-radius:16px;padding:10px;">
                     ${thumb(x.foto, x.nombre, '#fb7185')}
@@ -18457,16 +18540,51 @@ window.debugStockProducto = function(nombreBuscado) {
 }
 
 
+function _inventarioDebeEsperarListaCompleta() {
+    const totalActual = Array.isArray(_sheetProductos) ? _sheetProductos.length : 0;
+    let totalEsperado = 0;
+    try {
+        totalEsperado = parseInt(localStorage.getItem('natanael_inventario_full_count_v1') || '0', 10) || 0;
+    } catch(e) {}
+    return !!_inventarioDesdeCachePendienteSheet
+        && !_inventarioSheetCompleto
+        && totalActual > 0
+        && ((totalEsperado > 0 && totalActual < totalEsperado) || totalActual <= 60);
+}
+
+
 
 
 
                 function renderInventario() {
-            
-if (inventarioFiltrado.length === 0) {
+
+const queryInv = (document.getElementById('inputFiltroInv')?.value || '').trim();
+const provInv = (document.getElementById('filtroInvProveedor')?.value || '').trim();
+const catInv = (document.getElementById('filtroInvCategoria')?.value || '').trim();
+const deptoInv = (document.getElementById('filtroInvDepto')?.value || '').trim();
+const sinFiltrosInventario = !queryInv && !provInv && !catInv && !deptoInv;
+
+if (sinFiltrosInventario || inventarioFiltrado.length === 0) {
     inventarioFiltrado = [..._sheetProductos];
 }
 
 const container = document.getElementById('gridInventario');
+if (!container) return;
+
+if (_inventarioDebeEsperarListaCompleta()) {
+    container.innerHTML = `
+        <div class="col-span-full glass-card rounded-2xl p-8 text-center border border-emerald-500/30">
+            <div class="inline-flex items-center gap-2 text-emerald-400 font-black uppercase text-xs">
+                <i data-lucide="refresh-cw" class="w-4 h-4 animate-spin"></i>
+                Cargando inventario completo...
+            </div>
+            <p class="text-slate-400 text-xs mt-2 font-bold">Esperando todos los productos del Sheet para mostrarlos juntos.</p>
+        </div>`;
+    const countEl = document.getElementById('countInventario');
+    if (countEl) countEl.textContent = 'Cargando todos los productos...';
+    setTimeout(() => lucide.createIcons(), 0);
+    return;
+}
 
 // 🥗 Calculamos stock UNA sola vez y ordenamos
 const productosOrdenados = [...inventarioFiltrado].sort((a, b) => {
@@ -28396,7 +28514,14 @@ function calcularCajaEsperada() {
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
-                if (inventarioCache.length) { _sheetProductos = normalizarVencimientosProductos(inventarioCache); window._sheetProductos = _sheetProductos; indexarProductos(); }
+                if (inventarioCache.length) {
+                    _sheetProductos = normalizarVencimientosProductos(inventarioCache);
+                    window._sheetProductos = _sheetProductos;
+                    _inventarioSheetCompleto = false;
+                    _inventarioDesdeCachePendienteSheet = true;
+                    _inventarioCacheInicialCount = inventarioCache.length;
+                    indexarProductos();
+                }
                 if (ventasCache.length)     { _sheetVentas = ventasCache; window._sheetVentas = _sheetVentas; historial = ventasCache; }
                 if (pagoVentasCache.length) { _pagoVentasSheet = pagoVentasCache; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
@@ -28420,6 +28545,9 @@ function calcularCajaEsperada() {
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
                     window._sheetProductos = _sheetProductos;
+                    _inventarioSheetCompleto = false;
+                    _inventarioDesdeCachePendienteSheet = true;
+                    _inventarioCacheInicialCount = inventarioCache.length;
                     try { _cacheGuardarArray('natanael_inventario_v1', inventarioCache); } catch(e) {}
                     if (typeof indexarProductos === 'function') indexarProductos();
                 }
