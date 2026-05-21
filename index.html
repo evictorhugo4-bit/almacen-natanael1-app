@@ -18479,9 +18479,7 @@ const productosOrdenados = [...inventarioFiltrado].sort((a, b) => {
     return 0;
 });
 
-// 🥗 Solo renderizamos 60
-const PRODUCTOS_POR_RENDER = 60;
-const productosVisibles = productosOrdenados.slice(0, PRODUCTOS_POR_RENDER);
+const productosVisibles = productosOrdenados;
 
 // Pre-indexar productos por id una sola vez ? O(n) en vez de findIndex por cada tarjeta
 const _idxPorIdMap = new Map();
@@ -18513,7 +18511,7 @@ container.innerHTML = productosVisibles.map((p) => {
                     <div class="relative flex items-center justify-center overflow-hidden inventario-product-imgbox"
                          style="background: linear-gradient(135deg, #0d1420 0%, #1e293b 100%);">
                         ${p.foto
-                            ? `<img src="${driveUrl(p.foto)}" alt="${Utils.escHtml(p.nombre)}" class="inventario-product-img">`
+                            ? `<img src="${driveUrl(p.foto)}" alt="${Utils.escHtml(p.nombre)}" class="inventario-product-img" loading="lazy" decoding="async">`
                             : `<div class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black"
                                  style="background:${color}22; color:${color}; border: 1.5px solid ${color}44">${initials}</div>`
                         }
@@ -18566,7 +18564,7 @@ container.innerHTML = productosVisibles.map((p) => {
            poblarSelectsInv();
            // Actualizar contador
            const countEl = document.getElementById('countInventario');
-           if (countEl) countEl.textContent = productosVisibles.length + (inventarioFiltrado.length > productosVisibles.length ? ` de ${inventarioFiltrado.length}` : '') + ' productos';
+           if (countEl) countEl.textContent = inventarioFiltrado.length + ' productos';
         }
 
 
@@ -28078,6 +28076,12 @@ function calcularCajaEsperada() {
             return Array.isArray(actual) ? actual : [];
         }
 
+        function _cacheElegirInventarioCompleto(actual, cacheActual, legacy) {
+            const opciones = [actual, cacheActual, legacy].filter(arr => Array.isArray(arr) && arr.length);
+            if (!opciones.length) return Array.isArray(actual) ? actual : [];
+            return opciones.reduce((mejor, arr) => arr.length > mejor.length ? arr : mejor, opciones[0]);
+        }
+
         function _cacheCompactProducto(p) {
             return {
                 id: p.id || p.numeroProd || '',
@@ -28249,7 +28253,7 @@ function calcularCajaEsperada() {
                 const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
                 const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
                 const ventasActuales = (_sheetVentas && _sheetVentas.length) ? _sheetVentas : ((historial && historial.length) ? historial : []);
-                const inventarioCompacto = _cacheElegirArray(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
+                const inventarioCompacto = _cacheElegirInventarioCompleto(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
                 const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
                 const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
                 let registroChecksCache = {};
