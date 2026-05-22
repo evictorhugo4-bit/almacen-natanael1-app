@@ -932,7 +932,13 @@ z-index:999999999;
         <div class="max-w-5xl mx-auto space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-3">
                 <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic">Panel de Control</h1>
-                <div class="flex gap-2 flex-wrap">
+                <div class="flex gap-2 flex-wrap items-center">
+                    <!-- INDICADOR DE SINCRONIZACIÓN -->
+                    <div id="syncStatusBadge" title="Cargando datos del sheet..." style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;background:#1e293b;border:1.5px solid #334155;color:#94a3b8;cursor:default;transition:all .4s ease;">
+                        <svg id="syncStatusIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:all .4s;flex-shrink:0;">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span id="syncStatusText">Sincronizando</span>
+                    </div>
                     <button id="btnBackupSheet" onclick="crearBackupSheet()" class="text-black px-5 py-3 rounded-xl font-black text-sm flex items-center gap-2 btn-action uppercase" style="background:linear-gradient(135deg,#f59e0b,#ef4444);box-shadow:0 0 18px rgba(245,158,11,0.7);border:2px solid #fbbf24;">
                         <i data-lucide="copy" class="w-5 h-5"></i> Backup Sheet
                     </button>
@@ -5060,6 +5066,40 @@ let itemEnEdicion = null;
 let itemEditandoId = null;
         
        let _sheetProductos = [];
+
+        // ↗↗ INDICADOR DE SINCRONIZACIÓN ↗↗
+        const _syncStatus = { ventas: false, pagoVentas: false, ingresosNegocio: false, pagoIngresosNegocio: false, productos: false };
+        window._syncStatus = _syncStatus;
+        function actualizarIndicadorSync() {
+            const badge = document.getElementById('syncStatusBadge');
+            const icon  = document.getElementById('syncStatusIcon');
+            const text  = document.getElementById('syncStatusText');
+            if (!badge || !icon || !text) return;
+            const todos = Object.values(_syncStatus).every(Boolean);
+            const faltantes = Object.entries(_syncStatus).filter(([,v])=>!v).map(([k])=>({
+                ventas:'Ventas', pagoVentas:'Pago Ventas',
+                ingresosNegocio:'Ing. Negocio', pagoIngresosNegocio:'Pago Ing. Neg.',
+                productos:'Productos'
+            }[k])).join(', ');
+            if (todos) {
+                badge.style.background = '#052e16';
+                badge.style.borderColor = '#16a34a';
+                badge.style.color = '#4ade80';
+                badge.title = '✅ Todo sincronizado con el Sheet';
+                icon.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';
+                icon.style.stroke = '#4ade80';
+                text.textContent = 'Actualizado';
+            } else {
+                badge.style.background = '#1e293b';
+                badge.style.borderColor = '#334155';
+                badge.style.color = '#94a3b8';
+                badge.title = 'Pendiente: ' + faltantes;
+                icon.innerHTML = '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>';
+                icon.style.stroke = '#94a3b8';
+                text.textContent = 'Sincronizando';
+            }
+        }
+        window.actualizarIndicadorSync = actualizarIndicadorSync;
 let _inventarioSheetCompleto = false;
 let _inventarioDesdeCachePendienteSheet = false;
 let _inventarioCacheInicialCount = 0;
@@ -7803,6 +7843,11 @@ _sheetEgresosNegocio.forEach(e => {
         }
 
         async function sincronizarSheets(silencioso = false) {
+            // Resetear indicador solo en sync completo (no silencioso)
+            if (!silencioso) {
+                Object.keys(_syncStatus).forEach(k => _syncStatus[k] = false);
+                actualizarIndicadorSync();
+            }
             const indicator = document.getElementById('syncIndicator');
             const _log = (msg, color='#10b981') => {
                 console.log(msg);
@@ -7845,6 +7890,8 @@ _sheetEgresosNegocio.forEach(e => {
                     return;
                 }
                 _log('✅ Etapa 1 OK ? inventario:' + (dataRapido.inventario||[]).length + ' ventas:' + (dataRapido.ventas||[]).length, '#10b981');
+                if ((dataRapido.ventas||[]).length > 0)     { _syncStatus.ventas = true;     actualizarIndicadorSync(); }
+                if ((dataRapido.pagoVentas||[]).length > 0) { _syncStatus.pagoVentas = true;  actualizarIndicadorSync(); }
 
                 // Construir data inicial con lo que llegó rápido + arrays vacíos para el resto
                 data = {
@@ -8077,6 +8124,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     _inventarioCacheInicialCount = 0;
     try { localStorage.setItem('natanael_inventario_full_count_v1', String(_sheetProductos.length)); } catch(e) {}
     console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
+    if (_sheetProductos.length > 0) { _syncStatus.productos = true; actualizarIndicadorSync(); }
     indexarProductos();
     if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
     if (typeof _guardarCache === 'function') _guardarCache();
@@ -8736,6 +8784,7 @@ if (indicator) indicator.classList.remove('hidden');
                     window._pagoVentasSheet = _pagoVentasSheet;
                     if (typeof DB !== 'undefined' && DB.savePagoVentas) DB.savePagoVentas();
                     console.log('[Sec] pagoVentas cargados:', _pagoVentasSheet.length);
+                    if (_pagoVentasSheet.length > 0) { _syncStatus.pagoVentas = true; actualizarIndicadorSync(); }
                     renderClientes();
                     if (clienteDetalleId) {
                         const _md = document.getElementById('modalDetalleCliente');
@@ -8745,7 +8794,7 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), producto:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), PRODUCTO:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), imagen:String(r['IMAGEN DE LA COMPRA']||r['IMAGEN']||'').trim(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
                 if (Array.isArray(data.pagoIngresos))         { _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['ID_INGRESOS']||r['Id_Ingresos']||r['NUMERO DE INGRESOS']||r['NUMERO_DE_INGRESOS']||r['numeroIngreso']||'').trim(),ID_INGRESOS:String(r['ID_INGRESOS']||r['Id_Ingresos']||r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()})); window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(data.pagoEgresos))          { _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['ID_GASTOS']||r['Id_Gastos']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),ID_GASTOS:String(r['ID_GASTOS']||r['Id_Gastos']||r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim(),proveedor:String(r['SUPERCATEGORIA']||r['Supercategoria']||r['PROVEEDOR']||r['Proveedor']||'').trim(),categoria:String(r['CATEGORIA']||r['Categoria']||'').trim()})); window._sheetPagoEgresos = _sheetPagoEgresos; }
-                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; }
+                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; if (_sheetPagoIngNeg.length > 0) { _syncStatus.pagoIngresosNegocio = true; actualizarIndicadorSync(); } }
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({IDPAGOEGRESOSNEGOCIO:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),IDEGRESOSNEGOCIO:String(r['IDEGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim(),fromSheet:true})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; window._sheetPagoEgrNeg = _sheetPagoEgrNeg; }
                 // Ingresos Negocio / Egresos Negocio
                 if (typeof window.syncIngEgrNeg === 'function') {
@@ -8753,6 +8802,7 @@ if (indicator) indicator.classList.remove('hidden');
                     window.syncIngEgrNeg(data.egresosNegocio,  _sheetEgresosNegocio,  saveEgresosNeg,  'egresosNegocio',  _supercatsEgrNegSheet, _catsEgrNegSheet);
                     window._sheetIngresosNegocio = _sheetIngresosNegocio;
                     window._sheetEgresosNegocio  = _sheetEgresosNegocio;
+                    if ((data.ingresosNegocio||[]).length > 0) { _syncStatus.ingresosNegocio = true; actualizarIndicadorSync(); }
                 }
                 // Proveedores
                 syncProveedoresDesdeSheet(data.proveedoresNegocio, 'negocio');
