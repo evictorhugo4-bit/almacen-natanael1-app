@@ -9708,46 +9708,53 @@ console.log("FILTRADAS:", filtradas.length);
                 if (_dbg) console.log('[SEDAL KARDEX] stockBase:', stockBase, '| fechaRefRaw:', fechaRefRaw, '| refNum:', refNum, '| fdNum:', fdNum, '| fhNum:', fhNum, '| cItems:', cItems);
 
                 // Ajuste de stockBase si hay filtro DESDE posterior a refNum
+                // Usar fechaNum para comparar (compatible con formato DD/MM/YYYY y ISO)
                 let stockBaseAjustado = stockBase;
-                if (fdTs && refNum) {
-                    const refTs = new Date(fechaRefRaw).getTime();
-                    if (fdTs > refTs) {
-                        cItems.forEach(it => { if (it.ts > refTs && it.ts < fdTs) stockBaseAjustado += it.cantidad; });
-                        vItems.forEach(it => { if (it.ts > refTs && it.ts < fdTs) stockBaseAjustado -= it.cantidad; });
-                    }
+                if (fdNum && refNum && fdNum > refNum) {
+                    cItems.forEach(it => { if (it.fechaNum > refNum && it.fechaNum < fdNum) stockBaseAjustado += it.cantidad; });
+                    vItems.forEach(it => { if (it.fechaNum > refNum && it.fechaNum < fdNum) stockBaseAjustado -= it.cantidad; });
                 }
 
                 // Si hay filtro DESDE/HASTA explícito, ignorar refEfectivo completamente
-                const hayFiltroFechas = !!(fdTs || fhTs);
-                const refTs = fechaRefRaw ? new Date(fechaRefRaw).getTime() : null;
-                const refEfectivo = hayFiltroFechas ? null : refNum; // solo para compatibilidad sin filtro
-                const baseEfectiva = (fdTs && refTs && fdTs > refTs) ? stockBaseAjustado : stockBase;
+                const hayFiltroFechas = !!(fdNum || fhNum);
+                const refEfectivo = hayFiltroFechas ? null : refNum;
+                const baseEfectiva = (fdNum && refNum && fdNum > refNum) ? stockBaseAjustado : stockBase;
 
-                // Kardex en rango ? usar timestamps reales para evitar problema de timezone
+                // Kardex en rango — usar fechaNum (compatible con DD/MM/YYYY e ISO)
                 let saldo = baseEfectiva;
                 let totalCompras = 0, totalVentas = 0;
                 vItems.forEach(it => {
                     if (!hayFiltroFechas && refEfectivo && it.fechaNum <= refEfectivo) return;
-                    if (fdTs && it.ts < fdTs) return;
-                    if (fhTs && it.ts > fhTs) return;
+                    if (fdNum && it.fechaNum < fdNum) return;
+                    if (fhNum && it.fechaNum > fhNum) return;
                     saldo -= it.cantidad; totalVentas += it.cantidad;
                 });
                 cItems.forEach(it => {
                     if (!hayFiltroFechas && refEfectivo && it.fechaNum <= refEfectivo) return;
-                    if (fdTs && it.ts < fdTs) return;
-                    if (fhTs && it.ts > fhTs) return;
+                    if (fdNum && it.fechaNum < fdNum) return;
+                    if (fhNum && it.fechaNum > fhNum) return;
                     saldo += it.cantidad; totalCompras += it.cantidad;
                 });
 
-                // Stock esperado (sin filtro de UI, solo desde FECHA INICIAL)
+                // Stock esperado (respeta filtro de fechas de UI + FECHA INICIAL)
                 const _siEsperado = (prod.stockInicio !== null && prod.stockInicio !== undefined)
                     ? (parseFloat(prod.stockInicio) || 0)
                     : (parseFloat(prod.stock) || 0);
                 const _siRefRaw = prod.fechaStockInicio || prod.fechaInicio || '';
-                const _siRefTs = _siRefRaw ? new Date(_siRefRaw).getTime() : null;
+                const _siRefNum = parseFechaNum(_siRefRaw);
                 let _totCE = 0, _totVE = 0;
-                vItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totVE += it.cantidad; });
-                cItems.forEach(it => { if (!_siRefTs || it.ts > _siRefTs) _totCE += it.cantidad; });
+                vItems.forEach(it => {
+                    if (_siRefNum && it.fechaNum <= _siRefNum) return;
+                    if (fdNum && it.fechaNum < fdNum) return;
+                    if (fhNum && it.fechaNum > fhNum) return;
+                    _totVE += it.cantidad;
+                });
+                cItems.forEach(it => {
+                    if (_siRefNum && it.fechaNum <= _siRefNum) return;
+                    if (fdNum && it.fechaNum < fdNum) return;
+                    if (fhNum && it.fechaNum > fhNum) return;
+                    _totCE += it.cantidad;
+                });
                 const stockEsperado = Math.round((_siEsperado + _totCE - _totVE) * 100) / 100;
 
                 return {
@@ -9985,10 +9992,10 @@ console.log("FILTRADAS:", filtradas.length);
                         <td class="py-2 pr-3 text-right text-orange-400 font-black">${Utils.fmt(r.vendido)}</td>
                         <td class="py-2 pr-3 text-right font-black" style="color:${diffCVColor}" title="Comprado en el rango - vendido en el rango">${r.diffCompraVenta>=0?'+':''}${Utils.fmt(r.diffCompraVenta)}</td>
                         <td class="py-2 pr-3 text-right text-slate-300 font-black">${Utils.fmt(r.stockInicial)}</td>
-                        <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras>0?'cursor:pointer;':''}" onclick="${r.compras>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdTs||'null'},${fhTs||'null'})`:''}">
+                        <td class="py-2 pr-3 text-right text-blue-400 font-black" style="${r.compras>0?'cursor:pointer;':''}" onclick="${r.compras>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','COMPRA',${fdNum||'null'},${fhNum||'null'})`:''}">
                             ${r.compras>0?`<span style="text-decoration:underline dotted;">${Utils.fmt(r.compras)}</span>`:Utils.fmt(r.compras)}
                         </td>
-                        <td class="py-2 pr-3 text-right text-orange-400 font-black" style="${r.ventas>0?'cursor:pointer;':''}" onclick="${r.ventas>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','VENTA',${fdTs||'null'},${fhTs||'null'})`:''}">
+                        <td class="py-2 pr-3 text-right text-orange-400 font-black" style="${r.ventas>0?'cursor:pointer;':''}" onclick="${r.ventas>0?`verMovimientosProdProv('${p.nombre.replace(/'/g,"\\'")}','VENTA',${fdNum||'null'},${fhNum||'null'})`:''}">
                             ${r.ventas>0?`<span style="text-decoration:underline dotted;">${Utils.fmt(r.ventas)}</span>`:Utils.fmt(r.ventas)}
                         </td>
                         <td class="py-2 pr-3 text-right font-black" style="color:${saColor}">${Utils.fmt(r.stockEsperado)}</td>
