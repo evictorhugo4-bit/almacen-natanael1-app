@@ -3033,7 +3033,9 @@ GUARDAR PRODUCTO
                     <div style="display:flex;gap:8px;">
                         <input type="text" id="buscadorCatGlobal" placeholder="Escribí una categoría..." oninput="renderBuscadorCatGlobal()"
                             style="flex:1;box-sizing:border-box;background:#0f172a;border:2px solid #6d28d9;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:9px 12px;outline:none;">
-                        <input type="text" id="buscadorBarcodeProd" placeholder="🔢 Código de barras..." oninput="buscarPorBarcodeProd(this.value)"
+                        <input type="text" id="buscadorBarcodeProd" placeholder="🔢 Escanear código..." autocomplete="off"
+                            onkeydown="if(event.key==='Enter'){buscarPorBarcodeProd(this.value);event.preventDefault();}"
+                            oninput="_barcodeProdDebounce(this.value)"
                             style="flex:1;box-sizing:border-box;background:#0f172a;border:2px solid #0ea5e9;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:9px 12px;outline:none;"
                             inputmode="numeric">
                     </div>
@@ -9574,20 +9576,41 @@ console.log("FILTRADAS:", filtradas.length);
             contenedor.innerHTML = html;
         };
 
+        // Debounce timer para pistola lectora (dispara ~80ms después del último carácter)
+        let _barcodeProdTimer = null;
+        window._barcodeProdDebounce = function(val) {
+            clearTimeout(_barcodeProdTimer);
+            const barcode = (val || '').trim();
+            if (!barcode) return;
+            // Las pistolas lectoras típicamente envían todos los caracteres en <50ms + Enter
+            // Con debounce de 80ms capturamos el código completo antes de buscarlo
+            _barcodeProdTimer = setTimeout(() => buscarPorBarcodeProd(barcode), 80);
+        };
+
         window.buscarPorBarcodeProd = function(val) {
+            clearTimeout(_barcodeProdTimer);
             const barcode = (val || '').trim();
             if (!barcode) return;
             const idx = (_sheetProductos || []).findIndex(p => {
-                const cod = String(p.codigoBarra || p.codigo_barra || p.codigo || p.barcode || p.CODIGOBARRA || p['CODIGO DE BARRA'] || p['CÓDIGO DE BARRA'] || p['Codigo de Barra'] || '').trim();
+                const cod = String(
+                    p.codigoBarra || p.codigo_barra || p.codigoBarras || p.codigo ||
+                    p.barcode || p.CODIGOBARRA || p.CODIGODEBARRAS ||
+                    p['CODIGO DE BARRA'] || p['CÓDIGO DE BARRA'] ||
+                    p['CODIGO DE BARRAS'] || p['CÓDIGO DE BARRAS'] ||
+                    p['Codigo de Barra'] || p['Codigo de Barras'] || ''
+                ).trim();
                 return cod && cod === barcode;
             });
+            const el = document.getElementById('buscadorBarcodeProd');
             if (idx >= 0) {
+                if (el) el.value = '';
                 abrirVerificarStock(idx);
-                // Limpiar el input de barcode luego de abrir
-                setTimeout(() => {
-                    const el = document.getElementById('buscadorBarcodeProd');
-                    if (el) el.value = '';
-                }, 300);
+            } else {
+                // Parpadeo rojo para indicar que no se encontró
+                if (el) {
+                    el.style.borderColor = '#ef4444';
+                    setTimeout(() => { el.style.borderColor = '#0ea5e9'; }, 800);
+                }
             }
         };
 
