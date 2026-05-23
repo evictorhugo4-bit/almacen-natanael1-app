@@ -3108,10 +3108,10 @@ GUARDAR PRODUCTO
                                 <th class="py-2 pr-3 text-center text-slate-400 font-black" style="padding-left:6px;">INICIO</th>
                                 <th class="py-2 pr-3 text-left text-slate-400 font-black" style="max-width:180px;width:180px;padding-left:8px;">PRODUCTO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">COMPRAR</th>
+                                <th class="py-2 pr-3 text-right text-slate-400 font-black">STOCK</th>
                                 <th class="py-2 pr-3 text-center text-slate-400 font-black" style="width:120px;min-width:120px;">ACCIÓN</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VERIFICADO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">DIFERENCIA</th>
-                                <th class="py-2 pr-3 text-right text-slate-400 font-black">STOCK</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">MINIMO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">VENDIDO</th>
                                 <th class="py-2 pr-3 text-right text-slate-400 font-black">DIF. C/V</th>
@@ -9980,6 +9980,7 @@ console.log("FILTRADAS:", filtradas.length);
                             </div>
                         </td>
                         <td class="py-2 pr-3 text-right font-black" style="color:${diffVentaColor}">${diffVenta>=0?'+':''}${Utils.fmt(diffVenta)}</td>
+                        <td class="py-2 pr-3 text-right text-blue-400 font-black">${Utils.fmt(r.stockActual)}</td>
                         <td class="py-2 pr-3 text-center" style="width:120px;min-width:120px;">
                             <div style="display:flex;align-items:center;justify-content:center;gap:6px;width:120px;">
                                 ${_btnVentaDiff}
@@ -9988,7 +9989,6 @@ console.log("FILTRADAS:", filtradas.length);
                         </td>
                         ${verifHtml}
                         <td class="py-2 pr-3 text-right font-black" style="color:${diffFisicaColor}">${diffFisica===null?'-':`${diffFisica>=0?'+':''}${Utils.fmt(diffFisica)}`}</td>
-                        <td class="py-2 pr-3 text-right text-blue-400 font-black">${Utils.fmt(r.stockActual)}</td>
                         <td class="py-2 pr-3 text-right text-yellow-400 font-black">${Utils.fmt(stockMinProd)}</td>
                         <td class="py-2 pr-3 text-right text-orange-400 font-black">${Utils.fmt(r.vendido)}</td>
                         <td class="py-2 pr-3 text-right font-black" style="color:${diffCVColor}" title="Comprado en el rango - vendido en el rango">${r.diffCompraVenta>=0?'+':''}${Utils.fmt(r.diffCompraVenta)}</td>
@@ -10026,10 +10026,10 @@ console.log("FILTRADAS:", filtradas.length);
                         </div>
                     </td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:${catDiffVentaColor};">${catDiffVenta>=0?'+':''}${Utils.fmt(catDiffVenta)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#60a5fa;">${Utils.fmt(catStockCategoria)}</td>
                     <td style="padding:10px 12px;text-align:center;"><span style="font-size:9px;color:#64748b;font-weight:700;">-</span></td>
                     <td style="padding:10px 12px;text-align:right;"><span style="font-size:9px;color:#64748b;">-</span></td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:${catDiffFisicaColor};">${catDiffFisica===null?'-':`${catDiffFisica>=0?'+':''}${Utils.fmt(catDiffFisica)}`}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#60a5fa;">${Utils.fmt(catStockCategoria)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#facc15;">${Utils.fmt(catMin)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#fb923c;">${Utils.fmt(catVendido)}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:${catDiffCVColor};" title="Comprado en el rango - vendido en el rango">${catCV>=0?'+':''}${Utils.fmt(catCV)}</td>
