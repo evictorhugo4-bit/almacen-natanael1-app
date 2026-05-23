@@ -797,6 +797,11 @@ z-index:999999999;
         <input id="vsFecha" type="datetime-local"
           style="padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:white;font-size:12px;width:100%;box-sizing:border-box;">
       </div>
+      <div>
+        <label style="color:#f59e0b;font-size:10px;font-weight:800;text-transform:uppercase;display:block;margin-bottom:5px;">📅 Fecha de Vencimiento <span style="color:#64748b;font-weight:600;font-size:9px;">(opcional)</span></label>
+        <input id="vsVencimiento" type="date"
+          style="padding:10px;background:#0f172a;border:1px solid #78350f;border-radius:8px;color:#fbbf24;font-size:12px;width:100%;box-sizing:border-box;">
+      </div>
       <div id="vsDiferencia" style="display:none;padding:12px;border-radius:8px;text-align:center;font-weight:900;font-size:14px;"></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px;">
@@ -3022,11 +3027,16 @@ GUARDAR PRODUCTO
             <!-- BUSCADOR GLOBAL DE CATEGORÍA -->
             <div class="glass-card rounded-2xl border border-violet-500/20" style="overflow:hidden;">
                 <div style="background:#3b1f6e;padding:10px 14px;display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:13px;font-weight:900;color:#fff;letter-spacing:.06em;text-transform:uppercase;">🔍 Buscar por Categoría</span>
+                    <span style="font-size:13px;font-weight:900;color:#fff;letter-spacing:.06em;text-transform:uppercase;">🔍 Buscar por Categoría o Código de Barras</span>
                 </div>
                 <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
-                    <input type="text" id="buscadorCatGlobal" placeholder="Escribí una categoría..." oninput="renderBuscadorCatGlobal()"
-                        style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #6d28d9;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:9px 12px;outline:none;">
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="buscadorCatGlobal" placeholder="Escribí una categoría..." oninput="renderBuscadorCatGlobal()"
+                            style="flex:1;box-sizing:border-box;background:#0f172a;border:2px solid #6d28d9;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:9px 12px;outline:none;">
+                        <input type="text" id="buscadorBarcodeProd" placeholder="🔢 Código de barras..." oninput="buscarPorBarcodeProd(this.value)"
+                            style="flex:1;box-sizing:border-box;background:#0f172a;border:2px solid #0ea5e9;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:9px 12px;outline:none;"
+                            inputmode="numeric">
+                    </div>
                     <div id="resultadosBuscadorCatGlobal" style="display:none;"></div>
                 </div>
             </div>
@@ -9433,6 +9443,7 @@ console.log("FILTRADAS:", filtradas.length);
             document.getElementById('vsStockCalculado').textContent = Utils.fmt(stockCalculado);
             document.getElementById('vsStockCalculado').dataset.val = stockCalculado;
             document.getElementById('vsStockReal').value = '';
+            document.getElementById('vsVencimiento').value = '';
             document.getElementById('vsDiferencia').style.display = 'none';
 
             // Fecha actual por defecto
@@ -9473,6 +9484,7 @@ console.log("FILTRADAS:", filtradas.length);
         window.guardarVerificacion = function() {
             const real = parseFloat(document.getElementById('vsStockReal').value);
             const fecha = document.getElementById('vsFecha').value;
+            const vencimiento = (document.getElementById('vsVencimiento').value || '').trim();
             if (isNaN(real) || real < 0) { mostrarToast('Ingresá un stock válido', 'error'); return; }
             if (!fecha) { mostrarToast('Ingresá la fecha', 'error'); return; }
             if (_vsIndex < 0 || !_sheetProductos[_vsIndex]) return;
@@ -9488,14 +9500,16 @@ console.log("FILTRADAS:", filtradas.length);
             prod.stockInicio       = real;
             prod.stockComienzo     = real;
             prod.fechaStockInicio  = fecha;
+            if (vencimiento) prod.fechaVencimiento = vencimiento;
 
             // Enviar al sheet ? tipo dedicado para escribir STOCK FISICO y FECHA STOCK FISICO
             const payload = {
                 tipo: 'verificar_stock',
                 id:     prod.id || prod.IDPRODUCTOS || prod.numeroProd,
                 nombre: prod.nombre,
-                stockFisico:      real,   // ? columna STOCK FISICO
-                fechaStockFisico: fecha   // ? columna FECHA STOCK FISICO
+                stockFisico:      real,   // → columna STOCK FISICO
+                fechaStockFisico: fecha,  // → columna FECHA STOCK FISICO
+                ...(vencimiento ? { fechaVencimiento: vencimiento } : {})
             };
             fetchSheets({ method: 'POST', body: JSON.stringify(payload) });
 
@@ -9514,20 +9528,12 @@ console.log("FILTRADAS:", filtradas.length);
 
             // Agrupar todos los productos por categoría filtrando por búsqueda
             const catMap = new Map();
-            (_sheetProductos || []).forEach(p => {
+            (_sheetProductos || []).forEach((p, idx) => {
                 const cat = (p.categoria || p.depto || 'SIN CATEGORÍA').trim().toUpperCase();
                 if (!cat.includes(q)) return;
                 if (!catMap.has(cat)) catMap.set(cat, []);
-                catMap.get(cat).push(p);
+                catMap.get(cat).push({ p, idx });
             });
-            const _ordenDiffStock = (a, b) => {
-                const pa = a < 0 ? 0 : a > 0 ? 1 : 2;
-                const pb = b < 0 ? 0 : b > 0 ? 1 : 2;
-                if (pa !== pb) return pa - pb;
-                if (pa === 0) return a - b;
-                if (pa === 1) return b - a;
-                return 0;
-            };
 
             if (catMap.size === 0) {
                 contenedor.style.display = 'block';
@@ -9535,21 +9541,30 @@ console.log("FILTRADAS:", filtradas.length);
                 return;
             }
 
+            // Si hay exactamente 1 producto en total, abrir verificar stock directo
+            const allProds = [...catMap.values()].flat();
+            if (allProds.length === 1) {
+                abrirVerificarStock(allProds[0].idx);
+                contenedor.style.display = 'none';
+                return;
+            }
+
             let html = '';
             [...catMap.keys()].sort().forEach(cat => {
-                const prods = catMap.get(cat);
+                const entries = catMap.get(cat);
                 html += '<div style="margin-bottom:8px;">';
                 html += '<div style="font-size:10px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;background:#1e1040;border-radius:6px;margin-bottom:4px;">'
-                      + cat + ' <span style="color:#475569;font-size:9px;">(' + prods.length + ' prod.)</span></div>';
-                prods.forEach(p => {
+                      + cat + ' <span style="color:#475569;font-size:9px;">(' + entries.length + ' prod.)</span></div>';
+                entries.forEach(({ p, idx }) => {
                     const stock = (p.stockFisico !== null && p.stockFisico !== undefined && p.stockFisico !== '')
                         ? parseFloat(p.stockFisico)
                         : (parseFloat(p.stock) || 0);
                     const prov  = p.proveedor || '–';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;background:#0f172a;margin-bottom:2px;">';
-                    html += '<div><span style="font-size:10px;color:#e2e8f0;font-weight:700;">' + Utils.escHtml(p.nombre || '–') + '</span>'
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;background:#0f172a;margin-bottom:2px;gap:6px;">';
+                    html += '<div style="flex:1;min-width:0;"><span style="font-size:10px;color:#e2e8f0;font-weight:700;">' + Utils.escHtml(p.nombre || '–') + '</span>'
                           + '<span style="font-size:9px;color:#475569;margin-left:6px;">' + Utils.escHtml(prov) + '</span></div>';
-                    html += '<span style="font-size:10px;font-weight:900;font-family:monospace;color:' + (stock > 0 ? '#34d399' : '#f87171') + ';">' + stock + '</span>';
+                    html += '<span style="font-size:10px;font-weight:900;font-family:monospace;color:' + (stock > 0 ? '#34d399' : '#f87171') + ';white-space:nowrap;">' + stock + '</span>';
+                    html += '<button onclick="abrirVerificarStock(' + idx + ')" style="flex-shrink:0;padding:3px 8px;background:#10b981;border:none;color:#fff;border-radius:6px;font-size:9px;font-weight:900;cursor:pointer;white-space:nowrap;">✓ STOCK</button>';
                     html += '</div>';
                 });
                 html += '</div>';
@@ -9558,6 +9573,24 @@ console.log("FILTRADAS:", filtradas.length);
             contenedor.style.display = 'block';
             contenedor.innerHTML = html;
         };
+
+        window.buscarPorBarcodeProd = function(val) {
+            const barcode = (val || '').trim();
+            if (!barcode) return;
+            const idx = (_sheetProductos || []).findIndex(p => {
+                const cod = String(p.codigoBarra || p.codigo_barra || p.codigo || p.barcode || p.CODIGOBARRA || p['CODIGO DE BARRA'] || p['CÓDIGO DE BARRA'] || p['Codigo de Barra'] || '').trim();
+                return cod && cod === barcode;
+            });
+            if (idx >= 0) {
+                abrirVerificarStock(idx);
+                // Limpiar el input de barcode luego de abrir
+                setTimeout(() => {
+                    const el = document.getElementById('buscadorBarcodeProd');
+                    if (el) el.value = '';
+                }, 300);
+            }
+        };
+
 
         window.renderStockProveedor = function() {
             const proveedor = (document.getElementById('filtroProveedorStat')?.value || '').trim();
