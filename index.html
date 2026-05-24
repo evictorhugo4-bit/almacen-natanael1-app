@@ -31076,6 +31076,8 @@ function verDetalleProveedor(tipo, id){
 
             document.getElementById('scanResultado').style.display    = 'none';
             document.getElementById('scanNoEncontrado').style.display = 'none';
+            const _nb = document.getElementById('scanBuscadorNombre'); if (_nb) _nb.style.display = 'none';
+            const _ni = document.getElementById('scanResultadosNombre'); if (_ni) _ni.innerHTML = '';
             document.getElementById('scanInputManual').value          = '';
             document.getElementById('scanStatus').style.display       = 'none';
             document.getElementById('scanCamArea').style.display      = 'block';
@@ -31250,6 +31252,33 @@ function verDetalleProveedor(tipo, id){
             setTimeout(() => document.getElementById('scanInputManual').focus(), 100);
         }
 
+        window._scanBuscarNombre = function(q) {
+            const res = document.getElementById('scanResultadosNombre');
+            if (!res) return;
+            const txt = (q || '').trim().toUpperCase();
+            if (!txt) { res.innerHTML = ''; return; }
+            const matches = (_sheetProductos || [])
+                .map((p, i) => ({ p, i }))
+                .filter(({ p }) => (p.nombre || '').toUpperCase().includes(txt))
+                .slice(0, 12);
+            if (!matches.length) {
+                res.innerHTML = '<div style="font-size:10px;color:#64748b;text-align:center;padding:8px;font-weight:700;">Sin resultados</div>';
+                return;
+            }
+            res.innerHTML = matches.map(({ p, i }) => {
+                const stock = p.stockFisico !== undefined && p.stockFisico !== '' ? parseFloat(p.stockFisico) : (parseFloat(p.stock) || 0);
+                return '<div onclick="_scanSeleccionarProdVS(' + i + ')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#1e293b;border-radius:8px;cursor:pointer;border:1px solid #334155;gap:8px;">'
+                    + '<span style="font-size:11px;color:#e2e8f0;font-weight:700;flex:1;">' + Utils.escHtml(p.nombre || '–') + '</span>'
+                    + '<span style="font-size:11px;font-weight:900;font-family:monospace;color:' + (stock > 0 ? '#34d399' : '#f87171') + ';white-space:nowrap;">' + stock + '</span>'
+                    + '</div>';
+            }).join('');
+        };
+
+        window._scanSeleccionarProdVS = function(idx) {
+            cerrarScanner();
+            abrirVerificarStock(idx);
+        };
+
         function cerrarScanner() {
             const modoAntes = _scanModo;
             _pararScan();
@@ -31323,6 +31352,13 @@ function verDetalleProveedor(tipo, id){
                         const f = document.getElementById('editCodigoInput'); if (f) f.value = codigo;
                         buscarProductoPorCodigoEdit(codigo);
                     }, 500);
+                }
+                if (_scanModo === 'verificar_stock') {
+                    // Mostrar buscador por nombre
+                    const nb = document.getElementById('scanBuscadorNombre');
+                    const ni = document.getElementById('scanInputNombre');
+                    if (nb) nb.style.display = 'block';
+                    setTimeout(() => { if (ni) { ni.value = ''; ni.focus(); } }, 100);
                 }
                 if (_scanModo === 'producto') {
                     setTimeout(() => {
@@ -32436,6 +32472,15 @@ document.addEventListener('DOMContentLoaded', function () {
     <div id="scanNoEncontrado" style="display:none;background:rgba(127,29,29,0.3);border:1px solid rgba(248,113,113,0.3);border-radius:10px;padding:10px;margin-top:8px;">
       <div style="font-size:11px;color:#f87171;font-weight:900;text-transform:uppercase;">✅ Código no encontrado</div>
       <div id="scanNoEncontradoCodigo" style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:2px;"></div>
+    </div>
+
+    <!-- Buscador por nombre (solo modo verificar_stock) -->
+    <div id="scanBuscadorNombre" style="display:none;margin-top:10px;">
+      <div style="font-size:10px;color:#f59e0b;font-weight:900;text-transform:uppercase;margin-bottom:6px;">🔎 Buscar por nombre</div>
+      <input id="scanInputNombre" type="text" placeholder="Escribí el nombre del producto..."
+        style="width:100%;box-sizing:border-box;background:#1e293b;border:1.5px solid #f59e0b;color:#fff;border-radius:8px;padding:9px 10px;font-size:12px;font-weight:700;outline:none;"
+        oninput="_scanBuscarNombre(this.value)" autocomplete="off" />
+      <div id="scanResultadosNombre" style="margin-top:6px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
     </div>
 
   </div>
