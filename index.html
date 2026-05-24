@@ -24245,20 +24245,21 @@ producto.vencimiento = nuevoVencimiento;
         console.warn("?? Producto no encontrado en _sheetProductos, pero se actualizó en el carrito");
     }
 
+    // Capturar flag ANTES de cerrar (cerrarModalPrecios lo limpia)
+    const _deboReabrirScanner = !!window._compraReopenScanner;
+
     // CERRAR MODAL
     cerrarModalPrecios();
 
     // REFRESCAR CARRITO
-    console.log("📦 Refrescando carrito...");
     renderCarritoCompra();
 
     // RECALCULAR TOTAL
     calcularCompra();
 
     // Reabrir scanner si la compra viene del scanner
-    if (window._compraReopenScanner) {
-        window._compraReopenScanner = false;
-        setTimeout(() => abrirScanner('compra'), 200);
+    if (_deboReabrirScanner) {
+        setTimeout(() => abrirScanner('compra'), 250);
     }
 
     console.log("✅ GUARDADO COMPLETADO");
@@ -32091,7 +32092,7 @@ style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:6px
             CANCELAR
         </button>
 
-        <button onclick="guardarPreciosEditados(); cerrarModalPrecios();"
+        <button onclick="guardarPreciosEditados();"
                 style="flex:1;background:#22c55e;color:black;font-weight:bold;padding:12px;border:none;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.2s;"
                 onmouseover="this.style.background='#16a34a'"
                 onmouseout="this.style.background='#22c55e'">
