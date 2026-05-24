@@ -9521,15 +9521,42 @@ console.log("FILTRADAS:", filtradas.length);
             prod.fechaStockInicio  = fecha;
             if (vencimiento) prod.fechaVencimiento = vencimiento;
 
-            // Enviar al sheet ? tipo dedicado para escribir STOCK FISICO y FECHA STOCK FISICO
+            // Si hay código escaneado, agregarlo al producto en memoria y guardarlo en Sheets
+            if (codigoEscaneado) {
+                const codigosActuales = (prod.codigos || prod.codigo || '').split(',').map(c => c.trim()).filter(Boolean);
+                if (!codigosActuales.includes(codigoEscaneado)) codigosActuales.push(codigoEscaneado);
+                const codigosStr = codigosActuales.join(', ');
+                prod.codigos = codigosStr;
+                prod.codigo  = codigosStr;
+                prod.codigoBarra = codigoEscaneado;
+                const _gan  = (prod.precio || 0) - (prod.costo || 0);
+                const _marg = (String(prod.proveedor||'').toUpperCase().trim()==='GUAPITO') ? 25 : 35;
+                fetchSheets({ method: 'POST', body: JSON.stringify({
+                    tipo: 'producto',
+                    id: prod.id || prod.IDPRODUCTOS || prod.numeroProd,
+                    numeroProd: prod.id || prod.IDPRODUCTOS || prod.numeroProd,
+                    nombre: prod.nombre,
+                    codigos: codigosStr,
+                    codigo:  codigosStr,
+                    margenBruto: _marg,
+                    proveedor:   prod.proveedor  || '',
+                    categoria:   prod.categoria  || '',
+                    tipoVenta:   prod.tipoVenta  || '',
+                    departamento: prod.depto     || '',
+                    costo:       prod.costo      || 0,
+                    precioVenta: prod.precio     || 0,
+                    ganancia:    _gan,
+                }) });
+            }
+
+            // Enviar verificación de stock
             const payload = {
                 tipo: 'verificar_stock',
                 id:     prod.id || prod.IDPRODUCTOS || prod.numeroProd,
                 nombre: prod.nombre,
-                stockFisico:      real,   // → columna STOCK FISICO
-                fechaStockFisico: fecha,  // → columna FECHA STOCK FISICO
+                stockFisico:      real,
+                fechaStockFisico: fecha,
                 ...(vencimiento ? { fechaVencimiento: vencimiento } : {}),
-                ...(codigoEscaneado ? { codigoBarra: codigoEscaneado } : {})
             };
             fetchSheets({ method: 'POST', body: JSON.stringify(payload) });
 
@@ -23063,6 +23090,17 @@ function filtrarProductosCompra(query) {
     cerrarSelectorCompra();
     renderCarritoCompra();
     calcularCompra();
+
+    // Si vino del scanner, abrir editar precios automáticamente
+    if (window._compraDesdeScanner) {
+        window._compraDesdeScanner = false;
+        const nuevoItem = carritoCompra[carritoCompra.length - 1];
+        if (nuevoItem) {
+            crearModalPreciosSiNoExiste();
+            window._compraReopenScanner = true;
+            setTimeout(() => abrirModalPrecios(nuevoItem.itemId), 120);
+        }
+    }
 }
 
 
@@ -23542,7 +23580,9 @@ function cerrarModalPrecios(){
     modal.style.zIndex = '';
     
     itemEditandoId = null;
-    console.log("? MODAL CERRADO Y LISTO PARA REABRIRSE");
+    // Si el usuario cancela, no reabrir scanner
+    window._compraReopenScanner = false;
+    console.log("✅ MODAL CERRADO");
 }
 
 function actualizarGananciaMostrada(){
@@ -24213,10 +24253,15 @@ producto.vencimiento = nuevoVencimiento;
     renderCarritoCompra();
 
     // RECALCULAR TOTAL
-    console.log("🛒?Š Recalculando total...");
     calcularCompra();
 
-    console.log("? GUARDADO COMPLETADO - SINCRONIZADO CON FIREBASE ?");
+    // Reabrir scanner si la compra viene del scanner
+    if (window._compraReopenScanner) {
+        window._compraReopenScanner = false;
+        setTimeout(() => abrirScanner('compra'), 200);
+    }
+
+    console.log("✅ GUARDADO COMPLETADO");
 }
 
        
@@ -31342,6 +31387,7 @@ function verDetalleProveedor(tipo, id){
                             : _sheetProductos.indexOf(prod);
                         seleccionarParaCantidad(idxVenta);
                     } else if (_scanModo === 'compra') {
+                        window._compraDesdeScanner = true;
                         cerrarScanner(); seleccionarProductoCompra(idx);
                     } else if (_scanModo === 'producto') {
                         const f = document.getElementById('pCodigo');
