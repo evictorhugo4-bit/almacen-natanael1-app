@@ -782,6 +782,11 @@ z-index:999999999;
     <h2 style="margin:0 0 4px;font-size:16px;font-weight:900;color:#3b82f6;text-align:center;">OK VERIFICAR STOCK</h2>
     <p id="vsProdNombre" style="text-align:center;color:#94a3b8;font-size:11px;font-weight:700;margin:0 0 20px;text-transform:uppercase;"></p>
     <div style="display:flex;flex-direction:column;gap:14px;">
+      <div id="vsCodigoWrap" style="display:none;">
+        <label style="color:#0ea5e9;font-size:10px;font-weight:800;text-transform:uppercase;display:block;margin-bottom:5px;">🔢 Código de Barras escaneado</label>
+        <input id="vsCodigo" type="text" readonly
+          style="padding:10px;background:#0f172a;border:1px solid #0369a1;border-radius:8px;color:#7dd3fc;font-weight:900;font-size:13px;width:100%;box-sizing:border-box;font-family:monospace;cursor:default;">
+      </div>
       <div>
         <label style="color:#94a3b8;font-size:10px;font-weight:800;text-transform:uppercase;display:block;margin-bottom:5px;">Stock Calculado (sistema)</label>
         <div id="vsStockCalculado" style="padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#64748b;font-weight:900;font-size:15px;">?</div>
@@ -9433,7 +9438,7 @@ console.log("FILTRADAS:", filtradas.length);
         // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
         let _vsIndex = -1; // índice del producto en verificación
 
-        window.abrirVerificarStock = function(index) {
+        window.abrirVerificarStock = function(index, codigoPendiente) {
             const prod = _sheetProductos[index];
             if (!prod) { alert('Producto no encontrado'); return; }
             _vsIndex = index;
@@ -9447,6 +9452,17 @@ console.log("FILTRADAS:", filtradas.length);
             document.getElementById('vsStockReal').value = '';
             document.getElementById('vsVencimiento').value = '';
             document.getElementById('vsDiferencia').style.display = 'none';
+            // Código de barras pendiente (viene de escaneo sin coincidencia)
+            const vsCodigoWrap = document.getElementById('vsCodigoWrap');
+            const vsCodigoInput = document.getElementById('vsCodigo');
+            if (codigoPendiente) {
+                if (vsCodigoInput) vsCodigoInput.value = codigoPendiente;
+                if (vsCodigoWrap) vsCodigoWrap.style.display = 'block';
+                window._scanCodigoPendiente = '';
+            } else {
+                if (vsCodigoInput) vsCodigoInput.value = '';
+                if (vsCodigoWrap) vsCodigoWrap.style.display = 'none';
+            }
 
             // Fecha actual por defecto
             const now = new Date();
@@ -9487,6 +9503,7 @@ console.log("FILTRADAS:", filtradas.length);
             const real = parseFloat(document.getElementById('vsStockReal').value);
             const fecha = document.getElementById('vsFecha').value;
             const vencimiento = (document.getElementById('vsVencimiento').value || '').trim();
+            const codigoEscaneado = (document.getElementById('vsCodigo')?.value || '').trim();
             if (isNaN(real) || real < 0) { mostrarToast('Ingresá un stock válido', 'error'); return; }
             if (!fecha) { mostrarToast('Ingresá la fecha', 'error'); return; }
             if (_vsIndex < 0 || !_sheetProductos[_vsIndex]) return;
@@ -9511,7 +9528,8 @@ console.log("FILTRADAS:", filtradas.length);
                 nombre: prod.nombre,
                 stockFisico:      real,   // → columna STOCK FISICO
                 fechaStockFisico: fecha,  // → columna FECHA STOCK FISICO
-                ...(vencimiento ? { fechaVencimiento: vencimiento } : {})
+                ...(vencimiento ? { fechaVencimiento: vencimiento } : {}),
+                ...(codigoEscaneado ? { codigoBarra: codigoEscaneado } : {})
             };
             fetchSheets({ method: 'POST', body: JSON.stringify(payload) });
 
@@ -31275,8 +31293,9 @@ function verDetalleProveedor(tipo, id){
         };
 
         window._scanSeleccionarProdVS = function(idx) {
+            const codigoPendiente = window._scanCodigoPendiente || '';
             cerrarScanner();
-            abrirVerificarStock(idx);
+            abrirVerificarStock(idx, codigoPendiente);
         };
 
         function cerrarScanner() {
@@ -31354,10 +31373,13 @@ function verDetalleProveedor(tipo, id){
                     }, 500);
                 }
                 if (_scanModo === 'verificar_stock') {
-                    // Mostrar buscador por nombre
+                    // Guardar código para pre-cargarlo en verificar stock
+                    window._scanCodigoPendiente = codigo;
                     const nb = document.getElementById('scanBuscadorNombre');
                     const ni = document.getElementById('scanInputNombre');
+                    const codLabel = document.getElementById('scanCodigoPendienteLabel');
                     if (nb) nb.style.display = 'block';
+                    if (codLabel) codLabel.textContent = '📦 Código escaneado: ' + codigo;
                     setTimeout(() => { if (ni) { ni.value = ''; ni.focus(); } }, 100);
                 }
                 if (_scanModo === 'producto') {
@@ -32477,6 +32499,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <!-- Buscador por nombre (solo modo verificar_stock) -->
     <div id="scanBuscadorNombre" style="display:none;margin-top:10px;">
       <div style="font-size:10px;color:#f59e0b;font-weight:900;text-transform:uppercase;margin-bottom:6px;">🔎 Buscar por nombre</div>
+      <div id="scanCodigoPendienteLabel" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;font-family:monospace;"></div>
       <input id="scanInputNombre" type="text" placeholder="Escribí el nombre del producto..."
         style="width:100%;box-sizing:border-box;background:#1e293b;border:1.5px solid #f59e0b;color:#fff;border-radius:8px;padding:9px 10px;font-size:12px;font-weight:700;outline:none;"
         oninput="_scanBuscarNombre(this.value)" autocomplete="off" />
