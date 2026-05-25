@@ -24182,16 +24182,20 @@ function revisarAlertasCompra7Dias(){
             ? Number(p.stockCalculado)
             : (parseFloat(p.stock || p['STOCK ACTUAL'] || 0) || 0);
 
+        const stockMinProd = Math.max(0, parseFloat(p.stockMin || p['STOCK MINIMO X CATEGORIA'] || 0) || 0);
+
         const actual = categorias.get(catKey) || {
             categoria,
             foto: p.foto || p.imagen || p.IMAGEN || '',
             tipoGrupo,
             stockActual: 0,
+            stockMin: 0,
             vendido7: 0,
             productos: 0
         };
 
         actual.stockActual += stockActual;
+        actual.stockMin = Math.max(actual.stockMin || 0, stockMinProd);
         actual.productos += 1;
         if (!actual.foto) actual.foto = p.foto || p.imagen || p.IMAGEN || '';
         categorias.set(catKey, actual);
@@ -24229,8 +24233,8 @@ function revisarAlertasCompra7Dias(){
     });
 
     const alertasTodas = Array.from(categorias.values())
-    .filter(x => x.categoria && x.vendido7 > 0 && x.stockActual <= x.vendido7)
-    .map(x => ({ ...x, faltante: x.vendido7 - x.stockActual }))
+    .filter(x => x.categoria && (x.stockMin || 0) > 0 && x.stockActual <= 0)
+    .map(x => ({ ...x, faltante: Math.max(x.stockMin, x.vendido7) - x.stockActual }))
     .sort((a, b) => (b.faltante - a.faltante) || (b.vendido7 - a.vendido7) || String(a.categoria).localeCompare(String(b.categoria)));
 
     const alertasGramos = alertasTodas.filter(a => a.tipoGrupo === 'gramos').slice(0, 12);
