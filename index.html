@@ -24186,18 +24186,25 @@ function revisarAlertasCompra7Dias(){
 
         const actual = categorias.get(catKey) || {
             categoria,
-            foto: p.foto || p.imagen || p.IMAGEN || '',
+            foto: '',
             tipoGrupo,
             stockActual: 0,
             stockMin: 0,
             vendido7: 0,
-            productos: 0
+            productos: 0,
+            _vendidoPorProd: {}
         };
 
         actual.stockActual += stockActual;
         actual.stockMin = Math.max(actual.stockMin || 0, stockMinProd);
         actual.productos += 1;
-        if (!actual.foto) actual.foto = p.foto || p.imagen || p.IMAGEN || '';
+        // Registrar foto del producto para luego elegir el mas vendido
+        const prodFotoInv = p.foto || p.imagen || p.IMAGEN || '';
+        const prodClaveInv = id || normalizar(p.nombre || '');
+        if (prodClaveInv) {
+            if (!actual._vendidoPorProd[prodClaveInv]) actual._vendidoPorProd[prodClaveInv] = { foto: prodFotoInv, vendido: 0 };
+            else if (prodFotoInv) actual._vendidoPorProd[prodClaveInv].foto = prodFotoInv;
+        }
         categorias.set(catKey, actual);
     });
 
@@ -24219,17 +24226,36 @@ function revisarAlertasCompra7Dias(){
 
             const actual = categorias.get(catKey) || {
                 categoria,
-                foto: prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '',
+                foto: '',
                 tipoGrupo,
                 stockActual: 0,
                 vendido7: 0,
-                productos: 0
+                productos: 0,
+                _vendidoPorProd: {}
             };
 
             actual.vendido7 += cantidad;
-            if (!actual.foto && prodRef) actual.foto = prodRef.foto || prodRef.imagen || prodRef.IMAGEN || '';
+
+            // Acumular ventas por producto para elegir el mas vendido
+            const prodFotoVta = prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '';
+            const prodClaveVta = id || nombreKey;
+            if (prodClaveVta) {
+                if (!actual._vendidoPorProd[prodClaveVta]) actual._vendidoPorProd[prodClaveVta] = { foto: prodFotoVta, vendido: 0 };
+                actual._vendidoPorProd[prodClaveVta].vendido += cantidad;
+                if (prodFotoVta) actual._vendidoPorProd[prodClaveVta].foto = prodFotoVta;
+            }
+
             categorias.set(catKey, actual);
         });
+    });
+
+    // Asignar foto del producto mas vendido de cada categoria
+    categorias.forEach(cat => {
+        const prods = Object.values(cat._vendidoPorProd || {});
+        if (!prods.length) return;
+        prods.sort((a, b) => (b.vendido - a.vendido));
+        const mejor = prods.find(p => p.foto) || prods[0];
+        if (mejor && mejor.foto) cat.foto = mejor.foto;
     });
 
     const alertasTodas = Array.from(categorias.values())
@@ -28180,20 +28206,10 @@ function obtenerDetalleCaja() {
     // Parsear horaInicio como hora LOCAL (no UTC) para evitar desfase de timezone
     const _parseLocalISO = function(s) {
         if (!s) return 0;
-        const str = String(s).trim();
-        // Formato ISO: "2026-05-25T10:27:00" — sin Z, sin offset → tratar como local
-        let m = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+        // Formato: "2026-05-25T10:27:00" — sin Z, sin offset → tratar como local
+        const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
         if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]).getTime();
-        // Formato fechaSheet: "DD/MM/YYYY HH:mm:ss"
-        m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/);
-        if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]).getTime();
-        // Formato "DD/MM/YYYY HH:mm"
-        m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
-        if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], 0).getTime();
-        // Formato "DD/MM/YYYY"
-        m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (m) return new Date(+m[3], +m[2]-1, +m[1], 0, 0, 0).getTime();
-        return new Date(str).getTime();
+        return new Date(s).getTime();
     };
     const desdeTs = desde ? _parseLocalISO(desde) : null;
     const despues = item => {
