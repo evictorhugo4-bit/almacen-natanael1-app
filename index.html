@@ -7032,8 +7032,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzVel4nJsO4M3-bm2bUfdKvf9OuqkdWU7LFlAuOW3uA0QAWZ5ICbUF5LHWjuCcPIvcM/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbzVel4nJsO4M3-bm2bUfdKvf9OuqkdWU7LFlAuOW3uA0QAWZ5ICbUF5LHWjuCcPIvcM/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -17148,13 +17148,71 @@ console.log("FILTRADAS:", filtradas.length);
         }
 
         function kpiCajaCargarDesdeSheet() {
-            // Leer el registro más reciente de EFECTIVOENCAJA via GET
-            return fetch(SHEETS_URL + '?modo=efectivo_en_caja')
+            // Leer TODOS los registros de EFECTIVOENCAJA y quedarse con el más reciente
+            return fetch(SHEETS_URL + '?modo=efectivo_en_caja&todos=1')
                 .then(function(r){ return r.json(); })
                 .then(function(res) {
-                    if (!res || !res.ok || res.monto === undefined) return false;
-                    var monto = parseFloat(res.monto) || 0;
-                    var horaInicio = res.horaInicio || res.horainicio || res.fecha || '';
+                    // Si el backend devuelve un array de registros, elegir el más reciente
+                    var registros = [];
+                    if (Array.isArray(res)) {
+                        registros = res;
+                    } else if (res && res.ok && Array.isArray(res.registros)) {
+                        registros = res.registros;
+                    } else if (res && res.ok && res.monto !== undefined) {
+                        // Respuesta simple de un solo registro — comparar con localStorage
+                        var monto = parseFloat(res.monto) || 0;
+                        var horaInicio = res.horaInicio || res.horainicio || res.fecha || '';
+
+                        // Si el localStorage tiene un registro más reciente, usarlo
+                        try {
+                            const saved = localStorage.getItem('natanael_caja_control');
+                            if (saved) {
+                                const local = JSON.parse(saved);
+                                const _p = function(s) {
+                                    if (!s) return 0;
+                                    const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+                                    if (m) return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime();
+                                    const m2 = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+                                    if (m2) return new Date(+m2[3],+m2[2]-1,+m2[1],+m2[4],+m2[5],+(m2[6]||0)).getTime();
+                                    return new Date(s).getTime() || 0;
+                                };
+                                if (local && local.horaInicio && _p(local.horaInicio) > _p(horaInicio)) {
+                                    // localStorage es más reciente, mantenerlo
+                                    return true;
+                                }
+                            }
+                        } catch(e) {}
+
+                        _aplicarMontoInicialCaja(monto, horaInicio);
+                        localStorage.setItem('natanael_caja_control', JSON.stringify(cajaControl));
+                        return true;
+                    }
+
+                    if (registros.length === 0) return false;
+
+                    // Parsear fecha como local (mismo método que _parseLocalISO)
+                    const _parseLocalISO = function(s) {
+                        if (!s) return 0;
+                        const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+                        if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]).getTime();
+                        // Formato dd/mm/yyyy hh:mm:ss
+                        const m2 = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+                        if (m2) return new Date(+m2[3], +m2[2]-1, +m2[1], +m2[4], +m2[5], +(m2[6]||0)).getTime();
+                        return new Date(s).getTime() || 0;
+                    };
+
+                    // Elegir el registro con la fecha más reciente
+                    var masReciente = registros.reduce(function(mejor, r) {
+                        var f = r.horaInicio || r.horainicio || r.fecha || r.FECHA || '';
+                        var ts = _parseLocalISO(f);
+                        if (!mejor || ts > mejor.ts) return { r: r, ts: ts };
+                        return mejor;
+                    }, null);
+
+                    if (!masReciente) return false;
+                    var reg = masReciente.r;
+                    var monto = parseFloat(reg.monto || reg.MONTO || reg.montoInicial || 0) || 0;
+                    var horaInicio = reg.horaInicio || reg.horainicio || reg.fecha || reg.FECHA || '';
                     _aplicarMontoInicialCaja(monto, horaInicio);
                     localStorage.setItem('natanael_caja_control', JSON.stringify(cajaControl));
                     return true;
@@ -28115,12 +28173,24 @@ function obtenerDetalleCaja() {
     }
 
     const desde = cajaControl.horaInicio || null;
-    const desdeTs = desde ? new Date(desde).getTime() : null;
+    // Parsear horaInicio como hora LOCAL (no UTC) para evitar desfase de timezone
+    const _parseLocalISO = function(s) {
+        if (!s) return 0;
+        // Formato: "2026-05-25T10:27:00" — sin Z, sin offset → tratar como local
+        const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+        if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]).getTime();
+        return new Date(s).getTime();
+    };
+    const desdeTs = desde ? _parseLocalISO(desde) : null;
     const despues = item => {
         if (!desdeTs) return true;
         const f = String(item.fechaISO || item.fecha || '').trim();
         if (!f) return false;
-        return new Date(f).getTime() >= desdeTs;
+        // Parsear fecha del item también como local si no tiene offset
+        const itemTs = /Z$|[+-]\d{2}:\d{2}$/.test(f)
+            ? new Date(f).getTime()
+            : _parseLocalISO(f);
+        return itemTs > desdeTs;  // estrictamente POSTERIOR al registro de caja
     };
     const sumar = (arr, getter) => (arr || []).reduce((s, x) => s + (Number(getter(x)) || 0), 0);
 
