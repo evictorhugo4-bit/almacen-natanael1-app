@@ -5386,8 +5386,8 @@ _sheetProductos.forEach(p => {
             if (modalVenta) modalVenta.classList.add('modal-active');
         }
         function cerrarSelector() {
-
-    toggleModal('modalSelector', false);
+            window._selectorDesdeScanner = false;
+            toggleModal('modalSelector', false);
 
     // asegurar que la venta siga visible
     const venta = document.getElementById('modalVenta');
@@ -5747,6 +5747,10 @@ _sheetProductos.forEach(p => {
                 carrito.push({ ...productoPendiente, cantidad: qty, esPeso: false, itemId: Utils.genId() });
                 cerrarSelector();
                 renderCarrito();
+                if (window._selectorDesdeScanner) {
+                    window._selectorDesdeScanner = false;
+                    setTimeout(() => abrirScanner('venta'), 300);
+                }
                 return;
             }
 
@@ -5764,6 +5768,10 @@ _sheetProductos.forEach(p => {
             });
             cerrarSelector();
             renderCarrito();
+            if (window._selectorDesdeScanner) {
+                window._selectorDesdeScanner = false;
+                setTimeout(() => abrirScanner('venta'), 300);
+            }
         }
 
         window.eliminarDelCarrito = function(itemId) {
@@ -31611,6 +31619,7 @@ function verDetalleProveedor(tipo, id){
                         const idxVenta = _sheetProductos.findIndex(sp => sp.id && prod.id && sp.id === prod.id) !== -1
                             ? _sheetProductos.findIndex(sp => sp.id && prod.id && sp.id === prod.id)
                             : _sheetProductos.indexOf(prod);
+                        window._selectorDesdeScanner = true;
                         seleccionarParaCantidad(idxVenta);
                     } else if (_scanModo === 'compra') {
                         window._compraDesdeScanner = true;
