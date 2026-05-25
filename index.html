@@ -2885,26 +2885,72 @@ GUARDAR PRODUCTO
                 </div>
             </div>
 
-            <!-- Grilla: Entradas / Salidas -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- ENTRADAS -->
-                <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
-                    <p style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">🔥 Entradas de Efectivo</p>
-                    <div id="efEntradasDetalle" class="space-y-2"></div>
-                    <div style="margin-top:12px;padding-top:10px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">TOTAL ENTRADAS</span>
-                        <span id="efTotalEntradas" style="font-size:18px;font-weight:900;color:#34d399;font-family:monospace;">$0</span>
+            <!-- NEGOCIO -->
+            <div class="glass-card rounded-2xl p-4 border border-emerald-500/30" style="background:#041f17;">
+                <p style="font-size:11px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.15em;margin-bottom:14px;border-bottom:1px solid #1e3a2e;padding-bottom:8px;">🏪 NEGOCIO</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- INGRESOS NEGOCIO -->
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">🔥 Ingresos del Negocio</p>
+                        <div id="efNegIngresosDetalle" class="space-y-1"></div>
+                        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">TOTAL INGRESOS</span>
+                            <span id="efNegTotalIngresos" style="font-size:16px;font-weight:900;color:#34d399;font-family:monospace;">$0</span>
+                        </div>
+                    </div>
+                    <!-- EGRESOS NEGOCIO -->
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">🔴 Egresos del Negocio</p>
+                        <div id="efNegEgresosDetalle" class="space-y-1"></div>
+                        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">TOTAL EGRESOS</span>
+                            <span id="efNegTotalEgresos" style="font-size:16px;font-weight:900;color:#f87171;font-family:monospace;">$0</span>
+                        </div>
                     </div>
                 </div>
-                <!-- SALIDAS -->
-                <div class="glass-card rounded-2xl p-4 border border-red-500/30">
-                    <p style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">🔤 Salidas de Efectivo</p>
-                    <div id="efSalidasDetalle" class="space-y-2"></div>
-                    <div style="margin-top:12px;padding-top:10px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">TOTAL SALIDAS</span>
-                        <span id="efTotalSalidas" style="font-size:18px;font-weight:900;color:#f87171;font-family:monospace;">$0</span>
+                <!-- TOTAL GENERAL NEGOCIO -->
+                <div style="margin-top:14px;padding-top:10px;border-top:2px solid #34d399;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:10px;font-weight:900;color:#ffffff;text-transform:uppercase;letter-spacing:.12em;">⚡ TOTAL GENERAL NEGOCIO</span>
+                    <span id="efNegTotalGeneral" style="font-size:20px;font-weight:900;font-family:monospace;">$0</span>
+                </div>
+            </div>
+
+            <!-- PERSONAL -->
+            <div class="glass-card rounded-2xl p-4 border border-amber-500/30" style="background:#1f1400;">
+                <p style="font-size:11px;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:.15em;margin-bottom:14px;border-bottom:1px solid #3a2800;padding-bottom:8px;">👤 PERSONAL</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- INGRESOS PERSONAL -->
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">🔥 Ingresos Personales</p>
+                        <div id="efPersIngresosDetalle" class="space-y-1"></div>
+                        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">TOTAL INGRESOS</span>
+                            <span id="efPersTotalIngresos" style="font-size:16px;font-weight:900;color:#34d399;font-family:monospace;">$0</span>
+                        </div>
+                    </div>
+                    <!-- EGRESOS PERSONAL -->
+                    <div>
+                        <p style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">🔴 Egresos Personales</p>
+                        <div id="efPersEgresosDetalle" class="space-y-1"></div>
+                        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;">TOTAL EGRESOS</span>
+                            <span id="efPersTotalEgresos" style="font-size:16px;font-weight:900;color:#f87171;font-family:monospace;">$0</span>
+                        </div>
                     </div>
                 </div>
+                <!-- TOTAL GENERAL PERSONAL -->
+                <div style="margin-top:14px;padding-top:10px;border-top:2px solid #fbbf24;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:10px;font-weight:900;color:#ffffff;text-transform:uppercase;letter-spacing:.12em;">⚡ TOTAL GENERAL PERSONAL</span>
+                    <span id="efPersTotalGeneral" style="font-size:20px;font-weight:900;font-family:monospace;">$0</span>
+                </div>
+            </div>
+
+            <!-- IDs ocultos para compatibilidad con el resto del código -->
+            <div style="display:none;">
+                <div id="efEntradasDetalle"></div>
+                <div id="efSalidasDetalle"></div>
+                <span id="efTotalEntradas"></span>
+                <span id="efTotalSalidas"></span>
             </div>
 
             <!-- HERO: billete ARS + total efectivo -->
@@ -15104,9 +15150,19 @@ console.log("FILTRADAS:", filtradas.length);
                     'EFECTIVO'
                 );
 
-                const totalSalidas = efCompras + efPagoCompras + efEgrPersonal + efPagoEgresos + efEgrNeg + efPagoEgrNeg;
+                const negEgresosCasaErazoGlobal = (function() {
+                    const vistos = new Set();
+                    const todasVG = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : [];
+                    return todasVG.reduce(function(s, v) {
+                        if (!_efEnRango(v) || vistos.has(v.id)) return s;
+                        vistos.add(v.id);
+                        if (String(v.cliente || '').toUpperCase().trim() !== 'CASA ERAZO') return s;
+                        const dr = (v.items || []).reduce(function(si, i) { return si + (Number(i.dineroRecuperado || 0) || 0); }, 0);
+                        return s + (dr > 0 ? dr : (v.items || []).reduce(function(si, i) { return si + Number(i.costo || 0) * (Number(i.cantidad) || 1); }, 0));
+                    }, 0);
+                })();
+                const totalSalidas = efCompras + efPagoCompras + efEgrPersonal + efPagoEgresos + efEgrNeg + efPagoEgrNeg + negEgresosCasaErazoGlobal;
 
-                const neto = totalEntradas - totalSalidas;
                 const fmt$ = v => '$' + Utils.fmt(v);
 
                 const efPagoVentasOrig = _efSumaMontoPagosOriginal([...(window._pagoVentasSheet || [])], 'EFECTIVO');
@@ -15116,28 +15172,197 @@ console.log("FILTRADAS:", filtradas.length);
                 const efPagoEgresosOrig = _efSumaMontoPagosOriginal(window._sheetPagoEgresos || [], null);
                 const efPagoEgrNegOrig = _efSumaMontoPagosOriginal([...(_pagoEgrNegSheet || [])], 'EFECTIVO');
                 const totalEntradasOrig = efVentasDirecto + efPagoVentasOrig + efIngPersonal + efPagoIngresosOrig + efIngNeg + efPagoIngNegOrig;
-                const totalSalidasOrig = efCompras + efPagoComprasOrig + efEgrPersonal + efPagoEgresosOrig + efEgrNeg + efPagoEgrNegOrig;
+                const totalSalidasOrig = efCompras + efPagoComprasOrig + efEgrPersonal + efPagoEgresosOrig + efEgrNeg + efPagoEgrNegOrig + negEgresosCasaErazoGlobal;
                 const netoOrig = totalEntradasOrig - totalSalidasOrig;
 
-                // ↗↗ RENDER ENTRADAS ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
-                const entDiv = document.getElementById('efEntradasDetalle');
-                if (entDiv) entDiv.innerHTML =
-                    _efFila('Efectivo cobrado en Ventas',       efVentasDirecto) +
-                    _efFila('Cobros Pago Ventas (efectivo)',    efPagoVentas) +
-                    _efFila('Efectivo Ingresos Personal',       efIngPersonal) +
-                    _efFila('Cobros Pago Ingresos (efectivo)',  efPagoIngresos) +
-                    _efFila('Efectivo Ingresos Negocio',        efIngNeg) +
-                    _efFila('Cobros Pago Ing. Neg. (efectivo)', efPagoIngNeg);
+                // ↗↗ CÁLCULOS NUEVOS: NEGOCIO / PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
 
-                const salDiv = document.getElementById('efSalidasDetalle');
-                if (salDiv) salDiv.innerHTML =
-                    _efFila('Efectivo pagado en Compras',       efCompras,      '#f87171') +
-                    _efFila('Pagos Compras (efectivo)',         efPagoCompras,  '#f87171') +
-                    _efFila('Efectivo Egresos Personal',        efEgrPersonal,  '#f87171') +
-                    _efFila('Pagos Egresos (efectivo)',         efPagoEgresos,  '#f87171') +
-                    _efFila('Efectivo Egresos Negocio',         efEgrNeg,       '#f87171') +
-                    _efFila('Pagos Egr. Neg. (efectivo)',       efPagoEgrNeg,   '#f87171');
+                const todasVNeg = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : [];
 
+                // ─────────────────────────────────────────────────────────────────────
+                // Regla: una venta a crédito pagada hoy cuenta como efectivo.
+                // Por eso tomamos:
+                //   • PAGO EFECTIVO de la venta  → filtrado por fecha de la VENTA
+                //   • MONTO de PAGO VENTAS (efectivo) → filtrado por FECHA ORIGINAL
+                //     (la fecha de la venta original, no la fecha del cobro)
+                // La ganancia se calcula sobre esa misma suma cobrada.
+                // ─────────────────────────────────────────────────────────────────────
+
+                // Mapa idVenta → suma de MONTO de PAGO VENTAS efectivo cuya FECHA ORIGINAL cae en rango
+                const _pagoVentasPorIdOrig = (function() {
+                    const map = {};
+                    const pl = (_pagoVentasSheet && _pagoVentasSheet.length) ? _pagoVentasSheet : (_sheetPagoVentas || []);
+                    pl.forEach(function(p) {
+                        // filtramos por FECHA ORIGINAL (la de la venta, no la del cobro)
+                        if (!_efEnRangoOriginal(p)) return;
+                        const fp = String(p.formaPago || p.FORMAPAGO || p['FORMA DE PAGO'] || '').toUpperCase().trim();
+                        // solo pagos en efectivo (o sin forma especificada → asumir efectivo)
+                        if (fp && fp !== 'EFECTIVO') return;
+                        const idV = String(p.idVenta || p.IDVENTAS || '').trim();
+                        if (!idV) return;
+                        map[idV] = (map[idV] || 0) + Number(p.monto || p.MONTO || 0);
+                    });
+                    return map;
+                })();
+
+                // ─────────────────────────────────────────────────────────────────────
+                // Lógica de ganancia en pago mixto:
+                //   Ejemplo: total $500, ef $400, cr $100, costo $285
+                //   El efectivo primero cubre el costo: $400 - $285 = $115 ganancia ef
+                //   El crédito cubre lo que falta del costo (ya cubierto) + su ganancia: $100 gan cr
+                //   Fórmula: ganEf = max(0, min(cobradoEf - dineroRecup, ganBruta))
+                //            ganCr = ganBruta - ganEf
+                //   Si cobradoEf < dineroRecup (ef no alcanza a cubrir costo):
+                //     ganEf = 0, el costo lo cubre parcialmente ef y el resto cr
+                // ─────────────────────────────────────────────────────────────────────
+
+                // Acumula ventasEfRaw y gananciaEfNeg en un solo recorrido
+                let _ventasEfRaw       = 0;
+                let _calcGananciaEfNeg = 0;
+                (function() {
+                    const vistos = new Set();
+                    todasVNeg.forEach(function(v) {
+                        if (!_efEnRango(v) || vistos.has(v.id)) return;
+                        vistos.add(v.id);
+                        const cli  = String(v.cliente || '').toUpperCase().trim();
+                        const esEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
+                        const ef    = Number(v.efectivo  || 0);
+                        const cr    = Number(v.credito   || v.deuda || 0);
+                        const total = Number(v.total     || 0);
+
+                        // cobrado en efectivo = pago directo + cobros posteriores en efectivo (FECHA ORIGINAL en rango)
+                        const idKey      = String(v.id).trim();
+                        const pagosExtra = _pagoVentasPorIdOrig[idKey] || 0;
+                        const cobradoEf  = ef + pagosExtra;
+
+                        _ventasEfRaw += cobradoEf;
+
+                        if (!esEsp) {
+                            const costoVenta  = (v.items || []).reduce(function(s, i) {
+                                return s + Number(i.costo || 0) * Number(i.cantidad || 1);
+                            }, 0);
+                            const dineroRecup = (v.items || []).reduce(function(s, i) {
+                                return s + Number(i.dineroRecuperado || 0);
+                            }, 0) || costoVenta;
+                            const ganBruta = Math.max(0, total - dineroRecup);
+
+                            // El efectivo primero cubre el costo; lo que sobra es ganancia en efectivo
+                            // Si ef cubre todo el costo → ganEf = cobradoEf - dineroRecup (tope: ganBruta)
+                            // Si ef NO cubre el costo  → ganEf = 0 (todo va a recupero de capital)
+                            const ganEf = Math.max(0, Math.min(cobradoEf - dineroRecup, ganBruta));
+                            _calcGananciaEfNeg += ganEf;
+                        }
+                    });
+                })();
+
+                // VENTAS EFECTIVO = cobrado en efectivo - ganancia en efectivo (= capital recuperado en ef)
+                const negVentasEfectivo = _ventasEfRaw - _calcGananciaEfNeg;
+
+                // === NEGOCIO INGRESOS ===
+
+                // B) VENTAS A CASA ERAZO: DINERO RECUPERADO cuando cliente = CASA ERAZO (por fecha)
+                const negVentasCasaErazo = (function() {
+                    const vistos = new Set();
+                    return todasVNeg.reduce(function(s, v) {
+                        if (!_efEnRango(v) || vistos.has(v.id)) return s;
+                        vistos.add(v.id);
+                        if (String(v.cliente || '').toUpperCase().trim() !== 'CASA ERAZO') return s;
+                        const dr = (v.items || []).reduce(function(si, i) { return si + (Number(i.dineroRecuperado || 0) || 0); }, 0);
+                        return s + (dr > 0 ? dr : (v.items || []).reduce(function(si, i) { return si + Number(i.costo || 0) * (Number(i.cantidad) || 1); }, 0));
+                    }, 0);
+                })();
+
+                // C) INGRESOS DEL NEGOCIO:
+                //    PAGO EFECTIVO tabla INGRESOS NEGOCIO (por fecha)
+                //    + MONTO tabla PAGO INGRESOS NEGOCIO (por FECHA ORIGINAL)
+                const negIngresosNegocio = _efSumaEfectivo(window._sheetIngresosNegocio || [])
+                    + _efSumaMontoPagosOriginal([...(window._sheetPagoIngNeg || [])], 'EFECTIVO');
+
+                const negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negIngresosNegocio;
+
+                // === NEGOCIO EGRESOS ===
+                // D) COMPRAS EFECTIVO:
+                //    PAGO EFECTIVO tabla COMPRAS (por fecha)
+                //    + MONTO tabla PAGO COMPRAS (por FECHA ORIGINAL)
+                const negComprasEfectivo = _efSumaPagoEfectivoCompras()
+                    + _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
+
+                // E) EGRESOS CASA ERAZO: mismo valor que Ventas a Casa Erazo
+                const negEgresosCasaErazo = negVentasCasaErazo;
+
+                const negTotalEgresos = negComprasEfectivo;
+
+                // === PERSONAL INGRESOS ===
+                // E) INGRESOS EN EFECTIVO:
+                //    ganancia en efectivo del sistema
+                //    + PAGO EFECTIVO tabla INGRESOS (por fecha)
+                //    + MONTO tabla PAGO INGRESOS (por FECHA ORIGINAL)
+                const persIngEfectivo = _calcGananciaEfNeg
+                    + _efSumaEfectivo(window._sheetIngresos || [])
+                    + _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
+
+                const persTotalIngresos = persIngEfectivo;
+
+                // === PERSONAL EGRESOS ===
+                // F) EGRESOS EN EFECTIVO:
+                //    PAGO EFECTIVO tabla EGRESOS (por fecha)
+                //    + MONTO tabla PAGO EGRESOS (por FECHA ORIGINAL)
+                const persEgresosEfectivo = _efSumaPagoEfectivoEgresos()
+                    + _efSumaMontoPagosOriginal(window._sheetPagoEgresos || [], null);
+
+                const persTotalEgresos = persEgresosEfectivo + negEgresosCasaErazo;
+
+                // EFECTIVO EN CAJA = suma de todos los ingresos - suma de todos los egresos (secciones)
+                const neto = (negTotalIngresos + persTotalIngresos) - (negTotalEgresos + persTotalEgresos);
+
+                // ↗↗ RENDER NEGOCIO ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+                const negIngDiv = document.getElementById('efNegIngresosDetalle');
+                if (negIngDiv) negIngDiv.innerHTML =
+                    _efFila('Ventas Efectivo',     negVentasEfectivo) +
+                    _efFila('Ventas a Casa Erazo', negVentasCasaErazo) +
+                    _efFila('Ingresos del Negocio', negIngresosNegocio);
+
+                const negEgrDiv = document.getElementById('efNegEgresosDetalle');
+                if (negEgrDiv) negEgrDiv.innerHTML =
+                    _efFila('Compras Efectivo',    negComprasEfectivo,    '#f87171');
+
+                const elNegTI = document.getElementById('efNegTotalIngresos');
+                if (elNegTI) elNegTI.textContent = fmt$(negTotalIngresos);
+                const elNegTE = document.getElementById('efNegTotalEgresos');
+                if (elNegTE) elNegTE.textContent = fmt$(negTotalEgresos);
+
+                // TOTAL GENERAL NEGOCIO
+                const negTotalGeneral = negTotalIngresos - negTotalEgresos;
+                const elNegTG = document.getElementById('efNegTotalGeneral');
+                if (elNegTG) {
+                    elNegTG.textContent = fmt$(negTotalGeneral);
+                    elNegTG.style.color = negTotalGeneral >= 0 ? '#34d399' : '#f87171';
+                }
+
+                // ↗↗ RENDER PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+                const persIngDiv = document.getElementById('efPersIngresosDetalle');
+                if (persIngDiv) persIngDiv.innerHTML =
+                    _efFila('Ingresos en Efectivo', persIngEfectivo);
+
+                const persEgrDiv = document.getElementById('efPersEgresosDetalle');
+                if (persEgrDiv) persEgrDiv.innerHTML =
+                    _efFila('Egresos en Efectivo', persEgresosEfectivo, '#f87171') +
+                    _efFila('Egresos Casa Erazo',  negEgresosCasaErazo,  '#f87171');
+
+                const elPersTI = document.getElementById('efPersTotalIngresos');
+                if (elPersTI) elPersTI.textContent = fmt$(persTotalIngresos);
+                const elPersTE = document.getElementById('efPersTotalEgresos');
+                if (elPersTE) elPersTE.textContent = fmt$(persTotalEgresos);
+
+                // TOTAL GENERAL PERSONAL
+                const persTotalGeneral = persTotalIngresos - persTotalEgresos;
+                const elPersTG = document.getElementById('efPersTotalGeneral');
+                if (elPersTG) {
+                    elPersTG.textContent = fmt$(persTotalGeneral);
+                    elPersTG.style.color = persTotalGeneral >= 0 ? '#fbbf24' : '#f87171';
+                }
+
+                // Compatibilidad con IDs ocultos
                 const elEnt = document.getElementById('efTotalEntradas');
                 if (elEnt) elEnt.textContent = fmt$(totalEntradas);
                 const elSal = document.getElementById('efTotalSalidas');
