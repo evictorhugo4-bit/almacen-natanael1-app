@@ -1028,6 +1028,14 @@ z-index:999999999;
                         <div id="kpiGananciasDia" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
                         <div id="kpiGananciasDiaInfo" class="text-[9px] text-slate-600 font-bold mt-1">precio - costo</div>
                     </div>
+                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span style="font-size:20px;">&#128178;</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ganancia Neta</span>
+                        </div>
+                        <div id="kpiGananciaNeta" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
+                        <div id="kpiGananciaNetaInfo" class="text-[9px] text-slate-600 font-bold mt-1">ganancias - consumo - comida</div>
+                    </div>
                     <!-- IDs requeridos por JS ↗ ocultos -->
                     <div id="totalCaja" style="display:none;">$0</div>
                     <div id="cajaSinceInfo" style="display:none;"></div>
@@ -9008,6 +9016,7 @@ if (indicator) indicator.classList.remove('hidden');
             if (elV)  elV.textContent  = '$' + Utils.fmt(totalVentas);
             if (elVi) elVi.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
             if (elG)  elG.textContent  = '$' + Utils.fmt(totalGanancias);
+
         }
 
 
@@ -10739,6 +10748,7 @@ console.log("FILTRADAS:", filtradas.length);
                 epFila('GANANCIAS TOTALES',ganFiltroEP,0,'#fbbf24')+
                 epFila('CONSUMO DEL NEGOCIO',0,egrConsumoNeg,'#fb923c')+
                 epFila('COMIDA FAMILIAR',0,egrComidaFam,'#f87171')+
+                epFilaBal('GANANCIAS TOTALES','CONSUMO + COMIDA FAMILIAR',ganFiltroEP,egrConsumoNeg+egrComidaFam,ganFiltroEP-(egrConsumoNeg+egrComidaFam))+
                 epBloqueFilas('BLOQUE 1')+
                 epFilaBal('TOTAL BLOQUE 1',ganFiltroEP+epBloque1Total.ing,'EGRESOS BLOQUE 1',egrConsumoNeg+egrComidaFam+epBloque1Total.egr,(ganFiltroEP+epBloque1Total.ing)-(egrConsumoNeg+egrComidaFam+epBloque1Total.egr))+
                 epBloquesExtraFilas+
@@ -10746,6 +10756,8 @@ console.log("FILTRADAS:", filtradas.length);
             );
 
             html += tablaIng + tablaEgr;
+
+
 
             const epComparador = {
                 gananciasConsumo: {
@@ -24201,10 +24213,12 @@ function revisarAlertasCompra7Dias(){
         // Registrar foto del producto para luego elegir el mas vendido
         const prodFotoInv = p.foto || p.imagen || p.IMAGEN || '';
         const prodClaveInv = id || normalizar(p.nombre || '');
-        if (prodClaveInv) {
-            if (!actual._vendidoPorProd[prodClaveInv]) actual._vendidoPorProd[prodClaveInv] = { foto: prodFotoInv, vendido: 0 };
-            else if (prodFotoInv) actual._vendidoPorProd[prodClaveInv].foto = prodFotoInv;
-        }
+        if (!actual._vendidoPorProd) actual._vendidoPorProd = {};
+        // Registrar por id Y por nombre normalizado para que ventas (que no tienen id) puedan matchear
+        [id, normalizar(p.nombre || '')].filter(Boolean).forEach(clave => {
+            if (!actual._vendidoPorProd[clave]) actual._vendidoPorProd[clave] = { foto: prodFotoInv, vendido: 0 };
+            else if (prodFotoInv) actual._vendidoPorProd[clave].foto = prodFotoInv;
+        });
         categorias.set(catKey, actual);
     });
 
@@ -24237,6 +24251,7 @@ function revisarAlertasCompra7Dias(){
             actual.vendido7 += cantidad;
 
             // Acumular ventas por producto para elegir el mas vendido
+            if (!actual._vendidoPorProd) actual._vendidoPorProd = {};
             const prodFotoVta = prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '';
             const prodClaveVta = id || nombreKey;
             if (prodClaveVta) {
@@ -24273,7 +24288,8 @@ function revisarAlertasCompra7Dias(){
         Math.round(a.vendido7 * 100) / 100,
         Math.round(a.faltante * 100) / 100,
         a.tipoGrupo,
-        a.productos
+        a.productos,
+        a.foto ? a.foto.slice(-20) : ''
     ].join(':')).join('|')].join('::');
 
     if (widget.dataset.alertaKey === alertaKey && !widget.classList.contains('hidden')) return;
@@ -24425,6 +24441,7 @@ function calcularWidgetGastoFamiliar() {
     if (total <= UMBRAL) {
         widget.classList.add('hidden');
         widget.innerHTML = '';
+        _actualizarKpiGananciaNeta();
         return;
     }
 
@@ -24462,6 +24479,90 @@ function calcularWidgetGastoFamiliar() {
                 Alerta: supera el limite de $${Utils.fmt(UMBRAL)} en el dia
             </div>
         </div>`;
+
+    // KPI Ganancia Neta del dia (efectivo) = Ganancias efectivo hoy - Consumo - Comida Familiar
+    _actualizarKpiGananciaNeta();
+}
+
+function _actualizarKpiGananciaNeta() {
+    const elGN  = document.getElementById('kpiGananciaNeta');
+    const elGNi = document.getElementById('kpiGananciaNetaInfo');
+    if (!elGN) return;
+
+    const _ahora  = new Date();
+    const _hoyStr = _ahora.getFullYear() + '-' +
+        String(_ahora.getMonth() + 1).padStart(2, '0') + '-' +
+        String(_ahora.getDate()).padStart(2, '0');
+
+    // Mismo esHoy que usa calcularWidgetGastoFamiliar
+    const esHoyN = f => {
+        if (!f) return false;
+        const s = String(f).trim();
+        const mL = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})/);
+        if (mL) return mL[3]+'-'+mL[2].padStart(2,'0')+'-'+mL[1].padStart(2,'0') === _hoyStr;
+        if (s.length >= 10 && s[4] === '-') {
+            if (s.includes('T')) { const d = new Date(s); if (!isNaN(d)) return (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')) === _hoyStr; }
+            return s.startsWith(_hoyStr);
+        }
+        return false;
+    };
+
+    // GANANCIAS EFECTIVO HOY — igual al bloque EFECTIVO de Estado Personal pero solo hoy
+    let ganEfHoy = 0; // total (ef+cr)
+    const _ppvHoy = {};
+    (_pagoVentasSheet||[]).forEach(p => {
+        const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+        if (!idV || !esHoyN(p.fecha||p.FECHA||p.fechaOrig||'')) return;
+        _ppvHoy[idV] = (_ppvHoy[idV]||0) + Number(p.monto||p.MONTO||0);
+    });
+    const _vVistasHoy = new Set();
+    (_sheetVentas||[]).forEach(v => {
+        if (!esHoyN(v.fechaISO||v.fecha||'') || _vVistasHoy.has(v.id)) return;
+        _vVistasHoy.add(v.id);
+        const cli = String(v.cliente||'').toUpperCase().trim();
+        if (['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli)) return;
+        const total  = Number(v.total||0);
+        const ef     = Number(v.efectivo||0);
+        const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+        const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+        const ganBruta = Math.max(0, total - dinRec);
+        ganEfHoy += ganBruta;
+    });
+    // Sumar ventas locales no sincronizadas
+    const _idsSheet = new Set((_sheetVentas||[]).map(v=>v.id));
+    (historial||[]).filter(v => !_idsSheet.has(v.id) && esHoyN(v.fecha||v.fechaISO||'')).forEach(v => {
+        const cli = String(v.cliente||'').toUpperCase().trim();
+        if (['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli)) return;
+        const total  = Number(v.total||0);
+        const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+        const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+        ganEfHoy += Math.max(0, total - dinRec);
+    });
+
+    // CONSUMO DEL NEGOCIO HOY (Casa Erazo, dinero recuperado)
+    let consumoHoy = 0;
+    const _ventasCasa = (_sheetVentas||[]).filter(v => String(v.cliente||'').toUpperCase().trim()==='CASA ERAZO' && esHoyN(v.fecha||v.fechaISO||''));
+    _ventasCasa.forEach(v => {
+        const dr = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+        consumoHoy += dr > 0 ? dr : (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+    });
+    (historial||[]).filter(v => !_idsSheet.has(v.id) && String(v.cliente||'').toUpperCase().trim()==='CASA ERAZO' && esHoyN(v.fecha||v.fechaISO||'')).forEach(v => {
+        const dr = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
+        consumoHoy += dr > 0 ? dr : Number(v.total||0);
+    });
+
+    // COMIDA FAMILIAR HOY (egresos, efectivo, supercategoria = COMIDA FAMILIAR)
+    const comidaHoy = (_sheetEgresos||[])
+        .filter(e => (e.proveedor||e.supercategoria||'').toUpperCase().trim()==='COMIDA FAMILIAR' && esHoyN(e.fechaISO||e.fecha||''))
+        .reduce((s,e) => s + Number(e.total||e.efectivo||0), 0);
+
+    const neta = ganEfHoy - consumoHoy - comidaHoy;
+
+    elGN.textContent = '$' + Utils.fmt(Math.abs(neta));
+    elGN.style.color = neta >= 0 ? '#4ade80' : '#f87171';
+    if (elGNi) elGNi.innerHTML =
+        '<span style="color:#fb923c">consumo $' + Utils.fmt(consumoHoy) + '</span>' +
+        ' + <span style="color:#f87171">comida $' + Utils.fmt(comidaHoy) + '</span>';
 }
 // ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
 
