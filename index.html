@@ -5179,6 +5179,27 @@ let _inventarioCacheInicialCount = 0;
 let productosPorCodigo = {};
 let productosPorNombre = {};
 
+function _numStockProducto(v) {
+    if (typeof parseSheetNum === 'function') return parseSheetNum(v);
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    let s = String(v).trim().replace(/[^\d,.-]/g, '');
+    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function _stockVisibleProducto(prod) {
+    if (!prod) return 0;
+    const calc = _numStockProducto(prod.stockCalculado);
+    const stockSheet = _numStockProducto(prod.stock ?? prod['STOCK ACTUAL'] ?? prod.stockActual ?? prod.cantidad ?? prod.CANTIDAD);
+    if (calc > 0) return calc;
+    if (stockSheet > 0) return stockSheet;
+    return Math.max(0, calc || stockSheet || 0);
+}
+
+window._stockVisibleProducto = _stockVisibleProducto;
+
 let prodPorId = new Map();
 let prodPorCodigo = new Map();
 let prodPorNombre = new Map();
@@ -5420,8 +5441,7 @@ _sheetProductos.forEach(p => {
                 .filter(p => {
                     const nombreOk = String(p.nombre || '').toLowerCase().includes(q);
                     if (!nombreOk) return false;
-                    if (q) return true;
-                    return (p.stockCalculado ?? parseFloat(p.stock) ?? 0) > 0;
+                    return _stockVisibleProducto(p) > 0;
                 });
             if (filtrados.length === 0) {
                 container.innerHTML = `<p class="text-[10px] text-slate-500 text-center py-4 font-bold uppercase">Sin resultados</p>`;
@@ -5442,7 +5462,7 @@ _sheetProductos.forEach(p => {
                     ${thumb}
                     <div class="flex-1 min-w-0">
                         <span class="block font-black text-white uppercase text-xs truncate">${Utils.escHtml(p.nombre)}</span>
-                        <span class="block text-[9px] text-slate-500 font-bold">Stock: ${p.stockCalculado ?? p.stock ?? 0} - ${p.tipoVenta || 'Unidad'}</span>
+                        <span class="block text-[9px] text-slate-500 font-bold">Stock: ${Utils.fmt(_stockVisibleProducto(p))} - ${p.tipoVenta || 'Unidad'}</span>
                     </div>
                     <span class="font-mono font-black text-emerald-500 shrink-0">$${Utils.fmt(p.precio)}</span>
                 </button>`;
@@ -5644,7 +5664,7 @@ _sheetProductos.forEach(p => {
             // Stock
             const stockEl = document.getElementById('selectorStockRef');
             if (stockEl) {
-                const st = prod.stockCalculado ?? parseFloat(prod.stock) ?? 0;
+                const st = _stockVisibleProducto(prod);
                 const stColor = st <= 0 ? '#ef4444' : st <= 3 ? '#f59e0b' : '#94a3b8';
                 stockEl.textContent = `Stock: ${st}`;
                 stockEl.style.color = stColor;
@@ -5755,7 +5775,7 @@ _sheetProductos.forEach(p => {
                 const qty = Math.max(1, Math.floor(inputVal) || 1);
                 const prod = _sheetProductos.find(p => p.id === productoPendiente.id);
                 const enCarrito = carrito.filter(c => c.id === productoPendiente.id).reduce((s, c) => s + c.cantidad, 0);
-                const stockDisp = prod ? (prod.stockCalculado ?? parseFloat(prod.stock) ?? 0) : 0;
+                const stockDisp = prod ? _stockVisibleProducto(prod) : 0;
                 if (prod && stockDisp > 0 && (enCarrito + qty) > stockDisp) {
                     mostrarToast(`Stock insuficiente. Disponible: ${stockDisp - enCarrito}`, 'error'); return;
                 }
@@ -7818,7 +7838,7 @@ _sheetEgresosNegocio.forEach(e => {
                 id: prod.id,
                 numeroProd: prod.numeroProd || prod.id,
                 nombre: prod.nombre,
-                cantidad: prod.stockCalculado ?? 0
+                cantidad: _stockVisibleProducto(prod)
             }));
             // Ejecutar DESPU??S de que la UI se actualice
             setTimeout(() => {
@@ -9589,7 +9609,7 @@ console.log("FILTRADAS:", filtradas.length);
             _vsIndex = index;
 
             // Usar stockCalculado que ya está precalculado en el producto
-            const stockCalculado = prod.stockCalculado ?? parseFloat(prod.stock || prod.cantidad || 0);
+            const stockCalculado = _stockVisibleProducto(prod);
 
             document.getElementById('vsProdNombre').textContent = prod.nombre;
             document.getElementById('vsStockCalculado').textContent = Utils.fmt(stockCalculado);
@@ -13993,8 +14013,7 @@ console.log("FILTRADAS:", filtradas.length);
                 (_sheetProductos||[]).forEach(prod => {
                     const prov = (prod.proveedor||'').trim().toUpperCase();
                     if (!prov) return;
-                    const sc = prod.stockCalculado;
-                    const stockAct = Math.max(0,(sc!==null&&sc!==undefined&&!isNaN(sc))?sc:(parseFloat(prod.stock)||0));
+                    const stockAct = _stockVisibleProducto(prod);
                     valorStockProv[prov] = (valorStockProv[prov]||0) + stockAct*(parseFloat(prod.costo)||0);
                 });
 
@@ -16667,9 +16686,7 @@ console.log("FILTRADAS:", filtradas.length);
             const productos = (_sheetProductos||[])
                 .filter(p => String(p.proveedor||'').trim().toUpperCase() === nombreUp)
                 .map(p => {
-                    const sc = p.stockCalculado;
-                    const ss = parseFloat(p.stock) || 0;
-                    const stockAct = (sc !== null && sc !== undefined && !isNaN(sc) && sc > 0) ? sc : ss;
+                    const stockAct = _stockVisibleProducto(p);
                     const costo = parseFloat(p.costo) || 0;
                     return { nombre: p.nombre, stock: stockAct, costo, subtotal: stockAct * costo };
                 })
@@ -19136,8 +19153,8 @@ if (_inventarioDebeEsperarListaCompleta()) {
 // 🥗 Calculamos stock UNA sola vez y ordenamos
 const productosOrdenados = [...inventarioFiltrado].sort((a, b) => {
 
-    const sa = (a.stockCalculado !== null && a.stockCalculado !== undefined && !isNaN(Number(a.stockCalculado))) ? Number(a.stockCalculado) : (parseFloat(a.stock) || parseFloat(a.cantidad) || 0);
-    const sb = (b.stockCalculado !== null && b.stockCalculado !== undefined && !isNaN(Number(b.stockCalculado))) ? Number(b.stockCalculado) : (parseFloat(b.stock) || parseFloat(b.cantidad) || 0);
+    const sa = _stockVisibleProducto(a);
+    const sb = _stockVisibleProducto(b);
 
     if (sa > 0 && sb <= 0) return -1;
     if (sa <= 0 && sb > 0) return 1;
@@ -19153,9 +19170,7 @@ _sheetProductos.forEach((sp, i) => { if (sp.id) _idxPorIdMap.set(String(sp.id), 
 container.innerHTML = productosVisibles.map((p) => {
 
     const index = (p.id && _idxPorIdMap.has(String(p.id))) ? _idxPorIdMap.get(String(p.id)) : _sheetProductos.indexOf(p);
-    const stockActual = (p.stockCalculado !== null && p.stockCalculado !== undefined && !isNaN(Number(p.stockCalculado)))
-        ? Number(p.stockCalculado)
-        : (parseFloat(p.stock) || parseFloat(p.cantidad) || 0);
+    const stockActual = _stockVisibleProducto(p);
     const bajoMinimo = p.minimo && stockActual < p.minimo;
     const vencProx = p.fechaVencimiento && 
         (new Date(p.fechaVencimiento) - new Date()) < 30 * 86400000;
@@ -19564,7 +19579,7 @@ cargarOpcionesProducto();
                 stockVerificado: data.stockVerificado,
                 stockCorrecto: data.stockCorrecto,
                 fechaCantidad: data.fechaCantidad,
-                cantidad: data.stockCalculado ?? data.stock ?? 0,
+                cantidad: _stockVisibleProducto(data),
                 costo: data.costo,
                 precioVenta: data.precio,
                 ganancia: ganancia,
@@ -24068,7 +24083,7 @@ function revisarVencimientos(){
     _sheetProductos.forEach(p => {
         const venc = String(p.vencimiento || '').trim();
         if (!venc) return; // sin fecha ? ignorar
-        const stockReal = p.stockCalculado ?? Number(p.stock) ?? 0;
+        const stockReal = _stockVisibleProducto(p);
         if (stockReal <= 0) return; // sin stock ? ignorar
 
         const fechaVenc = new Date(venc);
@@ -24278,9 +24293,7 @@ function revisarAlertasCompra7Dias(){
         const catKey = normalizar(categoria) + '|' + tipoGrupo;
         if (!catKey) return;
 
-        const stockActual = Number.isFinite(Number(p.stockCalculado))
-            ? Number(p.stockCalculado)
-            : (parseFloat(p.stock || p['STOCK ACTUAL'] || 0) || 0);
+        const stockActual = _stockVisibleProducto(p);
 
         const stockMinProd = Math.max(0, parseFloat(p.stockMin || p['STOCK MINIMO X CATEGORIA'] || 0) || 0);
 
@@ -24629,7 +24642,7 @@ producto.vencimiento = nuevoVencimiento;
             stockVerificado: producto.stockVerificado || 0,
             stockCorrecto: producto.stockCorrecto || 0,
             fechaCantidad: producto.fechaCantidad || '',
-            cantidad: producto.stockCalculado ?? 0,
+            cantidad: _stockVisibleProducto(producto),
             costo: producto.costo,
             precioVenta: producto.precio,
             ganancia: ganancia,
@@ -29499,10 +29512,7 @@ function calcularCajaEsperada() {
                     .filter(prod => (prod.proveedor||'').toUpperCase() === nombre.toUpperCase())
                     .reduce((s, prod) => {
                         // Priorizar stockCalculado si es válido, sino usar stock del sheet
-                        const sc = prod.stockCalculado;
-                        const stockAct = Math.max(0,
-                            (sc !== null && sc !== undefined && !isNaN(sc)) ? sc : (parseFloat(prod.stock) || 0)
-                        );
+                        const stockAct = _stockVisibleProducto(prod);
                         const costo = parseFloat(prod.costo) || 0;
                         return s + stockAct * costo;
                     }, 0);
@@ -29515,7 +29525,7 @@ function calcularCajaEsperada() {
                             'stock (sheet)': parseFloat(p.stock)??0,
                             'stockCalculado': p.stockCalculado??'null',
                             costo: parseFloat(p.costo)||0,
-                            subtotal: Math.max(0, p.stockCalculado??parseFloat(p.stock)??0)*(parseFloat(p.costo)||0)
+                            subtotal: _stockVisibleProducto(p)*(parseFloat(p.costo)||0)
                         }))
                         .filter(p => (p['stockCalculado']||0) > 0 || (p['stock (sheet)']||0) > 0);
                     console.group('%c?? STOCK GUAPITO', 'color:#10b981;font-weight:900;');
@@ -30948,10 +30958,7 @@ function verDetalleProveedor(tipo, id){
         }
 
         function _getStockActualProd(prod) {
-            if (prod.stockCalculado !== undefined && prod.stockCalculado !== null && !isNaN(prod.stockCalculado)) {
-                return prod.stockCalculado;
-            }
-            return parseFloat(prod.stock) || 0;
+            return _stockVisibleProducto(prod);
         }
 
         let _inicioProdIdx = null;
@@ -31181,7 +31188,7 @@ function verDetalleProveedor(tipo, id){
                     if (provFiltro && prov.toUpperCase() !== provFiltro) return null;
                     const dep = prod ? String(prod.depto||'').trim() : '';
                     if (deptoFiltro && dep.toUpperCase() !== deptoFiltro) return null;
-                    const stock = prod ? Math.max(0, prod.stockCalculado ?? parseFloat(prod.stock) ?? 0) : 0;
+                    const stock = prod ? _stockVisibleProducto(prod) : 0;
                     const stockMin = prod ? Math.max(0, parseFloat(prod.stockMin) || 0) : 0;
                     const cat = prod ? String(prod.categoria||'SIN CATEGORÍA').trim().toUpperCase() : 'SIN CATEGORÍA';
                     // Stock mínimo es la base: si ventas supera ese mínimo, manda ventas.
