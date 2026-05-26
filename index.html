@@ -6263,7 +6263,7 @@ function confirmarVenta() {
         window._sheetVentas = _sheetVentas;
     }
     if (typeof DB !== 'undefined' && DB.saveHistorial) DB.saveHistorial();
-    if (typeof _guardarCache === 'function') _guardarCache();
+    if (typeof _guardarCache === 'function') setTimeout(_guardarCache, 0);
 
     // Guardado local en background
    
@@ -7481,10 +7481,17 @@ _sheetEgresosNegocio.forEach(e => {
                     window._pagoVentasSheet = _pagoVentasSheet;
                 }
 
-                const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length;
+                // Clientes desde snapshot
+                const clientesCache = Array.isArray(snap.clientes) ? snap.clientes : [];
+                if (clientesCache.length && typeof clientesDB !== 'undefined' && !clientesDB.length) {
+                    clientesDB = clientesCache;
+                    window.clientesDB = clientesDB;
+                }
+
+                const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length || clientesCache.length;
                 window._cacheLocalAplicado = !!aplicado;
                 if (aplicado) {
-                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length);
+                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
                 }
                 return !!aplicado;
             } catch(e) {
@@ -8120,7 +8127,7 @@ _sheetEgresosNegocio.forEach(e => {
                     });
                     _sheetVentas = Object.values(ventasMap);
                     window._sheetVentas = _sheetVentas;
-                    if (typeof _guardarCache === 'function') _guardarCache();
+                    if (typeof _guardarCache === 'function') setTimeout(_guardarCache, 0);
                     // Debug: verificar efectivo en primeras ventas del día actual
                     const _hoy = new Date(); const _hoyStr = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')+'-'+String(_hoy.getDate()).padStart(2,'0');
                     const _ventasHoy = _sheetVentas.filter(v => (v.fechaISO||v.fecha||'').startsWith(_hoyStr) || parseFechaNum(v.fechaISO||v.fecha||'') >= parseFechaNum(_hoyStr+'T00:00'));
@@ -19003,15 +19010,8 @@ window.debugStockProducto = function(nombreBuscado) {
 
 
 function _inventarioDebeEsperarListaCompleta() {
-    const totalActual = Array.isArray(_sheetProductos) ? _sheetProductos.length : 0;
-    let totalEsperado = 0;
-    try {
-        totalEsperado = parseInt(localStorage.getItem('natanael_inventario_full_count_v1') || '0', 10) || 0;
-    } catch(e) {}
-    return !!_inventarioDesdeCachePendienteSheet
-        && !_inventarioSheetCompleto
-        && totalActual > 0
-        && ((totalEsperado > 0 && totalActual < totalEsperado) || totalActual <= 60);
+    // Nunca bloquear — mostrar cache inmediatamente y actualizar cuando llegue el sheet
+    return false;
 }
 
 
