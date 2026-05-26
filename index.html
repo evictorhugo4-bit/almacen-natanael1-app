@@ -1029,6 +1029,14 @@ z-index:999999999;
                         <div id="kpiGananciasDiaInfo" class="text-[9px] text-slate-600 font-bold mt-1">precio - costo</div>
                     </div>
                     <!-- IDs requeridos por JS ↗ ocultos -->
+                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span style="font-size:20px;">&#128178;</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ganancia Neta</span>
+                        </div>
+                        <div id="kpiGananciaNeta" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
+                        <div id="kpiGananciaNetaInfo" class="text-[9px] text-slate-600 font-bold mt-1">ganancias - consumo - comida</div>
+                    </div>
                     <div id="totalCaja" style="display:none;">$0</div>
                     <div id="cajaSinceInfo" style="display:none;"></div>
                     <div id="totalDeudas" style="display:none;">$0</div>
@@ -9015,12 +9023,88 @@ if (indicator) indicator.classList.remove('hidden');
             if (elV)  elV.textContent  = '$' + Utils.fmt(totalVentas);
             if (elVi) elVi.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
             if (elG)  elG.textContent  = '$' + Utils.fmt(totalGanancias);
+            if (typeof _actualizarKpiGananciaNeta === 'function') _actualizarKpiGananciaNeta();
         }
 
 
         // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
         // M───────────────────────────────────────────────DULO PAGOS
         // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
+
+        function _actualizarKpiGananciaNeta() {
+            const elGN = document.getElementById('kpiGananciaNeta');
+            const elGNi = document.getElementById('kpiGananciaNetaInfo');
+            if (!elGN) return;
+
+            const ahora = new Date();
+            const hoyInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0).getTime();
+            const hoyFin = hoyInicio + 86400000;
+            const parseTsLocal = f => {
+                if (!f) return 0;
+                const s = String(f).trim();
+                let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})[\s T](\d{1,2}):(\d{2}):(\d{2})/);
+                if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]).getTime();
+                m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})[\s T](\d{1,2}):(\d{2})/);
+                if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], 0).getTime();
+                m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (m) return new Date(+m[3], +m[2] - 1, +m[1], 0, 0, 0).getTime();
+                m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+                if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime();
+                m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (m) return new Date(+m[1], +m[2] - 1, +m[3], 0, 0, 0).getTime();
+                return 0;
+            };
+            const esHoyN = f => {
+                const ts = parseTsLocal(f);
+                return ts >= hoyInicio && ts < hoyFin;
+            };
+
+            let ganEfHoy = 0;
+            const idsSheet = new Set((_sheetVentas || []).map(v => v.id));
+            const sumarGananciaVenta = v => {
+                const cli = String(v.cliente || '').toUpperCase().trim();
+                if (['ERROR VENTA', 'ERROR VENTAS', 'CASA ERAZO'].includes(cli)) return;
+                const total = Number(v.total || 0);
+                const costoV = (v.items || []).reduce((s, i) => s + Number(i.costo || 0) * (Number(i.cantidad) || 1), 0);
+                const dinRec = (v.items || []).reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0) || costoV;
+                ganEfHoy += Math.max(0, total - dinRec);
+            };
+
+            const vistas = new Set();
+            (_sheetVentas || []).forEach(v => {
+                if (!esHoyN(v.fechaISO || v.fecha || '') || vistas.has(v.id)) return;
+                vistas.add(v.id);
+                sumarGananciaVenta(v);
+            });
+            (historial || []).forEach(v => {
+                if (idsSheet.has(v.id) || !esHoyN(v.fecha || v.fechaISO || '')) return;
+                sumarGananciaVenta(v);
+            });
+
+            let consumoHoy = 0;
+            (_sheetVentas || []).forEach(v => {
+                if (String(v.cliente || '').toUpperCase().trim() !== 'CASA ERAZO' || !esHoyN(v.fecha || v.fechaISO || '')) return;
+                const dr = (v.items || []).reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0);
+                consumoHoy += dr > 0 ? dr : (v.items || []).reduce((s, i) => s + Number(i.costo || 0) * (Number(i.cantidad) || 1), 0);
+            });
+            (historial || []).forEach(v => {
+                if (idsSheet.has(v.id) || String(v.cliente || '').toUpperCase().trim() !== 'CASA ERAZO' || !esHoyN(v.fecha || v.fechaISO || '')) return;
+                const dr = (v.items || []).reduce((s, i) => s + Number(i.dineroRecuperado || 0), 0);
+                consumoHoy += dr > 0 ? dr : Number(v.total || 0);
+            });
+
+            const comidaHoy = (_sheetEgresos || [])
+                .filter(e => String(e.concepto || e.categoria || e.supercategoria || e.proveedor || '').toUpperCase().trim() === 'COMIDA FAMILIAR' && esHoyN(e.fechaISO || e.fecha || ''))
+                .reduce((s, e) => s + Number(e.efectivo || e.pagoEfectivo || e.total || 0), 0);
+
+            const neta = ganEfHoy - consumoHoy - comidaHoy;
+            elGN.textContent = '$' + Utils.fmt(Math.abs(neta));
+            elGN.style.color = neta >= 0 ? '#4ade80' : '#f87171';
+            if (elGNi) {
+                elGNi.innerHTML = '<span style="color:#fb923c">consumo $' + Utils.fmt(consumoHoy) + '</span>' +
+                    ' + <span style="color:#f87171">comida $' + Utils.fmt(comidaHoy) + '</span>';
+            }
+        }
 
         // Sub-tab activo
         let _pagoSubTab = 'pagoVentas';
@@ -18821,6 +18905,7 @@ function recalcularTodosLosStocks() {
     const mapaBase    = {};
     const mapaRefNum  = {};
     const mapaEsFisico = {}; // true = base viene de stockFisico (REGLA 1), false = stockInicio (REGLA 2)
+    const mapaUsaMovimientos = {};
 
     function claveProdStock(val) {
         return String(val || '')
@@ -18866,6 +18951,7 @@ function recalcularTodosLosStocks() {
                 mapaBase[nombre]    = parseFloat(p.stockInicio);
                 mapaRefNum[nombre]  = refNum;
                 mapaEsFisico[nombre] = false;
+                mapaUsaMovimientos[nombre] = true;
                 return;
             }
         }
@@ -18874,6 +18960,7 @@ function recalcularTodosLosStocks() {
         mapaBase[nombre]    = parseFloat(p.stock) || 0;
         mapaRefNum[nombre]  = null;
         mapaEsFisico[nombre] = false;
+        mapaUsaMovimientos[nombre] = false;
     });
 
     // Restar ventas posteriores a la fecha base
@@ -18888,6 +18975,7 @@ function recalcularTodosLosStocks() {
         (v.items || []).forEach(it => {
             const nombre = claveProdStock(it.nombre);
             if (mapaBase[nombre] == null) return;
+            if (!mapaUsaMovimientos[nombre]) return;
             const ref = mapaRefNum[nombre];
             if (ref && fnum && fnum < ref) return;
             mapaBase[nombre] -= parseFloat(it.cantidad) || 0;
@@ -18900,6 +18988,7 @@ function recalcularTodosLosStocks() {
         (cp.items || []).forEach(it => {
             const nombre = claveProdStock(it.nombre);
             if (mapaBase[nombre] == null) return;
+            if (!mapaUsaMovimientos[nombre]) return;
             const ref = mapaRefNum[nombre];
             if (ref && fnum && fnum < ref) return;
             mapaBase[nombre] += parseFloat(it.cantidad) || 0;
@@ -19047,8 +19136,8 @@ if (_inventarioDebeEsperarListaCompleta()) {
 // 🥗 Calculamos stock UNA sola vez y ordenamos
 const productosOrdenados = [...inventarioFiltrado].sort((a, b) => {
 
-    const sa = a.stockCalculado ?? 0;
-    const sb = b.stockCalculado ?? 0;
+    const sa = (a.stockCalculado !== null && a.stockCalculado !== undefined && !isNaN(Number(a.stockCalculado))) ? Number(a.stockCalculado) : (parseFloat(a.stock) || parseFloat(a.cantidad) || 0);
+    const sb = (b.stockCalculado !== null && b.stockCalculado !== undefined && !isNaN(Number(b.stockCalculado))) ? Number(b.stockCalculado) : (parseFloat(b.stock) || parseFloat(b.cantidad) || 0);
 
     if (sa > 0 && sb <= 0) return -1;
     if (sa <= 0 && sb > 0) return 1;
@@ -19064,7 +19153,9 @@ _sheetProductos.forEach((sp, i) => { if (sp.id) _idxPorIdMap.set(String(sp.id), 
 container.innerHTML = productosVisibles.map((p) => {
 
     const index = (p.id && _idxPorIdMap.has(String(p.id))) ? _idxPorIdMap.get(String(p.id)) : _sheetProductos.indexOf(p);
-    const stockActual = p.stockCalculado ?? 0;
+    const stockActual = (p.stockCalculado !== null && p.stockCalculado !== undefined && !isNaN(Number(p.stockCalculado)))
+        ? Number(p.stockCalculado)
+        : (parseFloat(p.stock) || parseFloat(p.cantidad) || 0);
     const bajoMinimo = p.minimo && stockActual < p.minimo;
     const vencProx = p.fechaVencimiento && 
         (new Date(p.fechaVencimiento) - new Date()) < 30 * 86400000;
@@ -24408,6 +24499,7 @@ function calcularWidgetGastoFamiliar() {
     if (total <= UMBRAL) {
         widget.classList.add('hidden');
         widget.innerHTML = '';
+        if (typeof _actualizarKpiGananciaNeta === 'function') _actualizarKpiGananciaNeta();
         return;
     }
 
@@ -24445,6 +24537,7 @@ function calcularWidgetGastoFamiliar() {
                 Alerta: supera el limite de $${Utils.fmt(UMBRAL)} en el dia
             </div>
         </div>`;
+    if (typeof _actualizarKpiGananciaNeta === 'function') _actualizarKpiGananciaNeta();
 }
 // ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
 
