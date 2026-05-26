@@ -9157,16 +9157,18 @@ if (indicator) indicator.classList.remove('hidden');
                 consumoHoy += dr > 0 ? dr : Number(v.total || 0);
             });
 
-            const comidaHoy = (_sheetEgresos || [])
-                .filter(e => String(e.concepto || e.categoria || e.supercategoria || e.proveedor || '').toUpperCase().trim() === 'COMIDA FAMILIAR' && esHoyN(e.fechaISO || e.fecha || ''))
+            const bloque1Hoy = (_sheetEgresos || [])
+                .filter(e => String(e.subcategoria || e.SUBCATEGORIA || '').toUpperCase().trim() === 'BLOQUE 1' && esHoyN(e.fechaISO || e.fecha || ''))
                 .reduce((s, e) => s + Number(e.efectivo || e.pagoEfectivo || e.total || 0), 0);
 
-            const neta = ganEfHoy - consumoHoy - comidaHoy;
+            const comidaHoy = bloque1Hoy;
+
+            const neta = ganEfHoy - consumoHoy - bloque1Hoy;
             elGN.textContent = '$' + Utils.fmt(Math.abs(neta));
             elGN.style.color = neta >= 0 ? '#4ade80' : '#f87171';
             if (elGNi) {
                 elGNi.innerHTML = '<span style="color:#fb923c">consumo $' + Utils.fmt(consumoHoy) + '</span>' +
-                    ' + <span style="color:#f87171">comida $' + Utils.fmt(comidaHoy) + '</span>';
+                    ' + <span style="color:#f87171">bloque1 $' + Utils.fmt(bloque1Hoy) + '</span>';
             }
         }
 
