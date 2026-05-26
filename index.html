@@ -906,6 +906,7 @@ z-index:999999999;
                 <span style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Log de Sincronización</span>
                 <div style="display:flex;gap:6px;align-items:center;">
                     <button onclick="testConexionSheet()" style="background:#065f46;color:#34d399;border:none;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:900;cursor:pointer;text-transform:uppercase;">TEST POST</button>
+                    <button onclick="(function(){['natanael_inventario_v1','natanael_inventario_full_count_v1','natanael_snap_v2','natanael_historial_v1','natanael_pago_ventas_v1','natanael_clientes_v1'].forEach(function(k){localStorage.removeItem(k);});alert('Caché limpio. Recargando...');location.reload();})()" style="background:#7c1d1d;color:#fca5a5;border:none;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:900;cursor:pointer;text-transform:uppercase;">RESET CAĆHE</button>
                     <button onclick="document.getElementById('syncDebugPanel').innerHTML=''" style="background:#1e293b;color:#64748b;border:none;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:900;cursor:pointer;">LIMPIAR</button>
                     <button onclick="this.closest('div.hidden,div.fixed').classList.add('hidden')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;">X</button>
                 </div>
@@ -7040,8 +7041,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxUsSvxPzxzCScWkU61vr7xAKELc-ODtlSId9SOnV6Q7_DXk-DnvCfagWCNWtBHSgxM/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxUsSvxPzxzCScWkU61vr7xAKELc-ODtlSId9SOnV6Q7_DXk-DnvCfagWCNWtBHSgxM/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -7976,42 +7977,50 @@ _sheetEgresosNegocio.forEach(e => {
                     while (panel.children.length > 20) panel.removeChild(panel.lastChild);
                 }
             };
-            if (!silencioso) _log('âú Iniciando sync en 2 etapas...', '#94a3b8');
+            if (!silencioso) _log('⚡ Iniciando sync: inventario exclusivo + rapido en paralelo...', '#94a3b8');
             let data;
             try {
-                // ↗↗ ETAPA 1: hojas críticas (inventario, ventas, compras, clientes) ↗↗
-                let resRapido;
+                // ↗↗ ETAPA 1: inventario SOLO + rapido (sin inventario) en paralelo ↗↗
+                const ts = Date.now();
+                let resInventario, resRapido;
                 try {
-                    resRapido = await fetch(SHEETS_URL2 + '?modo=rapido&_ts=' + Date.now(), { cache: 'no-store' });
+                    [resInventario, resRapido] = await Promise.all([
+                        fetch(SHEETS_URL2 + '?modo=inventario&_ts=' + ts, { cache: 'no-store' }),
+                        fetch(SHEETS_URL2 + '?modo=rapido&_ts='    + ts, { cache: 'no-store' })
+                    ]);
                 } catch(netErr) {
-                    if (!silencioso) _log('â? Error de red: ' + netErr.message, '#f87171');
-                    if (!silencioso) mostrarToast('â? Sin conexión al sheet: ' + netErr.message, 'error');
+                    if (!silencioso) _log('❌ Error de red: ' + netErr.message, '#f87171');
+                    if (!silencioso) mostrarToast('❌ Sin conexión al sheet: ' + netErr.message, 'error');
                     if (!silencioso && indicator) indicator.classList.add('hidden');
                     return;
                 }
-                if (!resRapido.ok) {
-                    _log('â? HTTP error ' + resRapido.status, '#f87171');
-                    mostrarToast('â? Sheet respondió HTTP ' + resRapido.status, 'error');
+                if (!resInventario.ok || !resRapido.ok) {
+                    const status = !resInventario.ok ? resInventario.status : resRapido.status;
+                    _log('❌ HTTP error ' + status, '#f87171');
+                    mostrarToast('❌ Sheet respondió HTTP ' + status, 'error');
                     if (indicator) indicator.classList.add('hidden');
                     return;
                 }
-                let dataRapido;
+                let dataInventario, dataRapido;
                 try {
-                    dataRapido = JSON.parse(await resRapido.text());
+                    [dataInventario, dataRapido] = await Promise.all([
+                        resInventario.text().then(t => JSON.parse(t)),
+                        resRapido.text().then(t => JSON.parse(t))
+                    ]);
                 } catch(parseErr) {
-                    _log('â? Respuesta no es JSON', '#f87171');
-                    mostrarToast('â? Sheet no devuelve JSON válido. ¿Redesplegaste el script?', 'error');
+                    _log('❌ Respuesta no es JSON', '#f87171');
+                    mostrarToast('❌ Sheet no devuelve JSON válido. ¿Redesplegaste el script?', 'error');
                     if (indicator) indicator.classList.add('hidden');
                     return;
                 }
-                _log('✅ Etapa 1 OK ? inventario:' + (dataRapido.inventario||[]).length + ' ventas:' + (dataRapido.ventas||[]).length, '#10b981');
+                _log('✅ Etapa 1 OK — inventario:' + (dataInventario.inventario||[]).length + ' ventas:' + (dataRapido.ventas||[]).length, '#10b981');
                 if ((dataRapido.ventas||[]).length > 0)     { _syncStatus.ventas = true;     actualizarIndicadorSync(); }
                 if ((dataRapido.pagoVentas||[]).length > 0) { _syncStatus.pagoVentas = true;  actualizarIndicadorSync(); }
 
-                // Construir data inicial con lo que llegó rápido + arrays vacíos para el resto
+                // Combinar: inventario exclusivo (modo=inventario) + resto de modo=rapido
                 data = {
                     ok: true,
-                    inventario: dataRapido.inventario || [],
+                    inventario: dataInventario.inventario || [],   // ← exclusivo, no compite con otras hojas
                     ventas:     dataRapido.ventas     || [],
                     compras:    dataRapido.compras    || [],
                     clientes:   dataRapido.clientes   || [],
