@@ -5312,6 +5312,11 @@ _sheetProductos.forEach(p => {
                 const claves = ['natanael_inventario_v1','natanael_historial_v1','natanael_pago_ventas_v1',
                                 'natanael_sheet_cache_v1','natanael_clientes_v1','natanael_compras_v1',
                                 'natanael_ingresos_v1','natanael_egresos_v1',
+                                'natanael_ingresos_negocio_v1','natanael_egresos_negocio_v1',
+                                'natanael_pago_compras_v1','natanael_pago_ingresos_v1','natanael_pago_egresos_v1',
+                                'natanael_pago_ingresos_negocio_v1','natanael_pago_egresos_negocio_v1',
+                                'natanael_lista_ingresos','natanael_lista_egresos',
+                                'natanael_proveedores_negocio','natanael_proveedores_gastos',
                                 'natanael_horario_caja','natanael_firebase_url','natanael_logo'];
                 const datos = {};
                 claves.forEach(k => { const v = localStorage.getItem(k); if(v) datos[k] = v; });
@@ -22237,6 +22242,8 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             if (input) input.value = val;
             if (catInput) catInput.value = '';
             if (dd) dd.classList.add('hidden');
+            // Auto-rellenar subcategoría según bloque
+            _autoFillBloque(val, 'inputIngNegSubcategoria');
             actualizarDatalistsIngNeg();
         }
 
@@ -22558,10 +22565,47 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             mostrarToast(`✅ Supercategoría "${nombre}" lista para usar`);
         }
 
+        // Mapa supercategoria → bloque (según planilla)
+        const _supercat_bloque_map = {
+            'ANTICONCEPTIVOS': 'BLOQUE 1',
+            'OFRENDA VICTOR': 'BLOQUE 1',
+            'EGRESOS GENERALES': 'BLOQUE 1',
+            'BICICLETA 6/6': 'BLOQUE 1',
+            'DESMALEZADORA DAEWOO VICTOR': 'BLOQUE 1',
+            'ASIGNACION UNIVERSAL': 'BLOQUE 2',
+            'ALIMENTAR': 'BLOQUE 2',
+            'PRESTAMO DIEGO': 'BLOQUE 2',
+            'ESCUELA NATANAEL': 'BLOQUE 3',
+            'IGLESIA NATANAEL': 'BLOQUE 3',
+            'DIEZMO MARIA JESUS': 'BLOQUE 3',
+            'OFRENDA MARIA JESUS': 'BLOQUE 3',
+            'BOLETOS VIEJO': 'BLOQUE 3',
+            'DESMALEZADORA DAEWOO FRANCISCA': 'BLOQUE 4',
+            'ZAPATILLAS VICTOR': 'BLOQUE 5',
+            'ZAPATILLAS NATANAEL': 'BLOQUE 5',
+            'ASADO': 'BLOQUE 6',
+            'MANTENIMIENTO VISA': 'BLOQUE 6',
+            'AMNSAT': 'BLOQUE 6',
+            'CCC WIFI': 'BLOQUE 6',
+            'CREDITO PERSONAL VICTOR': 'BLOQUE 6',
+            'CREDITO PERSONAL MARIA JESUS': 'BLOQUE 6'
+        };
+
+        function _autoFillBloque(supercatVal, subcatInputId) {
+            const subcatInput = document.getElementById(subcatInputId);
+            if (!subcatInput) return;
+            const key = (supercatVal || '').toUpperCase().trim();
+            const bloque = _supercat_bloque_map[key] || '';
+            subcatInput.value = bloque;
+        }
+
         function selSupercatIngEgr(val) {
 
     document.getElementById('inputIngEgrProveedor').value = val;
     document.getElementById('ddSupercatIngEgr').classList.add('hidden');
+
+    // Auto-rellenar subcategoría según bloque
+    _autoFillBloque(val, 'inputIngEgrSubcategoria');
 
     // limpiar genero
     const genInput = document.getElementById('inputIngEgrGenero');
@@ -29072,6 +29116,46 @@ function calcularCajaEsperada() {
             };
         }
 
+        function _cacheKeyRegistro(r) {
+            if (!r) return '';
+            const id = _cacheKeyLimpia(
+                r.idSheet || r.id || r.ID || r.IDCOMPRAS || r.IDINGRESOS || r.IDEGRESOS ||
+                r.ID_GASTOS || r.Id_Gastos || r.IDPAGOCOMPRAS || r.IDPAGODEVENTAS ||
+                r.IDPAGOSINGRESOSNEGOCIO || r.IDPAGOEGRESOSNEGOCIO ||
+                r.IDINGRESOSNEGOCIO || r.IDEGRESOSNEGOCIO || r.IDCLIENTE || ''
+            );
+            if (id) return 'id:' + id;
+            const fallback = [
+                r.fecha || r.fechaISO || r.FECHA || '',
+                r.proveedor || r.cliente || r.CLIENTE || r.concepto || r.PROVEEDOR || '',
+                r.total || r.monto || r.MONTO || r.credito || ''
+            ].map(_cacheKeyLimpia).join('|');
+            return fallback !== '||' ? 'row:' + fallback : '';
+        }
+
+        function _cacheFusionarRegistros(fresh, cacheActual, legacy) {
+            return _cacheFusionarPorClave(_cacheKeyRegistro, fresh, cacheActual, legacy);
+        }
+
+        function _cacheTablaSpecs() {
+            return [
+                { key:'compras', storage:'natanael_compras_v1', get:()=>_sheetCompras, set:v=>{ _sheetCompras=v; window._sheetCompras=v; } },
+                { key:'ingresos', storage:'natanael_ingresos_v1', get:()=>_sheetIngresos, set:v=>{ _sheetIngresos=v; window._sheetIngresos=v; } },
+                { key:'egresos', storage:'natanael_egresos_v1', get:()=>_sheetEgresos, set:v=>{ _sheetEgresos=v; window._sheetEgresos=v; } },
+                { key:'ingresosNegocio', storage:'natanael_ingresos_negocio_v1', get:()=>_sheetIngresosNegocio, set:v=>{ _sheetIngresosNegocio=v; window._sheetIngresosNegocio=v; } },
+                { key:'egresosNegocio', storage:'natanael_egresos_negocio_v1', get:()=>_sheetEgresosNegocio, set:v=>{ _sheetEgresosNegocio=v; window._sheetEgresosNegocio=v; } },
+                { key:'pagoCompras', storage:'natanael_pago_compras_v1', get:()=>_sheetPagoCompras, set:v=>{ _sheetPagoCompras=v; window._sheetPagoCompras=v; } },
+                { key:'pagoIngresos', storage:'natanael_pago_ingresos_v1', get:()=>_sheetPagoIngresos, set:v=>{ _sheetPagoIngresos=v; window._sheetPagoIngresos=v; } },
+                { key:'pagoEgresos', storage:'natanael_pago_egresos_v1', get:()=>_sheetPagoEgresos, set:v=>{ _sheetPagoEgresos=v; window._sheetPagoEgresos=v; } },
+                { key:'pagoIngresosNegocio', storage:'natanael_pago_ingresos_negocio_v1', get:()=>_sheetPagoIngNeg, set:v=>{ _sheetPagoIngNeg=v; _pagoIngNegSheet=v; window._sheetPagoIngNeg=v; window._pagoIngNegSheet=v; } },
+                { key:'pagoEgresosNegocio', storage:'natanael_pago_egresos_negocio_v1', get:()=>_sheetPagoEgrNeg, set:v=>{ _sheetPagoEgrNeg=v; _pagoEgrNegSheet=v; window._sheetPagoEgrNeg=v; window._pagoEgrNegSheet=v; } },
+                { key:'listaIngresos', storage:'natanael_lista_ingresos', get:()=>window._listaIngresos||[], set:v=>{ _listaIngresos=v; window._listaIngresos=v; } },
+                { key:'listaEgresos', storage:'natanael_lista_egresos', get:()=>window._listaEgresos||[], set:v=>{ _listaEgresos=v; window._listaEgresos=v; } },
+                { key:'proveedoresNegocio', storage:'natanael_proveedores_negocio', get:()=>window._sheetProveedoresNegocio||[], set:v=>{ window._sheetProveedoresNegocio=v; } },
+                { key:'proveedoresGastos', storage:'natanael_proveedores_gastos', get:()=>window._sheetProveedoresGastos||[], set:v=>{ window._sheetProveedoresGastos=v; } }
+            ];
+        }
+
         function _cacheLimpiarChunks(key) {
             const prev = parseInt(localStorage.getItem(key + '__chunks') || '0', 10) || 0;
             for (let i = 0; i < prev; i++) localStorage.removeItem(key + '__chunk_' + i);
@@ -29148,9 +29232,6 @@ function calcularCajaEsperada() {
                     'natanael_ingneg_v1',
                     'natanael_pago_ingneg_v1',
                     'natanael_egrneg_v1',
-                    'natanael_pago_compras_v1',
-                    'natanael_pago_ingresos_v1',
-                    'natanael_pago_egresos_v1',
                     'natanael_pago_egrneg_v1'
                 ].forEach(k => localStorage.removeItem(k));
                 const cola = JSON.parse(localStorage.getItem('natanael_cola_pendientes_v1') || '[]');
@@ -29172,6 +29253,16 @@ function calcularCajaEsperada() {
                 const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
                 const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
                 const clientesCompactos = _cacheFusionarClientes((typeof clientesDB !== 'undefined' ? clientesDB : []), previo.clientes, legacyClientes).map(_cacheCompactCliente);
+                const tablasExtra = {};
+                _cacheTablaSpecs().forEach(function(spec) {
+                    try {
+                        const legacy = _cacheLeerArrayKey(spec.storage);
+                        const actual = spec.get();
+                        tablasExtra[spec.key] = _cacheFusionarRegistros(actual, previo[spec.key], legacy);
+                    } catch(e) {
+                        tablasExtra[spec.key] = Array.isArray(previo[spec.key]) ? previo[spec.key] : [];
+                    }
+                });
                 let registroChecksCache = {};
                 try {
                     registroChecksCache = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}') || {};
@@ -29187,6 +29278,10 @@ function calcularCajaEsperada() {
                     clientes: _cacheGuardarArray('natanael_clientes_v1', clientesCompactos),
                     registroChecks: true
                 };
+                Object.keys(tablasExtra).forEach(function(k) {
+                    const spec = _cacheTablaSpecs().find(s => s.key === k);
+                    if (spec) guardados[k] = _cacheGuardarArray(spec.storage, tablasExtra[k]);
+                });
 
                 const snapshot = {
                     ts:                  Date.now(),
@@ -29199,6 +29294,7 @@ function calcularCajaEsperada() {
                     guardados:           guardados,
                     clientes:            clientesCompactos
                 };
+                Object.assign(snapshot, tablasExtra);
                 localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
         }
@@ -29245,12 +29341,12 @@ function calcularCajaEsperada() {
                     }
                 });
 
-                ['compras','ingresos','egresos','ingresosNegocio','egresosNegocio','pagoIngresosNegocio','pagoCompras','pagoIngresos','pagoEgresos','pagoEgresosNegocio','pagoIngNeg','pagoEgrNeg','supercatsIng','supercatsEgr','generosIng','generosEgr'].forEach(function(k) {
+                ['pagoIngNeg','pagoEgrNeg','supercatsIng','supercatsEgr','generosIng','generosEgr'].forEach(function(k) {
                     if (Object.prototype.hasOwnProperty.call(c, k)) { delete c[k]; dirty = true; }
                 });
 
-                // Limpiar ingresosNegocio
-                ['ingresosNegocio'].forEach(function(k) {
+                // Limpiar tablas secundarias guardadas
+                ['compras','ingresos','egresos','ingresosNegocio','egresosNegocio','pagoIngresosNegocio','pagoCompras','pagoIngresos','pagoEgresos','pagoEgresosNegocio','listaIngresos','listaEgresos','proveedoresNegocio','proveedoresGastos'].forEach(function(k) {
                     if (!Array.isArray(c[k])) return;
                     const vistos = new Set();
                     const limpio = [];
@@ -29284,7 +29380,12 @@ function calcularCajaEsperada() {
                 const ventasCache = _cacheElegirArray(c.ventas, null, legacyVentas);
                 const pagoVentasCache = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
                 const clientesCache = _cacheFusionarClientes(c.clientes, legacyClientes, null);
-                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length) return false;
+                const tablasCache = {};
+                _cacheTablaSpecs().forEach(function(spec) {
+                    tablasCache[spec.key] = _cacheFusionarRegistros(c[spec.key], _cacheLeerArrayKey(spec.storage), null);
+                });
+                const hayTablasExtra = Object.values(tablasCache).some(arr => Array.isArray(arr) && arr.length);
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length && !hayTablasExtra) return false;
                 // Mostrar aviso de antigüedad
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
@@ -29300,6 +29401,12 @@ function calcularCajaEsperada() {
                 if (ventasCache.length)     { _sheetVentas = ventasCache; window._sheetVentas = _sheetVentas; historial = ventasCache; }
                 if (pagoVentasCache.length) { _pagoVentasSheet = pagoVentasCache; window._pagoVentasSheet = _pagoVentasSheet; }
                 if (clientesCache.length) { clientesDB = clientesCache.map(_cacheCompactCliente); window.clientesDB = clientesDB; }
+                _cacheTablaSpecs().forEach(function(spec) {
+                    try {
+                        const tablaCache = tablasCache[spec.key] || [];
+                        if (tablaCache.length) spec.set(tablaCache);
+                    } catch(e) {}
+                });
                 _guardarCache();
                 return true;
             } catch(e) { console.warn('[Cache] Error al cargar:', e.message); return false; }
@@ -29315,8 +29422,14 @@ function calcularCajaEsperada() {
                 const ventasCache = await _cacheLeerArrayNativo('natanael_historial_v1');
                 const pagoVentasCache = await _cacheLeerArrayNativo('natanael_pago_ventas_v1');
                 const clientesCache = await _cacheLeerArrayNativo('natanael_clientes_v1');
+                const tablasCacheNativo = {};
+                for (const spec of _cacheTablaSpecs()) {
+                    try { tablasCacheNativo[spec.key] = await _cacheLeerArrayNativo(spec.storage); }
+                    catch(e) { tablasCacheNativo[spec.key] = []; }
+                }
+                const hayTablasExtra = Object.values(tablasCacheNativo).some(arr => Array.isArray(arr) && arr.length);
 
-                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length) return false;
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length && !hayTablasExtra) return false;
 
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
@@ -29347,6 +29460,16 @@ function calcularCajaEsperada() {
                     try { _cacheGuardarArray('natanael_clientes_v1', clientesCache); } catch(e) {}
                 }
 
+                for (const spec of _cacheTablaSpecs()) {
+                    try {
+                        const tablaCache = tablasCacheNativo[spec.key] || [];
+                        if (tablaCache.length && (!spec.get() || !spec.get().length)) {
+                            spec.set(tablaCache);
+                            try { _cacheGuardarArray(spec.storage, tablaCache); } catch(e) {}
+                        }
+                    } catch(e) {}
+                }
+
                 console.log('[Cache] Android nativo aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
                 return true;
             } catch(e) {
@@ -29369,6 +29492,10 @@ function calcularCajaEsperada() {
                 const _vistaEgr = document.getElementById('vistaEgresos');
                 if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
                 if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+                if (window._vistaActual === 'ingresosNegocio') renderIngNeg('ingresosNegocio');
+                if (window._vistaActual === 'egresosNegocio') renderIngNeg('egresosNegocio');
+                if (window._vistaActual === 'pagos') renderPagos();
+                if (window._vistaActual === 'listaCat' && typeof renderListaCat === 'function') renderListaCat(window._listaCatTab || 'ingresos', false);
             } catch(e) {
                 console.warn('[Cache] Error al renderizar cache nativo:', e.message);
             }
@@ -29389,6 +29516,10 @@ function calcularCajaEsperada() {
                 const _vistaEgr = document.getElementById('vistaEgresos');
                 if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
                 if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+                if (window._vistaActual === 'ingresosNegocio') renderIngNeg('ingresosNegocio');
+                if (window._vistaActual === 'egresosNegocio') renderIngNeg('egresosNegocio');
+                if (window._vistaActual === 'pagos') renderPagos();
+                if (window._vistaActual === 'listaCat' && typeof renderListaCat === 'function') renderListaCat(window._listaCatTab || 'ingresos', false);
             } catch(e) {
                 console.warn('[Cache] Error al renderizar cache inicial:', e.message);
             }
