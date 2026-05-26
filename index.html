@@ -5406,9 +5406,15 @@ _sheetProductos.forEach(p => {
         function filtrarProductos(query) {
             if (typeof _asegurarInventarioCacheCompleto === 'function') _asegurarInventarioCacheCompleto();
             const container = document.getElementById('listaProductosCatalogo');
+            const q = String(query || '').trim().toLowerCase();
             const filtrados = _sheetProductos
                 .map((p, i) => ({ ...p, _idx: i }))
-                .filter(p => (p.stockCalculado ?? parseFloat(p.stock) ?? 0) > 0 && p.nombre.toLowerCase().includes(query.toLowerCase()));
+                .filter(p => {
+                    const nombreOk = String(p.nombre || '').toLowerCase().includes(q);
+                    if (!nombreOk) return false;
+                    if (q) return true;
+                    return (p.stockCalculado ?? parseFloat(p.stock) ?? 0) > 0;
+                });
             if (filtrados.length === 0) {
                 container.innerHTML = `<p class="text-[10px] text-slate-500 text-center py-4 font-bold uppercase">Sin resultados</p>`;
                 return;
