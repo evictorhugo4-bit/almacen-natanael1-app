@@ -24534,16 +24534,32 @@ function _actualizarKpiGananciaNeta() {
         String(_ahora.getDate()).padStart(2, '0');
 
     // Mismo esHoy que usa calcularWidgetGastoFamiliar
-    const esHoyN = f => {
-        if (!f) return false;
+    const _hoyInicio = new Date(_ahora.getFullYear(), _ahora.getMonth(), _ahora.getDate(), 0, 0, 0).getTime();
+    const _hoyFin    = _hoyInicio + 86400000;
+    const _parseTsLocal = f => {
+        if (!f) return 0;
         const s = String(f).trim();
-        const mL = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})/);
-        if (mL) return mL[3]+'-'+mL[2].padStart(2,'0')+'-'+mL[1].padStart(2,'0') === _hoyStr;
-        if (s.length >= 10 && s[4] === '-') {
-            if (s.includes('T')) { const d = new Date(s); if (!isNaN(d)) return (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')) === _hoyStr; }
-            return s.startsWith(_hoyStr);
-        }
-        return false;
+        let m;
+        // DD/MM/YYYY HH:mm:ss o DD-MM-YYYY HH:mm:ss
+        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})[\s T](\d{1,2}):(\d{2}):(\d{2})/);
+        if (m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+m[6]).getTime();
+        // DD/MM/YYYY HH:mm
+        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})[\s T](\d{1,2}):(\d{2})/);
+        if (m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],0).getTime();
+        // DD/MM/YYYY
+        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (m) return new Date(+m[3],+m[2]-1,+m[1],0,0,0).getTime();
+        // YYYY-MM-DDTHH:mm:ss (sin Z)
+        m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+        if (m) return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime();
+        // YYYY-MM-DD
+        m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return new Date(+m[1],+m[2]-1,+m[3],0,0,0).getTime();
+        return 0;
+    };
+    const esHoyN = f => {
+        const ts = _parseTsLocal(f);
+        return ts >= _hoyInicio && ts < _hoyFin;
     };
 
     // GANANCIAS EFECTIVO HOY — igual al bloque EFECTIVO de Estado Personal pero solo hoy
