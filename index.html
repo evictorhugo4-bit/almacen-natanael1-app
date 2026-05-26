@@ -7488,6 +7488,34 @@ _sheetEgresosNegocio.forEach(e => {
                     window.clientesDB = clientesDB;
                 }
 
+                // Restaurar datos secundarios desde caché propio
+                try {
+                    const _ingNegCache   = _natBootReadArray('natanael_ingneg_cache_v1');
+                    const _egrNegCache   = _natBootReadArray('natanael_egrneg_cache_v1');
+                    const _pIngNegCache  = _natBootReadArray('natanael_pagingneg_cache_v1');
+                    const _pEgrNegCache  = _natBootReadArray('natanael_pagegrneg_cache_v1');
+                    const _pIngCache     = _natBootReadArray('natanael_paging_cache_v1');
+                    const _pEgrCache     = _natBootReadArray('natanael_pagegr_cache_v1');
+                    const _comprasCache2 = _natBootReadArray('natanael_compras_cache_v1');
+                    if (_ingNegCache.length && typeof _sheetIngresosNegocio !== 'undefined' && !_sheetIngresosNegocio.length) {
+                        _sheetIngresosNegocio.length = 0;
+                        _ingNegCache.forEach(function(r){ _sheetIngresosNegocio.push(r); });
+                        window._sheetIngresosNegocio = _sheetIngresosNegocio;
+                    }
+                    if (_egrNegCache.length && typeof _sheetEgresosNegocio !== 'undefined' && !_sheetEgresosNegocio.length) {
+                        _sheetEgresosNegocio.length = 0;
+                        _egrNegCache.forEach(function(r){ _sheetEgresosNegocio.push(r); });
+                        window._sheetEgresosNegocio = _sheetEgresosNegocio;
+                    }
+                    if (_pIngNegCache.length) { window._sheetPagoIngNeg = _pIngNegCache; window._pagoIngNegSheet = _pIngNegCache; }
+                    if (_pEgrNegCache.length) { window._sheetPagoEgrNeg = _pEgrNegCache; window._pagoEgrNegSheet = _pEgrNegCache; }
+                    if (_pIngCache.length && !(_sheetPagoIngresos && _sheetPagoIngresos.length)) { _sheetPagoIngresos = _pIngCache; window._sheetPagoIngresos = _pIngCache; }
+                    if (_pEgrCache.length && !(_sheetPagoEgresos && _sheetPagoEgresos.length))   { _sheetPagoEgresos = _pEgrCache;  window._sheetPagoEgresos  = _pEgrCache; }
+                    if (_comprasCache2.length && typeof _sheetCompras !== 'undefined' && !(_sheetCompras && _sheetCompras.length)) { window._sheetCompras = _comprasCache2; }
+                    if (_ingNegCache.length || _egrNegCache.length)
+                        console.log('[Cache] Secundarios restaurados -> ingNeg:' + _ingNegCache.length + ' egrNeg:' + _egrNegCache.length + ' pIngNeg:' + _pIngNegCache.length);
+                } catch(e2) { console.warn('[Cache] No se pudo restaurar datos secundarios:', e2.message); }
+
                 const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length || clientesCache.length;
                 window._cacheLocalAplicado = !!aplicado;
                 if (aplicado) {
@@ -8951,6 +8979,8 @@ if (indicator) indicator.classList.remove('hidden');
                 if (typeof _statsTab !== 'undefined' && _statsTab === 'coordPagos' && typeof renderCoordinacionPagos === 'function') {
                     renderCoordinacionPagos();
                 }
+                // Refrescar todas las vistas con los datos completos del Sheet
+                try { if (typeof _renderTodosLosDatos === 'function') _renderTodosLosDatos(); } catch(e2) {}
                 // Guardar caché fresco con todos los datos secundarios
                 if (typeof _guardarCache === 'function') _guardarCache();
             } catch(e) {
@@ -29021,34 +29051,77 @@ function calcularCajaEsperada() {
                 const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
                 const ventasActuales = (_sheetVentas && _sheetVentas.length) ? _sheetVentas : ((historial && historial.length) ? historial : []);
                 const inventarioCompacto = _cacheElegirInventarioCompleto(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
-                const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
-                const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
+                // Limitar ventas a 300 para liberar espacio para el inventario
+                const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).slice(0, 300).map(_cacheCompactVenta);
+                const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).slice(0, 300).map(_cacheCompactPagoVenta);
                 let registroChecksCache = {};
                 try {
                     registroChecksCache = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}') || {};
                     localStorage.setItem('natanael_reg_checks_cache_v1', JSON.stringify({ ts: Date.now(), checks: registroChecksCache }));
                 } catch(e) { registroChecksCache = {}; }
 
-                // Guardar separado primero. Si el snapshot grande falla por cuota, igual queda cache util.
-                localStorage.removeItem(_CACHE_KEY);
+                // ↗↗ PRIORIDAD: guardar inventario PRIMERO, es lo más importante ↗↗
+                // Limpiar claves viejas de otros datos antes para liberar espacio
+                ['natanael_historial_v1','natanael_pago_ventas_v1',
+                 'natanael_ingneg_cache_v1','natanael_egrneg_cache_v1',
+                 'natanael_pagingneg_cache_v1','natanael_pagegrneg_cache_v1',
+                 'natanael_paging_cache_v1','natanael_pagegr_cache_v1',
+                 'natanael_compras_cache_v1', _CACHE_KEY
+                ].forEach(function(k) {
+                    try {
+                        localStorage.removeItem(k);
+                        // también chunks
+                        const n = parseInt(localStorage.getItem(k + '__chunks') || '0', 10);
+                        for (let i = 0; i < n; i++) localStorage.removeItem(k + '__chunk_' + i);
+                        localStorage.removeItem(k + '__chunks');
+                    } catch(e2) {}
+                });
+
+                // Guardar inventario primero (prioridad máxima)
+                const invOk = _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto);
+                if (!invOk) console.warn('[Cache] No se pudo guardar inventario (' + inventarioCompacto.length + ' prods)');
+                else console.log('[Cache] Inventario guardado: ' + inventarioCompacto.length + ' productos');
+
+                // Luego ventas y pagos (secundarios)
                 const guardados = {
-                    inventario: _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto),
+                    inventario: invOk,
                     ventas: _cacheGuardarArray('natanael_historial_v1', ventasCompactas),
                     pagoVentas: _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCompacto),
                     registroChecks: true
                 };
 
-                const snapshot = {
-                    ts:                  Date.now(),
-                    inventarioCount:     inventarioCompacto.length,
-                    ventasCount:         ventasCompactas.length,
-                    pagoVentasCount:     pagoVentasCompacto.length,
-                    registroChecksCount: Object.keys(registroChecksCache).length,
-                    registroChecks:      registroChecksCache,
-                    guardados:           guardados,
-                    clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
-                };
-                localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
+                // Datos secundarios solo si queda espacio
+                try {
+                    const _ingNeg = Array.isArray(window._sheetIngresosNegocio) ? window._sheetIngresosNegocio : [];
+                    const _egrNeg = Array.isArray(window._sheetEgresosNegocio)  ? window._sheetEgresosNegocio  : [];
+                    const _pIngNeg = Array.isArray(window._sheetPagoIngNeg)     ? window._sheetPagoIngNeg      : [];
+                    const _pEgrNeg = Array.isArray(window._sheetPagoEgrNeg)     ? window._sheetPagoEgrNeg      : [];
+                    const _pIng   = Array.isArray(window._sheetPagoIngresos)    ? window._sheetPagoIngresos    : [];
+                    const _pEgr   = Array.isArray(window._sheetPagoEgresos)     ? window._sheetPagoEgresos     : [];
+                    const _compras = Array.isArray(window._sheetCompras)        ? window._sheetCompras         : [];
+                    if (_ingNeg.length)  _cacheGuardarArray('natanael_ingneg_cache_v1',    _ingNeg);
+                    if (_egrNeg.length)  _cacheGuardarArray('natanael_egrneg_cache_v1',    _egrNeg);
+                    if (_pIngNeg.length) _cacheGuardarArray('natanael_pagingneg_cache_v1', _pIngNeg);
+                    if (_pEgrNeg.length) _cacheGuardarArray('natanael_pagegrneg_cache_v1', _pEgrNeg);
+                    if (_pIng.length)    _cacheGuardarArray('natanael_paging_cache_v1',    _pIng);
+                    if (_pEgr.length)    _cacheGuardarArray('natanael_pagegr_cache_v1',    _pEgr);
+                    if (_compras.length) _cacheGuardarArray('natanael_compras_cache_v1',   _compras);
+                } catch(e) { /* sin espacio para secundarios, no importa */ }
+
+                // Snapshot mínimo (sin arrays grandes — ya están en claves separadas)
+                try {
+                    const snapshot = {
+                        ts:                  Date.now(),
+                        inventarioCount:     inventarioCompacto.length,
+                        ventasCount:         ventasCompactas.length,
+                        pagoVentasCount:     pagoVentasCompacto.length,
+                        registroChecksCount: Object.keys(registroChecksCache).length,
+                        registroChecks:      registroChecksCache,
+                        guardados:           guardados,
+                        clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
+                    };
+                    localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
+                } catch(e2) { console.warn('[Cache] Snapshot no se pudo guardar:', e2.message); }
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
         }
 
@@ -29125,13 +29198,18 @@ function calcularCajaEsperada() {
         function _cargarCache() {
             try {
                 const c = _cacheLeerSnapshotActual();
-                const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
-                const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
-                const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
-                const inventarioCache = _cacheElegirArray(c.inventario, null, legacyInventario);
-                const ventasCache = _cacheElegirArray(c.ventas, null, legacyVentas);
-                const pagoVentasCache = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
-                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
+                const legacyInventario  = _cacheLeerArrayKey('natanael_inventario_v1');
+                const legacyVentas      = _cacheLeerArrayKey('natanael_historial_v1');
+                const legacyPagoVentas  = _cacheLeerArrayKey('natanael_pago_ventas_v1');
+                // Elegir la fuente de inventario con más productos
+                const inventarioCache   = _cacheElegirInventarioCompleto(legacyInventario, c.inventario, null);
+                const ventasCache       = _cacheElegirArray(c.ventas, null, legacyVentas);
+                const pagoVentasCache   = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
+                console.log('[Cache] inventario legacy:' + legacyInventario.length + ' snap:' + (Array.isArray(c.inventario)?c.inventario.length:0) + ' elegido:' + inventarioCache.length + ' | ts:' + (c.ts ? Math.round((Date.now()-c.ts)/60000) + 'min' : 'sin ts'));
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) {
+                    console.warn('[Cache] Caché vacío - no hay datos para cargar');
+                    return false;
+                }
                 // Mostrar aviso de antigüedad
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
@@ -29201,18 +29279,23 @@ function calcularCajaEsperada() {
             if (!ok) return false;
             window._cacheNativoInicialRenderizado = true;
             try {
-                renderHistorial();
-                renderInventario();
-                renderClientes();
-                renderCompras();
-                const _vistaIng = document.getElementById('vistaIngresos');
-                const _vistaEgr = document.getElementById('vistaEgresos');
-                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
-                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+                _renderTodosLosDatos();
             } catch(e) {
                 console.warn('[Cache] Error al renderizar cache nativo:', e.message);
             }
             return true;
+        }
+
+        function _renderTodosLosDatos() {
+            try { renderHistorial();    } catch(e) {}
+            try { renderInventario();   } catch(e) {}
+            try { renderClientes();     } catch(e) {}
+            try { renderCompras();      } catch(e) {}
+            try { renderIngEgr('ingreso'); } catch(e) {}
+            try { renderIngEgr('egreso');  } catch(e) {}
+            try { if (typeof renderIngNeg === 'function') renderIngNeg('ingresosNegocio'); } catch(e) {}
+            try { if (typeof renderIngNeg === 'function') renderIngNeg('egresosNegocio');  } catch(e) {}
+            try { if (typeof renderPagos  === 'function') renderPagos(); } catch(e) {}
         }
 
         function _renderCacheInicial() {
@@ -29221,14 +29304,7 @@ function calcularCajaEsperada() {
             if (!ok) return false;
             window._cacheInicialRenderizado = true;
             try {
-                renderHistorial();
-                renderInventario();
-                renderClientes();
-                renderCompras();
-                const _vistaIng = document.getElementById('vistaIngresos');
-                const _vistaEgr = document.getElementById('vistaEgresos');
-                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
-                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+                _renderTodosLosDatos();
             } catch(e) {
                 console.warn('[Cache] Error al renderizar cache inicial:', e.message);
             }
@@ -29255,61 +29331,44 @@ function calcularCajaEsperada() {
                     mostrarToast('Datos locales de la app cargados. Sincronizando en segundo plano...', 'success');
                 }
             }).catch(function(){});
-            if (tuvimosCachee) {
-                // Renderizar con datos del caché al toque
-                renderHistorial();
-                renderInventario();
-                renderClientes();
-                renderCompras();
-                const _vistaAct = document.querySelector('[data-navbtn="true"].active') ;
-                const _vistaIng = document.getElementById('vistaIngresos');
-                const _vistaEgr = document.getElementById('vistaEgresos');
-                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
-                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
-            } else {
-                renderHistorial();
-            }
+
+            // Siempre renderizar TODAS las vistas con los datos disponibles (caché o vacío)
+            try { if (typeof recalcularTodosLosStocks === 'function') recalcularTodosLosStocks(); } catch(e) {}
+            _renderTodosLosDatos();
 
             lucide.createIcons();
             vincularAccesoCajaInicial();
             window.dispatchEvent(new Event('natanael-ready'));
-            // Mostrar rápido el valor local y luego reemplazar por el real del Sheet
             setTimeout(function(){
                 if (typeof kpiCajaCargarDesdeSheet === 'function') kpiCajaCargarDesdeSheet();
             }, 400);
 
+            // Función que refresca todo después del sync con el Sheet
+            function _postSyncRefresh() {
+                try {
+                    if (_sheetVentas && _sheetVentas.length > 0) renderHistorialConSheet();
+                    if (typeof kpiCajaCargarDesdeSheet === 'function') kpiCajaCargarDesdeSheet();
+                    _renderTodosLosDatos();
+                    _guardarCache();
+                } catch(e) {}
+            }
+
             if (tuvimosCachee) {
                 mostrarToast('Datos locales cargados. Sincronizando en segundo plano...', 'success');
+                // Con caché: arrancar sync en 1.5s (antes era 5s)
                 setTimeout(() => {
                     const syncPromise = iniciarSyncSheets();
                     Promise.resolve(syncPromise).then(() => {
-                        setTimeout(() => {
-                            if (_sheetVentas && _sheetVentas.length > 0) {
-                                renderHistorialConSheet();
-                            }
-                            if (typeof kpiCajaCargarDesdeSheet === 'function') {
-                                kpiCajaCargarDesdeSheet();
-                            }
-                            _guardarCache();
-                        }, 300);
+                        setTimeout(_postSyncRefresh, 300);
                     }).catch(() => {});
-                }, 5000);
+                }, 1500);
                 return;
             }
 
-            // 2) Sincronizar con sheet en segundo plano
+            // Sin caché: sync inmediato
             const syncPromise = iniciarSyncSheets();
             Promise.resolve(syncPromise).then(() => {
-                setTimeout(() => {
-                    if (_sheetVentas && _sheetVentas.length > 0) {
-                        renderHistorialConSheet();
-                    }
-                    if (typeof kpiCajaCargarDesdeSheet === 'function') {
-                        kpiCajaCargarDesdeSheet();
-                    }
-                    // Guardar caché fresco después del primer sync
-                    _guardarCache();
-                }, 300);
+                setTimeout(_postSyncRefresh, 300);
             }).catch(() => {});
         };
 
