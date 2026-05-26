@@ -906,7 +906,6 @@ z-index:999999999;
                 <span style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Log de Sincronización</span>
                 <div style="display:flex;gap:6px;align-items:center;">
                     <button onclick="testConexionSheet()" style="background:#065f46;color:#34d399;border:none;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:900;cursor:pointer;text-transform:uppercase;">TEST POST</button>
-                    <button onclick="(function(){['natanael_inventario_v1','natanael_inventario_full_count_v1','natanael_snap_v2','natanael_historial_v1','natanael_pago_ventas_v1','natanael_clientes_v1'].forEach(function(k){localStorage.removeItem(k);});alert('Caché limpio. Recargando...');location.reload();})()" style="background:#7c1d1d;color:#fca5a5;border:none;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:900;cursor:pointer;text-transform:uppercase;">RESET CAĆHE</button>
                     <button onclick="document.getElementById('syncDebugPanel').innerHTML=''" style="background:#1e293b;color:#64748b;border:none;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:900;cursor:pointer;">LIMPIAR</button>
                     <button onclick="this.closest('div.hidden,div.fixed').classList.add('hidden')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;">X</button>
                 </div>
@@ -1028,14 +1027,6 @@ z-index:999999999;
                         </div>
                         <div id="kpiGananciasDia" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
                         <div id="kpiGananciasDiaInfo" class="text-[9px] text-slate-600 font-bold mt-1">precio - costo</div>
-                    </div>
-                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span style="font-size:20px;">&#128178;</span>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ganancia Neta</span>
-                        </div>
-                        <div id="kpiGananciaNeta" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
-                        <div id="kpiGananciaNetaInfo" class="text-[9px] text-slate-600 font-bold mt-1">ganancias - consumo - comida</div>
                     </div>
                     <!-- IDs requeridos por JS ↗ ocultos -->
                     <div id="totalCaja" style="display:none;">$0</div>
@@ -5413,6 +5404,7 @@ _sheetProductos.forEach(p => {
     document.getElementById('selectorConversion').classList.add('hidden');
 }
         function filtrarProductos(query) {
+            if (typeof _asegurarInventarioCacheCompleto === 'function') _asegurarInventarioCacheCompleto();
             const container = document.getElementById('listaProductosCatalogo');
             const filtrados = _sheetProductos
                 .map((p, i) => ({ ...p, _idx: i }))
@@ -6264,7 +6256,7 @@ function confirmarVenta() {
         window._sheetVentas = _sheetVentas;
     }
     if (typeof DB !== 'undefined' && DB.saveHistorial) DB.saveHistorial();
-    if (typeof _guardarCache === 'function') setTimeout(_guardarCache, 0);
+    if (typeof _guardarCache === 'function') _guardarCache();
 
     // Guardado local en background
    
@@ -7041,8 +7033,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbxUsSvxPzxzCScWkU61vr7xAKELc-ODtlSId9SOnV6Q7_DXk-DnvCfagWCNWtBHSgxM/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbxUsSvxPzxzCScWkU61vr7xAKELc-ODtlSId9SOnV6Q7_DXk-DnvCfagWCNWtBHSgxM/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -7482,45 +7474,10 @@ _sheetEgresosNegocio.forEach(e => {
                     window._pagoVentasSheet = _pagoVentasSheet;
                 }
 
-                // Clientes desde snapshot
-                const clientesCache = Array.isArray(snap.clientes) ? snap.clientes : [];
-                if (clientesCache.length && typeof clientesDB !== 'undefined' && !clientesDB.length) {
-                    clientesDB = clientesCache;
-                    window.clientesDB = clientesDB;
-                }
-
-                // Restaurar datos secundarios desde caché propio
-                try {
-                    const _ingNegCache   = _natBootReadArray('natanael_ingneg_cache_v1');
-                    const _egrNegCache   = _natBootReadArray('natanael_egrneg_cache_v1');
-                    const _pIngNegCache  = _natBootReadArray('natanael_pagingneg_cache_v1');
-                    const _pEgrNegCache  = _natBootReadArray('natanael_pagegrneg_cache_v1');
-                    const _pIngCache     = _natBootReadArray('natanael_paging_cache_v1');
-                    const _pEgrCache     = _natBootReadArray('natanael_pagegr_cache_v1');
-                    const _comprasCache2 = _natBootReadArray('natanael_compras_cache_v1');
-                    if (_ingNegCache.length && typeof _sheetIngresosNegocio !== 'undefined' && !_sheetIngresosNegocio.length) {
-                        _sheetIngresosNegocio.length = 0;
-                        _ingNegCache.forEach(function(r){ _sheetIngresosNegocio.push(r); });
-                        window._sheetIngresosNegocio = _sheetIngresosNegocio;
-                    }
-                    if (_egrNegCache.length && typeof _sheetEgresosNegocio !== 'undefined' && !_sheetEgresosNegocio.length) {
-                        _sheetEgresosNegocio.length = 0;
-                        _egrNegCache.forEach(function(r){ _sheetEgresosNegocio.push(r); });
-                        window._sheetEgresosNegocio = _sheetEgresosNegocio;
-                    }
-                    if (_pIngNegCache.length) { window._sheetPagoIngNeg = _pIngNegCache; window._pagoIngNegSheet = _pIngNegCache; }
-                    if (_pEgrNegCache.length) { window._sheetPagoEgrNeg = _pEgrNegCache; window._pagoEgrNegSheet = _pEgrNegCache; }
-                    if (_pIngCache.length && !(_sheetPagoIngresos && _sheetPagoIngresos.length)) { _sheetPagoIngresos = _pIngCache; window._sheetPagoIngresos = _pIngCache; }
-                    if (_pEgrCache.length && !(_sheetPagoEgresos && _sheetPagoEgresos.length))   { _sheetPagoEgresos = _pEgrCache;  window._sheetPagoEgresos  = _pEgrCache; }
-                    if (_comprasCache2.length && typeof _sheetCompras !== 'undefined' && !(_sheetCompras && _sheetCompras.length)) { window._sheetCompras = _comprasCache2; }
-                    if (_ingNegCache.length || _egrNegCache.length)
-                        console.log('[Cache] Secundarios restaurados -> ingNeg:' + _ingNegCache.length + ' egrNeg:' + _egrNegCache.length + ' pIngNeg:' + _pIngNegCache.length);
-                } catch(e2) { console.warn('[Cache] No se pudo restaurar datos secundarios:', e2.message); }
-
-                const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length || clientesCache.length;
+                const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length;
                 window._cacheLocalAplicado = !!aplicado;
                 if (aplicado) {
-                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
+                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length);
                 }
                 return !!aplicado;
             } catch(e) {
@@ -7977,50 +7934,42 @@ _sheetEgresosNegocio.forEach(e => {
                     while (panel.children.length > 20) panel.removeChild(panel.lastChild);
                 }
             };
-            if (!silencioso) _log('⚡ Iniciando sync: inventario exclusivo + rapido en paralelo...', '#94a3b8');
+            if (!silencioso) _log('âú Iniciando sync en 2 etapas...', '#94a3b8');
             let data;
             try {
-                // ↗↗ ETAPA 1: inventario SOLO + rapido (sin inventario) en paralelo ↗↗
-                const ts = Date.now();
-                let resInventario, resRapido;
+                // ↗↗ ETAPA 1: hojas críticas (inventario, ventas, compras, clientes) ↗↗
+                let resRapido;
                 try {
-                    [resInventario, resRapido] = await Promise.all([
-                        fetch(SHEETS_URL2 + '?modo=inventario&_ts=' + ts, { cache: 'no-store' }),
-                        fetch(SHEETS_URL2 + '?modo=rapido&_ts='    + ts, { cache: 'no-store' })
-                    ]);
+                    resRapido = await fetch(SHEETS_URL2 + '?modo=rapido&_ts=' + Date.now(), { cache: 'no-store' });
                 } catch(netErr) {
-                    if (!silencioso) _log('❌ Error de red: ' + netErr.message, '#f87171');
-                    if (!silencioso) mostrarToast('❌ Sin conexión al sheet: ' + netErr.message, 'error');
+                    if (!silencioso) _log('â? Error de red: ' + netErr.message, '#f87171');
+                    if (!silencioso) mostrarToast('â? Sin conexión al sheet: ' + netErr.message, 'error');
                     if (!silencioso && indicator) indicator.classList.add('hidden');
                     return;
                 }
-                if (!resInventario.ok || !resRapido.ok) {
-                    const status = !resInventario.ok ? resInventario.status : resRapido.status;
-                    _log('❌ HTTP error ' + status, '#f87171');
-                    mostrarToast('❌ Sheet respondió HTTP ' + status, 'error');
+                if (!resRapido.ok) {
+                    _log('â? HTTP error ' + resRapido.status, '#f87171');
+                    mostrarToast('â? Sheet respondió HTTP ' + resRapido.status, 'error');
                     if (indicator) indicator.classList.add('hidden');
                     return;
                 }
-                let dataInventario, dataRapido;
+                let dataRapido;
                 try {
-                    [dataInventario, dataRapido] = await Promise.all([
-                        resInventario.text().then(t => JSON.parse(t)),
-                        resRapido.text().then(t => JSON.parse(t))
-                    ]);
+                    dataRapido = JSON.parse(await resRapido.text());
                 } catch(parseErr) {
-                    _log('❌ Respuesta no es JSON', '#f87171');
-                    mostrarToast('❌ Sheet no devuelve JSON válido. ¿Redesplegaste el script?', 'error');
+                    _log('â? Respuesta no es JSON', '#f87171');
+                    mostrarToast('â? Sheet no devuelve JSON válido. ¿Redesplegaste el script?', 'error');
                     if (indicator) indicator.classList.add('hidden');
                     return;
                 }
-                _log('✅ Etapa 1 OK — inventario:' + (dataInventario.inventario||[]).length + ' ventas:' + (dataRapido.ventas||[]).length, '#10b981');
+                _log('✅ Etapa 1 OK ? inventario:' + (dataRapido.inventario||[]).length + ' ventas:' + (dataRapido.ventas||[]).length, '#10b981');
                 if ((dataRapido.ventas||[]).length > 0)     { _syncStatus.ventas = true;     actualizarIndicadorSync(); }
                 if ((dataRapido.pagoVentas||[]).length > 0) { _syncStatus.pagoVentas = true;  actualizarIndicadorSync(); }
 
-                // Combinar: inventario exclusivo (modo=inventario) + resto de modo=rapido
+                // Construir data inicial con lo que llegó rápido + arrays vacíos para el resto
                 data = {
                     ok: true,
-                    inventario: dataInventario.inventario || [],   // ← exclusivo, no compite con otras hojas
+                    inventario: dataRapido.inventario || [],
                     ventas:     dataRapido.ventas     || [],
                     compras:    dataRapido.compras    || [],
                     clientes:   dataRapido.clientes   || [],
@@ -8164,7 +8113,7 @@ _sheetEgresosNegocio.forEach(e => {
                     });
                     _sheetVentas = Object.values(ventasMap);
                     window._sheetVentas = _sheetVentas;
-                    if (typeof _guardarCache === 'function') setTimeout(_guardarCache, 0);
+                    if (typeof _guardarCache === 'function') _guardarCache();
                     // Debug: verificar efectivo en primeras ventas del día actual
                     const _hoy = new Date(); const _hoyStr = _hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')+'-'+String(_hoy.getDate()).padStart(2,'0');
                     const _ventasHoy = _sheetVentas.filter(v => (v.fechaISO||v.fecha||'').startsWith(_hoyStr) || parseFechaNum(v.fechaISO||v.fecha||'') >= parseFechaNum(_hoyStr+'T00:00'));
@@ -8241,7 +8190,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
         });
     });
 
-    _sheetProductos = normalizarVencimientosProductos(nuevaLista);
+    _sheetProductos = normalizarVencimientosProductos(_cacheFusionarInventario(nuevaLista, _sheetProductos));
     window._sheetProductos = _sheetProductos;
     _inventarioSheetCompleto = true;
     _inventarioDesdeCachePendienteSheet = false;
@@ -8988,8 +8937,6 @@ if (indicator) indicator.classList.remove('hidden');
                 if (typeof _statsTab !== 'undefined' && _statsTab === 'coordPagos' && typeof renderCoordinacionPagos === 'function') {
                     renderCoordinacionPagos();
                 }
-                // Refrescar todas las vistas con los datos completos del Sheet
-                try { if (typeof _renderTodosLosDatos === 'function') _renderTodosLosDatos(); } catch(e2) {}
                 // Guardar caché fresco con todos los datos secundarios
                 if (typeof _guardarCache === 'function') _guardarCache();
             } catch(e) {
@@ -9062,7 +9009,6 @@ if (indicator) indicator.classList.remove('hidden');
             if (elV)  elV.textContent  = '$' + Utils.fmt(totalVentas);
             if (elVi) elVi.textContent = cantTx + ' transacci' + (cantTx===1?'ón':'ones');
             if (elG)  elG.textContent  = '$' + Utils.fmt(totalGanancias);
-
         }
 
 
@@ -10794,7 +10740,6 @@ console.log("FILTRADAS:", filtradas.length);
                 epFila('GANANCIAS TOTALES',ganFiltroEP,0,'#fbbf24')+
                 epFila('CONSUMO DEL NEGOCIO',0,egrConsumoNeg,'#fb923c')+
                 epFila('COMIDA FAMILIAR',0,egrComidaFam,'#f87171')+
-                epFilaBal('GANANCIAS TOTALES','CONSUMO + COMIDA FAMILIAR',ganFiltroEP,egrConsumoNeg+egrComidaFam,ganFiltroEP-(egrConsumoNeg+egrComidaFam))+
                 epBloqueFilas('BLOQUE 1')+
                 epFilaBal('TOTAL BLOQUE 1',ganFiltroEP+epBloque1Total.ing,'EGRESOS BLOQUE 1',egrConsumoNeg+egrComidaFam+epBloque1Total.egr,(ganFiltroEP+epBloque1Total.ing)-(egrConsumoNeg+egrComidaFam+epBloque1Total.egr))+
                 epBloquesExtraFilas+
@@ -10802,8 +10747,6 @@ console.log("FILTRADAS:", filtradas.length);
             );
 
             html += tablaIng + tablaEgr;
-
-
 
             const epComparador = {
                 gananciasConsumo: {
@@ -18652,6 +18595,7 @@ console.log("FILTRADAS:", filtradas.length);
         let inventarioFiltrado = [];
 
       function filtrarInventario() {
+    if (typeof _asegurarInventarioCacheCompleto === 'function') _asegurarInventarioCacheCompleto();
     const query    = (document.getElementById('inputFiltroInv')?.value || '').toLowerCase().trim();
     const prov     = (document.getElementById('filtroInvProveedor')?.value || '').toLowerCase();
     const cat      = (document.getElementById('filtroInvCategoria')?.value || '').toLowerCase();
@@ -19049,8 +18993,15 @@ window.debugStockProducto = function(nombreBuscado) {
 
 
 function _inventarioDebeEsperarListaCompleta() {
-    // Nunca bloquear — mostrar cache inmediatamente y actualizar cuando llegue el sheet
-    return false;
+    const totalActual = Array.isArray(_sheetProductos) ? _sheetProductos.length : 0;
+    let totalEsperado = 0;
+    try {
+        totalEsperado = parseInt(localStorage.getItem('natanael_inventario_full_count_v1') || '0', 10) || 0;
+    } catch(e) {}
+    return !!_inventarioDesdeCachePendienteSheet
+        && !_inventarioSheetCompleto
+        && totalActual > 0
+        && ((totalEsperado > 0 && totalActual < totalEsperado) || totalActual <= 60);
 }
 
 
@@ -23304,6 +23255,7 @@ proveedores.map(p => `<option value="${p}">${p}</option>`).join("");
 }
 
 function filtrarProductosCompra(query) {
+            if (typeof _asegurarInventarioCacheCompleto === 'function') _asegurarInventarioCacheCompleto();
             const container = document.getElementById('listaProductosCatalogoCompra');
             const filtrados = _sheetProductos.map((p,i) => ({...p,_idx:i}))
                 .filter(p => p.nombre.toLowerCase().includes(query.toLowerCase()));
@@ -24237,27 +24189,18 @@ function revisarAlertasCompra7Dias(){
 
         const actual = categorias.get(catKey) || {
             categoria,
-            foto: '',
+            foto: p.foto || p.imagen || p.IMAGEN || '',
             tipoGrupo,
             stockActual: 0,
             stockMin: 0,
             vendido7: 0,
-            productos: 0,
-            _vendidoPorProd: {}
+            productos: 0
         };
 
         actual.stockActual += stockActual;
         actual.stockMin = Math.max(actual.stockMin || 0, stockMinProd);
         actual.productos += 1;
-        // Registrar foto del producto para luego elegir el mas vendido
-        const prodFotoInv = p.foto || p.imagen || p.IMAGEN || '';
-        const prodClaveInv = id || normalizar(p.nombre || '');
-        if (!actual._vendidoPorProd) actual._vendidoPorProd = {};
-        // Registrar por id Y por nombre normalizado para que ventas (que no tienen id) puedan matchear
-        [id, normalizar(p.nombre || '')].filter(Boolean).forEach(clave => {
-            if (!actual._vendidoPorProd[clave]) actual._vendidoPorProd[clave] = { foto: prodFotoInv, vendido: 0 };
-            else if (prodFotoInv) actual._vendidoPorProd[clave].foto = prodFotoInv;
-        });
+        if (!actual.foto) actual.foto = p.foto || p.imagen || p.IMAGEN || '';
         categorias.set(catKey, actual);
     });
 
@@ -24279,37 +24222,17 @@ function revisarAlertasCompra7Dias(){
 
             const actual = categorias.get(catKey) || {
                 categoria,
-                foto: '',
+                foto: prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '',
                 tipoGrupo,
                 stockActual: 0,
                 vendido7: 0,
-                productos: 0,
-                _vendidoPorProd: {}
+                productos: 0
             };
 
             actual.vendido7 += cantidad;
-
-            // Acumular ventas por producto para elegir el mas vendido
-            if (!actual._vendidoPorProd) actual._vendidoPorProd = {};
-            const prodFotoVta = prodRef?.foto || prodRef?.imagen || prodRef?.IMAGEN || '';
-            const prodClaveVta = id || nombreKey;
-            if (prodClaveVta) {
-                if (!actual._vendidoPorProd[prodClaveVta]) actual._vendidoPorProd[prodClaveVta] = { foto: prodFotoVta, vendido: 0 };
-                actual._vendidoPorProd[prodClaveVta].vendido += cantidad;
-                if (prodFotoVta) actual._vendidoPorProd[prodClaveVta].foto = prodFotoVta;
-            }
-
+            if (!actual.foto && prodRef) actual.foto = prodRef.foto || prodRef.imagen || prodRef.IMAGEN || '';
             categorias.set(catKey, actual);
         });
-    });
-
-    // Asignar foto del producto mas vendido de cada categoria
-    categorias.forEach(cat => {
-        const prods = Object.values(cat._vendidoPorProd || {});
-        if (!prods.length) return;
-        prods.sort((a, b) => (b.vendido - a.vendido));
-        const mejor = prods.find(p => p.foto) || prods[0];
-        if (mejor && mejor.foto) cat.foto = mejor.foto;
     });
 
     const alertasTodas = Array.from(categorias.values())
@@ -24327,8 +24250,7 @@ function revisarAlertasCompra7Dias(){
         Math.round(a.vendido7 * 100) / 100,
         Math.round(a.faltante * 100) / 100,
         a.tipoGrupo,
-        a.productos,
-        a.foto ? a.foto.slice(-20) : ''
+        a.productos
     ].join(':')).join('|')].join('::');
 
     if (widget.dataset.alertaKey === alertaKey && !widget.classList.contains('hidden')) return;
@@ -24480,7 +24402,6 @@ function calcularWidgetGastoFamiliar() {
     if (total <= UMBRAL) {
         widget.classList.add('hidden');
         widget.innerHTML = '';
-        _actualizarKpiGananciaNeta();
         return;
     }
 
@@ -24518,106 +24439,6 @@ function calcularWidgetGastoFamiliar() {
                 Alerta: supera el limite de $${Utils.fmt(UMBRAL)} en el dia
             </div>
         </div>`;
-
-    // KPI Ganancia Neta del dia (efectivo) = Ganancias efectivo hoy - Consumo - Comida Familiar
-    _actualizarKpiGananciaNeta();
-}
-
-function _actualizarKpiGananciaNeta() {
-    const elGN  = document.getElementById('kpiGananciaNeta');
-    const elGNi = document.getElementById('kpiGananciaNetaInfo');
-    if (!elGN) return;
-
-    const _ahora  = new Date();
-    const _hoyStr = _ahora.getFullYear() + '-' +
-        String(_ahora.getMonth() + 1).padStart(2, '0') + '-' +
-        String(_ahora.getDate()).padStart(2, '0');
-
-    // Mismo esHoy que usa calcularWidgetGastoFamiliar
-    const _hoyInicio = new Date(_ahora.getFullYear(), _ahora.getMonth(), _ahora.getDate(), 0, 0, 0).getTime();
-    const _hoyFin    = _hoyInicio + 86400000;
-    const _parseTsLocal = f => {
-        if (!f) return 0;
-        const s = String(f).trim();
-        let m;
-        // DD/MM/YYYY HH:mm:ss o DD-MM-YYYY HH:mm:ss
-        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})[\s T](\d{1,2}):(\d{2}):(\d{2})/);
-        if (m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+m[6]).getTime();
-        // DD/MM/YYYY HH:mm
-        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})[\s T](\d{1,2}):(\d{2})/);
-        if (m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],0).getTime();
-        // DD/MM/YYYY
-        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if (m) return new Date(+m[3],+m[2]-1,+m[1],0,0,0).getTime();
-        // YYYY-MM-DDTHH:mm:ss (sin Z)
-        m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
-        if (m) return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime();
-        // YYYY-MM-DD
-        m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (m) return new Date(+m[1],+m[2]-1,+m[3],0,0,0).getTime();
-        return 0;
-    };
-    const esHoyN = f => {
-        const ts = _parseTsLocal(f);
-        return ts >= _hoyInicio && ts < _hoyFin;
-    };
-
-    // GANANCIAS EFECTIVO HOY — igual al bloque EFECTIVO de Estado Personal pero solo hoy
-    let ganEfHoy = 0; // total (ef+cr)
-    const _ppvHoy = {};
-    (_pagoVentasSheet||[]).forEach(p => {
-        const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-        if (!idV || !esHoyN(p.fecha||p.FECHA||p.fechaOrig||'')) return;
-        _ppvHoy[idV] = (_ppvHoy[idV]||0) + Number(p.monto||p.MONTO||0);
-    });
-    const _vVistasHoy = new Set();
-    (_sheetVentas||[]).forEach(v => {
-        if (!esHoyN(v.fechaISO||v.fecha||'') || _vVistasHoy.has(v.id)) return;
-        _vVistasHoy.add(v.id);
-        const cli = String(v.cliente||'').toUpperCase().trim();
-        if (['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli)) return;
-        const total  = Number(v.total||0);
-        const ef     = Number(v.efectivo||0);
-        const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
-        const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
-        const ganBruta = Math.max(0, total - dinRec);
-        ganEfHoy += ganBruta;
-    });
-    // Sumar ventas locales no sincronizadas
-    const _idsSheet = new Set((_sheetVentas||[]).map(v=>v.id));
-    (historial||[]).filter(v => !_idsSheet.has(v.id) && esHoyN(v.fecha||v.fechaISO||'')).forEach(v => {
-        const cli = String(v.cliente||'').toUpperCase().trim();
-        if (['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli)) return;
-        const total  = Number(v.total||0);
-        const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
-        const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
-        ganEfHoy += Math.max(0, total - dinRec);
-    });
-
-    // CONSUMO DEL NEGOCIO HOY (Casa Erazo, dinero recuperado)
-    let consumoHoy = 0;
-    const _ventasCasa = (_sheetVentas||[]).filter(v => String(v.cliente||'').toUpperCase().trim()==='CASA ERAZO' && esHoyN(v.fecha||v.fechaISO||''));
-    _ventasCasa.forEach(v => {
-        const dr = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-        consumoHoy += dr > 0 ? dr : (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
-    });
-    (historial||[]).filter(v => !_idsSheet.has(v.id) && String(v.cliente||'').toUpperCase().trim()==='CASA ERAZO' && esHoyN(v.fecha||v.fechaISO||'')).forEach(v => {
-        const dr = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-        consumoHoy += dr > 0 ? dr : Number(v.total||0);
-    });
-
-    // COMIDA FAMILIAR HOY (egresos, efectivo, supercategoria = COMIDA FAMILIAR)
-    const comidaHoy = (_sheetEgresos||[])
-        .filter(e => (e.proveedor||e.supercategoria||'').toUpperCase().trim()==='COMIDA FAMILIAR' && esHoyN(e.fechaISO||e.fecha||''))
-        .reduce((s,e) => s + Number(e.total||e.efectivo||0), 0);
-
-    const neta = ganEfHoy - consumoHoy - comidaHoy;
-
-    elGN.textContent = '$' + Utils.fmt(Math.abs(neta));
-    elGN.style.color = neta >= 0 ? '#4ade80' : '#f87171';
-    if (elGNi) elGNi.innerHTML =
-        '<span style="color:#fb923c">consumo $' + Utils.fmt(consumoHoy) + '</span>' +
-        ' + <span style="color:#f87171">comida $' + Utils.fmt(comidaHoy) + '</span>';
 }
 // ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
 
@@ -26335,6 +26156,7 @@ function filtrarGeneroEgr(query) {
 }
 
         function filtrarProductosIngEgr(query) {
+            if (typeof _asegurarInventarioCacheCompleto === 'function') _asegurarInventarioCacheCompleto();
             const container = document.getElementById('listaProductosCatalogoIngEgr');
             const filtrados = _sheetProductos.map((p,i) => ({...p,_idx:i})).filter(p => p.nombre.toLowerCase().includes(query.toLowerCase()));
             if (filtrados.length === 0) {
@@ -28904,6 +28726,87 @@ function calcularCajaEsperada() {
             return opciones.reduce((mejor, arr) => arr.length > mejor.length ? arr : mejor, opciones[0]);
         }
 
+        function _cacheKeyLimpia(v) {
+            return String(v || '').trim().toUpperCase();
+        }
+
+        function _cacheKeyProducto(p) {
+            if (!p) return '';
+            const id = _cacheKeyLimpia(p.id || p.numeroProd || p.IDPRODUCTOS || p.IDPRODUCTO || p['NUMERO PROD']);
+            if (id) return 'ID:' + id;
+            const nombre = _cacheKeyLimpia(p.nombre || p.NOMBRE || p.PRODUCTO);
+            return nombre ? 'N:' + nombre : '';
+        }
+
+        function _cacheFusionarPorClave(keyFn, fresh, cacheActual, legacy) {
+            const mapa = new Map();
+            const agregar = (arr, preferir) => {
+                if (!Array.isArray(arr)) return;
+                arr.forEach(item => {
+                    const key = keyFn(item);
+                    if (!key) return;
+                    if (preferir || !mapa.has(key)) mapa.set(key, item);
+                });
+            };
+            agregar(legacy, false);
+            agregar(cacheActual, false);
+            agregar(fresh, true);
+            return Array.from(mapa.values());
+        }
+
+        function _cacheFusionarInventario(fresh, cacheActual, legacy) {
+            return _cacheFusionarPorClave(_cacheKeyProducto, fresh, cacheActual, legacy);
+        }
+
+        function _asegurarInventarioCacheCompleto() {
+            try {
+                const snap = _cacheLeerSnapshotActual();
+                const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
+                const snapInventario = Array.isArray(snap.inventario) ? snap.inventario : [];
+                const cacheInventario = _cacheFusionarInventario(snapInventario, legacyInventario, null);
+                if (!cacheInventario.length) return false;
+                const actual = Array.isArray(_sheetProductos) ? _sheetProductos : [];
+                const fusionado = _cacheFusionarInventario(actual, cacheInventario, null);
+                if (fusionado.length <= actual.length) return false;
+                _sheetProductos = normalizarVencimientosProductos(fusionado);
+                window._sheetProductos = _sheetProductos;
+                _inventarioSheetCompleto = false;
+                _inventarioDesdeCachePendienteSheet = true;
+                _inventarioCacheInicialCount = _sheetProductos.length;
+                if (typeof indexarProductos === 'function') indexarProductos();
+                console.log('[Cache] Inventario reforzado desde cache para busqueda: ' + _sheetProductos.length + ' productos');
+                return true;
+            } catch(e) {
+                console.warn('[Cache] No se pudo reforzar inventario desde cache:', e.message);
+                return false;
+            }
+        }
+
+        window._asegurarInventarioCacheCompleto = _asegurarInventarioCacheCompleto;
+        window._cacheFusionarInventario = _cacheFusionarInventario;
+
+        function _aplicarInventarioExterno(fresh, origen) {
+            try {
+                if (!Array.isArray(fresh) || !fresh.length) return false;
+                _asegurarInventarioCacheCompleto();
+                const actual = Array.isArray(_sheetProductos) ? _sheetProductos : [];
+                if (fresh.length < actual.length) {
+                    console.warn('[' + (origen || 'Sync') + '] Inventario mas chico ignorado para no pisar cache completo: ' + fresh.length + ' < ' + actual.length);
+                    return false;
+                }
+                _sheetProductos = normalizarVencimientosProductos(_cacheFusionarInventario(fresh, actual));
+                window._sheetProductos = _sheetProductos;
+                if (typeof indexarProductos === 'function') indexarProductos();
+                if (typeof _guardarCache === 'function') setTimeout(_guardarCache, 0);
+                return true;
+            } catch(e) {
+                console.warn('[' + (origen || 'Sync') + '] No se pudo aplicar inventario externo:', e.message);
+                return false;
+            }
+        }
+
+        window._aplicarInventarioExterno = _aplicarInventarioExterno;
+
         function _cacheCompactProducto(p) {
             return {
                 id: p.id || p.numeroProd || '',
@@ -29029,20 +28932,25 @@ function calcularCajaEsperada() {
                 if (!Array.isArray(arr) || !arr.length) return false;
                 const json = JSON.stringify(arr);
                 _cacheGuardarNativo(key, json);
-                _cacheLimpiarChunks(key);
-                localStorage.removeItem(key);
                 try {
                     localStorage.setItem(key, json);
+                    _cacheLimpiarChunks(key);
                     return true;
                 } catch(e) {
-                    localStorage.removeItem(key);
-                    const size = 250000;
-                    const n = Math.ceil(json.length / size);
-                    for (let i = 0; i < n; i++) {
-                        localStorage.setItem(key + '__chunk_' + i, json.slice(i * size, (i + 1) * size));
+                    try {
+                        const size = 250000;
+                        const n = Math.ceil(json.length / size);
+                        localStorage.removeItem(key);
+                        _cacheLimpiarChunks(key);
+                        for (let i = 0; i < n; i++) {
+                            localStorage.setItem(key + '__chunk_' + i, json.slice(i * size, (i + 1) * size));
+                        }
+                        localStorage.setItem(key + '__chunks', String(n));
+                        return true;
+                    } catch(e2) {
+                        console.warn('[Cache] No se pudo actualizar ' + key + ' en localStorage; se conserva lo que haya quedado disponible:', e2.message || e.message);
+                        return false;
                     }
-                    localStorage.setItem(key + '__chunks', String(n));
-                    return true;
                 }
             } catch(e) {
                 console.warn('[Cache] No se pudo guardar ' + key + ':', e.message);
@@ -29075,78 +28983,35 @@ function calcularCajaEsperada() {
                 const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
                 const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
                 const ventasActuales = (_sheetVentas && _sheetVentas.length) ? _sheetVentas : ((historial && historial.length) ? historial : []);
-                const inventarioCompacto = _cacheElegirInventarioCompleto(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
-                // Limitar ventas a 300 para liberar espacio para el inventario
-                const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).slice(0, 300).map(_cacheCompactVenta);
-                const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).slice(0, 300).map(_cacheCompactPagoVenta);
+                const inventarioCompacto = _cacheFusionarInventario(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
+                const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
+                const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
                 let registroChecksCache = {};
                 try {
                     registroChecksCache = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}') || {};
                     localStorage.setItem('natanael_reg_checks_cache_v1', JSON.stringify({ ts: Date.now(), checks: registroChecksCache }));
                 } catch(e) { registroChecksCache = {}; }
 
-                // ↗↗ PRIORIDAD: guardar inventario PRIMERO, es lo más importante ↗↗
-                // Limpiar claves viejas de otros datos antes para liberar espacio
-                ['natanael_historial_v1','natanael_pago_ventas_v1',
-                 'natanael_ingneg_cache_v1','natanael_egrneg_cache_v1',
-                 'natanael_pagingneg_cache_v1','natanael_pagegrneg_cache_v1',
-                 'natanael_paging_cache_v1','natanael_pagegr_cache_v1',
-                 'natanael_compras_cache_v1', _CACHE_KEY
-                ].forEach(function(k) {
-                    try {
-                        localStorage.removeItem(k);
-                        // también chunks
-                        const n = parseInt(localStorage.getItem(k + '__chunks') || '0', 10);
-                        for (let i = 0; i < n; i++) localStorage.removeItem(k + '__chunk_' + i);
-                        localStorage.removeItem(k + '__chunks');
-                    } catch(e2) {}
-                });
-
-                // Guardar inventario primero (prioridad máxima)
-                const invOk = _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto);
-                if (!invOk) console.warn('[Cache] No se pudo guardar inventario (' + inventarioCompacto.length + ' prods)');
-                else console.log('[Cache] Inventario guardado: ' + inventarioCompacto.length + ' productos');
-
-                // Luego ventas y pagos (secundarios)
+                // Guardar separado primero. Si el snapshot grande falla por cuota, igual queda cache util.
+                localStorage.removeItem(_CACHE_KEY);
                 const guardados = {
-                    inventario: invOk,
+                    inventario: _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto),
                     ventas: _cacheGuardarArray('natanael_historial_v1', ventasCompactas),
                     pagoVentas: _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCompacto),
                     registroChecks: true
                 };
 
-                // Datos secundarios solo si queda espacio
-                try {
-                    const _ingNeg = Array.isArray(window._sheetIngresosNegocio) ? window._sheetIngresosNegocio : [];
-                    const _egrNeg = Array.isArray(window._sheetEgresosNegocio)  ? window._sheetEgresosNegocio  : [];
-                    const _pIngNeg = Array.isArray(window._sheetPagoIngNeg)     ? window._sheetPagoIngNeg      : [];
-                    const _pEgrNeg = Array.isArray(window._sheetPagoEgrNeg)     ? window._sheetPagoEgrNeg      : [];
-                    const _pIng   = Array.isArray(window._sheetPagoIngresos)    ? window._sheetPagoIngresos    : [];
-                    const _pEgr   = Array.isArray(window._sheetPagoEgresos)     ? window._sheetPagoEgresos     : [];
-                    const _compras = Array.isArray(window._sheetCompras)        ? window._sheetCompras         : [];
-                    if (_ingNeg.length)  _cacheGuardarArray('natanael_ingneg_cache_v1',    _ingNeg);
-                    if (_egrNeg.length)  _cacheGuardarArray('natanael_egrneg_cache_v1',    _egrNeg);
-                    if (_pIngNeg.length) _cacheGuardarArray('natanael_pagingneg_cache_v1', _pIngNeg);
-                    if (_pEgrNeg.length) _cacheGuardarArray('natanael_pagegrneg_cache_v1', _pEgrNeg);
-                    if (_pIng.length)    _cacheGuardarArray('natanael_paging_cache_v1',    _pIng);
-                    if (_pEgr.length)    _cacheGuardarArray('natanael_pagegr_cache_v1',    _pEgr);
-                    if (_compras.length) _cacheGuardarArray('natanael_compras_cache_v1',   _compras);
-                } catch(e) { /* sin espacio para secundarios, no importa */ }
-
-                // Snapshot mínimo (sin arrays grandes — ya están en claves separadas)
-                try {
-                    const snapshot = {
-                        ts:                  Date.now(),
-                        inventarioCount:     inventarioCompacto.length,
-                        ventasCount:         ventasCompactas.length,
-                        pagoVentasCount:     pagoVentasCompacto.length,
-                        registroChecksCount: Object.keys(registroChecksCache).length,
-                        registroChecks:      registroChecksCache,
-                        guardados:           guardados,
-                        clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
-                    };
-                    localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
-                } catch(e2) { console.warn('[Cache] Snapshot no se pudo guardar:', e2.message); }
+                const snapshot = {
+                    ts:                  Date.now(),
+                    inventarioCount:     inventarioCompacto.length,
+                    ventasCount:         ventasCompactas.length,
+                    pagoVentasCount:     pagoVentasCompacto.length,
+                    registroChecksCount: Object.keys(registroChecksCache).length,
+                    registroChecks:      registroChecksCache,
+                    guardados:           guardados,
+                    clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
+                };
+                localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
         }
 
@@ -29223,18 +29088,13 @@ function calcularCajaEsperada() {
         function _cargarCache() {
             try {
                 const c = _cacheLeerSnapshotActual();
-                const legacyInventario  = _cacheLeerArrayKey('natanael_inventario_v1');
-                const legacyVentas      = _cacheLeerArrayKey('natanael_historial_v1');
-                const legacyPagoVentas  = _cacheLeerArrayKey('natanael_pago_ventas_v1');
-                // Elegir la fuente de inventario con más productos
-                const inventarioCache   = _cacheElegirInventarioCompleto(legacyInventario, c.inventario, null);
-                const ventasCache       = _cacheElegirArray(c.ventas, null, legacyVentas);
-                const pagoVentasCache   = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
-                console.log('[Cache] inventario legacy:' + legacyInventario.length + ' snap:' + (Array.isArray(c.inventario)?c.inventario.length:0) + ' elegido:' + inventarioCache.length + ' | ts:' + (c.ts ? Math.round((Date.now()-c.ts)/60000) + 'min' : 'sin ts'));
-                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) {
-                    console.warn('[Cache] Caché vacío - no hay datos para cargar');
-                    return false;
-                }
+                const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
+                const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
+                const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
+                const inventarioCache = _cacheElegirArray(c.inventario, null, legacyInventario);
+                const ventasCache = _cacheElegirArray(c.ventas, null, legacyVentas);
+                const pagoVentasCache = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
                 // Mostrar aviso de antigüedad
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
@@ -29304,23 +29164,18 @@ function calcularCajaEsperada() {
             if (!ok) return false;
             window._cacheNativoInicialRenderizado = true;
             try {
-                _renderTodosLosDatos();
+                renderHistorial();
+                renderInventario();
+                renderClientes();
+                renderCompras();
+                const _vistaIng = document.getElementById('vistaIngresos');
+                const _vistaEgr = document.getElementById('vistaEgresos');
+                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
+                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
             } catch(e) {
                 console.warn('[Cache] Error al renderizar cache nativo:', e.message);
             }
             return true;
-        }
-
-        function _renderTodosLosDatos() {
-            try { renderHistorial();    } catch(e) {}
-            try { renderInventario();   } catch(e) {}
-            try { renderClientes();     } catch(e) {}
-            try { renderCompras();      } catch(e) {}
-            try { renderIngEgr('ingreso'); } catch(e) {}
-            try { renderIngEgr('egreso');  } catch(e) {}
-            try { if (typeof renderIngNeg === 'function') renderIngNeg('ingresosNegocio'); } catch(e) {}
-            try { if (typeof renderIngNeg === 'function') renderIngNeg('egresosNegocio');  } catch(e) {}
-            try { if (typeof renderPagos  === 'function') renderPagos(); } catch(e) {}
         }
 
         function _renderCacheInicial() {
@@ -29329,7 +29184,14 @@ function calcularCajaEsperada() {
             if (!ok) return false;
             window._cacheInicialRenderizado = true;
             try {
-                _renderTodosLosDatos();
+                renderHistorial();
+                renderInventario();
+                renderClientes();
+                renderCompras();
+                const _vistaIng = document.getElementById('vistaIngresos');
+                const _vistaEgr = document.getElementById('vistaEgresos');
+                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
+                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
             } catch(e) {
                 console.warn('[Cache] Error al renderizar cache inicial:', e.message);
             }
@@ -29356,44 +29218,61 @@ function calcularCajaEsperada() {
                     mostrarToast('Datos locales de la app cargados. Sincronizando en segundo plano...', 'success');
                 }
             }).catch(function(){});
-
-            // Siempre renderizar TODAS las vistas con los datos disponibles (caché o vacío)
-            try { if (typeof recalcularTodosLosStocks === 'function') recalcularTodosLosStocks(); } catch(e) {}
-            _renderTodosLosDatos();
+            if (tuvimosCachee) {
+                // Renderizar con datos del caché al toque
+                renderHistorial();
+                renderInventario();
+                renderClientes();
+                renderCompras();
+                const _vistaAct = document.querySelector('[data-navbtn="true"].active') ;
+                const _vistaIng = document.getElementById('vistaIngresos');
+                const _vistaEgr = document.getElementById('vistaEgresos');
+                if (_vistaIng && !_vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
+                if (_vistaEgr && !_vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
+            } else {
+                renderHistorial();
+            }
 
             lucide.createIcons();
             vincularAccesoCajaInicial();
             window.dispatchEvent(new Event('natanael-ready'));
+            // Mostrar rápido el valor local y luego reemplazar por el real del Sheet
             setTimeout(function(){
                 if (typeof kpiCajaCargarDesdeSheet === 'function') kpiCajaCargarDesdeSheet();
             }, 400);
 
-            // Función que refresca todo después del sync con el Sheet
-            function _postSyncRefresh() {
-                try {
-                    if (_sheetVentas && _sheetVentas.length > 0) renderHistorialConSheet();
-                    if (typeof kpiCajaCargarDesdeSheet === 'function') kpiCajaCargarDesdeSheet();
-                    _renderTodosLosDatos();
-                    _guardarCache();
-                } catch(e) {}
-            }
-
             if (tuvimosCachee) {
                 mostrarToast('Datos locales cargados. Sincronizando en segundo plano...', 'success');
-                // Con caché: arrancar sync en 1.5s (antes era 5s)
                 setTimeout(() => {
                     const syncPromise = iniciarSyncSheets();
                     Promise.resolve(syncPromise).then(() => {
-                        setTimeout(_postSyncRefresh, 300);
+                        setTimeout(() => {
+                            if (_sheetVentas && _sheetVentas.length > 0) {
+                                renderHistorialConSheet();
+                            }
+                            if (typeof kpiCajaCargarDesdeSheet === 'function') {
+                                kpiCajaCargarDesdeSheet();
+                            }
+                            _guardarCache();
+                        }, 300);
                     }).catch(() => {});
-                }, 1500);
+                }, 5000);
                 return;
             }
 
-            // Sin caché: sync inmediato
+            // 2) Sincronizar con sheet en segundo plano
             const syncPromise = iniciarSyncSheets();
             Promise.resolve(syncPromise).then(() => {
-                setTimeout(_postSyncRefresh, 300);
+                setTimeout(() => {
+                    if (_sheetVentas && _sheetVentas.length > 0) {
+                        renderHistorialConSheet();
+                    }
+                    if (typeof kpiCajaCargarDesdeSheet === 'function') {
+                        kpiCajaCargarDesdeSheet();
+                    }
+                    // Guardar caché fresco después del primer sync
+                    _guardarCache();
+                }, 300);
             }).catch(() => {});
         };
 
@@ -32055,7 +31934,9 @@ keys.forEach(key => {
 
             if (key === 'inventario') {
 
-                window._sheetProductos = data;
+                if (Array.isArray(data) && typeof window._aplicarInventarioExterno === 'function') {
+                    window._aplicarInventarioExterno(data, 'Firebase');
+                }
 
                 const vistaInv = document.getElementById('vistaInventario');
 
