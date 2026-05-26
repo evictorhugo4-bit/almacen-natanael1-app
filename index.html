@@ -5079,6 +5079,17 @@ Agregar
         return (_sheetVentas && _sheetVentas.length ? _sheetVentas : historial) || [];
     },
 
+    getClientes() {
+        try {
+            const raw = localStorage.getItem('natanael_clientes_v1');
+            if (raw) {
+                const datos = JSON.parse(raw);
+                if (Array.isArray(datos)) return datos;
+            }
+        } catch(e) {}
+        return (typeof clientesDB !== 'undefined' ? clientesDB : []) || [];
+    },
+
     saveInventario() {
         try {
             if (_sheetProductos && _sheetProductos.length) localStorage.setItem('natanael_inventario_v1', JSON.stringify(_sheetProductos));
@@ -5097,6 +5108,13 @@ Agregar
     savePagoVentas() {
         try {
             if (_pagoVentasSheet && _pagoVentasSheet.length) localStorage.setItem('natanael_pago_ventas_v1', JSON.stringify(_pagoVentasSheet));
+        } catch(e) {}
+        return true;
+    },
+
+    saveClientes() {
+        try {
+            if (typeof clientesDB !== 'undefined' && clientesDB.length) localStorage.setItem('natanael_clientes_v1', JSON.stringify(clientesDB));
         } catch(e) {}
         return true;
     }
@@ -7487,6 +7505,7 @@ _sheetEgresosNegocio.forEach(e => {
                 const inventarioCache = _natBootPick(snap.inventario, _natBootReadArray('natanael_inventario_v1'));
                 const ventasCache = _natBootPick(snap.ventas, _natBootReadArray('natanael_historial_v1'));
                 const pagoVentasCache = _natBootPick(snap.pagoVentas, _natBootReadArray('natanael_pago_ventas_v1'));
+                const clientesCache = _natBootPick(snap.clientes, _natBootReadArray('natanael_clientes_v1'));
 
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
@@ -7508,10 +7527,14 @@ _sheetEgresosNegocio.forEach(e => {
                     window._pagoVentasSheet = _pagoVentasSheet;
                 }
 
-                const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length;
+                if (clientesCache.length) {
+                    window._clientesCacheInicialPendiente = clientesCache;
+                }
+
+                const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length || clientesCache.length;
                 window._cacheLocalAplicado = !!aplicado;
                 if (aplicado) {
-                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length);
+                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
                 }
                 return !!aplicado;
             } catch(e) {
@@ -8252,6 +8275,8 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                         console.warn('[CLIENTES SHEET] Columnas exactas:', Object.keys(data.clientes[0]).join(' | '));
                         console.warn('[CLIENTES SHEET] Fila 1 completa:', JSON.stringify(data.clientes[0]));
                     }
+                    const clientesPrevios = Array.isArray(clientesDB) ? clientesDB : [];
+                    const clientesSheet = [];
                     data.clientes.forEach(row => {
                         const nombre = String(row['NOMBRE'] || '').trim().toUpperCase();
                         if (!nombre) return;
@@ -8260,6 +8285,17 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                         const direccion= String(row['DIRECCION'] || '').trim();
                         const imagen   = String(row['IMAGEN'] || '').trim();
                         const email    = String(row['EMAIL'] || '').trim();
+                        clientesSheet.push({
+                            id:        idSheet,
+                            idSheet:   idSheet,
+                            nombre:    nombre,
+                            celular:   telefono,
+                            direccion: direccion,
+                            foto:      imagen,
+                            email:     email,
+                            pagos:     [],
+                            fromSheet: true
+                        });
                         // Buscar por IDCLIENTE primero, luego por nombre
                         let existe = idSheet
                             ? clientesDB.find(c => String(c.id) === idSheet || String(c.idSheet) === idSheet)
@@ -8291,7 +8327,10 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                             });
                         }
                     });
-                    
+                    clientesDB = _cacheFusionarClientes(clientesSheet, clientesPrevios).map(_cacheCompactCliente);
+                    window.clientesDB = clientesDB;
+                    if (typeof _guardarCache === 'function') _guardarCache();
+                     
                     renderClientes();
                 }
 
@@ -19617,7 +19656,8 @@ cargarOpcionesProducto();
         // ============================================================
         // M───────────────────────────────────────────────DULO CLIENTES
         // ============================================================
-        let clientesDB = [];
+        let clientesDB = Array.isArray(window._clientesCacheInicialPendiente) ? window._clientesCacheInicialPendiente : [];
+        window.clientesDB = clientesDB;
         let clienteDetalleId = null;
         let filtroClientes = '';
 
@@ -19768,6 +19808,8 @@ console.log("CLIENTE COMPLETO:", c);
                 fetchSheets({ method: 'POST', body: JSON.stringify(clientePayload) });
 
                 cerrarEditorCliente();
+                window.clientesDB = clientesDB;
+                if (typeof _guardarCache === 'function') _guardarCache();
                 renderClientes();
                 mostrarToast('Cliente guardado');
             }
@@ -19792,7 +19834,9 @@ console.log("CLIENTE COMPLETO:", c);
             const c = clientesDB.find(c => c.id === id);
             if (!c || !confirm(`¿Eliminar a "${c.nombre}"?`)) return;
             clientesDB = clientesDB.filter(c => c.id !== id);
-            
+            window.clientesDB = clientesDB;
+            if (typeof _guardarCache === 'function') _guardarCache();
+             
             renderClientes();
             mostrarToast(`✅ Cliente eliminado`);
         }
@@ -28870,6 +28914,18 @@ function calcularCajaEsperada() {
             return _cacheFusionarPorClave(_cacheKeyProducto, fresh, cacheActual, legacy);
         }
 
+        function _cacheKeyCliente(c) {
+            if (!c) return '';
+            const id = _cacheKeyLimpia(c.idSheet || c.IDCLIENTE || c.id || '');
+            if (id) return 'id:' + id;
+            const nombre = _cacheKeyLimpia(c.nombre || c.NOMBRE || c.cliente || c.CLIENTE || '');
+            return nombre ? 'nom:' + nombre : '';
+        }
+
+        function _cacheFusionarClientes(fresh, cacheActual, legacy) {
+            return _cacheFusionarPorClave(_cacheKeyCliente, fresh, cacheActual, legacy);
+        }
+
         function _asegurarInventarioCacheCompleto() {
             try {
                 const snap = _cacheLeerSnapshotActual();
@@ -29000,6 +29056,22 @@ function calcularCajaEsperada() {
             };
         }
 
+        function _cacheCompactCliente(c) {
+            return {
+                id: c.id || c.idSheet || c.IDCLIENTE || '',
+                idSheet: c.idSheet || c.IDCLIENTE || c.id || '',
+                nombre: String(c.nombre || c.NOMBRE || c.cliente || '').trim().toUpperCase(),
+                celular: c.celular || c.telefono || c.TELEFONO || '',
+                telefono: c.telefono || c.celular || c.TELEFONO || '',
+                direccion: c.direccion || c.DIRECCION || '',
+                foto: c.foto || c.imagen || c.IMAGEN || '',
+                imagen: c.imagen || c.foto || c.IMAGEN || '',
+                email: c.email || c.EMAIL || '',
+                pagos: Array.isArray(c.pagos) ? c.pagos : [],
+                fromSheet: !!c.fromSheet
+            };
+        }
+
         function _cacheLimpiarChunks(key) {
             const prev = parseInt(localStorage.getItem(key + '__chunks') || '0', 10) || 0;
             for (let i = 0; i < prev; i++) localStorage.removeItem(key + '__chunk_' + i);
@@ -29094,10 +29166,12 @@ function calcularCajaEsperada() {
                 const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
                 const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
                 const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
+                const legacyClientes = _cacheLeerArrayKey('natanael_clientes_v1');
                 const ventasActuales = (_sheetVentas && _sheetVentas.length) ? _sheetVentas : ((historial && historial.length) ? historial : []);
                 const inventarioCompacto = _cacheFusionarInventario(_sheetProductos, previo.inventario, legacyInventario).map(_cacheCompactProducto);
                 const ventasCompactas = _cacheElegirArray(ventasActuales, previo.ventas, legacyVentas).map(_cacheCompactVenta);
                 const pagoVentasCompacto = _cacheElegirArray(_pagoVentasSheet, previo.pagoVentas, legacyPagoVentas).map(_cacheCompactPagoVenta);
+                const clientesCompactos = _cacheFusionarClientes((typeof clientesDB !== 'undefined' ? clientesDB : []), previo.clientes, legacyClientes).map(_cacheCompactCliente);
                 let registroChecksCache = {};
                 try {
                     registroChecksCache = JSON.parse(localStorage.getItem('natanael_reg_checks') || '{}') || {};
@@ -29110,6 +29184,7 @@ function calcularCajaEsperada() {
                     inventario: _cacheGuardarArray('natanael_inventario_v1', inventarioCompacto),
                     ventas: _cacheGuardarArray('natanael_historial_v1', ventasCompactas),
                     pagoVentas: _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCompacto),
+                    clientes: _cacheGuardarArray('natanael_clientes_v1', clientesCompactos),
                     registroChecks: true
                 };
 
@@ -29118,10 +29193,11 @@ function calcularCajaEsperada() {
                     inventarioCount:     inventarioCompacto.length,
                     ventasCount:         ventasCompactas.length,
                     pagoVentasCount:     pagoVentasCompacto.length,
+                    clientesCount:       clientesCompactos.length,
                     registroChecksCount: Object.keys(registroChecksCache).length,
                     registroChecks:      registroChecksCache,
                     guardados:           guardados,
-                    clientes:            typeof clientesDB !== 'undefined' ? clientesDB : []
+                    clientes:            clientesCompactos
                 };
                 localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
@@ -29203,10 +29279,12 @@ function calcularCajaEsperada() {
                 const legacyInventario = _cacheLeerArrayKey('natanael_inventario_v1');
                 const legacyVentas = _cacheLeerArrayKey('natanael_historial_v1');
                 const legacyPagoVentas = _cacheLeerArrayKey('natanael_pago_ventas_v1');
+                const legacyClientes = _cacheLeerArrayKey('natanael_clientes_v1');
                 const inventarioCache = _cacheElegirArray(c.inventario, null, legacyInventario);
                 const ventasCache = _cacheElegirArray(c.ventas, null, legacyVentas);
                 const pagoVentasCache = _cacheElegirArray(c.pagoVentas, null, legacyPagoVentas);
-                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
+                const clientesCache = _cacheFusionarClientes(c.clientes, legacyClientes, null);
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length) return false;
                 // Mostrar aviso de antigüedad
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
                 console.log('[Cache] Cargando datos de hace ' + mins + ' min');
@@ -29221,7 +29299,7 @@ function calcularCajaEsperada() {
                 }
                 if (ventasCache.length)     { _sheetVentas = ventasCache; window._sheetVentas = _sheetVentas; historial = ventasCache; }
                 if (pagoVentasCache.length) { _pagoVentasSheet = pagoVentasCache; window._pagoVentasSheet = _pagoVentasSheet; }
-                if (Array.isArray(c.clientes)         && c.clientes.length)         { clientesDB      = c.clientes;  }
+                if (clientesCache.length) { clientesDB = clientesCache.map(_cacheCompactCliente); window.clientesDB = clientesDB; }
                 _guardarCache();
                 return true;
             } catch(e) { console.warn('[Cache] Error al cargar:', e.message); return false; }
@@ -29236,8 +29314,9 @@ function calcularCajaEsperada() {
                 const inventarioCache = await _cacheLeerArrayNativo('natanael_inventario_v1');
                 const ventasCache = await _cacheLeerArrayNativo('natanael_historial_v1');
                 const pagoVentasCache = await _cacheLeerArrayNativo('natanael_pago_ventas_v1');
+                const clientesCache = await _cacheLeerArrayNativo('natanael_clientes_v1');
 
-                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length) return false;
+                if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length) return false;
 
                 if (inventarioCache.length && (!_sheetProductos || !_sheetProductos.length)) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
@@ -29262,7 +29341,13 @@ function calcularCajaEsperada() {
                     try { _cacheGuardarArray('natanael_pago_ventas_v1', pagoVentasCache); } catch(e) {}
                 }
 
-                console.log('[Cache] Android nativo aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length);
+                if (clientesCache.length && (!clientesDB || !clientesDB.length)) {
+                    clientesDB = clientesCache.map(_cacheCompactCliente);
+                    window.clientesDB = clientesDB;
+                    try { _cacheGuardarArray('natanael_clientes_v1', clientesCache); } catch(e) {}
+                }
+
+                console.log('[Cache] Android nativo aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
                 return true;
             } catch(e) {
                 console.warn('[Cache] Error leyendo cache nativo Android:', e.message);
