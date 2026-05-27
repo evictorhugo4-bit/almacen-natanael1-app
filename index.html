@@ -8803,6 +8803,9 @@ if (indicator) indicator.classList.remove('hidden');
                     fromSheet: true, items:[] };
                 // Buscar por id generado O por idSheet para evitar duplicar registros locales + sheet
                 const idx = db.findIndex(r => r.id === id || (idRow && (r.idSheet === idRow || r.id === idRow)));
+                // Verificar si fue borrado por el usuario
+                const _borradosKey = renderTipo === 'ingresosNegocio' ? 'natanael_ids_ingresoneg_borrados' : 'natanael_ids_egresoneg_borrados';
+                try { const _borradosSet = new Set(JSON.parse(localStorage.getItem(_borradosKey)||'[]')); if (idRow && _borradosSet.has(idRow)) return; } catch(e) {}
                 if (idx>=0) {
                     // Si fue editado localmente en los últimos 60 seg, NO sobreescribir con datos
                     // viejos del sheet (el POST puede no haberse procesado aún)
@@ -10889,15 +10892,14 @@ console.log("FILTRADAS:", filtradas.length);
             const epIngDinamico = epBloquesOrden.reduce((s,b)=>s+epBloqueTotal(b).ing,0);
             const epEgrDinamico = epBloquesOrden.reduce((s,b)=>s+epBloqueTotal(b).egr,0);
             const epIngTotalDinamico = ganFiltroEP + epIngDinamico;
-            const epEgrTotalDinamico = egrConsumoNeg + egrComidaFam + epEgrDinamico;
+            const epEgrTotalDinamico = egrConsumoNeg + epEgrDinamico;
             const epBalTotalDinamico = epIngTotalDinamico - epEgrTotalDinamico;
             html+='<div style="margin-bottom:10px;"><span style="font-size:10px;font-weight:900;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;">🛒?Š ESTADO PERSONAL / '+filtroLabelEP+'</span></div>';
             html+=epTabla(
                 epFila('GANANCIAS TOTALES',ganFiltroEP,0,'#fbbf24')+
                 epFila('CONSUMO DEL NEGOCIO',0,egrConsumoNeg,'#fb923c')+
-                epFila('COMIDA FAMILIAR',0,egrComidaFam,'#f87171')+
                 epBloqueFilas('BLOQUE 1')+
-                epFilaBal('TOTAL BLOQUE 1',ganFiltroEP+epBloque1Total.ing,'EGRESOS BLOQUE 1',egrConsumoNeg+egrComidaFam+epBloque1Total.egr,(ganFiltroEP+epBloque1Total.ing)-(egrConsumoNeg+egrComidaFam+epBloque1Total.egr))+
+                epFilaBal('TOTAL BLOQUE 1',ganFiltroEP+epBloque1Total.ing,'EGRESOS BLOQUE 1',egrConsumoNeg+epBloque1Total.egr,(ganFiltroEP+epBloque1Total.ing)-(egrConsumoNeg+epBloque1Total.egr))+
                 epBloquesExtraFilas+
                 epFilaTot('INGRESOS TOTALES / EGRESOS TOTALES',epIngTotalDinamico,epEgrTotalDinamico,epBalTotalDinamico)
             );
@@ -22499,10 +22501,12 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             const idParaSheet = reg.idSheet ? reg.idSheet : ingNegAccionId;
             if (esIng) {
                 _sheetIngresosNegocio = _sheetIngresosNegocio.filter(x => x.id !== idReal);
+                try { const _ingNegB = new Set(JSON.parse(localStorage.getItem('natanael_ids_ingresoneg_borrados')||'[]')); _ingNegB.add(idParaSheet); localStorage.setItem('natanael_ids_ingresoneg_borrados', JSON.stringify([..._ingNegB])); } catch(e) {}
                 eliminarEnSheet('ingreso_negocio', idParaSheet);
                 renderIngNeg('ingresosNegocio');
             } else {
                 _sheetEgresosNegocio = _sheetEgresosNegocio.filter(x => x.id !== idReal);
+                try { const _egrNegB = new Set(JSON.parse(localStorage.getItem('natanael_ids_egresoneg_borrados')||'[]')); _egrNegB.add(idParaSheet); localStorage.setItem('natanael_ids_egresoneg_borrados', JSON.stringify([..._egrNegB])); } catch(e) {}
                 eliminarEnSheet('egreso_negocio', idParaSheet);
                 renderIngNeg('egresosNegocio');
             }
@@ -22515,7 +22519,7 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
     if (ingEgrTipo === 'ingreso') {
         const r = _sheetIngresos.find(c => c.id === ingEgrAccionId);
         const idSheet = r ? (r.idSheet || r.id) : ingEgrAccionId;
-        if (idSheet) { _idsIngresoBorrados.add(idSheet); window._idsIngresoBorrados = _idsIngresoBorrados; }
+        if (idSheet) { _idsIngresoBorrados.add(idSheet); window._idsIngresoBorrados = _idsIngresoBorrados; try { localStorage.setItem('natanael_ids_ingreso_borrados', JSON.stringify([..._idsIngresoBorrados])); } catch(e) {} }
         _sheetIngresos = _sheetIngresos.filter(c => c.id !== ingEgrAccionId);
         window._sheetIngresos = _sheetIngresos;
         eliminarEnSheet('ingreso', idSheet);
@@ -22523,7 +22527,7 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
     } else {
         const r = _sheetEgresos.find(c => c.id === ingEgrAccionId);
         const idSheet = r ? (r.idSheet || r.id) : ingEgrAccionId;
-        if (idSheet) { _idsEgresoBorrados.add(idSheet); window._idsEgresoBorrados = _idsEgresoBorrados; }
+        if (idSheet) { _idsEgresoBorrados.add(idSheet); window._idsEgresoBorrados = _idsEgresoBorrados; try { localStorage.setItem('natanael_ids_egreso_borrados', JSON.stringify([..._idsEgresoBorrados])); } catch(e) {} }
         _sheetEgresos = _sheetEgresos.filter(c => c.id !== ingEgrAccionId);
         window._sheetEgresos = _sheetEgresos;
         eliminarEnSheet('egreso', idSheet);
@@ -26143,8 +26147,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
         // ============================================================
         let _sheetIngresos = []; window._sheetIngresos = _sheetIngresos;
         let _sheetEgresos = []; window._sheetEgresos = _sheetEgresos;
-        const _idsIngresoBorrados = new Set(); window._idsIngresoBorrados = _idsIngresoBorrados;
-        const _idsEgresoBorrados  = new Set(); window._idsEgresoBorrados  = _idsEgresoBorrados;
+        const _idsIngresoBorrados = new Set(JSON.parse(localStorage.getItem('natanael_ids_ingreso_borrados')||'[]')); window._idsIngresoBorrados = _idsIngresoBorrados;
+        const _idsEgresoBorrados  = new Set(JSON.parse(localStorage.getItem('natanael_ids_egreso_borrados')||'[]'));  window._idsEgresoBorrados  = _idsEgresoBorrados;
         let ingEgrTipo = 'ingreso'; window.ingEgrTipo = ingEgrTipo;
         let carritoIngEgr = [];
         let prodPendienteIngEgr = null;
