@@ -22502,17 +22502,37 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
             if (esIng) {
                 _sheetIngresosNegocio = _sheetIngresosNegocio.filter(x => x.id !== idReal);
                 try { const _ingNegB = new Set(JSON.parse(localStorage.getItem('natanael_ids_ingresoneg_borrados')||'[]')); _ingNegB.add(idParaSheet); localStorage.setItem('natanael_ids_ingresoneg_borrados', JSON.stringify([..._ingNegB])); } catch(e) {}
+                _borrarIdDeCache('natanael_ingresos_negocio_v1', idParaSheet);
+                _borrarIdDeCache('natanael_ingresos_negocio_v1', idReal);
                 eliminarEnSheet('ingreso_negocio', idParaSheet);
                 renderIngNeg('ingresosNegocio');
             } else {
                 _sheetEgresosNegocio = _sheetEgresosNegocio.filter(x => x.id !== idReal);
                 try { const _egrNegB = new Set(JSON.parse(localStorage.getItem('natanael_ids_egresoneg_borrados')||'[]')); _egrNegB.add(idParaSheet); localStorage.setItem('natanael_ids_egresoneg_borrados', JSON.stringify([..._egrNegB])); } catch(e) {}
+                _borrarIdDeCache('natanael_egresos_negocio_v1', idParaSheet);
+                _borrarIdDeCache('natanael_egresos_negocio_v1', idReal);
                 eliminarEnSheet('egreso_negocio', idParaSheet);
                 renderIngNeg('egresosNegocio');
             }
             toggleModal('modalEliminarIngNeg', false);
             mostrarToast('✅ Registro eliminado');
             ingNegAccionId = null; ingNegAccionTipo = null;
+        }
+
+       // Borra un ID de un array guardado en localStorage
+        function _borrarIdDeCache(storageKey, idBorrar) {
+            try {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return;
+                let arr = JSON.parse(raw);
+                if (!Array.isArray(arr)) return;
+                const antes = arr.length;
+                arr = arr.filter(r => {
+                    const rid = String(r.idSheet || r.id || r.IDEGRESOS || r.IDINGRESOS || r.ID_GASTOS || '').trim();
+                    return rid !== String(idBorrar).trim() && String(r.id || '').trim() !== String(idBorrar).trim();
+                });
+                if (arr.length < antes) localStorage.setItem(storageKey, JSON.stringify(arr));
+            } catch(e) {}
         }
 
        function confirmarEliminarIngEgr() {
@@ -22522,6 +22542,9 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         if (idSheet) { _idsIngresoBorrados.add(idSheet); window._idsIngresoBorrados = _idsIngresoBorrados; try { localStorage.setItem('natanael_ids_ingreso_borrados', JSON.stringify([..._idsIngresoBorrados])); } catch(e) {} }
         _sheetIngresos = _sheetIngresos.filter(c => c.id !== ingEgrAccionId);
         window._sheetIngresos = _sheetIngresos;
+        // Borrar del caché guardado en localStorage para que no vuelva al recargar
+        _borrarIdDeCache('natanael_ingresos_v1', idSheet || ingEgrAccionId);
+        _borrarIdDeCache('natanael_ingresos_v1', ingEgrAccionId);
         eliminarEnSheet('ingreso', idSheet).then(res => {
             if (!res || !res.ok) mostrarToast('❌ Sheet error al borrar ingreso: ' + (res && res.error ? res.error : 'sin respuesta'), 'error');
         });
@@ -22532,6 +22555,9 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
         if (idSheet) { _idsEgresoBorrados.add(idSheet); window._idsEgresoBorrados = _idsEgresoBorrados; try { localStorage.setItem('natanael_ids_egreso_borrados', JSON.stringify([..._idsEgresoBorrados])); } catch(e) {} }
         _sheetEgresos = _sheetEgresos.filter(c => c.id !== ingEgrAccionId);
         window._sheetEgresos = _sheetEgresos;
+        // Borrar del caché guardado en localStorage para que no vuelva al recargar
+        _borrarIdDeCache('natanael_egresos_v1', idSheet || ingEgrAccionId);
+        _borrarIdDeCache('natanael_egresos_v1', ingEgrAccionId);
         eliminarEnSheet('egreso', idSheet).then(res => {
             if (!res || !res.ok) mostrarToast('❌ Sheet error al borrar egreso: ' + (res && res.error ? res.error : 'sin respuesta'), 'error');
         });
@@ -29206,10 +29232,22 @@ function calcularCajaEsperada() {
             }
         }
 
+        // Límites máximos por tabla para no saturar localStorage (~5MB total)
+        const _CACHE_LIMITES = {
+            'natanael_historial_v1': 500,
+            'natanael_pago_ventas_v1': 300,
+            'natanael_sheet_cache_ingresos': 300,
+            'natanael_sheet_cache_egresos': 300,
+            'natanael_sheet_cache_ingresosNegocio': 200,
+            'natanael_sheet_cache_egresosNegocio': 200,
+        };
         function _cacheGuardarArray(key, arr) {
             try {
                 if (!Array.isArray(arr) || !arr.length) return false;
-                const json = JSON.stringify(arr);
+                // Limitar tamaño para no saturar localStorage
+                const limite = _CACHE_LIMITES[key];
+                const arrLimitado = (limite && arr.length > limite) ? arr.slice(-limite) : arr;
+                const json = JSON.stringify(arrLimitado);
                 _cacheGuardarNativo(key, json);
                 try {
                     localStorage.setItem(key, json);
@@ -29294,6 +29332,7 @@ function calcularCajaEsperada() {
                     if (spec) guardados[k] = _cacheGuardarArray(spec.storage, tablasExtra[k]);
                 });
 
+                // Snapshot liviano: solo contadores y metadatos, sin duplicar arrays grandes
                 const snapshot = {
                     ts:                  Date.now(),
                     inventarioCount:     inventarioCompacto.length,
@@ -29302,11 +29341,15 @@ function calcularCajaEsperada() {
                     clientesCount:       clientesCompactos.length,
                     registroChecksCount: Object.keys(registroChecksCache).length,
                     registroChecks:      registroChecksCache,
-                    guardados:           guardados,
-                    clientes:            clientesCompactos
+                    guardados:           guardados
+                    // clientes y tablasExtra ya se guardaron en claves separadas arriba
                 };
-                Object.assign(snapshot, tablasExtra);
-                localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
+                try {
+                    localStorage.setItem(_CACHE_KEY, JSON.stringify(snapshot));
+                } catch(e2) {
+                    // Si aun falla, guardar solo timestamp
+                    try { localStorage.setItem(_CACHE_KEY, JSON.stringify({ ts: Date.now(), guardados })); } catch(e3) {}
+                }
             } catch(e) { console.warn('[Cache] No se pudo guardar:', e.message); }
         }
 
