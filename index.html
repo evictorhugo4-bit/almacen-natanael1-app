@@ -10853,7 +10853,7 @@ console.log("FILTRADAS:", filtradas.length);
             const epTabla=filas=>'<div style="overflow-x:auto;border-radius:16px;border:1.5px solid #1e293b;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;min-width:340px;"><thead><tr>'+epThCell('CONCEPTO','#0f172a','#64748b','text-align:left;min-width:160px;')+epThCell('INGRESOS',EP_C_HEAD,EP_C_ING,'')+epThCell('EGRESOS',EP_C_HEGR,EP_C_EGR,'')+epThCell('BALANCE',EP_C_HBAL,EP_C_BAL,'')+'</tr></thead><tbody>'+filas+'</tbody></table></div>';
 
             const filtroLabelEP=_epFiltro==='efectivo'?'EFECTIVO':_epFiltro==='credito'?'CR??DITO':'TOTAL';
-            const epCatName = r => String(r.categoria || r.concepto || r.CATEGORIA || r.detalle || r.motivo || 'SIN CATEGORIA').trim().toUpperCase();
+            const epCatName = r => String(r.supercategoria || r['SUPER CATEGORIA'] || r.proveedor || r.categoria || r.concepto || r.CATEGORIA || r.detalle || r.motivo || 'SIN CATEGORIA').trim().toUpperCase();
             const epSubName = r => String(r.subcategoria || r.SUBCATEGORIA || r['SUBCATEGORIA'] || '').trim().toUpperCase();
             const epVal = r => Number(r[campoEP] || r[campoFil] || 0);
             const epBloques = {};
