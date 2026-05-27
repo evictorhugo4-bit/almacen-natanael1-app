@@ -22518,19 +22518,23 @@ document.getElementById("modalNuevoProducto").classList.add("hidden");
        function confirmarEliminarIngEgr() {
     if (ingEgrTipo === 'ingreso') {
         const r = _sheetIngresos.find(c => c.id === ingEgrAccionId);
-        const idSheet = r ? (r.idSheet || r.id) : ingEgrAccionId;
+        const idSheet = r ? (String(r.idSheet || '').trim() || String(r.IDINGRESOS || '').trim()) : ingEgrAccionId;
         if (idSheet) { _idsIngresoBorrados.add(idSheet); window._idsIngresoBorrados = _idsIngresoBorrados; try { localStorage.setItem('natanael_ids_ingreso_borrados', JSON.stringify([..._idsIngresoBorrados])); } catch(e) {} }
         _sheetIngresos = _sheetIngresos.filter(c => c.id !== ingEgrAccionId);
         window._sheetIngresos = _sheetIngresos;
-        eliminarEnSheet('ingreso', idSheet);
+        eliminarEnSheet('ingreso', idSheet).then(res => {
+            if (!res || !res.ok) mostrarToast('❌ Sheet error al borrar ingreso: ' + (res && res.error ? res.error : 'sin respuesta'), 'error');
+        });
         renderIngEgr('ingreso');
     } else {
         const r = _sheetEgresos.find(c => c.id === ingEgrAccionId);
-        const idSheet = r ? (r.idSheet || r.id) : ingEgrAccionId;
+        const idSheet = r ? (String(r.idSheet || '').trim() || String(r.IDEGRESOS || r.ID_GASTOS || '').trim()) : ingEgrAccionId;
         if (idSheet) { _idsEgresoBorrados.add(idSheet); window._idsEgresoBorrados = _idsEgresoBorrados; try { localStorage.setItem('natanael_ids_egreso_borrados', JSON.stringify([..._idsEgresoBorrados])); } catch(e) {} }
         _sheetEgresos = _sheetEgresos.filter(c => c.id !== ingEgrAccionId);
         window._sheetEgresos = _sheetEgresos;
-        eliminarEnSheet('egreso', idSheet);
+        eliminarEnSheet('egreso', idSheet).then(res => {
+            if (!res || !res.ok) mostrarToast('❌ Sheet error al borrar egreso: ' + (res && res.error ? res.error : 'sin respuesta'), 'error');
+        });
         renderIngEgr('egreso');
     }
     toggleModal('modalEliminarIngEgr', false);
