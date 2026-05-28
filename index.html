@@ -9664,7 +9664,35 @@ console.log("FILTRADAS:", filtradas.length);
             document.getElementById('vsStockCalculado').textContent = Utils.fmt(stockCalculado);
             document.getElementById('vsStockCalculado').dataset.val = stockCalculado;
             document.getElementById('vsStockReal').value = '';
-            document.getElementById('vsVencimiento').value = '';
+            // Pre-cargar vencimiento existente del producto (si tiene)
+            const _vencActual = prod.fechaVencimiento || prod.vencimiento || '';
+            let _vencInputVal = '';
+            if (_vencActual) {
+                // Intentar convertir DD/MM/YYYY o YYYY-MM-DD al formato input date (YYYY-MM-DD)
+                const _partesDDMMYYYY = _vencActual.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                const _partesYYYYMMDD = _vencActual.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+                if (_partesDDMMYYYY) {
+                    _vencInputVal = _partesDDMMYYYY[3] + '-' + String(_partesDDMMYYYY[2]).padStart(2,'0') + '-' + String(_partesDDMMYYYY[1]).padStart(2,'0');
+                } else if (_partesYYYYMMDD) {
+                    _vencInputVal = _partesYYYYMMDD[1] + '-' + String(_partesYYYYMMDD[2]).padStart(2,'0') + '-' + String(_partesYYYYMMDD[3]).padStart(2,'0');
+                } else {
+                    _vencInputVal = _vencActual; // dejar tal cual y que el browser lo interprete
+                }
+            }
+            const _vsVencEl = document.getElementById('vsVencimiento');
+            _vsVencEl.value = _vencInputVal;
+            // Mostrar indicador visual si ya tenía vencimiento cargado
+            let _vsVencLabel = _vsVencEl.previousElementSibling;
+            if (_vsVencLabel && _vsVencLabel.tagName === 'LABEL') {
+                if (_vencInputVal) {
+                    // Formatear la fecha para mostrarla legible (DD/MM/YYYY)
+                    const _partes = _vencInputVal.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    const _fechaLegible = _partes ? _partes[3]+'/'+_partes[2]+'/'+_partes[1] : _vencInputVal;
+                    _vsVencLabel.innerHTML = '📅 Fecha de Vencimiento <span style="color:#4ade80;font-weight:800;font-size:9px;">✓ ACTUAL: ' + _fechaLegible + ' — podés cambiarla</span>';
+                } else {
+                    _vsVencLabel.innerHTML = '📅 Fecha de Vencimiento <span style="color:#64748b;font-weight:600;font-size:9px;">(opcional)</span>';
+                }
+            }
             document.getElementById('vsDiferencia').style.display = 'none';
             // Código de barras pendiente (viene de escaneo sin coincidencia)
             const vsCodigoWrap = document.getElementById('vsCodigoWrap');
