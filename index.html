@@ -15453,10 +15453,16 @@ console.log("FILTRADAS:", filtradas.length);
                 const negComprasEfectivo = _efSumaPagoEfectivoCompras()
                     + _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
 
-                // E) EGRESOS CASA ERAZO: mismo valor que Ventas a Casa Erazo
+                // E) EGRESOS NEGOCIO:
+                //    PAGO EFECTIVO tabla EGRESOS NEGOCIO (por fecha)
+                //    + MONTO tabla PAGO EGRESOS NEGOCIO (por FECHA ORIGINAL)
+                const negEgresosNegocio = _efSumaEfectivo(window._sheetEgresosNegocio || [])
+                    + _efSumaMontoPagosOriginal([...(_pagoEgrNegSheet || [])], 'EFECTIVO');
+
+                // F) EGRESOS CASA ERAZO: mismo valor que Ventas a Casa Erazo
                 const negEgresosCasaErazo = negVentasCasaErazo;
 
-                const negTotalEgresos = negComprasEfectivo;
+                const negTotalEgresos = negComprasEfectivo + negEgresosNegocio;
 
                 // === PERSONAL INGRESOS ===
                 // E) INGRESOS EN EFECTIVO:
@@ -15490,7 +15496,8 @@ console.log("FILTRADAS:", filtradas.length);
 
                 const negEgrDiv = document.getElementById('efNegEgresosDetalle');
                 if (negEgrDiv) negEgrDiv.innerHTML =
-                    _efFila('Compras Efectivo',    negComprasEfectivo,    '#f87171');
+                    _efFila('Compras Efectivo',    negComprasEfectivo,    '#f87171') +
+                    _efFila('Egresos Negocio',     negEgresosNegocio,     '#f87171');
 
                 const elNegTI = document.getElementById('efNegTotalIngresos');
                 if (elNegTI) elNegTI.textContent = fmt$(negTotalIngresos);
