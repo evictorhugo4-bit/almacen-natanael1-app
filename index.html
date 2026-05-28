@@ -15466,13 +15466,26 @@ console.log("FILTRADAS:", filtradas.length);
                     }, 0);
                 })();
 
-                // C) INGRESOS DEL NEGOCIO:
+                // C) ERROR VENTA: DINERO RECUPERADO cuando cliente = ERROR VENTA / ERROR VENTAS (por fecha)
+                const negErrorVenta = (function() {
+                    const vistos = new Set();
+                    return todasVNeg.reduce(function(s, v) {
+                        if (!_efEnRango(v) || vistos.has(v.id)) return s;
+                        vistos.add(v.id);
+                        const cli = String(v.cliente || '').toUpperCase().trim();
+                        if (!['ERROR VENTA', 'ERROR VENTAS'].includes(cli)) return s;
+                        const dr = (v.items || []).reduce(function(si, i) { return si + (Number(i.dineroRecuperado || 0) || 0); }, 0);
+                        return s + (dr > 0 ? dr : (v.items || []).reduce(function(si, i) { return si + Number(i.costo || 0) * (Number(i.cantidad) || 1); }, 0));
+                    }, 0);
+                })();
+
+                // D) INGRESOS DEL NEGOCIO:
                 //    PAGO EFECTIVO tabla INGRESOS NEGOCIO (por fecha)
                 //    + MONTO tabla PAGO INGRESOS NEGOCIO (por FECHA ORIGINAL)
                 const negIngresosNegocio = _efSumaEfectivo(window._sheetIngresosNegocio || [])
                     + _efSumaMontoPagosOriginal([...(window._sheetPagoIngNeg || [])], 'EFECTIVO');
 
-                const negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negIngresosNegocio;
+                const negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
 
                 // === NEGOCIO EGRESOS ===
                 // D) COMPRAS EFECTIVO:
@@ -15520,6 +15533,7 @@ console.log("FILTRADAS:", filtradas.length);
                 if (negIngDiv) negIngDiv.innerHTML =
                     _efFila('Ventas Efectivo',     negVentasEfectivo) +
                     _efFila('Ventas a Casa Erazo', negVentasCasaErazo) +
+                    _efFila('Error Venta',         negErrorVenta,     '#fde68a') +
                     _efFila('Ingresos del Negocio', negIngresosNegocio);
 
                 const negEgrDiv = document.getElementById('efNegEgresosDetalle');
@@ -24591,6 +24605,8 @@ if (!window._alertaCompra7dTimer) {
 
 function calcularWidgetGastoFamiliar() {
     const widget = document.getElementById('widgetGastoFamiliar');
+    if (widget) { widget.classList.add('hidden'); widget.innerHTML = ''; }
+    return; // Widget HOGAR desactivado
     if (!widget) return;
 
     // Hoy en formato YYYY-MM-DD (hora local argentina)
