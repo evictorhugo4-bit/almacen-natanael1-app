@@ -4228,10 +4228,24 @@ CONFIRMAR PAGO
                     <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-2">
                         <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Ticket / Factura</label>
                         <div id="ticketGridNuevaCompra" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
-                        <label style="display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
-                            Agregar imagenes
-                            <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
-                        </label>
+                        <div style="display:flex;gap:6px;">
+                            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                                📎 Agregar
+                                <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
+                            </label>
+                            <button onclick="abrirCamaraNuevaCompra()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                                📷 Cámara
+                            </button>
+                        </div>
+                        <!-- Visor de cámara Nueva Compra -->
+                        <div id="camaraContainerNuevaCompra" class="hidden space-y-2">
+                            <video id="camaraVideoNuevaCompra" autoplay playsinline style="width:100%;border-radius:8px;max-height:180px;object-fit:cover;background:#000;display:block;"></video>
+                            <div style="display:flex;gap:6px;">
+                                <button onclick="capturarFotoNuevaCompra()" style="flex:1;padding:8px;background:#10b981;color:#000;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;">📸 Capturar</button>
+                                <button onclick="cerrarCamaraNuevaCompra()" style="flex:1;padding:8px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;">✕ Cerrar</button>
+                            </div>
+                            <canvas id="camaraCanvasNuevaCompra" class="hidden"></canvas>
+                        </div>
                     </div>
                     <!-- Botón confirmar al final del scroll en mobile, fijo en desktop -->
                     <button onclick="confirmarCompra()" class="w-full py-4 bg-emerald-500 text-black font-black text-sm rounded-xl uppercase italic shadow-xl btn-action">
@@ -22910,7 +22924,7 @@ window.actualizarDatalistsIngNeg = actualizarDatalistsIngNeg;
             lucide.createIcons();
         }
 
-        function cerrarNuevaCompra() { toggleModal('modalCompra', false); resetTicketUI && resetTicketUI(); }
+        function cerrarNuevaCompra() { toggleModal('modalCompra', false); resetTicketUI && resetTicketUI(); if (typeof cerrarCamaraNuevaCompra === 'function') cerrarCamaraNuevaCompra(); }
 
         // ↗↗ TICKET PROVEEDOR (replica de ticket compra) ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         let _streamProvTicket = null;
@@ -23671,17 +23685,7 @@ function filtrarProductosCompra(query) {
     cerrarSelectorCompra();
     renderCarritoCompra();
     calcularCompra();
-
-    // Si vino del scanner, abrir editar precios automáticamente
-    if (window._compraDesdeScanner) {
-        window._compraDesdeScanner = false;
-        const nuevoItem = carritoCompra[carritoCompra.length - 1];
-        if (nuevoItem) {
-            crearModalPreciosSiNoExiste();
-            window._compraReopenScanner = true;
-            setTimeout(() => abrirModalPrecios(nuevoItem.itemId), 120);
-        }
-    }
+    window._compraDesdeScanner = false;
 }
 
 
@@ -24978,6 +24982,51 @@ function eliminarItemCompra(itemId){
         function quitarTicket() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         function resetTicketUI() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         // ↗↗↗ FIN TICKETS NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+
+        // ↗↗↗ CÁMARA NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+        let _camaraStreamNuevaCompra = null;
+
+        window.abrirCamaraNuevaCompra = async function() {
+            const container = document.getElementById('camaraContainerNuevaCompra');
+            const video = document.getElementById('camaraVideoNuevaCompra');
+            if (!container || !video) return;
+            try {
+                _camaraStreamNuevaCompra = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                video.srcObject = _camaraStreamNuevaCompra;
+                container.classList.remove('hidden');
+            } catch (err) {
+                mostrarToast('No se pudo acceder a la cámara', 'error');
+                console.error(err);
+            }
+        };
+
+        window.cerrarCamaraNuevaCompra = function() {
+            const container = document.getElementById('camaraContainerNuevaCompra');
+            const video = document.getElementById('camaraVideoNuevaCompra');
+            if (_camaraStreamNuevaCompra) {
+                _camaraStreamNuevaCompra.getTracks().forEach(t => t.stop());
+                _camaraStreamNuevaCompra = null;
+            }
+            if (video) video.srcObject = null;
+            if (container) container.classList.add('hidden');
+        };
+
+        window.capturarFotoNuevaCompra = function() {
+            const video = document.getElementById('camaraVideoNuevaCompra');
+            const canvas = document.getElementById('camaraCanvasNuevaCompra');
+            if (!video || !canvas) return;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const nombre = 'foto_' + new Date().toISOString().replace(/[:.]/g,'-') + '.jpg';
+            _ticketsNuevaCompra.push({ data: dataUrl, nombre });
+            renderTicketGridNuevaCompra();
+            mostrarToast('Foto agregada ✓', 'success');
+        };
+        // ↗↗↗ FIN CÁMARA NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+
         function confirmarCompra() {
 
     if (carritoCompra.length === 0) {
