@@ -31909,6 +31909,14 @@ function verDetalleProveedor(tipo, id){
         let _scanActivo   = false;
         let _scanTorchDisponible = false;
         let _scanTorchEncendida  = false;
+        let _scanCompraRemota = {
+            id: null,
+            senderSessionId: null,
+            lastTs: 0,
+            unsub: null,
+            ownerId: localStorage.getItem('natanael_scan_device_id') || ('dev_' + Date.now() + '_' + Math.random().toString(36).slice(2))
+        };
+        try { localStorage.setItem('natanael_scan_device_id', _scanCompraRemota.ownerId); } catch(e) {}
 
         // Cargar jsQR dinámicamente como fallback
         function _cargarJsQR() {
@@ -31920,6 +31928,95 @@ function verDetalleProveedor(tipo, id){
                 s.onerror = () => res();
                 document.head.appendChild(s);
             });
+        }
+
+        function _scanCompraRemoteStatus(msg, tipo) {
+            const el = document.getElementById('scanCompraRemotoStatus');
+            if (!el) return;
+            if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+            const colores = {
+                ok: ['#052e16', '#16a34a', '#86efac'],
+                warn: ['#422006', '#d97706', '#fbbf24'],
+                info: ['#0f172a', '#2563eb', '#93c5fd'],
+                error: ['#450a0a', '#dc2626', '#fecaca']
+            }[tipo || 'info'];
+            el.style.display = 'block';
+            el.style.background = colores[0];
+            el.style.borderColor = colores[1];
+            el.style.color = colores[2];
+            el.textContent = msg;
+        }
+
+        function _detenerScanCompraRemoto() {
+            if (_scanCompraRemota.unsub) {
+                try { _scanCompraRemota.unsub(); } catch(e) {}
+            }
+            _scanCompraRemota.unsub = null;
+            _scanCompraRemota.id = null;
+            _scanCompraRemota.senderSessionId = null;
+            _scanCompraRemota.lastTs = 0;
+            _scanCompraRemoteStatus('', 'info');
+        }
+
+        async function _prepararScanCompraRemoto() {
+            _scanCompraRemota.senderSessionId = null;
+            if (!window._firebaseOK || typeof window.fbGet !== 'function' || typeof window.fbSet !== 'function' || typeof window.fbOn !== 'function') {
+                _scanCompraRemoteStatus('Scan remoto desactivado: conectá Firebase para enviar desde el celular a esta PC.', 'warn');
+                return;
+            }
+
+            const ahora = Date.now();
+            let sesion = null;
+            try { sesion = await window.fbGet('scanCompra/session'); } catch(e) {}
+            const activa = sesion && sesion.active && sesion.id && (ahora - (Number(sesion.ts) || 0) < 10 * 60 * 1000);
+
+            if (activa && sesion.ownerId && sesion.ownerId !== _scanCompraRemota.ownerId) {
+                _scanCompraRemota.senderSessionId = sesion.id;
+                _scanCompraRemoteStatus('Modo celular: el codigo escaneado se enviara a la PC.', 'ok');
+                return;
+            }
+
+            const sessionId = 'compra_' + ahora + '_' + Math.random().toString(36).slice(2);
+            _scanCompraRemota.id = sessionId;
+            _scanCompraRemota.lastTs = ahora;
+            await window.fbSet('scanCompra/session', {
+                id: sessionId,
+                ownerId: _scanCompraRemota.ownerId,
+                active: true,
+                ts: ahora
+            });
+            _scanCompraRemoteStatus('PC esperando scan remoto. Abrí Nueva Compra en el celular y tocá SCAN.', 'ok');
+
+            if (_scanCompraRemota.unsub) {
+                try { _scanCompraRemota.unsub(); } catch(e) {}
+            }
+            _scanCompraRemota.unsub = window.fbOn('scanCompra/inbox', data => {
+                if (!data || data.sessionId !== sessionId) return;
+                const ts = Number(data.ts) || 0;
+                if (!data.codigo || ts <= _scanCompraRemota.lastTs) return;
+                if (data.senderId === _scanCompraRemota.ownerId) return;
+                _scanCompraRemota.lastTs = ts;
+                _scanCompraRemoteStatus('Codigo recibido del celular: ' + data.codigo, 'ok');
+                procesarCodigo(data.codigo);
+            });
+        }
+
+        async function _publicarScanCompraCelular(codigo) {
+            if (!_scanCompraRemota.senderSessionId || !window._firebaseOK || typeof window.fbSet !== 'function') return false;
+            try {
+                await window.fbSet('scanCompra/inbox', {
+                    sessionId: _scanCompraRemota.senderSessionId,
+                    senderId: _scanCompraRemota.ownerId,
+                    codigo: codigo,
+                    ts: Date.now()
+                });
+                _scanCompraRemoteStatus('Codigo enviado a la PC: ' + codigo, 'ok');
+                mostrarToast && mostrarToast('Codigo enviado a la PC');
+                return true;
+            } catch(e) {
+                _scanCompraRemoteStatus('No se pudo enviar a la PC. Revisá Firebase/conexión.', 'error');
+                return false;
+            }
         }
 
         async function abrirScanner(modo) {
@@ -31980,6 +32077,13 @@ function verDetalleProveedor(tipo, id){
             document.getElementById('scanInputManual').value          = '';
             document.getElementById('scanStatus').style.display       = 'none';
             document.getElementById('scanCamArea').style.display      = 'block';
+            _scanCompraRemoteStatus('', 'info');
+
+            if (_scanModo === 'compra') {
+                await _prepararScanCompraRemoto();
+            } else {
+                _detenerScanCompraRemoto();
+            }
 
             log('iniciando camara...');
             try {
@@ -32182,6 +32286,17 @@ function verDetalleProveedor(tipo, id){
         function cerrarScanner() {
             const modoAntes = _scanModo;
             _pararScan();
+            if (modoAntes === 'compra') {
+                if (_scanCompraRemota.id && window._firebaseOK && typeof window.fbSet === 'function') {
+                    window.fbSet('scanCompra/session', {
+                        id: _scanCompraRemota.id,
+                        ownerId: _scanCompraRemota.ownerId,
+                        active: false,
+                        ts: Date.now()
+                    });
+                }
+                _detenerScanCompraRemoto();
+            }
             document.getElementById('modalScanner').style.display = 'none';
             document.body.style.overflow = '';
             const dbg = document.getElementById('_scanDebug');
@@ -32196,6 +32311,14 @@ function verDetalleProveedor(tipo, id){
         function procesarCodigo(codigo) {
             codigo = (codigo || '').replace(/[\r\n\t]/g, '').trim();
             if (!codigo) return;
+
+            if (_scanModo === 'compra' && _scanCompraRemota.senderSessionId) {
+                _publicarScanCompraCelular(codigo).then(enviado => {
+                    if (enviado) setTimeout(() => cerrarScanner(), 450);
+                });
+                return;
+            }
+
             document.getElementById('scanInputManual').value = codigo;
             document.getElementById('scanResultado').style.display    = 'none';
             document.getElementById('scanNoEncontrado').style.display = 'none';
@@ -32335,6 +32458,19 @@ if (!FIREBASE_URL) {
         } catch(e) {
             console.error('fbPush', e);
         }
+    };
+
+    window.fbSet = async function(path, data) {
+        await set(ref(db, 'natanael/' + path), data);
+    };
+
+    window.fbGet = async function(path) {
+        const snap = await get(ref(db, 'natanael/' + path));
+        return snap.exists() ? snap.val() : null;
+    };
+
+    window.fbOn = function(path, cb) {
+        return onValue(ref(db, 'natanael/' + path), snap => cb(snap.exists() ? snap.val() : null));
     };
 
     // LISTEN realtime
@@ -33361,6 +33497,8 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div id="scanStatus" style="display:none;font-size:11px;color:#fbbf24;font-weight:700;text-align:center;padding:8px;background:#1e293b;border-radius:8px;margin-top:8px;"></div>
+
+    <div id="scanCompraRemotoStatus" style="display:none;font-size:11px;font-weight:900;text-align:center;padding:9px;background:#0f172a;border:1px solid #2563eb;color:#93c5fd;border-radius:8px;margin-top:8px;"></div>
 
     <div style="display:flex;gap:6px;margin-top:10px;">
       <input id="scanInputManual" type="text" placeholder="O escribí el código acá..."
