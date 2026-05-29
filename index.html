@@ -4233,18 +4233,9 @@ CONFIRMAR PAGO
                                 📎 Agregar
                                 <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
                             </label>
-                            <button onclick="abrirCamaraNuevaCompra()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                            <button onclick="(function(){if(typeof abrirCamaraNuevaCompra==='function'){abrirCamaraNuevaCompra();}else{alert('Función no disponible');}})();" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
                                 📷 Cámara
                             </button>
-                        </div>
-                        <!-- Visor de cámara Nueva Compra -->
-                        <div id="camaraContainerNuevaCompra" class="hidden space-y-2">
-                            <video id="camaraVideoNuevaCompra" autoplay playsinline style="width:100%;border-radius:8px;max-height:180px;object-fit:cover;background:#000;display:block;"></video>
-                            <div style="display:flex;gap:6px;">
-                                <button onclick="capturarFotoNuevaCompra()" style="flex:1;padding:8px;background:#10b981;color:#000;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;">📸 Capturar</button>
-                                <button onclick="cerrarCamaraNuevaCompra()" style="flex:1;padding:8px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;">✕ Cerrar</button>
-                            </div>
-                            <canvas id="camaraCanvasNuevaCompra" class="hidden"></canvas>
                         </div>
                     </div>
                     <!-- Botón confirmar al final del scroll en mobile, fijo en desktop -->
@@ -24925,6 +24916,7 @@ function eliminarItemCompra(itemId){
 
         // ↗↗↗ TICKET ADJUNTO ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         let _ticketsNuevaCompra = []; // array de { data, nombre } ? multi-imagen
+        window._ticketsNuevaCompra = _ticketsNuevaCompra;
         let _camaraStream = null;
 
         // ↗↗↗ TICKETS NUEVA COMPRA (multi-imagen) ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
@@ -24982,50 +24974,6 @@ function eliminarItemCompra(itemId){
         function quitarTicket() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         function resetTicketUI() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         // ↗↗↗ FIN TICKETS NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
-
-        // ↗↗↗ CÁMARA NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
-        let _camaraStreamNuevaCompra = null;
-
-        window.abrirCamaraNuevaCompra = async function() {
-            const container = document.getElementById('camaraContainerNuevaCompra');
-            const video = document.getElementById('camaraVideoNuevaCompra');
-            if (!container || !video) return;
-            try {
-                _camaraStreamNuevaCompra = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-                video.srcObject = _camaraStreamNuevaCompra;
-                container.classList.remove('hidden');
-            } catch (err) {
-                mostrarToast('No se pudo acceder a la cámara', 'error');
-                console.error(err);
-            }
-        };
-
-        window.cerrarCamaraNuevaCompra = function() {
-            const container = document.getElementById('camaraContainerNuevaCompra');
-            const video = document.getElementById('camaraVideoNuevaCompra');
-            if (_camaraStreamNuevaCompra) {
-                _camaraStreamNuevaCompra.getTracks().forEach(t => t.stop());
-                _camaraStreamNuevaCompra = null;
-            }
-            if (video) video.srcObject = null;
-            if (container) container.classList.add('hidden');
-        };
-
-        window.capturarFotoNuevaCompra = function() {
-            const video = document.getElementById('camaraVideoNuevaCompra');
-            const canvas = document.getElementById('camaraCanvasNuevaCompra');
-            if (!video || !canvas) return;
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            const nombre = 'foto_' + new Date().toISOString().replace(/[:.]/g,'-') + '.jpg';
-            _ticketsNuevaCompra.push({ data: dataUrl, nombre });
-            renderTicketGridNuevaCompra();
-            mostrarToast('Foto agregada ✓', 'success');
-        };
-        // ↗↗↗ FIN CÁMARA NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
 
         function confirmarCompra() {
 
@@ -34509,6 +34457,77 @@ setTimeout(function() {
             <button onclick="guardarVencimientoWidget()" class="w-full py-3 bg-amber-500 text-black font-black rounded-xl uppercase text-xs hover:bg-amber-400 transition-colors">Guardar</button>
         </div>
     </div>
+
+    <!-- CÁMARA FULLSCREEN NUEVA COMPRA -->
+    <div id="camaraFullscreenNuevaCompra" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;flex-direction:column;">
+        <video id="camaraVideoNuevaCompra" autoplay playsinline style="width:100%;flex:1;object-fit:cover;display:block;"></video>
+        <canvas id="camaraCanvasNuevaCompra" style="display:none;"></canvas>
+        <div style="background:#000;padding:18px 20px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <button onclick="cerrarCamaraNuevaCompra()" style="width:52px;height:52px;border-radius:50%;background:#1e293b;border:2px solid #475569;color:#94a3b8;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;">✕</button>
+            <button onclick="capturarFotoNuevaCompra()" style="width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid #10b981;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">📸</button>
+            <div style="width:52px;height:52px;border-radius:50%;background:#1e293b;border:2px solid #334155;color:#10b981;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-direction:column;line-height:1.1;">
+                <span id="camaraContadorNumNuevaCompra" style="font-size:18px;font-weight:900;">0</span>
+                <span style="font-size:8px;color:#475569;">FOTOS</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var _stream = null;
+
+        window.abrirCamaraNuevaCompra = function() {
+            var overlay = document.getElementById('camaraFullscreenNuevaCompra');
+            var video   = document.getElementById('camaraVideoNuevaCompra');
+            if (!overlay || !video) { alert('Error: overlay no encontrado'); return; }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Tu navegador no soporta acceso a la cámara');
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+                .then(function(stream) {
+                    _stream = stream;
+                    video.srcObject = stream;
+                    overlay.style.display = 'flex';
+                    var cnt = document.getElementById('camaraContadorNumNuevaCompra');
+                    if (cnt && window._ticketsNuevaCompra) cnt.textContent = window._ticketsNuevaCompra.length;
+                })
+                .catch(function(err) {
+                    console.error('Camera error:', err);
+                    alert('No se pudo acceder a la cámara: ' + err.message);
+                });
+        };
+
+        window.cerrarCamaraNuevaCompra = function() {
+            if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
+            var video = document.getElementById('camaraVideoNuevaCompra');
+            if (video) video.srcObject = null;
+            var overlay = document.getElementById('camaraFullscreenNuevaCompra');
+            if (overlay) overlay.style.display = 'none';
+        };
+
+        window.capturarFotoNuevaCompra = function() {
+            var video  = document.getElementById('camaraVideoNuevaCompra');
+            var canvas = document.getElementById('camaraCanvasNuevaCompra');
+            if (!video || !canvas) return;
+            canvas.width  = video.videoWidth  || 1280;
+            canvas.height = video.videoHeight || 720;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            var nombre  = 'foto_' + new Date().toISOString().replace(/[:.]/g,'-') + '.jpg';
+            if (!window._ticketsNuevaCompra) window._ticketsNuevaCompra = [];
+            window._ticketsNuevaCompra.push({ data: dataUrl, nombre: nombre });
+            if (typeof renderTicketGridNuevaCompra === 'function') renderTicketGridNuevaCompra();
+            // Flash
+            var overlay = document.getElementById('camaraFullscreenNuevaCompra');
+            if (overlay) { overlay.style.filter='brightness(3)'; setTimeout(function(){ overlay.style.filter=''; }, 80); }
+            // Contador
+            var cnt = document.getElementById('camaraContadorNumNuevaCompra');
+            if (cnt) cnt.textContent = window._ticketsNuevaCompra.length;
+            if (typeof mostrarToast === 'function') mostrarToast('Foto ' + window._ticketsNuevaCompra.length + ' agregada ✓', 'success');
+        };
+    })();
+    </script>
 
 </body>
 </html>
