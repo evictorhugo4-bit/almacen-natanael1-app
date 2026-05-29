@@ -5209,9 +5209,10 @@ function _numStockProducto(v) {
 
 function _stockVisibleProducto(prod) {
     if (!prod) return 0;
+    const tieneCalc = prod.stockCalculado !== null && prod.stockCalculado !== undefined && prod.stockCalculado !== '';
     const calc = _numStockProducto(prod.stockCalculado);
     const stockSheet = _numStockProducto(prod.stock ?? prod['STOCK ACTUAL'] ?? prod.stockActual ?? prod.cantidad ?? prod.CANTIDAD);
-    if (calc > 0) return calc;
+    if (tieneCalc) return Math.max(0, calc);
     if (stockSheet > 0) return stockSheet;
     return Math.max(0, calc || stockSheet || 0);
 }
