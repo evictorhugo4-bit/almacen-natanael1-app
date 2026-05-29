@@ -32075,7 +32075,9 @@ function verDetalleProveedor(tipo, id){
             const _nb = document.getElementById('scanBuscadorNombre'); if (_nb) _nb.style.display = 'none';
             const _ni = document.getElementById('scanResultadosNombre'); if (_ni) _ni.innerHTML = '';
             document.getElementById('scanInputManual').value          = '';
-            document.getElementById('scanStatus').style.display       = 'none';
+            const scanStatus = document.getElementById('scanStatus');
+            scanStatus.textContent = 'Abriendo camara... si Android pide permiso, toca Permitir.';
+            scanStatus.style.display = 'block';
             document.getElementById('scanCamArea').style.display      = 'block';
             _scanCompraRemoteStatus('', 'info');
 
@@ -32098,23 +32100,37 @@ function verDetalleProveedor(tipo, id){
             // Parar stream anterior si existe
             _pararScan();
 
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                const esArchivo = location.protocol === 'file:';
+                const msg = esArchivo
+                    ? 'El navegador del celular no permite usar la camara desde un archivo. Abrila desde la APK o desde http://localhost/HTTPS. Tambien podes escribir el codigo manualmente.'
+                    : 'Este navegador no habilito la camara para esta app. Revisa permisos del sitio/app o escribi el codigo manualmente.';
+                _mostrarManual(msg);
+                return;
+            }
+
             try {
                 _scanStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
                 });
             } catch(e) {
                 try {
                     // Fallback: cualquier cÃ¡mara
-                    _scanStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    _scanStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                 } catch(e2) {
-                    _mostrarManual('Sin acceso a cÃ¡mara: ' + e2.message + '. IngresÃ¡ el cÃ³digo manualmente.');
+                    const detalle = e2 && (e2.name || e2.message) ? ((e2.name || '') + ' ' + (e2.message || '')).trim() : 'permiso bloqueado';
+                    _mostrarManual('Sin acceso a camara: ' + detalle + '. En Android entra a Ajustes > Apps > Natanael POS > Permisos > Camara y elegi Permitir. Tambien podes escribir el codigo manualmente.');
                     return;
                 }
             }
 
             const video = document.getElementById('scanVideo');
             video.srcObject = _scanStream;
-            video.play();
+            try { await video.play(); } catch(e) {}
+
+            const st = document.getElementById('scanStatus');
+            if (st) st.style.display = 'none';
 
             await _configurarTorchScanner();
 
@@ -32142,6 +32158,15 @@ function verDetalleProveedor(tipo, id){
             video.addEventListener('loadedmetadata', _loopScan, { once: true });
             // Seguridad: si ya tiene dimensiones, empezar igual
             if (video.readyState >= 2) _loopScan();
+            setTimeout(() => {
+                if (_scanActivo && (!video.videoWidth || !video.videoHeight)) {
+                    const st = document.getElementById('scanStatus');
+                    if (st) {
+                        st.textContent = 'La camara se abrio, pero todavia no entrega imagen. Revisá el permiso de camara o probá cerrar y abrir SCAN otra vez.';
+                        st.style.display = 'block';
+                    }
+                }
+            }, 2500);
         }
 
         async function _configurarTorchScanner() {
