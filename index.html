@@ -31931,20 +31931,7 @@ function verDetalleProveedor(tipo, id){
         }
 
         function _scanCompraRemoteStatus(msg, tipo) {
-            const el = document.getElementById('scanCompraRemotoStatus');
-            if (!el) return;
-            if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
-            const colores = {
-                ok: ['#052e16', '#16a34a', '#86efac'],
-                warn: ['#422006', '#d97706', '#fbbf24'],
-                info: ['#0f172a', '#2563eb', '#93c5fd'],
-                error: ['#450a0a', '#dc2626', '#fecaca']
-            }[tipo || 'info'];
-            el.style.display = 'block';
-            el.style.background = colores[0];
-            el.style.borderColor = colores[1];
-            el.style.color = colores[2];
-            el.textContent = msg;
+            // Estado remoto silenciado para no mostrar avisos de Firebase dentro del escáner.
         }
 
         function _detenerScanCompraRemoto() {
@@ -31999,17 +31986,49 @@ function verDetalleProveedor(tipo, id){
                 _scanCompraRemoteStatus('Codigo recibido del celular: ' + data.codigo, 'ok');
                 procesarCodigo(data.codigo);
             });
+
+            const unsubInbox = _scanCompraRemota.unsub;
+            const unsubLatest = window.fbOn('scanCompra/latest', data => {
+                const ts = Number(data && data.ts) || 0;
+                if (!data || !data.codigo || ts <= _scanCompraRemota.lastTs) return;
+                if (data.senderId === _scanCompraRemota.ownerId) return;
+                _scanCompraRemota.lastTs = ts;
+                _scanCompraRemoteStatus('Codigo recibido del celular: ' + data.codigo, 'ok');
+                procesarCodigo(data.codigo);
+            });
+            _scanCompraRemota.unsub = () => {
+                try { unsubInbox && unsubInbox(); } catch(e) {}
+                try { unsubLatest && unsubLatest(); } catch(e) {}
+            };
         }
 
         async function _publicarScanCompraCelular(codigo) {
-            if (!_scanCompraRemota.senderSessionId || !window._firebaseOK || typeof window.fbSet !== 'function') return false;
+            if (!window._firebaseOK || typeof window.fbSet !== 'function') return false;
+
+            if (!_scanCompraRemota.senderSessionId && typeof window.fbGet === 'function') {
+                try {
+                    const sesion = await window.fbGet('scanCompra/session');
+                    const ahora = Date.now();
+                    const activa = sesion && sesion.active && sesion.id && (ahora - (Number(sesion.ts) || 0) < 10 * 60 * 1000);
+                    if (activa && sesion.ownerId && sesion.ownerId !== _scanCompraRemota.ownerId) {
+                        _scanCompraRemota.senderSessionId = sesion.id;
+                    }
+                } catch(e) {}
+            }
+
             try {
-                await window.fbSet('scanCompra/inbox', {
-                    sessionId: _scanCompraRemota.senderSessionId,
+                const payload = {
                     senderId: _scanCompraRemota.ownerId,
                     codigo: codigo,
                     ts: Date.now()
-                });
+                };
+                if (_scanCompraRemota.senderSessionId) {
+                    await window.fbSet('scanCompra/inbox', {
+                        ...payload,
+                        sessionId: _scanCompraRemota.senderSessionId
+                    });
+                }
+                await window.fbSet('scanCompra/latest', payload);
                 _scanCompraRemoteStatus('Codigo enviado a la PC: ' + codigo, 'ok');
                 mostrarToast && mostrarToast('Codigo enviado a la PC');
                 return true;
@@ -32022,19 +32041,7 @@ function verDetalleProveedor(tipo, id){
         async function abrirScanner(modo) {
             _scanModo = modo || _scanModo || 'venta';
 
-            // DEBUG VISUAL ? mostrar panel de debug en pantalla
-            let dbg = document.getElementById('_scanDebug');
-            if (!dbg) {
-                dbg = document.createElement('div');
-                dbg.id = '_scanDebug';
-                dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font-size:12px;font-family:monospace;padding:8px;z-index:2147483647;max-height:40vh;overflow:auto;';
-                document.body.appendChild(dbg);
-            }
-            const log = (msg) => {
-                const l = document.createElement('div');
-                l.textContent = new Date().toLocaleTimeString() + ' ' + msg;
-                dbg.prepend(l);
-            };
+            const log = () => {};
 
             log('abrirScanner(' + modo + ') llamado');
 
@@ -32076,15 +32083,16 @@ function verDetalleProveedor(tipo, id){
             const _ni = document.getElementById('scanResultadosNombre'); if (_ni) _ni.innerHTML = '';
             document.getElementById('scanInputManual').value          = '';
             const scanStatus = document.getElementById('scanStatus');
-            scanStatus.textContent = 'Abriendo cámara... si Android pide permiso, toca Permitir.';
+            scanStatus.textContent = 'Abriendo cámara...';
             scanStatus.style.display = 'block';
-            const scanAltBtn = document.getElementById('scanFotoBtn');
-            if (scanAltBtn) scanAltBtn.style.display = 'none';
             document.getElementById('scanCamArea').style.display      = 'block';
             _scanCompraRemoteStatus('', 'info');
 
             if (_scanModo === 'compra') {
-                await _prepararScanCompraRemoto();
+                Promise.race([
+                    _prepararScanCompraRemoto(),
+                    new Promise((resolve) => setTimeout(resolve, 2500))
+                ]).catch(() => {});
             } else {
                 _detenerScanCompraRemoto();
             }
@@ -32131,7 +32139,6 @@ function verDetalleProveedor(tipo, id){
                 } catch(e2) {
                     const detalle = e2 && (e2.name || e2.message) ? ((e2.name || '') + ' ' + (e2.message || '')).trim() : 'permiso bloqueado';
                     _mostrarManual('No se pudo abrir la cámara: ' + detalle + '. Cerrá esta ventana, volve a tocar SCAN y confirma el permiso si aparece. Si sigue igual, reinicia la app o escribí el código manualmente.');
-                    _mostrarBotonFotoScanner();
                     return;
                 }
             }
@@ -32175,15 +32182,12 @@ function verDetalleProveedor(tipo, id){
                     if (st) {
                         st.textContent = 'La cámara se abrió, pero todavía no entrega imagen. Revisá el permiso de cámara o probá cerrar y abrir SCAN otra vez.';
                         st.style.display = 'block';
-                        _mostrarBotonFotoScanner();
                     }
                 }
             }, 2500);
         }
 
         function _mostrarBotonFotoScanner() {
-            const btn = document.getElementById('scanFotoBtn');
-            if (btn) btn.style.display = 'inline-flex';
         }
 
         async function abrirCamaraAlternativaScanner() {
@@ -32393,15 +32397,16 @@ function verDetalleProveedor(tipo, id){
             }
         }
 
-        function procesarCodigo(codigo) {
+        async function procesarCodigo(codigo) {
             codigo = (codigo || '').replace(/[\r\n\t]/g, '').trim();
             if (!codigo) return;
 
-            if (_scanModo === 'compra' && _scanCompraRemota.senderSessionId) {
-                _publicarScanCompraCelular(codigo).then(enviado => {
-                    if (enviado) setTimeout(() => cerrarScanner(), 450);
-                });
-                return;
+            if (_scanModo === 'compra' && window._firebaseOK) {
+                const enviado = await _publicarScanCompraCelular(codigo);
+                if (enviado) {
+                    setTimeout(() => cerrarScanner(), 450);
+                    return;
+                }
             }
 
             document.getElementById('scanInputManual').value = codigo;
@@ -33582,15 +33587,6 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div id="scanStatus" style="display:none;font-size:11px;color:#fbbf24;font-weight:700;text-align:center;padding:8px;background:#1e293b;border-radius:8px;margin-top:8px;"></div>
-
-    <div style="display:flex;justify-content:center;margin-top:8px;">
-      <button id="scanFotoBtn" onclick="abrirCamaraAlternativaScanner()" style="display:none;align-items:center;justify-content:center;background:#2563eb;color:#fff;border:none;border-radius:9px;padding:8px 12px;font-weight:900;font-size:11px;cursor:pointer;text-transform:uppercase;">
-        Cámara alternativa
-      </button>
-      <input id="scanFotoInput" type="file" accept="image/*" capture="environment" onchange="procesarFotoScanner(this)" style="display:none;">
-    </div>
-
-    <div id="scanCompraRemotoStatus" style="display:none;font-size:11px;font-weight:900;text-align:center;padding:9px;background:#0f172a;border:1px solid #2563eb;color:#93c5fd;border-radius:8px;margin-top:8px;"></div>
 
     <div style="display:flex;gap:6px;margin-top:10px;">
       <input id="scanInputManual" type="text" placeholder="O escribí el código acá..."
