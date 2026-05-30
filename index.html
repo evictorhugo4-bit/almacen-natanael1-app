@@ -24925,8 +24925,9 @@ function eliminarItemCompra(itemId){
         function renderTicketGridNuevaCompra() {
             const grid = document.getElementById('ticketGridNuevaCompra');
             if (!grid) return;
-            if (_ticketsNuevaCompra.length === 0) { grid.innerHTML = ''; return; }
-            grid.innerHTML = _ticketsNuevaCompra.map((t, i) => {
+            const arr = window._ticketsNuevaCompra || [];
+            if (arr.length === 0) { grid.innerHTML = ''; return; }
+            grid.innerHTML = arr.map((t, i) => {
                 const isPdf = t.data.startsWith('data:application/pdf');
                 const thumb = isPdf
                     ? `<div style="width:100%;height:54px;display:flex;align-items:center;justify-content:center;background:#1e293b;font-size:11px;font-weight:900;border-radius:6px;color:#cbd5e1;">PDF</div>`
@@ -24940,11 +24941,14 @@ function eliminarItemCompra(itemId){
         }
 
         window.cargarTicketsNuevaCompra = function(input) {
+            if (!input.files || input.files.length === 0) return;
+            if (!window._ticketsNuevaCompra) window._ticketsNuevaCompra = [];
             Array.from(input.files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = e => {
-                    _ticketsNuevaCompra.push({ data: e.target.result, nombre: file.name });
+                    window._ticketsNuevaCompra.push({ data: e.target.result, nombre: file.name });
                     renderTicketGridNuevaCompra();
+                    mostrarToast && mostrarToast('Foto agregada ✓', 'success');
                 };
                 reader.readAsDataURL(file);
             });
@@ -24952,12 +24956,12 @@ function eliminarItemCompra(itemId){
         };
 
         window.quitarTicketNuevaCompra = function(idx) {
-            _ticketsNuevaCompra.splice(idx, 1);
+            if (window._ticketsNuevaCompra) window._ticketsNuevaCompra.splice(idx, 1);
             renderTicketGridNuevaCompra();
         };
 
         window.verTicketNuevaCompraIdx = function(idx) {
-            const t = _ticketsNuevaCompra[idx];
+            const t = (window._ticketsNuevaCompra || [])[idx];
             if (!t) return;
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
@@ -24972,8 +24976,8 @@ function eliminarItemCompra(itemId){
 
         // Mantener compatibilidad con codigo viejo
         function cargarTicketArchivo(input) { cargarTicketsNuevaCompra(input); }
-        function quitarTicket() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
-        function resetTicketUI() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
+        function quitarTicket() { window._ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
+        function resetTicketUI() { window._ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         // ↗↗↗ FIN TICKETS NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         window.renderTicketGridNuevaCompra = renderTicketGridNuevaCompra;
 
@@ -25033,7 +25037,7 @@ const fecha =
     const _efectivoSnapshot = efectivo;
     const _fleteSnapshot    = flete;
     const _subtotalSnapshot = subtotalBase;
-    const _ticketsSnapshot  = _ticketsNuevaCompra.slice(); // capturar array ANTES de resetear
+    const _ticketsSnapshot  = (window._ticketsNuevaCompra || []).slice(); // capturar array ANTES de resetear
 
     cerrarNuevaCompra();
     resetTicketUI();
