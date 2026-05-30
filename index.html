@@ -32084,6 +32084,7 @@ function verDetalleProveedor(tipo, id){
             document.getElementById('scanNoEncontrado').style.display = 'none';
             const _nb = document.getElementById('scanBuscadorNombre'); if (_nb) _nb.style.display = 'none';
             const _ni = document.getElementById('scanResultadosNombre'); if (_ni) _ni.innerHTML = '';
+            const _btnC = document.getElementById('scanNoEncontradoBtnCompra'); if (_btnC) _btnC.style.display = 'none';
             document.getElementById('scanInputManual').value          = '';
             const scanStatus = document.getElementById('scanStatus');
             scanStatus.textContent = 'Abriendo cámara...';
@@ -32371,8 +32372,40 @@ function verDetalleProveedor(tipo, id){
 
         window._scanSeleccionarProdVS = function(idx) {
             const codigoPendiente = window._scanCodigoPendiente || '';
-            cerrarScanner();
-            abrirVerificarStock(idx, codigoPendiente);
+            if (_scanModo === 'compra') {
+                const prod = (_sheetProductos || [])[idx];
+                if (prod && codigoPendiente) {
+                    const codigos = (prod.codigoBarra || '').split(',').map(c => c.trim()).filter(Boolean);
+                    if (!codigos.includes(codigoPendiente)) {
+                        codigos.push(codigoPendiente);
+                        prod.codigoBarra = codigos.join(', ');
+                        prod.codigo_barra = prod.codigoBarra;
+                        if (typeof guardarProductoEnSheets === 'function') {
+                            try { guardarProductoEnSheets(prod); } catch(e) {}
+                        }
+                        mostrarToast('✅ Código ' + codigoPendiente + ' asignado a ' + prod.nombre, 'success');
+                    }
+                }
+                window._compraDesdeScanner = true;
+                cerrarScanner();
+                seleccionarProductoCompra(idx);
+                window._scanCodigoPendiente = '';
+            } else {
+                cerrarScanner();
+                abrirVerificarStock(idx, codigoPendiente);
+            }
+        };
+
+        window._scanAbrirBuscadorCompra = function() {
+            const codigo = window._scanCodigoPendiente || '';
+            const nb = document.getElementById('scanBuscadorNombre');
+            const ni = document.getElementById('scanInputNombre');
+            const codLabel = document.getElementById('scanCodigoPendienteLabel');
+            const btnCompra = document.getElementById('scanNoEncontradoBtnCompra');
+            if (nb) nb.style.display = 'block';
+            if (btnCompra) btnCompra.style.display = 'none';
+            if (codLabel) codLabel.textContent = '🏷️ Se asignará el código: ' + codigo;
+            setTimeout(function() { if (ni) { ni.value = ''; ni.focus(); } }, 100);
         };
 
         function cerrarScanner() {
@@ -32492,6 +32525,12 @@ function verDetalleProveedor(tipo, id){
                         }
                         cerrarScanner(); mostrarToast('Código ' + codigo + ' agregado. Guardá el producto');
                     }, 700);
+                }
+                if (_scanModo === 'compra') {
+                    // Guardar codigo pendiente y mostrar botón para buscar producto
+                    window._scanCodigoPendiente = codigo;
+                    const btnCompra = document.getElementById('scanNoEncontradoBtnCompra');
+                    if (btnCompra) btnCompra.style.display = 'block';
                 }
             }
         }
@@ -33606,11 +33645,18 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div id="scanNoEncontrado" style="display:none;background:rgba(127,29,29,0.3);border:1px solid rgba(248,113,113,0.3);border-radius:10px;padding:10px;margin-top:8px;">
-      <div style="font-size:11px;color:#f87171;font-weight:900;text-transform:uppercase;">✅ Código no encontrado</div>
+      <div style="font-size:11px;color:#f87171;font-weight:900;text-transform:uppercase;">❌ Código no encontrado</div>
       <div id="scanNoEncontradoCodigo" style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:2px;"></div>
+      <!-- Botón buscar producto (solo en modo compra) -->
+      <div id="scanNoEncontradoBtnCompra" style="display:none;margin-top:8px;">
+        <button onclick="_scanAbrirBuscadorCompra()"
+          style="width:100%;padding:9px;background:#f59e0b;color:#000;border:none;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;">
+          🔎 Elegir producto y asignar código
+        </button>
+      </div>
     </div>
 
-    <!-- Buscador por nombre (solo modo verificar_stock) -->
+    <!-- Buscador por nombre (modo verificar_stock Y compra sin match) -->
     <div id="scanBuscadorNombre" style="display:none;margin-top:10px;">
       <div style="font-size:10px;color:#f59e0b;font-weight:900;text-transform:uppercase;margin-bottom:6px;">🔎 Buscar por nombre</div>
       <div id="scanCodigoPendienteLabel" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;font-family:monospace;"></div>
