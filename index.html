@@ -3363,14 +3363,17 @@ GUARDAR PRODUCTO
                             <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;">Gan. Ef</th>
                             <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#fb923c;text-transform:uppercase;letter-spacing:.08em;">Gan. Cr</th>
                             <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#facc15;text-transform:uppercase;letter-spacing:.08em;">Gan. Total</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#6ee7b7;text-transform:uppercase;letter-spacing:.08em;">Ef s/Gan</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#fca5a5;text-transform:uppercase;letter-spacing:.08em;">Cr s/Gan</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#cbd5e1;text-transform:uppercase;letter-spacing:.08em;">Total s/Gan</th>
                         </tr>
                     </thead>
                     <tbody id="tablaRegistrosBody">
-                        <tr><td colspan="12" class="py-8 text-center text-slate-500 font-bold uppercase text-[10px]">Seleccioná un período para ver registros</td></tr>
+                        <tr><td colspan="15" class="py-8 text-center text-slate-500 font-bold uppercase text-[10px]">Seleccioná un período para ver registros</td></tr>
                     </tbody>
                 </table>
             </div>
-            <div id="tablaRegistrosTotales" class="grid grid-cols-3 gap-3"></div>
+            <div id="tablaRegistrosTotales" class="grid grid-cols-3 gap-3" style="grid-template-columns:repeat(6,minmax(0,1fr));"></div>
         </div>
 
     </div><!-- /vistaEstadisticas -->
@@ -31325,6 +31328,9 @@ function verDetalleProveedor(tipo, id){
                     <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#34d399;letter-spacing:.02em;text-shadow:0 0 6px #34d39944;">${_ganEfDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : _ganEfDisp > 0 ? '$'+Utils.fmt(_ganEfDisp) : '<span style="color:#475569;">$0</span>'}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#fb923c;letter-spacing:.02em;text-shadow:0 0 6px #fb923c44;">${_ganCrDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : _ganCrDisp > 0 ? '$'+Utils.fmt(_ganCrDisp) : '<span style="color:#475569;">$0</span>'}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#facc15;letter-spacing:.02em;text-shadow:0 0 6px #facc1544;">${_ganTotDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : _ganTotDisp > 0 ? '$'+Utils.fmt(_ganTotDisp) : '<span style="color:#475569;">$0</span>'}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#6ee7b7;letter-spacing:.02em;">${_ganEfDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : (()=>{ const v = (mostrarEfDoble ? efConGanancia : r.ef) - (_ganEfDisp||0); return v > 0 ? '$'+Utils.fmt(v) : '<span style="color:#475569;">$0</span>'; })()}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#fca5a5;letter-spacing:.02em;">${_ganCrDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : (()=>{ const v = (_crDisplay||0) - (_ganCrDisp||0); return v > 0 ? '$'+Utils.fmt(v) : '<span style="color:#475569;">$0</span>'; })()}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#cbd5e1;letter-spacing:.02em;">${_ganTotDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : (()=>{ const v = (mostrarTotDoble ? totConGanancia : r.tot) - (_ganTotDisp||0); return v > 0 ? '$'+Utils.fmt(v) : '<span style="color:#475569;">$0</span>'; })()}</td>
                 </tr>`;
             }).join('');
 
@@ -31347,6 +31353,9 @@ function verDetalleProveedor(tipo, id){
             const sumGanEf  = rowsFiltradas.reduce((s,r)=>s+Number(r.ganEf  || 0), 0);
             const sumGanCr  = rowsFiltradas.reduce((s,r)=>s+Number(r.ganCr  || 0), 0);
             const sumGanTot = rowsFiltradas.reduce((s,r)=>s+Number(r.ganTot || 0), 0);
+            const sumEfSGan  = (sumEfConGanancia  > 0 ? sumEfConGanancia  : sumEfSinGanancia)  - sumGanEf;
+            const sumCrSGan  = (sumCrConGanancia  > 0 ? sumCrConGanancia  : sumCrSinGanancia)  - sumGanCr;
+            const sumTotSGan = (sumTotConGanancia > 0 ? sumTotConGanancia : sumTotSinGanancia) - sumGanTot;
             if (totEl) totEl.innerHTML = `
                 <div class="glass-card rounded-xl p-3 text-center border border-emerald-500/30">
                     <p class="text-[8px] font-black text-emerald-400 uppercase">Total Ef</p>
@@ -31362,6 +31371,21 @@ function verDetalleProveedor(tipo, id){
                     <p class="text-[8px] font-black text-yellow-400 uppercase">Gan. Total</p>
                     <p class="text-base font-black text-yellow-400 font-mono">$${Utils.fmt(sumGanTot)}</p>
                     <p class="text-[8px] text-slate-500">${rowsFiltradas.length} registros</p>
+                </div>
+                <div class="glass-card rounded-xl p-3 text-center border border-emerald-500/20" style="border-color:#6ee7b744;">
+                    <p class="text-[8px] font-black uppercase" style="color:#6ee7b7;">Ef s/Gan</p>
+                    <p class="text-base font-black font-mono" style="color:#6ee7b7;">$${Utils.fmt(Math.max(0, sumEfSGan))}</p>
+                    <p class="text-[8px] font-black font-mono mt-1" style="color:#6ee7b799;">Ef − Gan.Ef</p>
+                </div>
+                <div class="glass-card rounded-xl p-3 text-center" style="border:1px solid #fca5a544;">
+                    <p class="text-[8px] font-black uppercase" style="color:#fca5a5;">Cr s/Gan</p>
+                    <p class="text-base font-black font-mono" style="color:#fca5a5;">$${Utils.fmt(Math.max(0, sumCrSGan))}</p>
+                    <p class="text-[8px] font-black font-mono mt-1" style="color:#fca5a599;">Cr − Gan.Cr</p>
+                </div>
+                <div class="glass-card rounded-xl p-3 text-center" style="border:1px solid #cbd5e144;">
+                    <p class="text-[8px] font-black uppercase" style="color:#cbd5e1;">Total s/Gan</p>
+                    <p class="text-base font-black font-mono" style="color:#cbd5e1;">$${Utils.fmt(Math.max(0, sumTotSGan))}</p>
+                    <p class="text-[8px] font-black font-mono mt-1" style="color:#cbd5e199;">Total − Gan.Tot</p>
                 </div>`;
         }
 
