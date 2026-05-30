@@ -979,7 +979,7 @@ z-index:999999999;
                 <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500" id="colVentasRecientes">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
                         <h3 class="text-xs font-black uppercase text-emerald-500 tracking-widest italic">Ventas Recientes</h3>
-                        <input type="text" placeholder="Buscar cliente o producto..." oninput="filtroHistorial=this.value; renderHistorial()" class="text-[10px] px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500 w-44">
+                        <input type="text" placeholder="Buscar cliente o producto..." oninput="filtroHistorial=this.value;_dbounce('hist',renderHistorial)" class="text-[10px] px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500 w-44">
                     </div>
                     <div id="listaHistorial" class="space-y-1"><p style="font-size:10px;color:#475569;font-weight:700;text-align:center;padding:1.5rem;text-transform:uppercase;">Sin ventas registradas</p></div>
                 </div>
@@ -1076,7 +1076,7 @@ z-index:999999999;
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -1107,7 +1107,7 @@ z-index:999999999;
                     <p id="countInventario" class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">↗ productos</p>
                 </div>
                 <div class="flex gap-2 items-center flex-wrap">
-                    <input type="text" id="inputFiltroInv" placeholder="Buscar producto..." oninput="filtrarInventario()" class="text-xs px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500 w-44">
+                    <input type="text" id="inputFiltroInv" placeholder="Buscar producto..." oninput="_dbounce('inv',filtrarInventario)" class="text-xs px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500 w-44">
                     <select id="filtroInvProveedor" onchange="filtrarInventario()" class="text-xs px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 outline-none focus:border-emerald-500">
                         <option value="">Proveedor</option>
                     </select>
@@ -1157,7 +1157,7 @@ z-index:999999999;
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -1192,7 +1192,7 @@ z-index:999999999;
                 </button>
             </div>
 
-            <input type="text" id="inputFiltroClientes" placeholder="Buscar cliente..." oninput="filtrarClientes(this.value)" class="w-full text-xs px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500">
+            <input type="text" id="inputFiltroClientes" placeholder="Buscar cliente..." oninput="_dbounce('clientes',()=>filtrarClientes(this.value))" class="w-full text-xs px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500">
 
             <!-- KPIs globales de deuda -->
             <div class="grid grid-cols-3 gap-3">
@@ -1564,7 +1564,7 @@ GUARDAR PRODUCTO
     <input type="text"
         id="inputFiltroCompras"
         placeholder="Buscar producto o proveedor..."
-        oninput="_filtroCompraTexto=this.value; renderCompras()"
+        oninput="_filtroCompraTexto=this.value;_dbounce('compras',renderCompras)"
         class="px-4 py-2 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:border-emerald-500 w-64">
 
     <input type="date"
@@ -1629,7 +1629,7 @@ GUARDAR PRODUCTO
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -1739,7 +1739,7 @@ GUARDAR PRODUCTO
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -1849,7 +1849,7 @@ GUARDAR PRODUCTO
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -1939,7 +1939,7 @@ GUARDAR PRODUCTO
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -2029,7 +2029,7 @@ GUARDAR PRODUCTO
         <div class="flex flex-wrap gap-2 items-center">
           <input type="datetime-local" id="pagosDesde" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
           <input type="datetime-local" id="pagosHasta" class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500" onchange="renderPagos()">
-          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="renderPagos()">
+          <input type="text" id="pagosBuscar" placeholder="Buscar..." class="bg-slate-800 border border-slate-600 text-white text-xs font-bold rounded-lg p-2 outline-none focus:border-emerald-500 flex-1 min-w-32" oninput="_dbounce('pagos',renderPagos)">
           <button onclick="document.getElementById('pagosDesde').value='';document.getElementById('pagosHasta').value='';document.getElementById('pagosBuscar').value='';renderPagos();" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-black text-xs">Limpiar</button>
         </div>
 
@@ -3688,7 +3688,7 @@ GUARDAR PRODUCTO
                 </div>
             </div>
             <div class="product-voice-search">
-                <input type="text" id="inputBusquedaIngEgr" placeholder="Buscar producto..." oninput="filtrarProductosIngEgr(this.value)" class="search-input">
+                <input type="text" id="inputBusquedaIngEgr" placeholder="Buscar producto..." oninput="_dbounce('ingegr',()=>filtrarProductosIngEgr(this.value))" class="search-input">
                 <button type="button" class="btn-voice-search" title="Buscar por voz" onclick="vozBuscarProducto('inputBusquedaIngEgr','filtrarProductosIngEgr', this)">
                     <i data-lucide="mic" class="w-5 h-5"></i>
                 </button>
@@ -4429,7 +4429,7 @@ CONFIRMAR PAGO
                 </div>
             </div>
             <div class="product-voice-search">
-                <input type="text" id="inputBusquedaCompra" placeholder="Buscar producto..." oninput="filtrarProductosCompra(this.value)" class="search-input">
+                <input type="text" id="inputBusquedaCompra" placeholder="Buscar producto..." oninput="_dbounce('pcompra',()=>filtrarProductosCompra(this.value))" class="search-input">
                 <button type="button" class="btn-voice-search" title="Buscar por voz" onclick="vozBuscarProducto('inputBusquedaCompra','filtrarProductosCompra', this)">
                     <i data-lucide="mic" class="w-5 h-5"></i>
                 </button>
@@ -4762,7 +4762,7 @@ SCAN
                 <button onclick="cerrarCatalogo()" class="text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-6 h-6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
             </div>
             <div class="product-voice-search">
-                <input type="text" id="inputBusqueda" placeholder="Nombre del producto..." oninput="filtrarProductos(this.value)" class="search-input">
+                <input type="text" id="inputBusqueda" placeholder="Nombre del producto..." oninput="_dbounce('prod',()=>filtrarProductos(this.value))" class="search-input">
                 <button type="button" class="btn-voice-search" title="Buscar por voz" onclick="vozBuscarProducto('inputBusqueda','filtrarProductos', this)">
                     <i data-lucide="mic" class="w-5 h-5"></i>
                 </button>
@@ -5021,43 +5021,43 @@ Agregar
         // ============================================================
         // === DIAGN───────────────────────────────────────────────STICO GLOBAL ===
         window.diagnostico = function() {
-            console.log('=== DIAGN───────────────────────────────────────────────STICO STOCK ===');
-            console.log('_sheetProductos:', _sheetProductos.length, 'productos');
-            console.log('historial:', historial.length, 'ventas locales');
+            /*dbg*/0&&console.log('=== DIAGN───────────────────────────────────────────────STICO STOCK ===');
+            /*dbg*/0&&console.log('_sheetProductos:', _sheetProductos.length, 'productos');
+            /*dbg*/0&&console.log('historial:', historial.length, 'ventas locales');
             
-            console.log('_sheetCompras:', (_sheetCompras||[]).length, 'compras sheet');
+            /*dbg*/0&&console.log('_sheetCompras:', (_sheetCompras||[]).length, 'compras sheet');
             const pConStock = _sheetProductos.find(p => p.stockInicio > 0);
             if (pConStock) {
-                console.log('Producto con stockInicio:', pConStock.nombre);
-                console.log('  stockInicio:', pConStock.stockInicio);
-                console.log('  fechaStockInicio:', pConStock.fechaStockInicio);
-                console.log('  fechaVerif:', pConStock.fechaVerif);
+                /*dbg*/0&&console.log('Producto con stockInicio:', pConStock.nombre);
+                /*dbg*/0&&console.log('  stockInicio:', pConStock.stockInicio);
+                /*dbg*/0&&console.log('  fechaStockInicio:', pConStock.fechaStockInicio);
+                /*dbg*/0&&console.log('  fechaVerif:', pConStock.fechaVerif);
                 const refNum = parseFechaNum(pConStock.fechaStockInicio || pConStock.fechaVerif || '');
-                console.log('  refNum:', refNum);
+                /*dbg*/0&&console.log('  refNum:', refNum);
             } else {
-                console.log('NING?šN producto tiene stockInicio > 0');
-                _sheetProductos.slice(0,3).forEach(p => console.log(' ', p.nombre, '| stockInicio:', p.stockInicio, '| fechaStockInicio:', p.fechaStockInicio, '| fechaVerif:', p.fechaVerif));
+                /*dbg*/0&&console.log('NING?šN producto tiene stockInicio > 0');
+                _sheetProductos.slice(0,3).forEach(p => /*dbg*/0&&console.log(' ', p.nombre, '| stockInicio:', p.stockInicio, '| fechaStockInicio:', p.fechaStockInicio, '| fechaVerif:', p.fechaVerif));
             }
             const vConItems = (_sheetVentas||[]).find(v => v.items && v.items.length > 0);
             if (vConItems) {
-                console.log('Primera venta sheet - fecha:', vConItems.fecha, '| fechaISO:', vConItems.fechaISO);
-                console.log('  fnum:', parseFechaNum(vConItems.fechaISO || vConItems.fecha || ''));
-                console.log('  KEYS:', Object.keys(vConItems).join(', '));
-                console.log('  item[0]:', JSON.stringify(vConItems.items[0]));
+                /*dbg*/0&&console.log('Primera venta sheet - fecha:', vConItems.fecha, '| fechaISO:', vConItems.fechaISO);
+                /*dbg*/0&&console.log('  fnum:', parseFechaNum(vConItems.fechaISO || vConItems.fecha || ''));
+                /*dbg*/0&&console.log('  KEYS:', Object.keys(vConItems).join(', '));
+                /*dbg*/0&&console.log('  item[0]:', JSON.stringify(vConItems.items[0]));
             } else {
-                if ((_sheetVentas||[]).length > 0) console.log('  KEYS:', Object.keys(_sheetVentas[0]).join(', '));
+                if ((_sheetVentas||[]).length > 0) /*dbg*/0&&console.log('  KEYS:', Object.keys(_sheetVentas[0]).join(', '));
             }
         };
         window.diagnostico2 = function(nom) {
             const nombreUp = (nom||'').toUpperCase();
             const todas = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
-            console.log('Buscando', nombreUp, 'en', todas.length, 'ventas...');
+            /*dbg*/0&&console.log('Buscando', nombreUp, 'en', todas.length, 'ventas...');
             todas.forEach((v,i) => {
                 const tiene = (v.items||[]).some(it => String(it.nombre||'').toUpperCase().includes(nombreUp));
                 if (!tiene) return;
-                console.log(i, 'fecha:', v.fecha, '| fechaISO:', v.fechaISO, '| fnum:', parseFechaNum(v.fechaISO||v.fecha||''));
+                /*dbg*/0&&console.log(i, 'fecha:', v.fecha, '| fechaISO:', v.fechaISO, '| fnum:', parseFechaNum(v.fechaISO||v.fecha||''));
                 (v.items||[]).filter(it=>String(it.nombre||'').toUpperCase().includes(nombreUp))
-                    .forEach(it => console.log('  item:', it.nombre, 'cant:', it.cantidad));
+                    .forEach(it => /*dbg*/0&&console.log('  item:', it.nombre, 'cant:', it.cantidad));
             });
         };
 
@@ -5128,6 +5128,15 @@ Agregar
 };
 
         // ============================================================
+        // DEBOUNCE — evita ejecuciones repetidas en oninput
+        // ============================================================
+        const _dbTimers = {};
+        function _dbounce(key, fn, ms) {
+            clearTimeout(_dbTimers[key]);
+            _dbTimers[key] = setTimeout(fn, ms === undefined ? 220 : ms);
+        }
+
+                // ============================================================
         // M───────────────────────────────────────────────DULO UTILS ↗ Helpers de uso general
         // ============================================================
         const Utils = {
@@ -5655,7 +5664,7 @@ _sheetProductos.forEach(p => {
             if (!prod) return;
             // Para productos Peso: precio = $/kg. Para Unidad: precio = $/unidad
             const precioPorKg = esTipoVenta(prod.tipoVenta) ? (prod.precio || prod.precioVenta || 0) : prod.precio;
-            console.log('[Selector] Producto:', prod.nombre, '| tipoVenta:', prod.tipoVenta, '| precio raw:', prod.precio, '| costo:', prod.costo);
+            /*dbg*/0&&console.log('[Selector] Producto:', prod.nombre, '| tipoVenta:', prod.tipoVenta, '| precio raw:', prod.precio, '| costo:', prod.costo);
             productoPendiente = { idx, id: prod.id, nombre: prod.nombre, precio: precioPorKg, tipoVenta: prod.tipoVenta, foto: prod.foto || '' };
             cerrarCatalogo();
 
@@ -5893,7 +5902,7 @@ _sheetProductos.forEach(p => {
                 .then(r => r.json())
                 .then(res => {
                     if (res.ok && res.url) {
-                        console.log('[Drive] URL:', res.url);
+                        /*dbg*/0&&console.log('[Drive] URL:', res.url);
                         mostrarToast('✅ Imagen subida a Drive', 'success');
                         callback(res.url);
                     } else {
@@ -5996,7 +6005,7 @@ _sheetProductos.forEach(p => {
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     // Calidad 0.45 para mantener base64 bajo ~40KB
                     const compressed = canvas.toDataURL('image/jpeg', 0.45);
-                    console.log('[Foto] Original:', Math.round(dataUrl.length/1024)+'KB ? Comprimida:', Math.round(compressed.length/1024)+'KB');
+                    /*dbg*/0&&console.log('[Foto] Original:', Math.round(dataUrl.length/1024)+'KB ? Comprimida:', Math.round(compressed.length/1024)+'KB');
                     callback(compressed);
                 };
                 img.onerror = function() { callback(dataUrl); };
@@ -7307,8 +7316,8 @@ _sheetEgresosNegocio.forEach(e => {
                         fetchSheets._dedupRecientes[dedupKey] = ahoraDedup;
                     }
                 } catch(e) {}
-                console.log('[Sheet] POST ? body length:', payload.length);
-                console.log('[Sheet] POST ? body preview:', payload.substring(0, 300));
+                /*dbg*/0&&console.log('[Sheet] POST ? body length:', payload.length);
+                /*dbg*/0&&console.log('[Sheet] POST ? body preview:', payload.substring(0, 300));
                 const sheetController = new AbortController();
                 const sheetTimeout = setTimeout(() => sheetController.abort(), 30000);
                 return fetch(SHEETS_URL2, {
@@ -7320,7 +7329,7 @@ _sheetEgresosNegocio.forEach(e => {
                     .finally(() => clearTimeout(sheetTimeout))
                     .then(r => r.text())
                     .then(txt => {
-                        console.log('[Sheet] POST ? respuesta:', txt.substring(0, 200));
+                        /*dbg*/0&&console.log('[Sheet] POST ? respuesta:', txt.substring(0, 200));
                         try {
                             const d = JSON.parse(txt);
                             if (d.ok) {
@@ -7546,7 +7555,7 @@ _sheetEgresosNegocio.forEach(e => {
                 const aplicado = inventarioCache.length || ventasCache.length || pagoVentasCache.length || clientesCache.length;
                 window._cacheLocalAplicado = !!aplicado;
                 if (aplicado) {
-                    console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
+                    /*dbg*/0&&console.log('[Cache] Arranque local aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
                 }
                 return !!aplicado;
             } catch(e) {
@@ -7659,16 +7668,16 @@ _sheetEgresosNegocio.forEach(e => {
                 // Si _pagoVentasSheet sigue vacío después de 3 segundos,
                 // significa que el Apps Script no lo está devolviendo
                 
-                console.log('[PAGOS] Verificando si hay datos de PAGO_VENTAS...');
-                console.log('[PAGOS] _pagoVentasSheet.length =', _pagoVentasSheet.length);
+                /*dbg*/0&&console.log('[PAGOS] Verificando si hay datos de PAGO_VENTAS...');
+                /*dbg*/0&&console.log('[PAGOS] _pagoVentasSheet.length =', _pagoVentasSheet.length);
                 
                 if (_pagoVentasSheet && _pagoVentasSheet.length > 0) {
-                    console.log('[PAGOS] ✅ Ya hay datos cargados desde Google Sheets');
+                    /*dbg*/0&&console.log('[PAGOS] ✅ Ya hay datos cargados desde Google Sheets');
                     return true;
                 }
                 
-                console.log('[PAGOS] ? No hay datos. El Apps Script no está devolviendo pagoVentas.');
-                console.log('[PAGOS] Verifica que el Google Apps Script incluya pagoVentas en la respuesta JSON');
+                /*dbg*/0&&console.log('[PAGOS] ? No hay datos. El Apps Script no está devolviendo pagoVentas.');
+                /*dbg*/0&&console.log('[PAGOS] Verifica que el Google Apps Script incluya pagoVentas en la respuesta JSON');
                 return false;
             } catch(err) {
                 console.error('[PAGOS] Error verificando pagos:', err);
@@ -7678,42 +7687,42 @@ _sheetEgresosNegocio.forEach(e => {
 
         // === DIAGN───────────────────────────────────────────────STICO: ejecutar diagnostico() en consola ===
         window.diagnostico = function() {
-            console.log('=== DIAGN───────────────────────────────────────────────STICO STOCK ===');
-            console.log('_sheetProductos:', _sheetProductos.length, 'productos');
-            console.log('historial:', historial.length, 'ventas locales');
-            console.log('_sheetCompras:', _sheetCompras.length, 'compras locales');
-            console.log('_sheetCompras:', (_sheetCompras||[]).length, 'compras sheet');
+            /*dbg*/0&&console.log('=== DIAGN───────────────────────────────────────────────STICO STOCK ===');
+            /*dbg*/0&&console.log('_sheetProductos:', _sheetProductos.length, 'productos');
+            /*dbg*/0&&console.log('historial:', historial.length, 'ventas locales');
+            /*dbg*/0&&console.log('_sheetCompras:', _sheetCompras.length, 'compras locales');
+            /*dbg*/0&&console.log('_sheetCompras:', (_sheetCompras||[]).length, 'compras sheet');
 
             // Mostrar primer producto con stockInicio
             const pConStock = _sheetProductos.find(p => p.stockInicio > 0);
             if (pConStock) {
-                console.log('\n--- Producto con stockInicio:', pConStock.nombre);
-                console.log('  stockInicio:', pConStock.stockInicio);
-                console.log('  fechaStockInicio:', pConStock.fechaStockInicio);
-                console.log('  fechaVerif:', pConStock.fechaVerif);
-                console.log('  stock:', pConStock.stock);
-                console.log('  numeroProd:', pConStock.numeroProd);
+                /*dbg*/0&&console.log('\n--- Producto con stockInicio:', pConStock.nombre);
+                /*dbg*/0&&console.log('  stockInicio:', pConStock.stockInicio);
+                /*dbg*/0&&console.log('  fechaStockInicio:', pConStock.fechaStockInicio);
+                /*dbg*/0&&console.log('  fechaVerif:', pConStock.fechaVerif);
+                /*dbg*/0&&console.log('  stock:', pConStock.stock);
+                /*dbg*/0&&console.log('  numeroProd:', pConStock.numeroProd);
                 const refNum = parseFechaNum(pConStock.fechaStockInicio || pConStock.fechaVerif || '');
-                console.log('  refNum calculado:', refNum);
+                /*dbg*/0&&console.log('  refNum calculado:', refNum);
             } else {
-                console.log('\n? NING?šN producto tiene stockInicio > 0');
-                console.log('Primeros 3 productos:');
+                /*dbg*/0&&console.log('\n? NING?šN producto tiene stockInicio > 0');
+                /*dbg*/0&&console.log('Primeros 3 productos:');
                 _sheetProductos.slice(0,3).forEach(p => {
-                    console.log(' ', p.nombre, '| stockInicio:', p.stockInicio, '| fechaStockInicio:', p.fechaStockInicio, '| stock:', p.stock);
+                    /*dbg*/0&&console.log(' ', p.nombre, '| stockInicio:', p.stockInicio, '| fechaStockInicio:', p.fechaStockInicio, '| stock:', p.stock);
                 });
             }
 
             // Mostrar primera venta sheet con items
             const vConItems = (_sheetVentas||[]).find(v => v.items && v.items.length > 0);
             if (vConItems) {
-                console.log('\n--- Primera venta sheet:');
-                console.log('  fecha:', vConItems.fecha);
-                console.log('  fechaISO:', vConItems.fechaISO);
-                console.log('  items:', vConItems.items.length);
-                console.log('  item[0]:', JSON.stringify(vConItems.items[0]));
-                console.log('  parseFechaNum(fechaISO):', parseFechaNum(vConItems.fechaISO || vConItems.fecha || ''));
+                /*dbg*/0&&console.log('\n--- Primera venta sheet:');
+                /*dbg*/0&&console.log('  fecha:', vConItems.fecha);
+                /*dbg*/0&&console.log('  fechaISO:', vConItems.fechaISO);
+                /*dbg*/0&&console.log('  items:', vConItems.items.length);
+                /*dbg*/0&&console.log('  item[0]:', JSON.stringify(vConItems.items[0]));
+                /*dbg*/0&&console.log('  parseFechaNum(fechaISO):', parseFechaNum(vConItems.fechaISO || vConItems.fecha || ''));
                 // Mostrar TODAS las keys del objeto
-                console.log('  KEYS:', Object.keys(vConItems).join(', '));
+                /*dbg*/0&&console.log('  KEYS:', Object.keys(vConItems).join(', '));
             } else {
                 if ((_sheetVentas||[]).length > 0) {
                 }
@@ -7722,25 +7731,25 @@ _sheetEgresosNegocio.forEach(e => {
             // Primera compra
             const cpConItems = (_sheetCompras||[]).find(cp => cp.items && cp.items.length > 0);
             if (cpConItems) {
-                console.log('\n--- Primera compra sheet:');
-                console.log('  fecha:', cpConItems.fecha);
-                console.log('  fechaISO:', cpConItems.fechaISO);
-                console.log('  parseFechaNum:', parseFechaNum(cpConItems.fechaISO || cpConItems.fecha || ''));
+                /*dbg*/0&&console.log('\n--- Primera compra sheet:');
+                /*dbg*/0&&console.log('  fecha:', cpConItems.fecha);
+                /*dbg*/0&&console.log('  fechaISO:', cpConItems.fechaISO);
+                /*dbg*/0&&console.log('  parseFechaNum:', parseFechaNum(cpConItems.fechaISO || cpConItems.fecha || ''));
             }
         };
         
         window.diagnosticoPagos = function() {
-            console.log('=== DIAGN───────────────────────────────────────────────STICO PAGOS ===');
-            console.log('_pagoVentasSheet TOTAL:', _pagoVentasSheet.length);
+            /*dbg*/0&&console.log('=== DIAGN───────────────────────────────────────────────STICO PAGOS ===');
+            /*dbg*/0&&console.log('_pagoVentasSheet TOTAL:', _pagoVentasSheet.length);
             if (_pagoVentasSheet.length === 0) {
-                console.log('? NO HAY PAGOS CARGADOS');
+                /*dbg*/0&&console.log('? NO HAY PAGOS CARGADOS');
                 return;
             }
-            console.log('\n--- PRIMEROS 5 PAGOS ---');
+            /*dbg*/0&&console.log('\n--- PRIMEROS 5 PAGOS ---');
             _pagoVentasSheet.slice(0,5).forEach((p, i) => {
-                console.log(i, '| idCliente:', p.idCliente, '| idVenta:', p.idVenta, '| monto:', p.monto, '| fecha:', p.fecha);
+                /*dbg*/0&&console.log(i, '| idCliente:', p.idCliente, '| idVenta:', p.idVenta, '| monto:', p.monto, '| fecha:', p.fecha);
             });
-            console.log('\n--- PAGOS POR CLIENTE ---');
+            /*dbg*/0&&console.log('\n--- PAGOS POR CLIENTE ---');
             const grupos = {};
             _pagoVentasSheet.forEach(p => {
                 const cl = p.idCliente || p.cliente;
@@ -7749,62 +7758,62 @@ _sheetEgresosNegocio.forEach(e => {
             });
             Object.entries(grupos).forEach(([cl, pagos]) => {
                 const totalMonto = pagos.reduce((s, p) => s + p.monto, 0);
-                console.log('  Cliente ' + cl + ': ' + pagos.length + ' pagos | Total: $' + totalMonto);
+                /*dbg*/0&&console.log('  Cliente ' + cl + ': ' + pagos.length + ' pagos | Total: $' + totalMonto);
                 pagos.forEach(p => {
-                    console.log('    - idVenta:', p.idVenta, '| monto:', p.monto, '| fecha:', p.fecha);
+                    /*dbg*/0&&console.log('    - idVenta:', p.idVenta, '| monto:', p.monto, '| fecha:', p.fecha);
                 });
             });
         };
         window.diagnosticoEgresos = function() {
-            console.log('=== DIAGN───────────────────────────────────────────────STICO EGRESOS/INGRESOS ===');
-            console.log('_supercatsEgrSheet:', _supercatsEgrSheet.length, _supercatsEgrSheet);
-            console.log('_catsEgrSheet keys:', Object.keys(_catsEgrSheet).length, _catsEgrSheet);
-            console.log('_supercatsIngSheet:', _supercatsIngSheet.length, _supercatsIngSheet);
-            console.log('_sheetEgresos total:', _sheetEgresos.length);
-            console.log('_sheetIngresos total:', _sheetIngresos.length);
+            /*dbg*/0&&console.log('=== DIAGN───────────────────────────────────────────────STICO EGRESOS/INGRESOS ===');
+            /*dbg*/0&&console.log('_supercatsEgrSheet:', _supercatsEgrSheet.length, _supercatsEgrSheet);
+            /*dbg*/0&&console.log('_catsEgrSheet keys:', Object.keys(_catsEgrSheet).length, _catsEgrSheet);
+            /*dbg*/0&&console.log('_supercatsIngSheet:', _supercatsIngSheet.length, _supercatsIngSheet);
+            /*dbg*/0&&console.log('_sheetEgresos total:', _sheetEgresos.length);
+            /*dbg*/0&&console.log('_sheetIngresos total:', _sheetIngresos.length);
             if (_sheetEgresos.length > 0) {
-                console.log('\n--- PRIMER EGRESO DB ---');
+                /*dbg*/0&&console.log('\n--- PRIMER EGRESO DB ---');
                 const e = _sheetEgresos[0];
-                console.log('  proveedor:', e.proveedor);
-                console.log('  concepto:', e.concepto);
-                console.log('  fromSheet:', e.fromSheet);
-                console.log('  TODAS LAS KEYS:', Object.keys(e).join(', '));
+                /*dbg*/0&&console.log('  proveedor:', e.proveedor);
+                /*dbg*/0&&console.log('  concepto:', e.concepto);
+                /*dbg*/0&&console.log('  fromSheet:', e.fromSheet);
+                /*dbg*/0&&console.log('  TODAS LAS KEYS:', Object.keys(e).join(', '));
             }
             // Ver qué datos RAW llegan del sheet en el próximo sync
             const origFetch = window.fetch;
-            console.log('\n--- Para ver datos RAW del sheet, ejecutá: verDatosSheet() ---');
+            /*dbg*/0&&console.log('\n--- Para ver datos RAW del sheet, ejecutá: verDatosSheet() ---');
         };
         window.verDatosSheet = function() {
             const url = typeof SHEETS_URL2 !== 'undefined' ? SHEETS_URL2 : null;
-            if (!url) { console.log('No hay URL del sheet configurada'); return; }
-            console.log('Fetching sheet data...');
+            if (!url) { /*dbg*/0&&console.log('No hay URL del sheet configurada'); return; }
+            /*dbg*/0&&console.log('Fetching sheet data...');
             fetch(url).then(r=>r.json()).then(data=>{
-                console.log('=== DATOS RAW DEL SHEET ===');
-                console.log('Keys del objeto data:', Object.keys(data).join(', '));
+                /*dbg*/0&&console.log('=== DATOS RAW DEL SHEET ===');
+                /*dbg*/0&&console.log('Keys del objeto data:', Object.keys(data).join(', '));
                 if (data.gastos && data.gastos.length > 0) {
-                    console.log('\n--- GASTOS: total rows:', data.gastos.length);
-                    console.log('  COLUMNAS de la primera fila:', Object.keys(data.gastos[0]).join(', '));
-                    console.log('  Primera fila completa:', data.gastos[0]);
+                    /*dbg*/0&&console.log('\n--- GASTOS: total rows:', data.gastos.length);
+                    /*dbg*/0&&console.log('  COLUMNAS de la primera fila:', Object.keys(data.gastos[0]).join(', '));
+                    /*dbg*/0&&console.log('  Primera fila completa:', data.gastos[0]);
                 } else {
-                    console.log('? data.gastos está VAC?O o no existe');
-                    console.log('  Intentando otras keys...', Object.keys(data));
+                    /*dbg*/0&&console.log('? data.gastos está VAC?O o no existe');
+                    /*dbg*/0&&console.log('  Intentando otras keys...', Object.keys(data));
                 }
                 if (data.ingresos && data.ingresos.length > 0) {
-                    console.log('\n--- INGRESOS: total rows:', data.ingresos.length);
-                    console.log('  COLUMNAS:', Object.keys(data.ingresos[0]).join(', '));
+                    /*dbg*/0&&console.log('\n--- INGRESOS: total rows:', data.ingresos.length);
+                    /*dbg*/0&&console.log('  COLUMNAS:', Object.keys(data.ingresos[0]).join(', '));
                 }
             }).catch(e => console.error('Error:', e));
         };
         window.diagnostico2 = function(nombreProd) {
             const nom = (nombreProd || '').toUpperCase();
-            console.log('=== VENTAS que contienen:', nom, '===');
+            /*dbg*/0&&console.log('=== VENTAS que contienen:', nom, '===');
             const todas = [...historial, ...(_sheetVentas||[]).filter(v=>!historial.some(h=>h.id===v.id))];
             todas.forEach((v,i) => {
                 const tiene = (v.items||[]).some(it => String(it.nombre||'').toUpperCase().includes(nom));
                 if (tiene) {
-                    console.log(i, '| fecha:', v.fecha, '| fechaISO:', v.fechaISO, '| fnum:', parseFechaNum(v.fechaISO||v.fecha||''));
+                    /*dbg*/0&&console.log(i, '| fecha:', v.fecha, '| fechaISO:', v.fechaISO, '| fnum:', parseFechaNum(v.fechaISO||v.fecha||''));
                     v.items.filter(it=>String(it.nombre||'').toUpperCase().includes(nom)).forEach(it=>{
-                        console.log('   item:', it.nombre, 'cant:', it.cantidad);
+                        /*dbg*/0&&console.log('   item:', it.nombre, 'cant:', it.cantidad);
                     });
                 }
             });
@@ -7992,7 +8001,7 @@ _sheetEgresosNegocio.forEach(e => {
             }
             const indicator = document.getElementById('syncIndicator');
             const _log = (msg, color='#10b981') => {
-                console.log(msg);
+                /*dbg*/0&&console.log(msg);
                 const panel = document.getElementById('syncDebugPanel');
                 if (panel) {
                     const line = document.createElement('div');
@@ -8188,8 +8197,8 @@ _sheetEgresosNegocio.forEach(e => {
                     const _ventasHoy = _sheetVentas.filter(v => (v.fechaISO||v.fecha||'').startsWith(_hoyStr) || parseFechaNum(v.fechaISO||v.fecha||'') >= parseFechaNum(_hoyStr+'T00:00'));
                     let _sumEfHoy=0, _sumCrHoy=0, _sumTotHoy=0;
                     _ventasHoy.forEach(v => { _sumEfHoy+=Number(v.efectivo||0); _sumCrHoy+=Number(v.deuda||0); _sumTotHoy+=Number(v.total||0); });
-                    console.log('[VENTAS HOY] count:', _ventasHoy.length, '| total:', _sumTotHoy, '| efectivo:', _sumEfHoy, '| credito:', _sumCrHoy);
-                    if (_ventasHoy[0]) console.log('[VENTA HOY 0]', JSON.stringify({id:_ventasHoy[0].id, total:_ventasHoy[0].total, efectivo:_ventasHoy[0].efectivo, deuda:_ventasHoy[0].deuda, items:(_ventasHoy[0].items||[]).length}));
+                    /*dbg*/0&&console.log('[VENTAS HOY] count:', _ventasHoy.length, '| total:', _sumTotHoy, '| efectivo:', _sumEfHoy, '| credito:', _sumCrHoy);
+                    if (_ventasHoy[0]) /*dbg*/0&&console.log('[VENTA HOY 0]', JSON.stringify({id:_ventasHoy[0].id, total:_ventasHoy[0].total, efectivo:_ventasHoy[0].efectivo, deuda:_ventasHoy[0].deuda, items:(_ventasHoy[0].items||[]).length}));
                     renderHistorialConSheet();
                 }
                 // ? Procesar inventario del Sheet ?
@@ -8265,7 +8274,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     _inventarioDesdeCachePendienteSheet = false;
     _inventarioCacheInicialCount = 0;
     try { localStorage.setItem('natanael_inventario_full_count_v1', String(_sheetProductos.length)); } catch(e) {}
-    console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
+    /*dbg*/0&&console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
     if (_sheetProductos.length > 0) { _syncStatus.productos = true; actualizarIndicadorSync(); }
     indexarProductos();
     if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
@@ -8277,7 +8286,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     filtrarInventario();
 
 } else {
-    console.log('Inventario: sheet vacío, manteniendo ' + _sheetProductos.length + ' productos locales');
+    /*dbg*/0&&console.log('Inventario: sheet vacío, manteniendo ' + _sheetProductos.length + ' productos locales');
 }
 
                                 // ? Procesar clientes del Sheet ?
@@ -8484,14 +8493,14 @@ window._pagoVentasSheet = _pagoVentasSheet;
 _sheetCompras = comprasSheet;
 window._sheetCompras = _sheetCompras;
 window._comprasSheetCargadas = true;
-console.log('✅ Compras Sheet cargadas:', _sheetCompras.length);
+/*dbg*/0&&console.log('✅ Compras Sheet cargadas:', _sheetCompras.length);
 const fpResumen = {}; _sheetCompras.forEach(c=>{ const fp=c.formaPago||'(vacío)'; fpResumen[fp]=(fpResumen[fp]||0)+1; });
-console.log('🛒?Š Compras por formaPago:', fpResumen);
+/*dbg*/0&&console.log('🛒?Š Compras por formaPago:', fpResumen);
                     if (agregados > 0 || actualizados > 0) {
                       
                         const vistaCompras = document.getElementById('vistaCompras');
                         //if (vistaCompras && !vistaCompras.classList.contains('hidden')) renderCompras();
-                        if (agregados > 0 || actualizados > 0) console.log('✅ Compras Sheet: ' + agregados + ' nuevas, ' + actualizados + ' actualizadas');
+                        if (agregados > 0 || actualizados > 0) /*dbg*/0&&console.log('✅ Compras Sheet: ' + agregados + ' nuevas, ' + actualizados + ' actualizadas');
                     }
                 }
 
@@ -8576,7 +8585,7 @@ window._catsIngSheet = _catsIngSheet;
                         
                         const vistaIng = document.getElementById('vistaIngresos');
                         if (vistaIng && !vistaIng.classList.contains('hidden')) renderIngEgr('ingreso');
-                        console.log('✅ Ingresos Sheet: ' + agregados + ' nuevos, ' + actualizados + ' actualizados');
+                        /*dbg*/0&&console.log('✅ Ingresos Sheet: ' + agregados + ' nuevos, ' + actualizados + ' actualizados');
                     }
                 }
 
@@ -8609,7 +8618,7 @@ data.gastos.forEach(row => {
 });
                     _supercatsEgrSheet = [...supercatsSet].sort();
 _generosEgrSheet = [...generosSet].sort();
-console.log('GENEROS DESDE SHEET:', _generosEgrSheet);
+/*dbg*/0&&console.log('GENEROS DESDE SHEET:', _generosEgrSheet);
 window._supercatsEgrSheet = _supercatsEgrSheet;
 window._generosEgrSheet = _generosEgrSheet;
 
@@ -8668,11 +8677,11 @@ window._catsEgrSheet = _catsEgrSheet;
                     });
 
                     if (agregados > 0 || actualizados > 0) {
-console.log('Generos cargados:', _generosEgrSheet);
+/*dbg*/0&&console.log('Generos cargados:', _generosEgrSheet);
                       
                         const vistaEgr = document.getElementById('vistaEgresos');
                         if (vistaEgr && !vistaEgr.classList.contains('hidden')) renderIngEgr('egreso');
-                        console.log('✅ Gastos Sheet: ' + agregados + ' nuevos, ' + actualizados + ' actualizados');
+                        /*dbg*/0&&console.log('✅ Gastos Sheet: ' + agregados + ' nuevos, ' + actualizados + ' actualizados');
                     }
                 }
 
@@ -8692,7 +8701,7 @@ console.log('Generos cargados:', _generosEgrSheet);
                         fecha:       String(row['FECHA']                || '').trim(),
                         formaPago:   String(row['FORMA DE PAGO']        || '').trim(),
                     })).filter(p => p.monto > 0);
-                    console.log('[Sync] _pagoEgrNegSheet cargados:', _pagoEgrNegSheet.length);
+                    /*dbg*/0&&console.log('[Sync] _pagoEgrNegSheet cargados:', _pagoEgrNegSheet.length);
                 }
                 syncProveedoresDesdeSheet(data.proveedoresNegocio, 'negocio');
 syncProveedoresDesdeSheet(data.proveedoresGastos, 'gastos');
@@ -8824,7 +8833,7 @@ if (indicator) indicator.classList.remove('hidden');
             const vista = document.getElementById('vista'+renderTipo.charAt(0).toUpperCase()+renderTipo.slice(1));
             if (vista && !vista.classList.contains('hidden')) renderIngNeg(renderTipo);
             if (ag>0||ac>0) {
-                console.log('✅ '+renderTipo+': '+ag+' nuevos, '+ac+' actualizados');
+                /*dbg*/0&&console.log('✅ '+renderTipo+': '+ag+' nuevos, '+ac+' actualizados');
             }
         };
 
@@ -8944,7 +8953,7 @@ if (indicator) indicator.classList.remove('hidden');
                     })).filter(p => p.monto > 0);
                     window._pagoVentasSheet = _pagoVentasSheet;
                     if (typeof DB !== 'undefined' && DB.savePagoVentas) DB.savePagoVentas();
-                    console.log('[Sec] pagoVentas cargados:', _pagoVentasSheet.length);
+                    /*dbg*/0&&console.log('[Sec] pagoVentas cargados:', _pagoVentasSheet.length);
                     if (_pagoVentasSheet.length > 0) { _syncStatus.pagoVentas = true; actualizarIndicadorSync(); }
                     renderClientes();
                     if (clienteDetalleId) {
@@ -8969,10 +8978,10 @@ if (indicator) indicator.classList.remove('hidden');
                 syncProveedoresDesdeSheet(data.proveedoresNegocio, 'negocio');
                 syncProveedoresDesdeSheet(data.proveedoresGastos, 'gastos');
                 // Refrescar modal de cliente si está abierto (los préstamos llegan en esta etapa)
-                console.log('[REFRESH] clienteDetalleId:', clienteDetalleId, '| _sheetIngresosNegocio.length:', _sheetIngresosNegocio.length);
+                /*dbg*/0&&console.log('[REFRESH] clienteDetalleId:', clienteDetalleId, '| _sheetIngresosNegocio.length:', _sheetIngresosNegocio.length);
                 if (typeof clienteDetalleId !== 'undefined' && clienteDetalleId) {
                     const _modalAbierto = document.getElementById('modalDetalleCliente');
-                    console.log('[REFRESH] modal-active:', _modalAbierto && _modalAbierto.classList.contains('modal-active'));
+                    /*dbg*/0&&console.log('[REFRESH] modal-active:', _modalAbierto && _modalAbierto.classList.contains('modal-active'));
                     if (_modalAbierto && _modalAbierto.classList.contains('modal-active')) {
                         abrirDetalleCliente(clienteDetalleId);
                     }
@@ -8980,7 +8989,7 @@ if (indicator) indicator.classList.remove('hidden');
                 // Refrescar lista de clientes para mostrar deuda total actualizada
                 const _vcl = document.getElementById('vistaClientes');
                 if (_vcl && !_vcl.classList.contains('hidden')) renderClientes();
-                console.log('✅ Datos secundarios procesados');
+                /*dbg*/0&&console.log('✅ Datos secundarios procesados');
                 // Cargar LISTA DE INGRESOS y LISTA DE EGRESOS
                 if (Array.isArray(data.listaIngresos) && data.listaIngresos.length > 0) {
                     _listaIngresos.length = 0;
@@ -9252,7 +9261,7 @@ if (indicator) indicator.classList.remove('hidden');
 
         function savePagosDB(tab, data) {
     // NO SE GUARDA LOCALMENTE
-    console.log('[Pagos] datos modificados en memoria:', tab);
+    /*dbg*/0&&console.log('[Pagos] datos modificados en memoria:', tab);
 }
 
         function cambiarSubTabPagos(tab) {
@@ -9511,7 +9520,7 @@ if (indicator) indicator.classList.remove('hidden');
 
             const noData = document.getElementById('statsNoData');
 
-console.log("FILTRADAS:", filtradas.length);
+/*dbg*/0&&console.log("FILTRADAS:", filtradas.length);
 
             if (filtradas.length === 0) {
                 noData.classList.remove('hidden');
@@ -9994,7 +10003,7 @@ console.log("FILTRADAS:", filtradas.length);
             // DEBUG nombres en compras que contengan SEDAL
             const _sedal = [];
             todasC.forEach(cp => { (cp.items||[]).forEach(it => { if (String(it.nombre||'').toUpperCase().includes('SEDAL')) _sedal.push({nombre:it.nombre, cantidad:it.cantidad, fecha:cp.fechaISO||cp.fecha}); }); });
-            if (_sedal.length) console.log('[DEBUG SEDAL en compras]:', _sedal);
+            if (_sedal.length) /*dbg*/0&&console.log('[DEBUG SEDAL en compras]:', _sedal);
 
             // Mapa: nombreUp ? [{fechaNum, cantidad}]
             const ventasPorNombre = {};
@@ -10026,15 +10035,15 @@ console.log("FILTRADAS:", filtradas.length);
             });
             // DEBUG: mostrar claves de compras que contengan el proveedor seleccionado
             const _dbgKeys = Object.keys(comprasPorNombre).filter(k => productos.some(p => String(p.nombre||'').trim().toUpperCase() === k));
-            console.log('[COMPRAS INDEX] productos del proveedor encontrados en compras:', _dbgKeys);
+            /*dbg*/0&&console.log('[COMPRAS INDEX] productos del proveedor encontrados en compras:', _dbgKeys);
             const _dbgMissing = productos.filter(p => !comprasPorNombre[String(p.nombre||'').trim().toUpperCase()]);
-            if (_dbgMissing.length) console.log('[COMPRAS INDEX] productos SIN compras indexadas:', _dbgMissing.map(p=>p.nombre));
+            if (_dbgMissing.length) /*dbg*/0&&console.log('[COMPRAS INDEX] productos SIN compras indexadas:', _dbgMissing.map(p=>p.nombre));
             // DEBUG fechas
-            console.log('[FILTRO] fdNum:', fdNum, '| fhNum:', fhNum);
+            /*dbg*/0&&console.log('[FILTRO] fdNum:', fdNum, '| fhNum:', fhNum);
             const _sItems = comprasPorNombre['ACONDICIONADOR X10 ML SEDAL'] || [];
-            console.log('[SEDAL cItems]:', _sItems);
+            /*dbg*/0&&console.log('[SEDAL cItems]:', _sItems);
             const _sVItems = ventasPorNombre['ACONDICIONADOR X10 ML SEDAL'] || [];
-            console.log('[SEDAL vItems]:', _sVItems);
+            /*dbg*/0&&console.log('[SEDAL vItems]:', _sVItems);
 
             // ↗↗ Calcular kardex usando índices pre-construidos ↗↗
             function calcKardexProd(prod) {
@@ -10056,7 +10065,7 @@ console.log("FILTRADAS:", filtradas.length);
                     fechaRefRaw = '';
                 }
                 const refNum = parseFechaNum(fechaRefRaw);
-                if (_dbg) console.log('[SEDAL KARDEX] stockBase:', stockBase, '| fechaRefRaw:', fechaRefRaw, '| refNum:', refNum, '| fdNum:', fdNum, '| fhNum:', fhNum, '| cItems:', cItems);
+                if (_dbg) /*dbg*/0&&console.log('[SEDAL KARDEX] stockBase:', stockBase, '| fechaRefRaw:', fechaRefRaw, '| refNum:', refNum, '| fdNum:', fdNum, '| fhNum:', fhNum, '| cItems:', cItems);
 
                 // Ajuste de stockBase si hay filtro DESDE posterior a refNum
                 // Usar fechaNum para comparar (compatible con formato DD/MM/YYYY y ISO)
@@ -10454,9 +10463,9 @@ console.log("FILTRADAS:", filtradas.length);
             const hastaVal = document.getElementById('resumenHasta').value;
             const fdNum = desdeVal ? parseFechaNum(desdeVal) : null;
             const fhNum = hastaVal ? parseFechaNum(hastaVal) : null;
-            console.log('=== RESUMEN DEBUG ===');
-            console.log('Filtro desde:', desdeVal, '? fnum:', fdNum);
-            console.log('Filtro hasta:', hastaVal, '? fnum:', fhNum);
+            /*dbg*/0&&console.log('=== RESUMEN DEBUG ===');
+            /*dbg*/0&&console.log('Filtro desde:', desdeVal, '? fnum:', fdNum);
+            /*dbg*/0&&console.log('Filtro hasta:', hastaVal, '? fnum:', fhNum);
 
             // Ventas
             const todasV = (_sheetVentas||[]);
@@ -10466,8 +10475,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { vCnt++; vTotal += Number(v.total||0); }
             });
-            console.log('Ventas en rango:', vCnt, '| Total:', vTotal);
-            if (todasV[0]) console.log('  Muestra venta[0] fecha raw:', todasV[0].fechaISO||todasV[0].fecha, '| fnum:', parseFechaNum(todasV[0].fechaISO||todasV[0].fecha||''));
+            /*dbg*/0&&console.log('Ventas en rango:', vCnt, '| Total:', vTotal);
+            if (todasV[0]) /*dbg*/0&&console.log('  Muestra venta[0] fecha raw:', todasV[0].fechaISO||todasV[0].fecha, '| fnum:', parseFechaNum(todasV[0].fechaISO||todasV[0].fecha||''));
 
             // Pago ventas
             let pvCnt=0, pvTotal=0;
@@ -10476,8 +10485,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { pvCnt++; pvTotal += Number(p.monto||p.MONTO||0); }
             });
-            console.log('Pago Ventas en rango:', pvCnt, '| Total:', pvTotal);
-            if ((_pagoVentasSheet||[])[0]) console.log('  Muestra pagoVenta[0] fecha raw:', _pagoVentasSheet[0].fecha, '| fnum:', parseFechaNum(_pagoVentasSheet[0].fecha||''));
+            /*dbg*/0&&console.log('Pago Ventas en rango:', pvCnt, '| Total:', pvTotal);
+            if ((_pagoVentasSheet||[])[0]) /*dbg*/0&&console.log('  Muestra pagoVenta[0] fecha raw:', _pagoVentasSheet[0].fecha, '| fnum:', parseFechaNum(_pagoVentasSheet[0].fecha||''));
 
             // Pago ingresos negocio
             let pinCnt=0, pinTotal=0;
@@ -10485,10 +10494,10 @@ console.log("FILTRADAS:", filtradas.length);
                 const fnum = parseFechaNum(p.fecha||p.FECHA||p.fechaISO||'');
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { pinCnt++; pinTotal += Number(p.monto||p.MONTO||0); }
-                else console.log('  PagoIngNeg FUERA rango:', p.fecha||p.fechaISO, '? fnum:', fnum);
+                else /*dbg*/0&&console.log('  PagoIngNeg FUERA rango:', p.fecha||p.fechaISO, '? fnum:', fnum);
             });
-            console.log('Pago IngNeg en rango:', pinCnt, '| Total:', pinTotal);
-            if ((_sheetPagoIngNeg||[])[0]) console.log('  Muestra pagoIngNeg[0]:', JSON.stringify(_sheetPagoIngNeg[0]));
+            /*dbg*/0&&console.log('Pago IngNeg en rango:', pinCnt, '| Total:', pinTotal);
+            if ((_sheetPagoIngNeg||[])[0]) /*dbg*/0&&console.log('  Muestra pagoIngNeg[0]:', JSON.stringify(_sheetPagoIngNeg[0]));
 
             // Pago compras
             let pcCnt=0, pcTotal=0;
@@ -10497,8 +10506,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { pcCnt++; pcTotal += Number(p.monto||p.MONTO||0); }
             });
-            console.log('Pago Compras en rango:', pcCnt, '| Total:', pcTotal);
-            if ((_sheetPagoCompras||[])[0]) console.log('  Muestra pagoCompra[0]:', JSON.stringify(_sheetPagoCompras[0]));
+            /*dbg*/0&&console.log('Pago Compras en rango:', pcCnt, '| Total:', pcTotal);
+            if ((_sheetPagoCompras||[])[0]) /*dbg*/0&&console.log('  Muestra pagoCompra[0]:', JSON.stringify(_sheetPagoCompras[0]));
 
             // Egresos
             let eCnt=0, eTotal=0;
@@ -10507,8 +10516,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { eCnt++; eTotal += Number(r.total||0); }
             });
-            console.log('Egresos en rango:', eCnt, '| Total:', eTotal);
-            if ((_sheetEgresos||[])[0]) console.log('  Muestra egreso[0] fecha raw:', _sheetEgresos[0].fechaISO||_sheetEgresos[0].fecha, '| fnum:', parseFechaNum(_sheetEgresos[0].fechaISO||_sheetEgresos[0].fecha||''));
+            /*dbg*/0&&console.log('Egresos en rango:', eCnt, '| Total:', eTotal);
+            if ((_sheetEgresos||[])[0]) /*dbg*/0&&console.log('  Muestra egreso[0] fecha raw:', _sheetEgresos[0].fechaISO||_sheetEgresos[0].fecha, '| fnum:', parseFechaNum(_sheetEgresos[0].fechaISO||_sheetEgresos[0].fecha||''));
 
             // Egresos negocio
             let enCnt=0, enTotal=0;
@@ -10517,8 +10526,8 @@ console.log("FILTRADAS:", filtradas.length);
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { enCnt++; enTotal += Number(r.total||0); }
             });
-            console.log('EgresosNeg en rango:', enCnt, '| Total:', enTotal);
-            if ((_sheetEgresosNegocio||[])[0]) console.log('  Muestra egrNeg[0]:', JSON.stringify({fecha:_sheetEgresosNegocio[0].fechaISO||_sheetEgresosNegocio[0].fecha, total:_sheetEgresosNegocio[0].total}));
+            /*dbg*/0&&console.log('EgresosNeg en rango:', enCnt, '| Total:', enTotal);
+            if ((_sheetEgresosNegocio||[])[0]) /*dbg*/0&&console.log('  Muestra egrNeg[0]:', JSON.stringify({fecha:_sheetEgresosNegocio[0].fechaISO||_sheetEgresosNegocio[0].fecha, total:_sheetEgresosNegocio[0].total}));
 
             // Pago egresos
             let peCnt=0, peTotal=0;
@@ -10527,10 +10536,10 @@ console.log("FILTRADAS:", filtradas.length);
                 const ok = (!fdNum || fnum >= fdNum) && (!fhNum || fnum <= fhNum);
                 if (ok) { peCnt++; peTotal += Number(p.monto||p.MONTO||0); }
             });
-            console.log('Pago Egresos en rango:', peCnt, '| Total:', peTotal);
-            if ((_sheetPagoEgresos||[])[0]) console.log('  Muestra pagoEgreso[0]:', JSON.stringify(_sheetPagoEgresos[0]));
+            /*dbg*/0&&console.log('Pago Egresos en rango:', peCnt, '| Total:', peTotal);
+            if ((_sheetPagoEgresos||[])[0]) /*dbg*/0&&console.log('  Muestra pagoEgreso[0]:', JSON.stringify(_sheetPagoEgresos[0]));
 
-            console.log('=== FIN RESUMEN DEBUG ===');
+            /*dbg*/0&&console.log('=== FIN RESUMEN DEBUG ===');
         }
 
         // ↗↗ ESTADO PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
@@ -19193,7 +19202,7 @@ window.debugStockProducto = function(nombreBuscado) {
         });
     });
 
-    console.log('[DEBUG STOCK PROD]', {
+    /*dbg*/0&&console.log('[DEBUG STOCK PROD]', {
         producto: prod?.nombre || nombreBuscado,
         clave,
         stockInicio: prod?.stockInicio,
@@ -19809,7 +19818,7 @@ function calcularDeudaTotalCliente(idCl) {
 
             if (id) {
                 const c = clientesDB.find(c => c.id === id);
-console.log("CLIENTE COMPLETO:", c);
+/*dbg*/0&&console.log("CLIENTE COMPLETO:", c);
 
                 if (c) {
                     document.getElementById('cNombre').value    = c.nombre || '';
@@ -21102,7 +21111,7 @@ clienteDetalleId = null;
             document.getElementById('pagoRapidoDeudaTotal').textContent = '$' + Utils.fmt(total);
             document.getElementById('pagoRapidoMonto').value = '';
             document.getElementById('pagoRapidoDistribucion').innerHTML = '<p style="color:#475569;font-size:10px;font-weight:700;text-align:center;padding:12px;">Ingresá un monto para ver la distribución</p>';
-            console.log('[PAGO RAPIDO] abriendo modal, pendientes:', _pagoRapidoPendientes.length, 'total:', total);
+            /*dbg*/0&&console.log('[PAGO RAPIDO] abriendo modal, pendientes:', _pagoRapidoPendientes.length, 'total:', total);
             toggleModal('modalPagoRapido', true);
           } catch(err) {
             console.error('[PAGO RAPIDO] error:', err);
@@ -21164,7 +21173,7 @@ clienteDetalleId = null;
 
             if (pagos.length === 0) { mostrarToast('Sin pagos a procesar', 'error'); return; }
 
-            console.log('[PAGO RAPIDO] monto:', monto, '| pagos:', pagos.length);
+            /*dbg*/0&&console.log('[PAGO RAPIDO] monto:', monto, '| pagos:', pagos.length);
 
             // Cerrar modal antes de procesar
             toggleModal('modalPagoRapido', false);
@@ -21617,18 +21626,18 @@ clienteDetalleId = null;
     const idCl = String(c.idSheet || c.id || '').trim();
 
     // DEBUG MORA
-    console.log('[PDF MORA] idCl=', idCl);
+    /*dbg*/0&&console.log('[PDF MORA] idCl=', idCl);
     todasLasVentas().filter(v => String(v.idCliente||'').trim()===idCl && (parseFloat(v.deuda)||0)>0).slice(0,5).forEach(v => {
         const _fl = v.fecha || v.fechaISO || '';
 
     });
 
-    console.log('[PDF] idCl='+idCl+' | c.id='+c.id+' | c.idSheet='+c.idSheet);
+    /*dbg*/0&&console.log('[PDF] idCl='+idCl+' | c.id='+c.id+' | c.idSheet='+c.idSheet);
     const _todasV = todasLasVentas();
-    console.log('[PDF] total ventas='+_todasV.length+' | sample idCliente='+(_todasV[0]?_todasV[0].idCliente:'none'));
+    /*dbg*/0&&console.log('[PDF] total ventas='+_todasV.length+' | sample idCliente='+(_todasV[0]?_todasV[0].idCliente:'none'));
     const _ventasCliente = _todasV.filter(v => String(v.idCliente||'').trim() === idCl);
-    console.log('[PDF] ventas de este cliente='+_ventasCliente.length);
-    if(_ventasCliente[0]) console.log('[PDF] primera venta: id='+_ventasCliente[0].id+' deuda='+_ventasCliente[0].deuda+' total='+_ventasCliente[0].total);
+    /*dbg*/0&&console.log('[PDF] ventas de este cliente='+_ventasCliente.length);
+    if(_ventasCliente[0]) /*dbg*/0&&console.log('[PDF] primera venta: id='+_ventasCliente[0].id+' deuda='+_ventasCliente[0].deuda+' total='+_ventasCliente[0].total);
     const ventasPendientes = _todasV
         .filter(v => String(v.idCliente || '').trim() === idCl)
         .map(v => {
@@ -21725,8 +21734,8 @@ clienteDetalleId = null;
     doc.text('DEBE',     W-14, y+3.5, {align:'right'});
     y += 9;
 
-    console.log('[PDF RENDER] ventasPendientes count='+ventasPendientes.length);
-    ventasPendientes.forEach((v,vi) => console.log('[PDF RENDER] venta['+vi+'] fecha='+v.fecha+' deuda='+v.deuda+' items='+JSON.stringify(v.items.map(i=>({n:i.nombre,saldo:i.saldoItem,sub:i.subTotal})))));
+    /*dbg*/0&&console.log('[PDF RENDER] ventasPendientes count='+ventasPendientes.length);
+    ventasPendientes.forEach((v,vi) => /*dbg*/0&&console.log('[PDF RENDER] venta['+vi+'] fecha='+v.fecha+' deuda='+v.deuda+' items='+JSON.stringify(v.items.map(i=>({n:i.nombre,saldo:i.saldoItem,sub:i.subTotal})))));
     let rowIdx = 0;
     ventasPendientes.forEach((v) => {
         v.items.forEach((item, iIdx) => {
@@ -23660,7 +23669,7 @@ function filtrarProductosCompra(query) {
     }
 
     // 📦 PON?? ESTO AQU?
-    console.log("productoPendienteCompra:", productoPendienteCompra);
+    /*dbg*/0&&console.log("productoPendienteCompra:", productoPendienteCompra);
 
     carritoCompra.push({
         id: productoPendienteCompra.id,
@@ -23721,7 +23730,6 @@ function calcularCompra() {
         i._fletePorItem   = flete > 0 ? Math.round(pct * flete * 100) / 100 : 0;
         const cant = parseFloat(i.cantidad) || 1;
         i._costoConFlete  = parseFloat(i.costo||0) + (i._fletePorItem / cant);
-        console.log('[FLETE] item:', i.nombre, '| _fletePorItem:', i._fletePorItem, '| costo:', i.costo, '| itemEnEdicion:', itemEnEdicion, '| itemId:', i.itemId);
     });
 
     const efectivo = parseFloat(document.getElementById('inputCompraEfectivo')?.value) || 0;
@@ -23845,7 +23853,7 @@ function crearModalPreciosSiNoExiste(){
 
 function calcularPrecioSugerido(itemId, costo){
 
-console.log("FUNCION PRECIO SUGERIDO", itemId, costo);
+/*dbg*/0&&console.log("FUNCION PRECIO SUGERIDO", itemId, costo);
 const item = carritoCompra.find(i => String(i.itemId) === String(itemId));
 if(!item) return;
 
@@ -24004,8 +24012,8 @@ ${editando ? `
 
 
 function abrirModalPrecios(itemId){
-    console.log("🛒 abrirModalPrecios llamado con:", itemId);
-    console.log("carritoCompra:", carritoCompra);
+    /*dbg*/0&&console.log("🛒 abrirModalPrecios llamado con:", itemId);
+    /*dbg*/0&&console.log("carritoCompra:", carritoCompra);
     
     const item = carritoCompra.find(c => String(c.itemId) === String(itemId));
     if (!item) {
@@ -24014,15 +24022,15 @@ function abrirModalPrecios(itemId){
     }
 
     itemEditandoId = itemId;
-    console.log("? itemEditandoId seteado a:", itemEditandoId);
+    /*dbg*/0&&console.log("? itemEditandoId seteado a:", itemEditandoId);
 
     const modal = document.getElementById('modalEditarPrecios');
     const costoInput = document.getElementById('editCostoInput');
     const ventaInput = document.getElementById('editVentaInput');
     
-    console.log("Modal existe:", !!modal);
-    console.log("CostoInput existe:", !!costoInput);
-    console.log("VentaInput existe:", !!ventaInput);
+    /*dbg*/0&&console.log("Modal existe:", !!modal);
+    /*dbg*/0&&console.log("CostoInput existe:", !!costoInput);
+    /*dbg*/0&&console.log("VentaInput existe:", !!ventaInput);
     
     if (!modal || !costoInput || !ventaInput) {
         console.error("❌ Modal o inputs no encontrados");
@@ -24030,7 +24038,7 @@ function abrirModalPrecios(itemId){
     }
 
     // Capturar _fletePorItem ANTES de cualquier recalculo
-    console.log('[MODAL ABRE] _fletePorItem:', item._fletePorItem, '| cantidad:', item.cantidad, '| costo:', item.costo, '| flete input:', document.getElementById('inputCompraFlete')?.value);
+    /*dbg*/0&&console.log('[MODAL ABRE] _fletePorItem:', item._fletePorItem, '| cantidad:', item.cantidad, '| costo:', item.costo, '| flete input:', document.getElementById('inputCompraFlete')?.value);
     const _fleteSnap = item._fletePorItem || 0;
     const _cantSnap  = parseFloat(item.cantidad) || 1;
     const _fleteUSnap = _fleteSnap / _cantSnap;
@@ -24058,9 +24066,9 @@ vencInput.value = item.vencimiento || "";
 }
 
 
-    console.log("🛒? Valores cargados en inputs");
-    console.log("Costo:", costoInput.value);
-    console.log("Venta:", ventaInput.value);
+    /*dbg*/0&&console.log("🛒? Valores cargados en inputs");
+    /*dbg*/0&&console.log("Costo:", costoInput.value);
+    /*dbg*/0&&console.log("Venta:", ventaInput.value);
 
     // Agregar listeners para calcular ganancia
 
@@ -24105,7 +24113,7 @@ actualizarGananciaMostrada();
     // FORCE: Sacar de cualquier contenedor y poner en body
     if (modal.parentElement !== document.body) {
         document.body.appendChild(modal);
-        console.log("?? Modal movido al body");
+        /*dbg*/0&&console.log("?? Modal movido al body");
     }
     
     // FORCE: Aplicar estilos directamente
@@ -24123,20 +24131,20 @@ actualizarGananciaMostrada();
     modal.style.border = 'none';
     modal.style.boxShadow = '0 20px 25px rgba(0,0,0,0.8)';
     
-    console.log("🛒ú Intentando mostrar modal...");
+    /*dbg*/0&&console.log("🛒ú Intentando mostrar modal...");
     modal.showModal();
     
     // Verificar que se abrió
-    console.log("Modal open:", modal.open);
-    console.log("Modal display:", window.getComputedStyle(modal).display);
-    console.log("Modal z-index:", window.getComputedStyle(modal).zIndex);
-    console.log("? Modal abierto");
+    /*dbg*/0&&console.log("Modal open:", modal.open);
+    /*dbg*/0&&console.log("Modal display:", window.getComputedStyle(modal).display);
+    /*dbg*/0&&console.log("Modal z-index:", window.getComputedStyle(modal).zIndex);
+    /*dbg*/0&&console.log("? Modal abierto");
 }
 
 
 
 function cerrarModalPrecios(){
-    console.log("🔴 CERRANDO MODAL");
+    /*dbg*/0&&console.log("🔴 CERRANDO MODAL");
     
     const modal = document.getElementById('modalEditarPrecios');
     if (!modal) {
@@ -24147,7 +24155,7 @@ function cerrarModalPrecios(){
     // Usar .close() que es el método correcto para dialogs
     if (modal.open) {
         modal.close();
-        console.log("? Modal cerrado con .close()");
+        /*dbg*/0&&console.log("? Modal cerrado con .close()");
     }
     
     // Limpiar estilos inline para que el CSS del estado [open] funcione correctamente
@@ -24159,7 +24167,7 @@ function cerrarModalPrecios(){
     itemEditandoId = null;
     // Si el usuario cancela, no reabrir scanner
     window._compraReopenScanner = false;
-    console.log("✅ MODAL CERRADO");
+    /*dbg*/0&&console.log("✅ MODAL CERRADO");
 }
 
 function actualizarGananciaMostrada(){
@@ -24668,7 +24676,7 @@ function calcularWidgetGastoFamiliar() {
         }, 0);
 
     const casaErazoHoy = casaErazoSheet + casaErazoLocal;
-    console.log('[GastoFamiliar] Casa Erazo hoy: $' + casaErazoHoy,
+    /*dbg*/0&&console.log('[GastoFamiliar] Casa Erazo hoy: $' + casaErazoHoy,
         '| ventas:', _ventasCasaHoy.map(v => ({fecha: v.fecha, items: (v.items||[]).map(i => ({nom:i.nombre, dr:i.dineroRecuperado, precio:i.precio, cant:i.cantidad}))})));
 
     // COMIDA FAMILIAR ? suma PAGO EFECTIVO de egresos de hoy
@@ -24732,8 +24740,8 @@ function guardarPreciosEditados(){
 const vencInput = document.getElementById('editVencimientoInput');
 const nuevoVencimiento = vencInput ? vencInput.value : "";
 
-    console.log("🥗 GUARDAR PRECIOS EJECUTADO");
-    console.log("itemEditandoId:", itemEditandoId);
+    /*dbg*/0&&console.log("🥗 GUARDAR PRECIOS EJECUTADO");
+    /*dbg*/0&&console.log("itemEditandoId:", itemEditandoId);
 
     const costoInput = document.getElementById('editCostoInput');
     const ventaInput = document.getElementById('editVentaInput');
@@ -24741,8 +24749,8 @@ const nuevoVencimiento = vencInput ? vencInput.value : "";
     const nuevoCosto = parseFloat(costoInput.value) || 0;
     const nuevaVenta = parseFloat(ventaInput.value) || 0;
 
-    console.log("Nuevo Costo:", nuevoCosto);
-    console.log("Nueva Venta:", nuevaVenta);
+    /*dbg*/0&&console.log("Nuevo Costo:", nuevoCosto);
+    /*dbg*/0&&console.log("Nueva Venta:", nuevaVenta);
 
     const item = carritoCompra.find(c => String(c.itemId) === String(itemEditandoId));
 
@@ -24751,7 +24759,7 @@ const nuevoVencimiento = vencInput ? vencInput.value : "";
         return;
     }
 
-    console.log("? Item encontrado:", item);
+    /*dbg*/0&&console.log("? Item encontrado:", item);
 
     // GUARDAR LOS PRECIOS EN EL ITEM DEL CARRITO
     item.costo = nuevoCosto;
@@ -24760,10 +24768,10 @@ item.vencimiento = nuevoVencimiento;
     item.costoModificado = true;
     item.ventaModificada = true;
 
-    console.log("? Precios guardados en item:", item);
+    /*dbg*/0&&console.log("? Precios guardados en item:", item);
 
     // ACTUALIZAR EN LA BASE DE DATOS PRINCIPAL (_sheetProductos)
-    console.log("📚 Buscando producto en _sheetProductos...");
+    /*dbg*/0&&console.log("📚 Buscando producto en _sheetProductos...");
     const producto = _sheetProductos.find(p => String(p.id) === String(item.id));
     
     if (producto) {
@@ -24774,16 +24782,16 @@ item.vencimiento = nuevoVencimiento;
         producto.precio = nuevaVenta;
 producto.vencimiento = nuevoVencimiento;
         
-        console.log("? Producto actualizado en _sheetProductos");
-        console.log("   Costo:", costoAnterior, "?", nuevoCosto);
-        console.log("   Precio:", precioAnterior, "?", nuevaVenta);
+        /*dbg*/0&&console.log("? Producto actualizado en _sheetProductos");
+        /*dbg*/0&&console.log("   Costo:", costoAnterior, "?", nuevoCosto);
+        /*dbg*/0&&console.log("   Precio:", precioAnterior, "?", nuevaVenta);
         
         // GUARDAR EN LOCALSTORAGE - USAR LA CLAVE CORRECTA
         /* [cache unificado] */
-        console.log("? Guardado en localStorage con clave correcta");
+        /*dbg*/0&&console.log("? Guardado en localStorage con clave correcta");
         
         // SINCRONIZAR CON FIREBASE
-        console.log("🛒á Sincronizando INVENTARIO con Firebase...");
+        /*dbg*/0&&console.log("🛒á Sincronizando INVENTARIO con Firebase...");
         if (typeof DB !== 'undefined' && typeof DB.saveInventario === 'function') {
             
         } else if (typeof fbPush === 'function') {
@@ -24820,9 +24828,9 @@ producto.vencimiento = nuevoVencimiento;
             precioVenta: producto.precio,
             ganancia: ganancia,
         };
-        console.log('🔤 PAYLOAD PRECIOS ? SHEETS:', JSON.stringify(prodPayload));
+        /*dbg*/0&&console.log('🔤 PAYLOAD PRECIOS ? SHEETS:', JSON.stringify(prodPayload));
         fetchSheets({method: 'POST', body: JSON.stringify(prodPayload)});
-        console.log("? Precio/Costo actualizado en Google Sheets (tabla productos)");
+        /*dbg*/0&&console.log("? Precio/Costo actualizado en Google Sheets (tabla productos)");
 
     } else {
         console.warn("?? Producto no encontrado en _sheetProductos, pero se actualizó en el carrito");
@@ -24845,7 +24853,7 @@ producto.vencimiento = nuevoVencimiento;
         setTimeout(() => abrirScanner('compra'), 250);
     }
 
-    console.log("✅ GUARDADO COMPLETADO");
+    /*dbg*/0&&console.log("✅ GUARDADO COMPLETADO");
 }
 
        
@@ -25137,9 +25145,9 @@ fetchSheets({
 method:'POST',
 body:JSON.stringify(payload)
 }).catch(err => {
-console.log("Error enviando compra a Sheets:", err);
+/*dbg*/0&&console.log("Error enviando compra a Sheets:", err);
 if(intento < 5){
-console.log("Reintentando envio... intento", intento+1);
+/*dbg*/0&&console.log("Reintentando envio... intento", intento+1);
 setTimeout(()=>{
 enviarCompraSheets(payload, intento+1);
 },3000);
@@ -25150,11 +25158,11 @@ try{ _colaGuardar(JSON.stringify(payload)); }catch(e){}
 
 }catch(err){
 
-console.log("❌ Error enviando compra a Sheets:", err);
+/*dbg*/0&&console.log("❌ Error enviando compra a Sheets:", err);
 
 if(intento < 5){
 
-console.log("📦 Reintentando envio... intento", intento+1);
+/*dbg*/0&&console.log("📦 Reintentando envio... intento", intento+1);
 
 setTimeout(()=>{
 enviarCompraSheets(payload, intento+1);
@@ -25162,7 +25170,7 @@ enviarCompraSheets(payload, intento+1);
 
 }else{
 
-console.log("? No se pudo enviar la compra al Sheet");
+/*dbg*/0&&console.log("? No se pudo enviar la compra al Sheet");
 
 }
 
@@ -26421,7 +26429,7 @@ function filtrarGeneroEgr(query) {
                 db.forEach(r => { const g = String(r.genero||'').trim().toUpperCase(); if (g) genSet.add(g); });
                 lista = [...genSet].sort();
             }
-            console.log('[GENERO] tipo:', tipo, '| lista:', lista);
+            /*dbg*/0&&console.log('[GENERO] tipo:', tipo, '| lista:', lista);
             const dd = document.getElementById('ddGeneroIngEgr');
             if (dd && lista.length) {
                 const color = esEgr ? 'hover:bg-red-500/20' : 'hover:bg-emerald-500/20';
@@ -27005,8 +27013,8 @@ function _getIdSheet(r) {
         function abrirPagoIngreso(id) {
 
 
-console.log("CLICK INGRESO:", id);
-console.log("INGRESOS DB:", _sheetIngresos);
+/*dbg*/0&&console.log("CLICK INGRESO:", id);
+/*dbg*/0&&console.log("INGRESOS DB:", _sheetIngresos);
     const r = _sheetIngresos.find(c => String(c.id) === String(id));
     if (!r) return;
 
@@ -27068,7 +27076,7 @@ console.log("INGRESOS DB:", _sheetIngresos);
 
 const r = _sheetIngresos.find(c => String(c.id) === String(_pagoIngresoId));
 
-console.log("REGISTRO ENCONTRADO:", r);
+/*dbg*/0&&console.log("REGISTRO ENCONTRADO:", r);
 
 if(!r) return;
 
@@ -27081,7 +27089,7 @@ if(monto <= 0){
 
 const idSheet = _getIdSheet(r);
 
-console.log("IDSHEET:", idSheet);
+/*dbg*/0&&console.log("IDSHEET:", idSheet);
 
 const ahora = new Date();
 const id = Utils.genId();
@@ -27504,7 +27512,7 @@ renderIngresos();
                         .filter(p => String(p.idVenta||p.IDVENTAS||'').trim() === String(_rv.id).trim() ||
                                      String(p.idVenta||p.IDVENTAS||'').trim() === String(_idS).trim())
                         .reduce((a,p)=>a+(parseFloat(p.monto||p.MONTO)||0),0);
-                    console.log('[PAGO DBG] deuda:', _rv.deuda, '| pagado:', _pagado, '| saldo:', (_rv.deuda||0)-_pagado, '| id:', _rv.id, '| idSheet:', _idS);
+                    /*dbg*/0&&console.log('[PAGO DBG] deuda:', _rv.deuda, '| pagado:', _pagado, '| saldo:', (_rv.deuda||0)-_pagado, '| id:', _rv.id, '| idSheet:', _idS);
                 }
                 abrirDetalleCliente(clienteDetalleId);
             }
@@ -27539,17 +27547,17 @@ renderIngresos();
 }
        function abrirPagoCompra(id, montoPreset, nombreProducto) {
 
-    console.log("CLICK PAGO COMPRA", id);
+    /*dbg*/0&&console.log("CLICK PAGO COMPRA", id);
 
     const r = _sheetCompras.find(c =>
         String(c.id) === String(id) ||
         String(c.IDCOMPRAS) === String(id)
     );
 
-    console.log("COMPRA ENCONTRADA:", r);
+    /*dbg*/0&&console.log("COMPRA ENCONTRADA:", r);
 
     if (!r) {
-        console.log("NO ENCONTRO LA COMPRA");
+        /*dbg*/0&&console.log("NO ENCONTRO LA COMPRA");
         return;
     }
 
@@ -27606,9 +27614,9 @@ _pagoCompraNombre = nombreProducto || null;
      function confirmarPagoCompra() { _ejecutarPagoUnico('btnConfPagoCompra', _confirmarPagoCompraImpl); }
      async function _confirmarPagoCompraImpl() {
 
-console.log("CONFIRMAR PAGO COMPRA INICIO");
-console.log("ID BUSCADO:", _pagoCompraId);
-console.log("COMPRAS DB:", _sheetCompras);
+/*dbg*/0&&console.log("CONFIRMAR PAGO COMPRA INICIO");
+/*dbg*/0&&console.log("ID BUSCADO:", _pagoCompraId);
+/*dbg*/0&&console.log("COMPRAS DB:", _sheetCompras);
 
 const r = _sheetCompras.find(c =>
     String(c.id) === String(_pagoCompraId) ||
@@ -27724,7 +27732,7 @@ detallesPagoCompra.forEach(function(item, idx) {
     });
 });
 
-console.log("FETCH ENVIADO", enviosPagoCompra.length);
+/*dbg*/0&&console.log("FETCH ENVIADO", enviosPagoCompra.length);
 
 toggleModal('modalPagoCompra', false);
 _liberarPago('btnConfPagoCompra');
@@ -27735,7 +27743,7 @@ renderCompras();
 
 // Refrescar modal proveedor si estaba abierto
 if (window._provDetalleActivo) {
-    console.log('[REFRESH PROV] refrescando:', JSON.stringify(window._provDetalleActivo));
+    /*dbg*/0&&console.log('[REFRESH PROV] refrescando:', JSON.stringify(window._provDetalleActivo));
     verDetalleProveedor(window._provDetalleActivo.tipo, window._provDetalleActivo.id);
 }
 
@@ -27752,7 +27760,7 @@ if (enviosPagoCompra.length) {
     })();
 }
 
-console.log("FUNCION TERMINADA"); }
+/*dbg*/0&&console.log("FUNCION TERMINADA"); }
 
         // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
         // PAGO INGRESOS NEGOCIO
@@ -27817,12 +27825,12 @@ console.log("FUNCION TERMINADA"); }
         }
         function abrirPagoIngNeg(id) {
 
-    console.log("CLICK PAGO ING NEG:", id);
+    /*dbg*/0&&console.log("CLICK PAGO ING NEG:", id);
 
     const r = _sheetIngresosNegocio.find(c => String(c.id) === String(id));
 
     if(!r){
-        console.log("NO SE ENCONTRO:", id, _sheetIngresosNegocio);
+        /*dbg*/0&&console.log("NO SE ENCONTRO:", id, _sheetIngresosNegocio);
         return;
     }
 
@@ -27865,7 +27873,7 @@ console.log("FUNCION TERMINADA"); }
         function confirmarPagoIngNeg() { _ejecutarPagoUnico('btnConfPagoIngNeg', _confirmarPagoIngNegImpl); }
         function _confirmarPagoIngNegImpl() {
 
-console.log("CLICK CONFIRMAR PAGO");
+/*dbg*/0&&console.log("CLICK CONFIRMAR PAGO");
             const r = _sheetIngresosNegocio.find(c => c.id===_pagoIngNegId); if(!r) return;
             const monto = parseFloat(document.getElementById('inputPagoIngNegMonto').value)||0;
             if(monto<=0) { mostrarToast('Ingresá un monto válido','error'); return; }
@@ -27874,7 +27882,7 @@ console.log("CLICK CONFIRMAR PAGO");
             _sheetPagoIngNeg.push({ IDPAGOSINGRESOSNEGOCIO:id, IDINGRESOSNEGOCIO:idSheet, FECHA:fechaSheet(ahora), CLIENTE:r.cliente||'', 'FORMA DE PAGO':_pagoIngNegFP, MONTO:monto, 'FECHA ORIGINAL':r.fecha||'' });
           
 
-console.log("FECHA ENVIADA:", fechaSheet(ahora));
+/*dbg*/0&&console.log("FECHA ENVIADA:", fechaSheet(ahora));
 
 
 const cli = (clientesDB || []).find(c =>
@@ -28944,15 +28952,15 @@ function calcularCajaEsperada() {
     const detalle = obtenerDetalleCaja();
 
     console.group('%c🛒?µ CAJA ESPERADA', 'color:#10b981;font-weight:900;font-size:13px;');
-    console.log('Desde:', detalle.desde ? detalle.desde.toLocaleString('es-AR') : 'sin filtro');
-    console.log('Monto inicial:', detalle.inicial);
-    console.log('↗↗ ENTRADAS ↗↗');
-    detalle.itemsEntradas.forEach(function(it) { console.log(' ', it.label + ':', it.monto, '| ops:', it.count); });
-    console.log('  TOTAL ENT:   ', detalle.entradas);
-    console.log('↗↗ SALIDAS ↗↗');
-    detalle.itemsSalidas.forEach(function(it) { console.log(' ', it.label + ':', it.monto, '| ops:', it.count); });
-    console.log('  TOTAL SAL:   ', detalle.salidas);
-    console.log('RESULTADO: ', detalle.inicial, '+', detalle.entradas, '-', detalle.salidas, '=', detalle.total);
+    /*dbg*/0&&console.log('Desde:', detalle.desde ? detalle.desde.toLocaleString('es-AR') : 'sin filtro');
+    /*dbg*/0&&console.log('Monto inicial:', detalle.inicial);
+    /*dbg*/0&&console.log('↗↗ ENTRADAS ↗↗');
+    detalle.itemsEntradas.forEach(function(it) { /*dbg*/0&&console.log(' ', it.label + ':', it.monto, '| ops:', it.count); });
+    /*dbg*/0&&console.log('  TOTAL ENT:   ', detalle.entradas);
+    /*dbg*/0&&console.log('↗↗ SALIDAS ↗↗');
+    detalle.itemsSalidas.forEach(function(it) { /*dbg*/0&&console.log(' ', it.label + ':', it.monto, '| ops:', it.count); });
+    /*dbg*/0&&console.log('  TOTAL SAL:   ', detalle.salidas);
+    /*dbg*/0&&console.log('RESULTADO: ', detalle.inicial, '+', detalle.entradas, '-', detalle.salidas, '=', detalle.total);
     console.groupEnd();
 
     return detalle.total;
@@ -29078,7 +29086,7 @@ function calcularCajaEsperada() {
                 _inventarioDesdeCachePendienteSheet = true;
                 _inventarioCacheInicialCount = _sheetProductos.length;
                 if (typeof indexarProductos === 'function') indexarProductos();
-                console.log('[Cache] Inventario reforzado desde cache para busqueda: ' + _sheetProductos.length + ' productos');
+                /*dbg*/0&&console.log('[Cache] Inventario reforzado desde cache para busqueda: ' + _sheetProductos.length + ' productos');
                 return true;
             } catch(e) {
                 console.warn('[Cache] No se pudo reforzar inventario desde cache:', e.message);
@@ -29428,7 +29436,7 @@ function calcularCajaEsperada() {
                         return true;
                     });
                     if (limpio.length !== c.inventario.length) {
-                        console.log('[Cache] inventario saneado: ' + c.inventario.length + ' -> ' + limpio.length);
+                        /*dbg*/0&&console.log('[Cache] inventario saneado: ' + c.inventario.length + ' -> ' + limpio.length);
                         c.inventario = limpio; dirty = true;
                     }
                 }
@@ -29445,7 +29453,7 @@ function calcularCajaEsperada() {
                         limpio.unshift(r);
                     }
                     if (limpio.length !== c[k].length) {
-                        console.log('[Cache] ' + k + ' saneado: ' + c[k].length + ' -> ' + limpio.length);
+                        /*dbg*/0&&console.log('[Cache] ' + k + ' saneado: ' + c[k].length + ' -> ' + limpio.length);
                         c[k] = limpio; dirty = true;
                     }
                 });
@@ -29468,7 +29476,7 @@ function calcularCajaEsperada() {
                         limpio.unshift(r);
                     }
                     if (limpio.length !== c[k].length) {
-                        console.log('[Cache] ' + k + ' saneado: ' + c[k].length + ' -> ' + limpio.length);
+                        /*dbg*/0&&console.log('[Cache] ' + k + ' saneado: ' + c[k].length + ' -> ' + limpio.length);
                         c[k] = limpio; dirty = true;
                     }
                 });
@@ -29497,7 +29505,7 @@ function calcularCajaEsperada() {
                 if (!inventarioCache.length && !ventasCache.length && !pagoVentasCache.length && !clientesCache.length && !hayTablasExtra) return false;
                 // Mostrar aviso de antigüedad
                 const mins = c.ts ? Math.round((Date.now() - c.ts) / 60000) : 0;
-                console.log('[Cache] Cargando datos de hace ' + mins + ' min');
+                /*dbg*/0&&console.log('[Cache] Cargando datos de hace ' + mins + ' min');
 
                 if (inventarioCache.length) {
                     _sheetProductos = normalizarVencimientosProductos(inventarioCache);
@@ -29579,7 +29587,7 @@ function calcularCajaEsperada() {
                     } catch(e) {}
                 }
 
-                console.log('[Cache] Android nativo aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
+                /*dbg*/0&&console.log('[Cache] Android nativo aplicado -> productos:' + inventarioCache.length + ' ventas:' + ventasCache.length + ' pagoVentas:' + pagoVentasCache.length + ' clientes:' + clientesCache.length);
                 return true;
             } catch(e) {
                 console.warn('[Cache] Error leyendo cache nativo Android:', e.message);
@@ -29854,7 +29862,7 @@ function calcularCajaEsperada() {
                         }))
                         .filter(p => (p['stockCalculado']||0) > 0 || (p['stock (sheet)']||0) > 0);
                     console.group('%c?? STOCK GUAPITO', 'color:#10b981;font-weight:900;');
-                    console.log('Total stock $:', valorStock);
+                    /*dbg*/0&&console.log('Total stock $:', valorStock);
                     console.table(detalle);
                     console.groupEnd();
                 }
@@ -29882,7 +29890,7 @@ function calcularCajaEsperada() {
 
                 if (nombre.toUpperCase() === 'GUAPITO') {
                     console.group('%c🔥 CLIENTES DEBEN GUAPITO', 'color:#f59e0b;font-weight:900;');
-                    console.log('Total clientes deben $:', deudaClientesProv);
+                    /*dbg*/0&&console.log('Total clientes deben $:', deudaClientesProv);
                     const detalleCli = [];
                     todasVentas.forEach(v => {
                         const resumenProv = calcularResumenProveedorVenta(v, 'GUAPITO', cobrosPorVentaProv);
@@ -29964,7 +29972,7 @@ function calcularCajaEsperada() {
 
 function verDetalleProveedor(tipo,id){
 
-    console.log("CLICK OK", tipo, id);
+    /*dbg*/0&&console.log("CLICK OK", tipo, id);
 
     toggleModal('modalDetalleProveedor', true);
 
@@ -30126,7 +30134,7 @@ window.pagarCompraProv = function(idCompra, montoTotal) {
 };
 
 window.verDetalleProveedor = function(tipo, id) {
-    console.log("CLICK OK", tipo, id);
+    /*dbg*/0&&console.log("CLICK OK", tipo, id);
     window._provDetalleActivo = { tipo, id };
 
     const db = tipo === 'negocio' ? _sheetProveedoresNegocio : _sheetProveedoresGastos;
@@ -30196,7 +30204,7 @@ window.verDetalleProveedor = function(tipo, id) {
     const totalPagado  = esGasto
         ? pagosRegistrados.reduce((s,p)=> s+(Number(p.MONTO||p.monto)||0), 0)
         : pagosRegistrados.reduce((s,p)=> s+(Number(p.MONTO||p.monto)||0), 0);
-    console.log('[DEUDA DBG] nombre:', nombre, '| registros:', registros.length, '| totalCredito:', totalCredito, '| pagosRegistrados:', pagosRegistrados.length, '| totalPagado:', totalPagado, '| sample pago:', pagosRegistrados[0] ? JSON.stringify(pagosRegistrados[0]) : 'ninguno');
+    /*dbg*/0&&console.log('[DEUDA DBG] nombre:', nombre, '| registros:', registros.length, '| totalCredito:', totalCredito, '| pagosRegistrados:', pagosRegistrados.length, '| totalPagado:', totalPagado, '| sample pago:', pagosRegistrados[0] ? JSON.stringify(pagosRegistrados[0]) : 'ninguno');
     const deudaReal    = Math.max(0, totalCredito - totalPagado);
 
     // Reutilizar comprasProveedor y pagosComp como alias para el resto del codigo
@@ -30364,7 +30372,7 @@ window.cerrarDetalleProveedor = function(){
 
 function verDetalleProveedor(tipo, id){
 
-    console.log("CLICK OK", tipo, id);
+    /*dbg*/0&&console.log("CLICK OK", tipo, id);
 
     const db = tipo === 'negocio' ? _sheetProveedoresNegocio : _sheetProveedoresGastos;
     const proveedor = db.find(p => String(p.id) === String(id));
@@ -30695,7 +30703,7 @@ function verDetalleProveedor(tipo, id){
     });
 
     if (ag || ac) {
-        console.log('✅ Sync proveedores ' + tipo + ': +' + ag + ' act:' + ac);
+        /*dbg*/0&&console.log('✅ Sync proveedores ' + tipo + ': +' + ag + ' act:' + ac);
     }
 }
 
@@ -31753,7 +31761,7 @@ function verDetalleProveedor(tipo, id){
             const fechaRefRaw = prod?.fechaStockInicio || prod?.fechaVerif ||
                                  prod?.['FECHA STOCK INICIAL MENSUAL'] || prod?.['FECHA STOCK FISICO'] || '';
             const refNum    = parseFechaNum(fechaRefRaw);
-            console.log('[KARDEX] prod:', prod?.nombre, '| stockInicio:', stockBase, '| fechaRefRaw:', fechaRefRaw, '| refNum:', refNum);
+            /*dbg*/0&&console.log('[KARDEX] prod:', prod?.nombre, '| stockInicio:', stockBase, '| fechaRefRaw:', fechaRefRaw, '| refNum:', refNum);
 
             const movimientos = [];
 
@@ -31772,7 +31780,7 @@ function verDetalleProveedor(tipo, id){
 
             // Ventas
             const todasV = ventasParaCalculo();
-            console.log('[KARDEX VENTAS] total:', todasV.length, '| refNum:', refNum, '| buscando:', nombreUp);
+            /*dbg*/0&&console.log('[KARDEX VENTAS] total:', todasV.length, '| refNum:', refNum, '| buscando:', nombreUp);
             todasV.forEach(v => {
                 // Intentar todos los campos fecha posibles
                 const rawFecha = v.fechaISO || v.fecha || v['FECHA'] || v['Fecha'] || '';
