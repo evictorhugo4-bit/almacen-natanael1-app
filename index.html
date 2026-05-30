@@ -3352,18 +3352,21 @@ GUARDAR PRODUCTO
                     <thead>
                         <tr style="border-bottom:2px solid #334155;background:rgba(15,23,42,0.8);">
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Operación</th>
+                            <th style="padding:10px 12px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Estado</th>
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Cliente/Proveedor</th>
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Fecha y Hora</th>
+                            <th style="padding:10px 12px;text-align:center;font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;">Cantidad</th>
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Producto/Categoría</th>
                             <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;">Ef $</th>
                             <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#f87171;text-transform:uppercase;letter-spacing:.08em;">Cr $</th>
                             <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.08em;">Total $</th>
-                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#6ee7b7;text-transform:uppercase;letter-spacing:.08em;">Saldo Ef</th>
-                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#fcd34d;text-transform:uppercase;letter-spacing:.08em;">Saldo Cr</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;">Gan. Ef</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#fb923c;text-transform:uppercase;letter-spacing:.08em;">Gan. Cr</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:9px;font-weight:900;color:#facc15;text-transform:uppercase;letter-spacing:.08em;">Gan. Total</th>
                         </tr>
                     </thead>
                     <tbody id="tablaRegistrosBody">
-                        <tr><td colspan="9" class="py-8 text-center text-slate-500 font-bold uppercase text-[10px]">Seleccioná un período para ver registros</td></tr>
+                        <tr><td colspan="12" class="py-8 text-center text-slate-500 font-bold uppercase text-[10px]">Seleccioná un período para ver registros</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -30709,6 +30712,48 @@ function verDetalleProveedor(tipo, id){
 
         // SINCRONIZACI───────────────────────────────────────────────N GOOGLE SHEETS ? Tiempo real (30s)
         // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
+        function eliminarDesdeRegistros(tipo, idSheet, detalle) {
+            if (!confirm('¿Eliminar "' + detalle + '"? Esta acción no se puede deshacer.')) return;
+            // Eliminar visualmente en todas las estructuras según tipo
+            const _id = String(idSheet || '').replace('sheet_V_','').replace('sheet_C_','').replace('sheet_I_','').replace('sheet_E_','').trim();
+            if (tipo === 'VENTA') {
+                if (window._sheetVentas) window._sheetVentas = window._sheetVentas.filter(v => String(v.idSheet||v.IDVENTAS||v.id||'').replace('sheet_V_','').trim() !== _id);
+                if (window._sheetVentasRaw) window._sheetVentasRaw = window._sheetVentasRaw.filter(v => String(v.IDVENTAS||v.idVenta||v.id||'').replace('sheet_V_','').trim() !== _id);
+                if (window.historial) window.historial = window.historial.filter(v => String(v.idSheet||v.IDVENTAS||v.id||'').replace('sheet_V_','').trim() !== _id);
+                if (typeof _guardarCache === 'function') _guardarCache();
+                mostrarToast('✅ Venta eliminada', 'success');
+                renderRegistros();
+                if (_id) (async()=>{ try { await fetchSheets({ method:'POST', body: JSON.stringify({ tipo:'eliminar_venta', IDVENTAS: _id }) }); if (typeof sincronizarSheetsSilencioso==='function') setTimeout(()=>sincronizarSheetsSilencioso(),500); } catch(e){} })();
+            } else if (tipo === 'COMPRA') {
+                if (window._sheetCompras) window._sheetCompras = window._sheetCompras.filter(c => String(c.idSheet||c.IDCOMPRAS||c.id||'').replace('sheet_C_','').trim() !== _id);
+                mostrarToast('✅ Compra eliminada', 'success');
+                renderRegistros();
+                if (_id) (async()=>{ try { await eliminarEnSheet('compra', _id); } catch(e){} })();
+            } else if (tipo === 'INGRESO') {
+                if (window._sheetIngresos) window._sheetIngresos = window._sheetIngresos.filter(r => String(r.idSheet||r.id||'').trim() !== _id);
+                mostrarToast('✅ Ingreso eliminado', 'success');
+                renderRegistros();
+                if (_id) (async()=>{ try { await eliminarEnSheet('ingreso', _id); } catch(e){} })();
+            } else if (tipo === 'EGRESO') {
+                if (window._sheetEgresos) window._sheetEgresos = window._sheetEgresos.filter(r => String(r.idSheet||r.id||'').trim() !== _id);
+                mostrarToast('✅ Egreso eliminado', 'success');
+                renderRegistros();
+                if (_id) (async()=>{ try { await eliminarEnSheet('egreso', _id); } catch(e){} })();
+            } else if (tipo === 'ING. NEGOCIO') {
+                if (window._sheetIngresosNegocio) window._sheetIngresosNegocio = window._sheetIngresosNegocio.filter(r => String(r.idSheet||r.id||'').trim() !== _id);
+                mostrarToast('✅ Ingreso Negocio eliminado', 'success');
+                renderRegistros();
+                if (_id) (async()=>{ try { await eliminarEnSheet('ingreso_negocio', _id); } catch(e){} })();
+            } else if (tipo === 'EGR. NEGOCIO') {
+                if (window._sheetEgresosNegocio) window._sheetEgresosNegocio = window._sheetEgresosNegocio.filter(r => String(r.idSheet||r.id||'').trim() !== _id);
+                mostrarToast('✅ Egreso Negocio eliminado', 'success');
+                renderRegistros();
+                if (_id) (async()=>{ try { await eliminarEnSheet('egreso_negocio', _id); } catch(e){} })();
+            } else {
+                mostrarToast('Eliminación no soportada para: ' + tipo, 'error');
+            }
+        }
+
         function renderRegistros() {
             const desde = document.getElementById('regDesde').value;
             const hasta = document.getElementById('regHasta').value;
@@ -30789,30 +30834,43 @@ function verDetalleProveedor(tipo, id){
                     crConGanancia = 0; crSinGanancia = 0;
                     totConGanancia = ef; totSinGanancia = ef;
                 } else {
-                    // Calcular ganancia bruta y su distribución ef/cr
-                    const sumItemEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                    const sumItemCr = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
+                    // EF = pagoEfectivo + monto(pagoVentas coincidente por IDVENTAS)
+                    // CR = pagoCredito - monto(pagoVentas coincidente por IDVENTAS), mínimo 0
+                    const sumItemEf  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const sumItemCr  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
                     const sumItemTot = sumItemEf + sumItemCr;
-                    const costoV  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
-                    const dinRecV = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoV;
-                    const ganBruta = Math.max(0, sumItemTot - dinRecV);
-                    const cobEf = sumItemEf + pagado;
-                    const ganEfV = cobEf > dinRecV ? Math.min(cobEf - dinRecV, ganBruta) : 0;
-                    const ganCrV = Math.max(0, ganBruta - ganEfV);
-                    ef  = Math.max(0, cobEf - ganEfV);
-                    cr  = Math.max(0, sumItemCr - ganCrV);
-                    tot = Math.max(0, sumItemTot - ganBruta);
-                    efConGanancia = cobEf; efSinGanancia = ef;
-                    crConGanancia = sumItemCr; crSinGanancia = cr;
-                    totConGanancia = sumItemTot; totSinGanancia = tot;
+                    ef  = sumItemEf + pagado;
+                    cr  = Math.max(0, sumItemCr - pagado);
+                    tot = ef + cr;
+                    efConGanancia  = ef;  efSinGanancia  = ef;
+                    crConGanancia  = cr;  crSinGanancia  = cr;
+                    totConGanancia = tot; totSinGanancia = tot;
+                    // Ganancia a nivel de venta completa (para distribuir entre ítems si no tienen datos propios)
+                    const costoVN  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                    const dinRecVN = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVN;
+                    const ganTotV  = Math.max(0, (sumItemEf + sumItemCr) - dinRecVN);
+                    const ganEfV2  = Math.max(0, sumItemEf - dinRecVN);
+                    const ganCrV2  = Math.max(0, ganTotV - ganEfV2);
                 }
                 const items = v.items||[];
                 // Para esEsp: _vSumTot = suma de dineroRecuperado por ítem (o costo)
                 const _vSumDinRec = esEsp ? (items.reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || items.reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0) || 1) : 1;
                 if (items.length === 0) {
-                    rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
+                    const _vEf0  = Number(v.efectivo||0);
+                    const _vCr0  = Number(v.deuda||0);
+                    const _vTot0 = Number(v.total||0) || (_vEf0 + _vCr0);
+                    const _vEst0 = (_vTot0 > 0 && _vEf0 >= _vTot0) ? 'FINALIZADO' : (_vCr0 > 0 && _vEf0 === 0) ? 'PENDIENTE' : (_vEf0 > 0 && _vCr0 > 0) ? 'MIXTO' : 'FINALIZADO';
+                    rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ganEf: 0, ganCr: 0, ganTot: 0, estado: _vEst0, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                 } else {
-                    const _vSumTot = esEsp ? _vSumDinRec : ((typeof sumItemTot !== 'undefined' ? sumItemTot : 0) || 1);
+                    const _vSumTot = esEsp ? _vSumDinRec : (((v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0)||Number(v.efectivo||0)) + ((v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)||Number(v.deuda||0)) || 1);
+                    // Estado de pago de la venta completa
+                    const _vEfTotal  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const _vCrTotal  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
+                    const _vTotTotal = Number(v.total||0) || (_vEfTotal + _vCrTotal);
+                    const _vEstado   = (_vTotTotal > 0 && _vEfTotal >= _vTotTotal) ? 'FINALIZADO'
+                                     : (_vCrTotal > 0 && _vEfTotal === 0)          ? 'PENDIENTE'
+                                     : (_vEfTotal > 0 && _vCrTotal > 0)            ? 'MIXTO'
+                                     : 'FINALIZADO';
                     items.forEach((it, i) => {
                         const _itNomUp = String(it.nombre||'').trim().toUpperCase();
                         const _itId    = String(it.id||'').trim();
@@ -30824,29 +30882,44 @@ function verDetalleProveedor(tipo, id){
                         const _itTot   = Number(it.subtotal||it.pagoTotal||0) || (_itPrecio * _itCant);
                         const _itEf    = Number(it.pagoEfectivo||0);
                         const _itCr    = Number(it.pagoCredito||0);
-                        let _ef, _cr, _tot, _efCG, _crCG, _totCG;
+                        let _ef, _cr, _tot, _efCG, _crCG, _totCG, _ganEf, _ganCr, _ganTot;
+                        const _itDR = Number(it.dineroRecuperado||0) || (_itCosto * _itCant);
                         if (esEsp) {
                             // Casa Erazo / Error Venta: ef = dineroRecuperado del ítem (costo real cobrado)
-                            const _itDREsp = Number(it.dineroRecuperado||0) || (_itCosto * _itCant);
+                            const _itDREsp = _itDR;
                             _ef = _itDREsp; _cr = 0; _tot = _itDREsp;
                             _efCG = _itDREsp; _crCG = 0; _totCG = _itDREsp;
+                            _ganEf = 0; _ganCr = 0; _ganTot = 0;
                         } else if (_itEf > 0 || _itCr > 0) {
-                            const _itDR  = (_itCosto * _itCant) || Number(it.dineroRecuperado||0);
-                            const _itGB  = Math.max(0, (_itEf+_itCr) - _itDR);
-                            const _ganEf = _itEf > _itDR ? Math.min(_itEf - _itDR, _itGB) : 0;
-                            _efCG = _itEf; _crCG = _itCr; _totCG = _itEf + _itCr;
-                            _ef   = Math.max(0, _itEf - _ganEf);
-                            _cr   = Math.max(0, _itCr - Math.max(0, _itGB - _ganEf));
-                            _tot  = Math.max(0, _totCG - _itGB);
+                            // EF por ítem = pagoEfectivo del ítem + pagado proporcional
+                            // CR por ítem = pagoCredito del ítem - pagado proporcional (mín 0)
+                            const _itTotBase = _itEf + _itCr;
+                            const _ratio = _vSumTot > 0 ? _itTotBase / _vSumTot : (i === 0 ? 1 : 0);
+                            const _itPagado = pagado * _ratio;
+                            _ef   = _itEf + _itPagado;
+                            _cr   = Math.max(0, _itCr - _itPagado);
+                            _tot  = _ef + _cr;
+                            _efCG = _ef; _crCG = _cr; _totCG = _tot;
+                            // Ganancias: lo que supera el dineroRecuperado
+                            _ganTot = Math.max(0, _itTotBase - _itDR);
+                            _ganEf  = Math.max(0, _itEf - _itDR);
+                            _ganCr  = Math.max(0, _ganTot - _ganEf);
                         } else if (items.length > 1 && _itTot > 0) {
                             const _ratio = _itTot / _vSumTot;
-                            _efCG = efConGanancia * _ratio; _crCG = crConGanancia * _ratio; _totCG = totConGanancia * _ratio;
                             _ef   = ef  * _ratio; _cr = cr * _ratio; _tot = tot * _ratio;
+                            _efCG = _ef; _crCG = _cr; _totCG = _tot;
+                            // Distribuir ganancias de la venta proporcionalmente
+                            _ganEf  = ganEfV2  * _ratio;
+                            _ganCr  = ganCrV2  * _ratio;
+                            _ganTot = ganTotV   * _ratio;
                         } else {
                             _ef = i===0?ef:0; _cr = i===0?cr:0; _tot = i===0?tot:0;
-                            _efCG = i===0?efConGanancia:0; _crCG = i===0?crConGanancia:0; _totCG = i===0?totConGanancia:0;
+                            _efCG = _ef; _crCG = _cr; _totCG = _tot;
+                            _ganEf  = i===0 ? ganEfV2  : 0;
+                            _ganCr  = i===0 ? ganCrV2  : 0;
+                            _ganTot = i===0 ? ganTotV   : 0;
                         }
-                        rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle: it.nombre||'?', prodFotoKey: _itNomUp, prodIdKey: _itId, prodFotoUrl: _itFoto, ef: _ef, efConGanancia: _efCG, efSinGanancia: _ef, cr: _cr, crConGanancia: _crCG, crSinGanancia: _cr, tot: _tot, totConGanancia: _totCG, totSinGanancia: _tot, ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
+                        rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle: it.nombre||'?', prodFotoKey: _itNomUp, prodIdKey: _itId, prodFotoUrl: _itFoto, cantidad: _itCant, esPeso: it.esPeso||false, cantidadDisplay: it.cantidadDisplay||null, ef: _ef, efConGanancia: _efCG, efSinGanancia: _ef, cr: _cr, crConGanancia: _crCG, crSinGanancia: _cr, tot: _tot, totConGanancia: _totCG, totSinGanancia: _tot, ganEf: _ganEf, ganCr: _ganCr, ganTot: _ganTot, estado: _vEstado, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                     });
                 }
             });
@@ -30873,7 +30946,7 @@ function verDetalleProveedor(tipo, id){
                 const crTotal  = Math.max(0, crBase - pagado);
                 const items = c.items||[];
                 if (items.length === 0) {
-                    rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'?', fecha: c.fechaISO||c.fecha, detalle:'?', prodFotoKey:'', ef: efTotal, cr: crTotal, tot: totTotal, ts: _parseFechaReg(c.fechaISO||c.fecha), esEgreso: true });
+                    rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'?', fecha: c.fechaISO||c.fecha, detalle:'?', prodFotoKey:'', ef: efTotal, cr: crTotal, tot: totTotal, idSheet: String(c.idSheet||c.IDCOMPRAS||c.id||''), ts: _parseFechaReg(c.fechaISO||c.fecha), esEgreso: true });
                 } else {
                     items.forEach((it) => {
                         const _itNomUp = String(it.nombre||'').trim().toUpperCase();
@@ -30889,7 +30962,7 @@ function verDetalleProveedor(tipo, id){
                         const _itPagado = pagado * _ratio;
                         const _itEf     = _itEfBase + _itPagado;
                         const _itCr     = Math.max(0, _itCrBase - _itPagado);
-                        rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'?', fecha: c.fechaISO||c.fecha, detalle: it.nombre||'?', prodFotoKey: _itNomUp, prodIdKey: _itId, prodFotoUrl: _itFoto, ef: _itEf, cr: _itCr, tot: _itTot, ts: _parseFechaReg(c.fechaISO||c.fecha), esEgreso: true });
+                        rows.push({ tipo:'COMPRA', color:'#f97316', quien: c.proveedor||'?', fecha: c.fechaISO||c.fecha, detalle: it.nombre||'?', prodFotoKey: _itNomUp, prodIdKey: _itId, prodFotoUrl: _itFoto, ef: _itEf, cr: _itCr, tot: _itTot, idSheet: String(c.idSheet||c.IDCOMPRAS||c.id||''), ts: _parseFechaReg(c.fechaISO||c.fecha), esEgreso: true });
                     });
                 }
             });
@@ -30911,7 +30984,7 @@ function verDetalleProveedor(tipo, id){
                 const tot = Number(r.total||0);
                 const cr = Math.max(0, tot - ef);
                 const supercat = String(r.proveedor||r.supercategoria||'').trim() || '?';
-                { const _d=r.concepto||''; const _dk=_d.trim().toUpperCase(); const _imgCat=_imgMapIng[_dk]||''; const _p=prodPorNombre.get(_dk)||{}; const _scImg=(typeof window._getCatImg==='function')?(window._getCatImg('supercat',supercat)||window._getCatImg('categoria',supercat)||''):''; rows.push({ tipo:'INGRESO', color:'#3b82f6', quien: supercat, quienFotoUrl:_scImg, fecha: r.fechaISO||r.fecha, detalle: _d||'?', prodFotoKey:_dk, prodFotoUrl:_imgCat||_p.foto||_p.imagen||'', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: false, esSinCliente: true }); }
+                { const _d=r.concepto||''; const _dk=_d.trim().toUpperCase(); const _imgCat=_imgMapIng[_dk]||''; const _p=prodPorNombre.get(_dk)||{}; const _scImg=(typeof window._getCatImg==='function')?(window._getCatImg('supercat',supercat)||window._getCatImg('categoria',supercat)||''):''; rows.push({ tipo:'INGRESO', color:'#3b82f6', quien: supercat, quienFotoUrl:_scImg, fecha: r.fechaISO||r.fecha, detalle: _d||'?', prodFotoKey:_dk, prodFotoUrl:_imgCat||_p.foto||_p.imagen||'', ef, cr, tot, idSheet: String(r.idSheet||r.id||''), ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: false, esSinCliente: true }); }
             });
 
             // ↗↗ Pre-calcular PAGO EGRESOS por IDEGRESOS ↗↗
@@ -30931,7 +31004,7 @@ function verDetalleProveedor(tipo, id){
                 const tot = Number(r.total||0);
                 const cr = Math.max(0, tot - ef);
                 const supercat = String(r.proveedor||r.supercategoria||'').trim() || '?';
-                { const _d=r.concepto||''; const _dk=_d.trim().toUpperCase(); const _imgCat=_imgMapEgr[_dk]||''; const _p=prodPorNombre.get(_dk)||{}; const _scImg=(typeof window._getCatImg==='function')?(window._getCatImg('supercat',supercat)||window._getCatImg('categoria',supercat)||''):''; rows.push({ tipo:'EGRESO', color:'#ef4444', quien: supercat, quienFotoUrl:_scImg, fecha: r.fechaISO||r.fecha, detalle: _d||'?', prodFotoKey:_dk, prodFotoUrl:_imgCat||_p.foto||_p.imagen||'', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: true, esSinCliente: true }); }
+                { const _d=r.concepto||''; const _dk=_d.trim().toUpperCase(); const _imgCat=_imgMapEgr[_dk]||''; const _p=prodPorNombre.get(_dk)||{}; const _scImg=(typeof window._getCatImg==='function')?(window._getCatImg('supercat',supercat)||window._getCatImg('categoria',supercat)||''):''; rows.push({ tipo:'EGRESO', color:'#ef4444', quien: supercat, quienFotoUrl:_scImg, fecha: r.fechaISO||r.fecha, detalle: _d||'?', prodFotoKey:_dk, prodFotoUrl:_imgCat||_p.foto||_p.imagen||'', ef, cr, tot, idSheet: String(r.idSheet||r.id||''), ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: true, esSinCliente: true }); }
             });
 
             // ↗↗ Pre-calcular PAGO ING NEGOCIO ↗↗
@@ -30950,7 +31023,7 @@ function verDetalleProveedor(tipo, id){
                 const ef = Number(r.efectivo||r.pagoEfectivo||0) + pagado;
                 const tot = Number(r.total||r.pagoTotal||0);
                 const cr = Math.max(0, tot - ef);
-                rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PRESTAMO', prodFotoKey:'PRESTAMO', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: false });
+                rows.push({ tipo:'ING. NEGOCIO', color:'#06b6d4', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PRESTAMO', prodFotoKey:'PRESTAMO', ef, cr, tot, idSheet: String(r.idSheet||r.id||''), ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: false });
             });
 
             // ↗↗ Pre-calcular PAGO EGR NEGOCIO ↗↗
@@ -30969,7 +31042,7 @@ function verDetalleProveedor(tipo, id){
                 const ef = Number(r.efectivo||r.pagoEfectivo||0) + pagado;
                 const tot = Number(r.total||r.pagoTotal||0);
                 const cr = Math.max(0, tot - ef);
-                rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PRESTAMO', prodFotoKey:'PRESTAMO', ef, cr, tot, ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: true });
+                rows.push({ tipo:'EGR. NEGOCIO', color:'#ec4899', quien: r.cliente||r.proveedor||'?', fecha: r.fechaISO||r.fecha, detalle: 'PRESTAMO', prodFotoKey:'PRESTAMO', ef, cr, tot, idSheet: String(r.idSheet||r.id||''), ts: _parseFechaReg(r.fechaISO||r.fecha), esEgreso: true });
             });
 
             // ↗↗ PAGO VENTAS ↗↗
@@ -31093,7 +31166,7 @@ function verDetalleProveedor(tipo, id){
             _poblarSelect('regFiltroDet', rowsFiltradas.map(r => r.detalle));
 
             if (!rowsFiltradas.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500 font-bold uppercase">Sin registros en el período</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" class="py-8 text-center text-slate-500 font-bold uppercase">Sin registros en el período</td></tr>';
                 if (totEl) totEl.innerHTML = '';
                 return;
             }
@@ -31115,24 +31188,7 @@ function verDetalleProveedor(tipo, id){
                 if (p.id) _prodMapById[String(p.id).trim()] = p;
             });
 
-            // Calcular saldos acumulados (ordenado por fecha desc = más reciente primero)
-            // Para saldo acumulado calculamos de atrás hacia adelante
-            let saldoEf = 0, saldoCr = 0;
-            // Primero calcular totales para empezar desde 0 en orden desc
-            rowsFiltradas.forEach(r => {
-                const _rCr = Number(r.crConGanancia || r.cr || 0);
-                if (r.esEgreso) { saldoEf -= r.ef; saldoCr -= _rCr; }
-                else            { saldoEf += r.ef; saldoCr += _rCr; }
-            });
-            // Ahora asignar saldo por fila de arriba a abajo (desc)
-            let acumEf = saldoEf, acumCr = saldoCr;
-            rowsFiltradas.forEach(r => {
-                r.saldoEf = acumEf;
-                r.saldoCr = acumCr;
-                const _rCr2 = Number(r.crConGanancia || r.cr || 0);
-                if (r.esEgreso) { acumEf += r.ef; acumCr += _rCr2; }
-                else            { acumEf -= r.ef; acumCr -= _rCr2; }
-            });
+            // (saldos acumulados reemplazados por ganancias por ítem)
 
             tbody.innerHTML = rowsFiltradas.map((r, idx) => {
                 const cliObj = r.esSinCliente ? null : _cliMap[String(r.quien||'').trim().toUpperCase()];
@@ -31151,8 +31207,9 @@ function verDetalleProveedor(tipo, id){
                     ? `<img src="${driveUrl(_prodFotoRaw)}" style="width:26px;height:26px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='${_prodAvatarUrl}'">`
                     : `<img src="${_prodAvatarUrl}" style="width:26px;height:26px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid ${r.color}44;">`;
 
-                const sEfColor = r.saldoEf >= 0 ? '#10b981' : '#ef4444';
-                const sCrColor = r.saldoCr >= 0 ? '#f59e0b' : '#ef4444';
+                const _ganEfDisp  = (r.tipo==='VENTA' && !r.esGanancias && !r.esConsumoNegocio) ? Number(r.ganEf  || 0) : null;
+                const _ganCrDisp  = (r.tipo==='VENTA' && !r.esGanancias && !r.esConsumoNegocio) ? Number(r.ganCr  || 0) : null;
+                const _ganTotDisp = (r.tipo==='VENTA' && !r.esGanancias && !r.esConsumoNegocio) ? Number(r.ganTot || 0) : null;
                 const efConGanancia = Number(r.efConGanancia || 0);
                 const efSinGanancia = Number(r.efSinGanancia || r.ef || 0);
                 const crConGanancia = Number(r.crConGanancia || 0);
@@ -31217,9 +31274,13 @@ function verDetalleProveedor(tipo, id){
                     ? `<span style="width:26px;height:26px;border-radius:6px;background:#f9731622;border:1px solid #f9731655;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🏪</span>`
                     : prodFoto;
 
+                const _rIdSheet = (r.idSheet||'').replace(/"/g,'&quot;');
+                const _rDetalleSafe = (r.detalle||r.tipo||'registro').replace(/'/g,"\'").replace(/"/g,'&quot;').substring(0,40);
+                const _noElimTypes = ['PAGO VENTAS','PAGO COMPRAS','PAGO INGRESOS','PAGO EGRESOS','PAGO ING.NEG','PAGO EGR.NEG'];
+                const _puedeElim = !_noElimTypes.includes(r.tipo);
                 return `<tr style="${_rowStyle}transition:background .1s;" onmouseover="this.style.background='${_rowHover}'" onmouseout="this.style.background='${_rowOut}'" id="reg-row-${idx}">
                     <td style="padding:10px 12px;">
-                        <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:6px;">
                             <button onclick="toggleRegCheck(${idx})" id="reg-check-${idx}"
                                 data-check-key="${ckKey.replace(/"/g,'&quot;')}"
                                 data-check-legacy-key="${ckLegacyKey.replace(/"/g,'&quot;')}"
@@ -31227,7 +31288,22 @@ function verDetalleProveedor(tipo, id){
                                 <span id="reg-check-icon-${idx}" style="font-size:11px;line-height:1;font-weight:900;color:${ckColor};">${ckIcon}</span>
                             </button>
                             <span style="font-size:10px;font-weight:900;color:${r.color};letter-spacing:.04em;text-shadow:0 0 8px ${r.color}55;">${r.tipo}</span>
+                            ${_puedeElim ? `<button onclick="eliminarDesdeRegistros('${r.tipo}','${_rIdSheet}','${_rDetalleSafe}')"
+                                title="Eliminar registro"
+                                style="width:18px;height:18px;border-radius:4px;border:1px solid #ef444455;background:#ef444412;color:#ef4444;font-size:11px;font-weight:900;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-left:2px;"
+                                onmouseover="this.style.background='#ef444430';this.style.borderColor='#ef4444'"
+                                onmouseout="this.style.background='#ef444412';this.style.borderColor='#ef444455'">✕</button>` : ''}
                         </div>
+                    </td>
+                    <td style="padding:6px 12px;text-align:center;">
+                        ${r.tipo === 'VENTA' && !r.esGanancias && !r.esConsumoNegocio
+                            ? r.estado === 'FINALIZADO'
+                                ? '<span style="font-size:9px;font-weight:900;color:#10b981;background:#10b98118;border:1px solid #10b98144;border-radius:20px;padding:3px 8px;letter-spacing:.04em;white-space:nowrap;">✓ FINALIZADO</span>'
+                                : r.estado === 'PENDIENTE'
+                                ? '<span style="font-size:9px;font-weight:900;color:#ef4444;background:#ef444418;border:1px solid #ef444444;border-radius:20px;padding:3px 8px;letter-spacing:.04em;white-space:nowrap;">● PENDIENTE</span>'
+                                : '<span style="font-size:9px;font-weight:900;color:#f59e0b;background:#f59e0b18;border:1px solid #f59e0b44;border-radius:20px;padding:3px 8px;letter-spacing:.04em;white-space:nowrap;">◑ MIXTO</span>'
+                            : '<span style="color:#334155;font-size:9px;">—</span>'
+                        }
                     </td>
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
@@ -31236,6 +31312,7 @@ function verDetalleProveedor(tipo, id){
                         </div>
                     </td>
                     <td style="padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;letter-spacing:.01em;">${r.esGanancias ? '<span style="color:#f59e0b99;font-style:italic;font-size:9px;">' + r.detalle + '</span>' : r.esConsumoNegocio ? '<span style="color:#fb923c99;font-style:italic;font-size:9px;">' + r.detalle + '</span>' : fmtFecha(r.fecha)}</td>
+                    <td style="padding:10px 12px;text-align:center;">${(r.tipo==='VENTA' && r.cantidad != null && !r.esGanancias && !r.esConsumoNegocio) ? '<span style="font-size:11px;font-weight:900;color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa33;border-radius:6px;padding:2px 7px;font-family:monospace;">' + (r.cantidadDisplay || (r.esPeso ? (r.cantidad + 'gr') : (r.cantidad + 'x'))) + '</span>' : '<span style="color:#334155;font-size:9px;">—</span>'}</td>
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             ${_prodFotoFinal}
@@ -31245,8 +31322,9 @@ function verDetalleProveedor(tipo, id){
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#34d399;font-family:monospace;letter-spacing:.02em;">${efHtml}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#f87171;font-family:monospace;letter-spacing:.02em;">${crHtml}</td>
                     <td style="padding:10px 12px;text-align:right;font-size:11px;font-weight:900;color:#e2e8f0;font-family:monospace;letter-spacing:.02em;">${totHtml}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sEfColor};letter-spacing:.02em;text-shadow:0 0 6px ${sEfColor}44;">${(r.esGanancias||r.esConsumoNegocio) ? '<span style="color:#475569;font-size:9px;">?</span>' : '$'+Utils.fmt(r.saldoEf)}</td>
-                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:${sCrColor};letter-spacing:.02em;text-shadow:0 0 6px ${sCrColor}44;">${(r.esGanancias||r.esConsumoNegocio) ? '<span style="color:#475569;font-size:9px;">?</span>' : '$'+Utils.fmt(r.saldoCr)}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#34d399;letter-spacing:.02em;text-shadow:0 0 6px #34d39944;">${_ganEfDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : _ganEfDisp > 0 ? '$'+Utils.fmt(_ganEfDisp) : '<span style="color:#475569;">$0</span>'}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#fb923c;letter-spacing:.02em;text-shadow:0 0 6px #fb923c44;">${_ganCrDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : _ganCrDisp > 0 ? '$'+Utils.fmt(_ganCrDisp) : '<span style="color:#475569;">$0</span>'}</td>
+                    <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:900;font-family:monospace;color:#facc15;letter-spacing:.02em;text-shadow:0 0 6px #facc1544;">${_ganTotDisp === null ? '<span style="color:#334155;font-size:9px;">—</span>' : _ganTotDisp > 0 ? '$'+Utils.fmt(_ganTotDisp) : '<span style="color:#475569;">$0</span>'}</td>
                 </tr>`;
             }).join('');
 
@@ -31266,18 +31344,23 @@ function verDetalleProveedor(tipo, id){
                     ? `$${Utils.fmt(conGanancia)} <span style="color:#94a3b8;font-size:11px;font-weight:800;">($${Utils.fmt(sinGanancia)})</span>`
                     : `$${Utils.fmt(sinGanancia)}`;
             };
+            const sumGanEf  = rowsFiltradas.reduce((s,r)=>s+Number(r.ganEf  || 0), 0);
+            const sumGanCr  = rowsFiltradas.reduce((s,r)=>s+Number(r.ganCr  || 0), 0);
+            const sumGanTot = rowsFiltradas.reduce((s,r)=>s+Number(r.ganTot || 0), 0);
             if (totEl) totEl.innerHTML = `
                 <div class="glass-card rounded-xl p-3 text-center border border-emerald-500/30">
-                    <p class="text-[8px] font-black text-emerald-400 uppercase">Total Efectivo</p>
+                    <p class="text-[8px] font-black text-emerald-400 uppercase">Total Ef</p>
                     <p class="text-base font-black text-emerald-400 font-mono">${fmtDobleTotal(sumEfConGanancia, sumEfSinGanancia)}</p>
+                    <p class="text-[9px] font-black text-emerald-300 font-mono mt-1">Gan: $${Utils.fmt(sumGanEf)}</p>
                 </div>
                 <div class="glass-card rounded-xl p-3 text-center border border-red-500/30">
-                    <p class="text-[8px] font-black text-red-400 uppercase">Total Crédito</p>
+                    <p class="text-[8px] font-black text-red-400 uppercase">Total Cr</p>
                     <p class="text-base font-black text-red-400 font-mono">${fmtDobleTotal(sumCrConGanancia, sumCrSinGanancia)}</p>
+                    <p class="text-[9px] font-black text-orange-300 font-mono mt-1">Gan: $${Utils.fmt(sumGanCr)}</p>
                 </div>
-                <div class="glass-card rounded-xl p-3 text-center border border-slate-600">
-                    <p class="text-[8px] font-black text-white uppercase">Total General</p>
-                    <p class="text-base font-black text-white font-mono">${fmtDobleTotal(sumTotConGanancia, sumTotSinGanancia)}</p>
+                <div class="glass-card rounded-xl p-3 text-center border border-yellow-500/30">
+                    <p class="text-[8px] font-black text-yellow-400 uppercase">Gan. Total</p>
+                    <p class="text-base font-black text-yellow-400 font-mono">$${Utils.fmt(sumGanTot)}</p>
                     <p class="text-[8px] text-slate-500">${rowsFiltradas.length} registros</p>
                 </div>`;
         }
