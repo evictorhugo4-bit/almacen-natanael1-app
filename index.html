@@ -24975,6 +24975,7 @@ function eliminarItemCompra(itemId){
         function quitarTicket() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         function resetTicketUI() { _ticketsNuevaCompra = []; renderTicketGridNuevaCompra(); }
         // ↗↗↗ FIN TICKETS NUEVA COMPRA ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+        window.renderTicketGridNuevaCompra = renderTicketGridNuevaCompra;
 
         function confirmarCompra() {
 
@@ -34482,6 +34483,30 @@ setTimeout(function() {
         s.textContent = '@keyframes ncFlash { 0%{opacity:1} 100%{opacity:0} }';
         document.head.appendChild(s);
     })();
+
+    // Listener robusto para cámara nativa Android
+    document.addEventListener('DOMContentLoaded', function() {
+        var inputCamara = document.getElementById('inputCamaraNativa');
+        if (inputCamara) {
+            inputCamara.addEventListener('change', function() {
+                var files = this.files;
+                if (!files || files.length === 0) return;
+                Array.from(files).forEach(function(file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (!window._ticketsNuevaCompra) window._ticketsNuevaCompra = [];
+                        window._ticketsNuevaCompra.push({ data: e.target.result, nombre: file.name });
+                        if (typeof renderTicketGridNuevaCompra === 'function') renderTicketGridNuevaCompra();
+                        if (typeof mostrarToast === 'function') mostrarToast('Foto agregada ✓', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                });
+                // Reset para permitir sacar otra foto del mismo archivo
+                this.value = '';
+            });
+        }
+    });
+
     (function() {
         var _stream = null;
 
