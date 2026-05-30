@@ -34459,7 +34459,8 @@ setTimeout(function() {
     </div>
 
     <!-- CÁMARA FULLSCREEN NUEVA COMPRA -->
-    <div id="camaraFullscreenNuevaCompra" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;flex-direction:column;">
+    <div id="camaraFullscreenNuevaCompra" style="display:none;position:fixed;inset:0;z-index:9999999999;background:#000;flex-direction:column;">
+        <div id="camaraFlashNuevaCompra" style="display:none;position:absolute;inset:0;background:#fff;z-index:10;pointer-events:none;"></div>
         <video id="camaraVideoNuevaCompra" autoplay playsinline style="width:100%;flex:1;object-fit:cover;display:block;"></video>
         <canvas id="camaraCanvasNuevaCompra" style="display:none;"></canvas>
         <div style="background:#000;padding:18px 20px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
@@ -34518,9 +34519,18 @@ setTimeout(function() {
             if (!window._ticketsNuevaCompra) window._ticketsNuevaCompra = [];
             window._ticketsNuevaCompra.push({ data: dataUrl, nombre: nombre });
             if (typeof renderTicketGridNuevaCompra === 'function') renderTicketGridNuevaCompra();
-            // Flash
-            var overlay = document.getElementById('camaraFullscreenNuevaCompra');
-            if (overlay) { overlay.style.filter='brightness(3)'; setTimeout(function(){ overlay.style.filter=''; }, 80); }
+            // Flash blanco real
+            var flash = document.getElementById('camaraFlashNuevaCompra');
+            if (flash) {
+                flash.style.display = 'block';
+                flash.style.opacity = '1';
+                flash.style.transition = 'none';
+                setTimeout(function() {
+                    flash.style.transition = 'opacity 0.4s ease';
+                    flash.style.opacity = '0';
+                    setTimeout(function() { flash.style.display = 'none'; }, 400);
+                }, 30);
+            }
             // Contador
             var cnt = document.getElementById('camaraContadorNumNuevaCompra');
             if (cnt) cnt.textContent = window._ticketsNuevaCompra.length;
