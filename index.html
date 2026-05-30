@@ -995,10 +995,29 @@ z-index:999999999;
                                 <span id="kpiCajaDesde" class="text-[8px] font-bold text-slate-500"></span>
                                 <button type="button" onclick="event.stopPropagation(); abrirModalHorarioCaja();" title="Configurar monto inicial de caja" class="w-7 h-7 rounded-full border border-emerald-500/30 bg-slate-900/70 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 text-sm font-black flex items-center justify-center">+</button>
                                 <button type="button" onclick="event.stopPropagation(); abrirDetalleCajaModal();" title="Ver detalle de caja" class="w-7 h-7 rounded-full border border-emerald-500/30 bg-slate-900/70 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 text-sm font-black flex items-center justify-center">i</button>
+                                <button type="button" onclick="event.stopPropagation(); kpiCajaRealToggle();" title="Ingresar caja real" class="w-7 h-7 rounded-full border border-yellow-500/40 bg-slate-900/70 text-yellow-400 hover:bg-yellow-900/40 hover:text-yellow-300 text-sm font-black flex items-center justify-center">&#128176;</button>
                             </div>
                         </div>
                         <div id="kpiCajaMonto" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
                         <div id="kpiCajaInfo" class="text-[9px] text-slate-500 font-bold mt-1">Entradas - Salidas</div>
+                        <!-- Diferencia caja real -->
+                        <div id="kpiCajaRealWrap" class="hidden mt-2 pt-2 border-t border-slate-700/50">
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <span class="text-[9px] font-black text-yellow-400 uppercase tracking-widest">💰 Caja Real</span>
+                                <button onclick="event.stopPropagation(); kpiCajaRealBorrar();" class="text-[9px] text-slate-500 hover:text-red-400 font-black">✕</button>
+                            </div>
+                            <div class="flex gap-2 mb-2">
+                                <input type="number" id="kpiCajaRealInput" placeholder="0"
+                                    class="flex-1 bg-slate-950 border border-yellow-500/30 rounded-xl p-2 text-white font-black text-sm outline-none focus:border-yellow-400 text-right"
+                                    onclick="event.stopPropagation()" oninput="kpiCajaRealActualizar()">
+                                <button onclick="event.stopPropagation(); kpiCajaRealGuardar()"
+                                    class="bg-yellow-500 text-black font-black text-xs px-3 rounded-xl hover:bg-yellow-400">OK</button>
+                            </div>
+                            <div id="kpiCajaRealDif" class="hidden rounded-xl px-3 py-2 text-center">
+                                <div class="text-[9px] font-black uppercase tracking-widest mb-0.5" id="kpiCajaRealDifLabel">Diferencia</div>
+                                <div class="text-xl font-black font-mono" id="kpiCajaRealDifMonto">$0</div>
+                            </div>
+                        </div>
                         <!-- Input monto inicial colapsable -->
                         <div id="kpiCajaInputWrap" class="hidden mt-3 pt-3 border-t border-slate-700">
                             <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Monto inicial en caja</label>
@@ -15553,7 +15572,9 @@ if (indicator) indicator.classList.remove('hidden');
                 // ↗↗ RENDER NEGOCIO ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const negIngDiv = document.getElementById('efNegIngresosDetalle');
                 if (negIngDiv) negIngDiv.innerHTML =
-                    _efFila('Ventas Efectivo',     negVentasEfectivo + negVentasCasaErazo + negErrorVenta) +
+                    _efFila('Ventas Efectivo',     negVentasEfectivo) +
+                    _efFila('Ventas a Casa Erazo', negVentasCasaErazo) +
+                    _efFila('Error Venta',         negErrorVenta,     '#fde68a') +
                     _efFila('Ingresos del Negocio', negIngresosNegocio);
 
                 const negEgrDiv = document.getElementById('efNegEgresosDetalle');
@@ -17372,6 +17393,67 @@ if (indicator) indicator.classList.remove('hidden');
             mostrarToast('✅ Caja iniciada con $' + Utils.fmt(v));
         }
 
+        function kpiCajaRealToggle() {
+            var wrap = document.getElementById('kpiCajaRealWrap');
+            if (!wrap) return;
+            var oculto = wrap.classList.contains('hidden');
+            wrap.classList.toggle('hidden', !oculto);
+            if (oculto) {
+                // Al abrir, cargar valor guardado y recalcular diferencia
+                var guardado = parseFloat(localStorage.getItem('natanael_caja_real') || '');
+                var inp = document.getElementById('kpiCajaRealInput');
+                if (inp && !isNaN(guardado)) inp.value = guardado;
+                kpiCajaRealActualizar();
+            }
+        }
+
+        function kpiCajaRealActualizar() {
+            var inp = document.getElementById('kpiCajaRealInput');
+            var difDiv = document.getElementById('kpiCajaRealDif');
+            var difMonto = document.getElementById('kpiCajaRealDifMonto');
+            var difLabel = document.getElementById('kpiCajaRealDifLabel');
+            if (!inp || !difDiv) return;
+            var real = parseFloat(inp.value);
+            if (isNaN(real) || inp.value === '') { difDiv.classList.add('hidden'); return; }
+            var sistema = (typeof calcularCajaEsperada === 'function') ? calcularCajaEsperada() : 0;
+            var dif = real - sistema;
+            difDiv.classList.remove('hidden');
+            difMonto.textContent = (dif >= 0 ? '+' : '') + '$' + Utils.fmt(dif);
+            if (dif === 0) {
+                difDiv.style.background = '#0f2a1a'; difDiv.style.border = '1px solid #14532d';
+                difLabel.style.color = '#34d399'; difLabel.textContent = 'Cuadra perfecto ✓';
+                difMonto.style.color = '#34d399';
+            } else if (dif > 0) {
+                difDiv.style.background = '#1a2a0f'; difDiv.style.border = '1px solid #365314';
+                difLabel.style.color = '#a3e635'; difLabel.textContent = 'Sobra en caja';
+                difMonto.style.color = '#a3e635';
+            } else {
+                difDiv.style.background = '#2a0f0f'; difDiv.style.border = '1px solid #7f1d1d';
+                difLabel.style.color = '#f87171'; difLabel.textContent = 'Falta en caja';
+                difMonto.style.color = '#f87171';
+            }
+        }
+
+        function kpiCajaRealGuardar() {
+            var inp = document.getElementById('kpiCajaRealInput');
+            if (!inp) return;
+            var real = parseFloat(inp.value);
+            if (!isNaN(real)) {
+                localStorage.setItem('natanael_caja_real', real);
+                mostrarToast('💰 Caja real guardada: $' + Utils.fmt(real));
+            }
+            kpiCajaRealActualizar();
+        }
+
+        function kpiCajaRealBorrar() {
+            localStorage.removeItem('natanael_caja_real');
+            var inp = document.getElementById('kpiCajaRealInput');
+            if (inp) inp.value = '';
+            var difDiv = document.getElementById('kpiCajaRealDif');
+            if (difDiv) difDiv.classList.add('hidden');
+            document.getElementById('kpiCajaRealWrap').classList.add('hidden');
+        }
+
         function kpiCajaCargarDesdeSheet() {
             // Leer TODOS los registros de EFECTIVOENCAJA y quedarse con el más reciente
             return fetch(SHEETS_URL + '?modo=efectivo_en_caja&todos=1')
@@ -17465,6 +17547,9 @@ if (indicator) indicator.classList.remove('hidden');
                 }
             }
             if (infoEl) infoEl.textContent = 'inicial $' + Utils.fmt(cajaControl.montoInicial || 0) + ' + entradas - salidas';
+            // Recalcular diferencia caja real si el panel está visible
+            var realWrap = document.getElementById('kpiCajaRealWrap');
+            if (realWrap && !realWrap.classList.contains('hidden')) kpiCajaRealActualizar();
         }
 
         // Acción directa por índice ? sin modales, sin data-attributes
