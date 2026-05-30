@@ -4230,12 +4230,13 @@ CONFIRMAR PAGO
                         <div id="ticketGridNuevaCompra" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
                         <div style="display:flex;gap:6px;">
                             <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
-                                📎 Agregar
+                                📎 Archivo
                                 <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
                             </label>
-                            <button onclick="(function(){if(typeof abrirCamaraNuevaCompra==='function'){abrirCamaraNuevaCompra();}else{alert('Función no disponible');}})();" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
                                 📷 Cámara
-                            </button>
+                                <input type="file" id="inputCamaraNativa" accept="image/*" capture="environment" class="hidden" onchange="cargarTicketsNuevaCompra(this)">
+                            </label>
                         </div>
                     </div>
                     <!-- Botón confirmar al final del scroll en mobile, fijo en desktop -->
