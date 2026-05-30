@@ -4233,10 +4233,10 @@ CONFIRMAR PAGO
                                 📎 Archivo
                                 <input type="file" id="inputTicketArchivo" accept="image/*,.pdf" multiple class="hidden" onchange="cargarTicketsNuevaCompra(this)">
                             </label>
-                            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
+                            <button type="button" onclick="var i=document.getElementById('inputCamaraNativa');i.value='';i.click();" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:#0f172a;border:1px dashed #334155;border-radius:8px;cursor:pointer;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;">
                                 📷 Cámara
-                                <input type="file" id="inputCamaraNativa" accept="image/*" capture="environment" class="hidden" onchange="cargarTicketsNuevaCompra(this)">
-                            </label>
+                            </button>
+                            <input type="file" id="inputCamaraNativa" accept="image/*" capture="environment" style="display:none;">
                         </div>
                     </div>
                     <!-- Botón confirmar al final del scroll en mobile, fijo en desktop -->
@@ -34488,28 +34488,25 @@ setTimeout(function() {
         document.head.appendChild(s);
     })();
 
-    // Listener robusto para cámara nativa Android
-    document.addEventListener('DOMContentLoaded', function() {
+    // Listener cámara nativa Android
+    (function attachCamara() {
         var inputCamara = document.getElementById('inputCamaraNativa');
-        if (inputCamara) {
-            inputCamara.addEventListener('change', function() {
-                var files = this.files;
-                if (!files || files.length === 0) return;
-                Array.from(files).forEach(function(file) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        if (!window._ticketsNuevaCompra) window._ticketsNuevaCompra = [];
-                        window._ticketsNuevaCompra.push({ data: e.target.result, nombre: file.name });
-                        if (typeof renderTicketGridNuevaCompra === 'function') renderTicketGridNuevaCompra();
-                        if (typeof mostrarToast === 'function') mostrarToast('Foto agregada ✓', 'success');
-                    };
-                    reader.readAsDataURL(file);
-                });
-                // Reset para permitir sacar otra foto del mismo archivo
-                this.value = '';
+        if (!inputCamara) { setTimeout(attachCamara, 100); return; }
+        inputCamara.addEventListener('change', function() {
+            var files = this.files;
+            if (!files || files.length === 0) return;
+            Array.from(files).forEach(function(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    if (!window._ticketsNuevaCompra) window._ticketsNuevaCompra = [];
+                    window._ticketsNuevaCompra.push({ data: e.target.result, nombre: file.name });
+                    if (typeof window.renderTicketGridNuevaCompra === 'function') window.renderTicketGridNuevaCompra();
+                    if (typeof mostrarToast === 'function') mostrarToast('Foto agregada ✓', 'success');
+                };
+                reader.readAsDataURL(file);
             });
-        }
-    });
+        });
+    })();
 
     (function() {
         var _stream = null;
