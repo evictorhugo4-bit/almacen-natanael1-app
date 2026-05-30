@@ -15553,9 +15553,7 @@ if (indicator) indicator.classList.remove('hidden');
                 // ↗↗ RENDER NEGOCIO ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const negIngDiv = document.getElementById('efNegIngresosDetalle');
                 if (negIngDiv) negIngDiv.innerHTML =
-                    _efFila('Ventas Efectivo',     negVentasEfectivo) +
-                    _efFila('Ventas a Casa Erazo', negVentasCasaErazo) +
-                    _efFila('Error Venta',         negErrorVenta,     '#fde68a') +
+                    _efFila('Ventas Efectivo',     negVentasEfectivo + negVentasCasaErazo + negErrorVenta) +
                     _efFila('Ingresos del Negocio', negIngresosNegocio);
 
                 const negEgrDiv = document.getElementById('efNegEgresosDetalle');
