@@ -24160,8 +24160,13 @@ function abrirModalPrecios(itemId){
         if (_cantItem > 1) {
             panelTotal.style.display = 'block';
             if (cantLabel) cantLabel.textContent = _cantItem;
-            if (totalInp) { totalInp.value = ''; }
             window._editCostoTotalCant = _cantItem;
+            var _totalActual = (parseFloat(item.costo) || 0) * _cantItem;
+            if (totalInp) {
+                totalInp.value = _totalActual > 0 ? _totalActual.toFixed(2) : '';
+                editCostoTotalCalc();
+            }
+            setTimeout(function(){ panelTotal.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 80);
         } else {
             panelTotal.style.display = 'none';
             window._editCostoTotalCant = 1;
@@ -33369,7 +33374,7 @@ renderIngEgr = function(tipo) {
 
 </script>
 
-<dialog id="modalEditarPrecios" style="border:none;border-radius:16px;padding:30px;background:#1e293b;color:white;width:380px;box-shadow:0 20px 25px rgba(0,0,0,0.8);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999999;display:flex;flex-direction:column;gap:18px;">
+<dialog id="modalEditarPrecios" style="border:none;border-radius:16px;padding:30px;background:#1e293b;color:white;width:380px;box-shadow:0 20px 25px rgba(0,0,0,0.8);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999999;display:flex;flex-direction:column;gap:18px;max-height:92vh;overflow-y:auto;">
 
     <h2 style="margin:0;font-size:18px;font-weight:bold;color:#10b981;text-align:center;">?? EDITAR PRECIOS</h2>
 
