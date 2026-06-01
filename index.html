@@ -3334,27 +3334,40 @@ GUARDAR PRODUCTO
                     <input type="hidden" id="regFiltroOp" value="">
                 </div>
                 <div class="flex flex-col gap-1 flex-1" style="min-width:160px;position:relative;" id="regFiltroQuiWrap">
-                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cliente/Proveedor</label>
-                    <!-- Botón que muestra la selección actual -->
+                    <label class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Cliente</label>
                     <div id="regFiltroQuiBtn" onclick="toggleMultiSelectQui()" class="text-xs px-3 py-2 rounded-xl w-full flex items-center justify-between" style="background:#0f172a;border:1px solid #334155;color:white;cursor:pointer;min-height:34px;user-select:none;">
                         <span id="regFiltroQuiLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">Todos</span>
                         <span style="margin-left:6px;color:#64748b;font-size:10px;">▼</span>
                     </div>
-                    <!-- Dropdown con checkboxes -->
                     <div id="regFiltroQuiDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#0f172a;border:1px solid #334155;border-radius:12px;max-height:220px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
                         <div style="padding:8px 10px;border-bottom:1px solid #1e293b;">
-                            <input type="text" id="regFiltroQuiSearch" placeholder="Buscar..." oninput="filtrarOpcionesQui()" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;color:white;font-size:11px;outline:none;">
+                            <input type="text" id="regFiltroQuiSearch" placeholder="Buscar cliente..." oninput="filtrarOpcionesQui()" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;color:white;font-size:11px;outline:none;">
                         </div>
-                        <div style="padding:4px 0;" id="regFiltroQuiOpciones">
-                            <!-- Las opciones se generan dinámicamente -->
-                        </div>
+                        <div style="padding:4px 0;" id="regFiltroQuiOpciones"></div>
                         <div style="padding:6px 10px;border-top:1px solid #1e293b;display:flex;gap:6px;">
                             <button onclick="regFiltroQuiSelAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#10b981;font-size:10px;font-weight:900;cursor:pointer;">✅ Todos</button>
                             <button onclick="regFiltroQuiClearAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#ef4444;font-size:10px;font-weight:900;cursor:pointer;">Ninguno</button>
                         </div>
                     </div>
-                    <!-- Input oculto para mantener compatibilidad -->
                     <input type="hidden" id="regFiltroQui" value="">
+                </div>
+                <div class="flex flex-col gap-1 flex-1" style="min-width:160px;position:relative;" id="regFiltroProvWrap">
+                    <label class="text-[9px] font-black text-orange-400 uppercase tracking-widest">Proveedor</label>
+                    <div id="regFiltroProvBtn" onclick="toggleMultiSelectProv()" class="text-xs px-3 py-2 rounded-xl w-full flex items-center justify-between" style="background:#0f172a;border:1px solid #334155;color:white;cursor:pointer;min-height:34px;user-select:none;">
+                        <span id="regFiltroProvLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">Todos</span>
+                        <span style="margin-left:6px;color:#64748b;font-size:10px;">▼</span>
+                    </div>
+                    <div id="regFiltroProvDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#0f172a;border:1px solid #334155;border-radius:12px;max-height:220px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+                        <div style="padding:8px 10px;border-bottom:1px solid #1e293b;">
+                            <input type="text" id="regFiltroProvSearch" placeholder="Buscar proveedor..." oninput="filtrarOpcionesProv()" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;color:white;font-size:11px;outline:none;">
+                        </div>
+                        <div style="padding:4px 0;" id="regFiltroProvOpciones"></div>
+                        <div style="padding:6px 10px;border-top:1px solid #1e293b;display:flex;gap:6px;">
+                            <button onclick="regFiltroProvSelAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#10b981;font-size:10px;font-weight:900;cursor:pointer;">✅ Todos</button>
+                            <button onclick="regFiltroProvClearAll()" style="flex:1;padding:4px;background:#1e293b;border:none;border-radius:6px;color:#ef4444;font-size:10px;font-weight:900;cursor:pointer;">Ninguno</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="regFiltroProv" value="">
                 </div>
                 <div class="flex flex-col gap-1 flex-1" style="min-width:160px;">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto/Categoría</label>
@@ -3370,7 +3383,8 @@ GUARDAR PRODUCTO
                         <tr style="border-bottom:2px solid #334155;background:rgba(15,23,42,0.8);">
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Operación</th>
                             <th style="padding:10px 12px;text-align:center;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Estado</th>
-                            <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Cliente/Proveedor</th>
+                            <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:.08em;">Cliente</th>
+                            <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#fb923c;text-transform:uppercase;letter-spacing:.08em;">Proveedor</th>
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Fecha y Hora</th>
                             <th style="padding:10px 12px;text-align:center;font-size:9px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;">Cantidad</th>
                             <th style="padding:10px 12px;text-align:left;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Producto/Categoría</th>
@@ -3386,7 +3400,7 @@ GUARDAR PRODUCTO
                         </tr>
                     </thead>
                     <tbody id="tablaRegistrosBody">
-                        <tr><td colspan="15" class="py-8 text-center text-slate-500 font-bold uppercase text-[10px]">Seleccioná un período para ver registros</td></tr>
+                        <tr><td colspan="16" class="py-8 text-center text-slate-500 font-bold uppercase text-[10px]">Seleccioná un período para ver registros</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -8990,7 +9004,7 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), producto:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), PRODUCTO:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), imagen:String(r['IMAGEN DE LA COMPRA']||r['IMAGEN']||'').trim(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
                 if (Array.isArray(data.pagoIngresos))         { _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['ID_INGRESOS']||r['Id_Ingresos']||r['NUMERO DE INGRESOS']||r['NUMERO_DE_INGRESOS']||r['numeroIngreso']||'').trim(),ID_INGRESOS:String(r['ID_INGRESOS']||r['Id_Ingresos']||r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()})); window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(data.pagoEgresos))          { _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['ID_GASTOS']||r['Id_Gastos']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),ID_GASTOS:String(r['ID_GASTOS']||r['Id_Gastos']||r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim(),proveedor:String(r['SUPERCATEGORIA']||r['Supercategoria']||r['PROVEEDOR']||r['Proveedor']||'').trim(),categoria:String(r['CATEGORIA']||r['Categoria']||'').trim()})); window._sheetPagoEgresos = _sheetPagoEgresos; }
-                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; if (_sheetPagoIngNeg.length > 0) { _syncStatus.pagoIngresosNegocio = true; actualizarIndicadorSync(); } }
+                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; if (_sheetPagoIngNeg.length > 0) { _syncStatus.pagoIngresosNegocio = true; actualizarIndicadorSync(); } }
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({IDPAGOEGRESOSNEGOCIO:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),IDEGRESOSNEGOCIO:String(r['IDEGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim(),fromSheet:true})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; window._sheetPagoEgrNeg = _sheetPagoEgrNeg; }
                 // Ingresos Negocio / Egresos Negocio
                 if (typeof window.syncIngEgrNeg === 'function') {
@@ -11154,7 +11168,7 @@ if (indicator) indicator.classList.remove('hidden');
                     if (uid) _pagoEgrVis.add(uid);
                     return true;
                 }).map(p => ({ ...p, fechaOrig: p.fechaOrig||p['FECHA ORIGINAL']||p.fechaOriginal||p.fecha||p.FECHA||'' }));
-                const _pagoIngArr = (_sheetPagoIngNeg||[]).map(p => ({ ...p, fechaOrig: p.fechaOrig||p['FECHA ORIGINAL']||p.fechaOriginal||p.fecha||p.FECHA||'' }));
+                const _pagoIngArr = (_sheetPagoIngNeg||[]).map(p => ({ ...p, fechaOrig: p.fechaOrig||p['FECHA ORIGINAL']||p.fechaOriginal||'' }));
                 const pagoEgrNegEfNeg = sumPagoFOEP(_pagoEgrArr);
                 const pagoIngNegEfNeg = sumPagoFOEP(_pagoIngArr);
 
@@ -11843,7 +11857,7 @@ if (indicator) indicator.classList.remove('hidden');
             }).map(p => ({ ...p, fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || '' }));
             const _pagoIngNegAll = (_sheetPagoIngNeg||[]).map(p => ({
                 ...p,
-                fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || p.fecha || p.FECHA || ''
+                fechaOrig: p.fechaOrig || p['FECHA ORIGINAL'] || p.fechaOriginal || ''
             }));
             const pagoEgrNegEf = sumPagoFechaOrig(_pagoEgrNegAll);
             const ingNegEf     = sumNeg(_sheetIngresosNegocio, 'efectivo');
@@ -14529,8 +14543,11 @@ if (indicator) indicator.classList.remove('hidden');
                 : (r_o_str || '');
             var fn = parseFechaNum(fechaStr);
             if (!fn) return false;
-            var fd = parseFechaNum(dEl.value + 'T00:00:00');
-            var fh = parseFechaNum(hEl.value + 'T23:59:59');
+            // Respetar la hora real del input (datetime-local incluye hora, date usa 00:00:00 / 23:59:59)
+            var dVal = dEl.value.indexOf('T') >= 0 ? dEl.value : dEl.value + 'T00:00:00';
+            var hVal = hEl.value.indexOf('T') >= 0 ? hEl.value : hEl.value + 'T23:59:59';
+            var fd = parseFechaNum(dVal);
+            var fh = parseFechaNum(hVal);
             return fn >= fd && fn <= fh;
         }
 
@@ -15452,7 +15469,16 @@ if (indicator) indicator.classList.remove('hidden');
                 //     ganEf = 0, el costo lo cubre parcialmente ef y el resto cr
                 // ─────────────────────────────────────────────────────────────────────
 
-                // Acumula ventasEfRaw y gananciaEfNeg en un solo recorrido
+                // Acumula ventasEfRaw y gananciaEfNeg con la misma lógica exacta de renderRegistros
+                // ef = sumItemEf + pagado (PAGO VENTAS por IDVENTAS, igual que Registros)
+                // ganEf = max(0, sumItemEf - dineroRecuperado)  →  ventasEf - ganEf = capital recuperado
+                const _pagoVtaMapEf = {};
+                (_pagoVentasSheet||[]).forEach(function(p) {
+                    const id = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!id) return;
+                    _pagoVtaMapEf[id] = (_pagoVtaMapEf[id]||0) + Number(p.monto||p.MONTO||0);
+                });
+
                 let _ventasEfRaw       = 0;
                 let _calcGananciaEfNeg = 0;
                 (function() {
@@ -15460,39 +15486,30 @@ if (indicator) indicator.classList.remove('hidden');
                     todasVNeg.forEach(function(v) {
                         if (!_efEnRango(v) || vistos.has(v.id)) return;
                         vistos.add(v.id);
-                        const cli  = String(v.cliente || '').toUpperCase().trim();
+                        const cli   = String(v.cliente || '').toUpperCase().trim();
                         const esEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
-                        const ef    = Number(v.efectivo  || 0);
-                        const cr    = Number(v.credito   || v.deuda || 0);
-                        const total = Number(v.total     || 0);
+                        const pagado = Number(_pagoVtaMapEf[String(v.idSheet||v.id||'').trim()]||0);
 
-                        // cobrado en efectivo = pago directo + cobros posteriores en efectivo (FECHA ORIGINAL en rango)
-                        const idKey      = String(v.id).trim();
-                        const pagosExtra = _pagoVentasPorIdOrig[idKey] || 0;
-                        const cobradoEf  = ef + pagosExtra;
-
-                        _ventasEfRaw += cobradoEf;
-
-                        if (!esEsp) {
-                            const costoVenta  = (v.items || []).reduce(function(s, i) {
-                                return s + Number(i.costo || 0) * Number(i.cantidad || 1);
-                            }, 0);
-                            const dineroRecup = (v.items || []).reduce(function(s, i) {
-                                return s + Number(i.dineroRecuperado || 0);
-                            }, 0) || costoVenta;
-                            const ganBruta = Math.max(0, total - dineroRecup);
-
-                            // El efectivo primero cubre el costo; lo que sobra es ganancia en efectivo
-                            // Si ef cubre todo el costo → ganEf = cobradoEf - dineroRecup (tope: ganBruta)
-                            // Si ef NO cubre el costo  → ganEf = 0 (todo va a recupero de capital)
-                            const ganEf = Math.max(0, Math.min(cobradoEf - dineroRecup, ganBruta));
-                            _calcGananciaEfNeg += ganEf;
+                        if (esEsp) {
+                            // Casa Erazo / Error Venta: no se cuentan en Ventas Efectivo
+                            return;
                         }
+
+                        const sumItemEf = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoEfectivo||0); }, 0) || Number(v.efectivo||0);
+                        const sumItemCr = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoCredito||0);  }, 0) || Number(v.deuda||0);
+                        const ef = sumItemEf + pagado;
+
+                        const costoVN  = (v.items||[]).reduce(function(s,i){ return s + Number(i.costo||0)*Number(i.cantidad||1); }, 0);
+                        const dinRecVN = (v.items||[]).reduce(function(s,i){ return s + Number(i.dineroRecuperado||0); }, 0) || costoVN;
+                        const ganEf    = Math.max(0, sumItemEf - dinRecVN);
+
+                        _ventasEfRaw       += ef;
+                        _calcGananciaEfNeg += ganEf;
                     });
                 })();
 
-                // VENTAS EFECTIVO = cobrado en efectivo - ganancia en efectivo (= capital recuperado en ef)
-                const negVentasEfectivo = _ventasEfRaw - _calcGananciaEfNeg;
+                // VENTAS EFECTIVO = ef (incluye pagos extra) - ganancia ef = capital recuperado en efectivo
+                let negVentasEfectivo = _ventasEfRaw - _calcGananciaEfNeg;
 
                 // === NEGOCIO INGRESOS ===
 
@@ -15523,11 +15540,31 @@ if (indicator) indicator.classList.remove('hidden');
 
                 // D) INGRESOS DEL NEGOCIO:
                 //    PAGO EFECTIVO tabla INGRESOS NEGOCIO (por fecha)
-                //    + MONTO tabla PAGO INGRESOS NEGOCIO (por FECHA ORIGINAL)
-                const negIngresosNegocio = _efSumaEfectivo(window._sheetIngresosNegocio || [])
-                    + _efSumaMontoPagosOriginal([...(window._sheetPagoIngNeg || [])], 'EFECTIVO');
+                //    + MONTO tabla PAGO INGRESOS NEGOCIO (por FECHA ORIGINAL estricta, sin fallback a FECHA)
+                const _clientesExcluirIngNeg = ['HUGO','SILVIA','LEO'];
+                const negIngresosNegocio = (window._sheetIngresosNegocio || []).reduce(function(s, r) {
+                        if (!_efEnRango(r)) return s;
+                        const cli = String(r.cliente || r.proveedor || r.CLIENTE || '').trim().toUpperCase();
+                        if (_clientesExcluirIngNeg.includes(cli)) return s;
+                        return s + (parseFloat(r.efectivo || 0) || 0);
+                    }, 0)
+                    + (window._sheetPagoIngNeg || []).reduce(function(s, r) {
+                        const fo = r.fechaOriginal || r.fechaOrig || r['FECHA ORIGINAL'] || r.FechaOriginal || '';
+                        if (!fo) return s;
+                        const fn = parseFechaNum(fo);
+                        if (!fn) return s;
+                        const dEl = document.getElementById('efDesde');
+                        const hEl = document.getElementById('efHasta');
+                        if (dEl && hEl && dEl.value && hEl.value) {
+                            const dVal = dEl.value.indexOf('T') >= 0 ? dEl.value : dEl.value + 'T00:00:00';
+                            const hVal = hEl.value.indexOf('T') >= 0 ? hEl.value : hEl.value + 'T23:59:59';
+                            const fd = parseFechaNum(dVal), fh = parseFechaNum(hVal);
+                            if (fn < fd || fn > fh) return s;
+                        }
+                        return s + (parseFloat(r.monto || r.MONTO || 0) || 0);
+                    }, 0);
 
-                const negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
+                let negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
 
                 // === NEGOCIO EGRESOS ===
                 // D) COMPRAS EFECTIVO:
@@ -15537,10 +15574,32 @@ if (indicator) indicator.classList.remove('hidden');
                     + _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
 
                 // E) EGRESOS NEGOCIO:
-                //    PAGO EFECTIVO tabla EGRESOS NEGOCIO (por fecha)
-                //    + MONTO tabla PAGO EGRESOS NEGOCIO (por FECHA ORIGINAL)
-                const negEgresosNegocio = _efSumaEfectivo(window._sheetEgresosNegocio || [])
-                    + _efSumaMontoPagosOriginal([...(_pagoEgrNegSheet || [])], 'EFECTIVO');
+                //    PAGO EFECTIVO tabla EGRESOS NEGOCIO (por fecha) excluyendo HUGO/LEO/SILVIA
+                //    + MONTO tabla PAGO EGRESOS NEGOCIO (por FECHA ORIGINAL) excluyendo HUGO/LEO/SILVIA
+                const _clientesExcluirEgrNeg = ['HUGO','SILVIA','LEO'];
+                const negEgresosNegocio = (window._sheetEgresosNegocio || []).reduce(function(s, r) {
+                        if (!_efEnRango(r)) return s;
+                        const cli = String(r.cliente || r.proveedor || r.CLIENTE || '').trim().toUpperCase();
+                        if (_clientesExcluirEgrNeg.includes(cli)) return s;
+                        return s + (parseFloat(r.efectivo || 0) || 0);
+                    }, 0)
+                    + (_pagoEgrNegSheet || []).reduce(function(s, r) {
+                        const fo = r.fechaOriginal || r.fechaOrig || r['FECHA ORIGINAL'] || r.FechaOriginal || '';
+                        if (!fo) return s;
+                        const fn = parseFechaNum(fo);
+                        if (!fn) return s;
+                        const dEl = document.getElementById('efDesde');
+                        const hEl = document.getElementById('efHasta');
+                        if (dEl && hEl && dEl.value && hEl.value) {
+                            const dVal = dEl.value.indexOf('T') >= 0 ? dEl.value : dEl.value + 'T00:00:00';
+                            const hVal = hEl.value.indexOf('T') >= 0 ? hEl.value : hEl.value + 'T23:59:59';
+                            const fd = parseFechaNum(dVal), fh = parseFechaNum(hVal);
+                            if (fn < fd || fn > fh) return s;
+                        }
+                        const cli = String(r.cliente || r.CLIENTE || '').trim().toUpperCase();
+                        if (_clientesExcluirEgrNeg.includes(cli)) return s;
+                        return s + (parseFloat(r.monto || r.MONTO || 0) || 0);
+                    }, 0);
 
                 // F) EGRESOS CASA ERAZO: mismo valor que Ventas a Casa Erazo
                 const negEgresosCasaErazo = negVentasCasaErazo;
@@ -15568,7 +15627,7 @@ if (indicator) indicator.classList.remove('hidden');
                 const persTotalEgresos = persEgresosEfectivo + negEgresosCasaErazo;
 
                 // EFECTIVO EN CAJA = suma de todos los ingresos - suma de todos los egresos (secciones)
-                const neto = (negTotalIngresos + persTotalIngresos) - (negTotalEgresos + persTotalEgresos);
+                let neto = (negTotalIngresos + persTotalIngresos) - (negTotalEgresos + persTotalEgresos);
 
                 // ↗↗ RENDER NEGOCIO ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const negIngDiv = document.getElementById('efNegIngresosDetalle');
@@ -15741,13 +15800,23 @@ if (indicator) indicator.classList.remove('hidden');
                         pagoComprasPorProv[pn] = (pagoComprasPorProv[pn] || 0) + parseSheetNum(p.monto || p.MONTO || 0);
                     });
 
-                    // ── PASO 4: Recorrer ventas → acumular pagoEfectivo por proveedor ──
+                    // ── PASO 4: Recorrer ventas → acumular EF por proveedor (lógica idéntica a Registros) ──
                     // provMapEf[pn] = { ventas, casaErazo, errorVenta, comprasEf, pagoCompras, totalParaProv }
                     const provMapEf = {};
                     const _asegurarProv2 = pn => {
                         if (!provMapEf[pn]) provMapEf[pn] = { ventas:0, casaErazo:0, errorVenta:0, comprasEf:0, pagoCompras:0, totalParaProv:0, totalDR:0 };
                         return provMapEf[pn];
                     };
+
+                    // Pre-calcular mapa IDVENTAS → monto total pagado (tabla Pago Ventas)
+                    const _pagoVtaMapEf = {};
+                    (window._pagoVentasSheet || []).forEach(p => {
+                        const id = String(p.idVenta || p.IDVENTAS || '').trim();
+                        if (!id) return;
+                        const fp = String(p.formaPago || p.FORMAPAGO || p['FORMA DE PAGO'] || '').toUpperCase().trim();
+                        if (fp && fp !== 'EFECTIVO') return; // solo efectivo
+                        _pagoVtaMapEf[id] = (_pagoVtaMapEf[id] || 0) + (Number(p.monto || p.MONTO || 0));
+                    });
 
                     const vistasEf = new Set();
                     todasV.forEach(v => {
@@ -15759,9 +15828,11 @@ if (indicator) indicator.classList.remove('hidden');
                         const esErrorVenta  = cli === 'ERROR VENTA' || cli === 'ERROR VENTAS';
                         const esEsp         = esCasaErazo || esErrorVenta;
                         const items         = Array.isArray(v.items) ? v.items.filter(Boolean) : [];
+                        // Pagos de ventas recibidos para esta venta (solo efectivo)
+                        const _vPagado = Number(_pagoVtaMapEf[String(v.idSheet || v.id || '').trim()] || 0);
 
                         if (esEsp) {
-                            // Venta especial: acumular DINERO RECUPERADO por proveedor
+                            // Venta especial: acumular DINERO RECUPERADO por proveedor (igual que Registros)
                             items.forEach(i => {
                                 const pn = normProvEf(i.proveedor);
                                 if (!pn) return;
@@ -15770,45 +15841,53 @@ if (indicator) indicator.classList.remove('hidden');
                                 if (!dr) return;
                                 const rec = _asegurarProv2(pn);
                                 rec.totalDR += dr;
-                                if (esCasaErazo) rec.casaErazo  += dr;
+                                if (esCasaErazo) rec.casaErazo += dr;
                                 else             rec.errorVenta += dr;
                             });
                         } else {
-                            // Venta normal: sumar pagoEfectivo del ítem por proveedor
-                            // y calcular ganancia efectivo por proveedor (mismo criterio que sección personal)
-                            const totalVenta   = Math.max(Number(v.total || 0) || 0,
-                                items.reduce((s,i) => s + (Number(i.precio||0))*(Number(i.cantidad)||1), 0), 1);
-                            const pagoEfVenta  = items.reduce((s,i) => s + (Number(i.pagoEfectivo||0)||0), 0);
-                            const dinRecVenta  = items.reduce((s,i) => s + (Number(i.dineroRecuperado||0)||0), 0)
-                                || items.reduce((s,i) => s + (Number(i.costo||0)*(Number(i.cantidad)||1)), 0);
-                            const ganBrutaVenta = Math.max(0, totalVenta - dinRecVenta);
-                            const ganEfVenta    = pagoEfVenta > dinRecVenta
-                                ? Math.min(pagoEfVenta - dinRecVenta, ganBrutaVenta) : 0;
-                            const ganBrutaItemsTotal = items.reduce((s,i) =>
-                                s + Math.max(0, (Number(i.precio||0))*(Number(i.cantidad)||1) - (Number(i.dineroRecuperado||0)||Number(i.costo||0)*(Number(i.cantidad)||1))), 0);
+                            // Venta normal: mismo cálculo que renderRegistros
+                            // EF ítem = pagoEfectivo + porción proporcional del pagado
+                            // GAN EF ítem = max(0, EF ítem - dineroRecuperado ítem)
+                            const sumItemEf  = items.reduce((s,i) => s + (Number(i.pagoEfectivo||0)||0), 0) || Number(v.efectivo||0);
+                            const sumItemCr  = items.reduce((s,i) => s + (Number(i.pagoCredito||0)||0), 0)  || Number(v.deuda||0);
+                            const _vSumTot   = (sumItemEf + sumItemCr) || 1;
+                            // ganancia a nivel venta (para distribuir si ítem no tiene datos propios)
+                            const dinRecVN   = items.reduce((s,i) => s + (Number(i.dineroRecuperado||0)||0), 0)
+                                            || items.reduce((s,i) => s + (Number(i.costo||0)*(Number(i.cantidad)||1)), 0);
+                            const ganTotV    = Math.max(0, (sumItemEf + sumItemCr) - dinRecVN);
+                            const ganEfV2    = Math.max(0, sumItemEf - dinRecVN);
 
-                            items.forEach(i => {
+                            items.forEach((i, idx) => {
                                 const pn = normProvEf(i.proveedor);
                                 if (!pn) return;
-                                const pagoEfItem  = Number(i.pagoEfectivo || 0);
-                                const rec = _asegurarProv2(pn);
-                                rec.ventas += pagoEfItem;
+                                const rec      = _asegurarProv2(pn);
+                                const _itEf    = Number(i.pagoEfectivo || 0);
+                                const _itCr    = Number(i.pagoCredito  || 0);
+                                const _itDR    = Number(i.dineroRecuperado || 0) || (Number(i.costo||0) * (Number(i.cantidad)||1));
+                                let _ef, _ganEf;
 
-                                // Ganancia efectivo proporcional al ítem (igual que sección personal)
-                                const ganBrutaItem = Math.max(0,
-                                    (Number(i.precio||0))*(Number(i.cantidad)||1)
-                                    - (Number(i.dineroRecuperado||0)||Number(i.costo||0)*(Number(i.cantidad)||1)));
-                                const ganShare = ganBrutaItemsTotal > 0 ? ganBrutaItem / ganBrutaItemsTotal : 0;
-                                rec.ganancia = (rec.ganancia || 0) + ganEfVenta * ganShare;
+                                if (_itEf > 0 || _itCr > 0) {
+                                    // Misma lógica que Registros: ef = pagoEfectivo + pagado proporcional
+                                    const _itTotBase = _itEf + _itCr;
+                                    const _ratio     = _itTotBase / _vSumTot;
+                                    const _itPagado  = _vPagado * _ratio;
+                                    _ef    = _itEf + _itPagado;
+                                    _ganEf = ganEfV2 * _ratio;
+                                } else {
+                                    // Sin datos propios: distribuir ef total de la venta
+                                    const _itTot = Number(i.subtotal||i.pagoTotal||0) || (Number(i.precio||0)*(Number(i.cantidad)||1));
+                                    const _ratio = _itTot / _vSumTot;
+                                    _ef    = (sumItemEf + _vPagado) * _ratio;
+                                    _ganEf = ganEfV2 * _ratio;
+                                }
+                                rec.ventas   += _ef;
+                                rec.ganancia  = (rec.ganancia || 0) + _ganEf;
                             });
                         }
                     });
 
-                    // Agregar pagoVentas por proveedor (tabla Pago Ventas, fecha original)
-                    Object.entries(pagoVentasPorProv).forEach(([pn, monto]) => {
-                        const rec = _asegurarProv2(pn);
-                        rec.ventas += monto;
-                    });
+                    // NOTA: pagoVentasPorProv ya está incluido en _pagoVtaMapEf distribuido arriba,
+                    // no se vuelve a sumar para evitar doble conteo.
 
                     // ── PASO 5: Sumar compras y calcular TOTAL por proveedor ─────────
                     // Asegurar que proveedores que solo tienen compras también aparezcan
@@ -15828,8 +15907,7 @@ if (indicator) indicator.classList.remove('hidden');
                         r.totalPagoCompras = r.pagoCompras;
                     });
 
-                    // ── PANEL SUPERIOR: ventasEf y gananciasEf por proveedor ────────
-                    // ventasEf = pagoEfectivo ítem (ventas, fecha original) + monto pago ventas (fecha original)
+                    // ── PANEL SUPERIOR: ventasEf y gananciasEf por proveedor (lógica idéntica a Registros) ────────
                     const panelProvCalc = {};
                     const panelAsegurarProv = pn => {
                         pn = normProvEf(pn);
@@ -15842,7 +15920,7 @@ if (indicator) indicator.classList.remove('hidden');
                         return Number(it.dineroRecuperado || 0) || ((Number(it.costo || it.precioCosto || 0) || 0) * cant);
                     };
 
-                    // Acumular pagoEfectivo de ítems de ventas por proveedor (fecha original)
+                    // Acumular EF de ítems de ventas por proveedor (igual lógica que Registros)
                     const panelVentasVistas = new Set();
                     todasV.forEach(v => {
                         const keyV = String(v.idSheet || v.id || '').trim();
@@ -15855,32 +15933,38 @@ if (indicator) indicator.classList.remove('hidden');
                         const items = Array.isArray(v.items) ? v.items.filter(Boolean) : [];
                         if (!items.length) return;
 
-                        const totalVenta = Math.max(Number(v.total || 0) || 0, items.reduce((s,it)=>(s+(Number(it.precio||0)||0)*(Number(it.cantidad)||1)),0), 1);
+                        // Pagos efectivo recibidos para esta venta (mismo mapa que PASO 4)
+                        const _vPagadoPanel = Number(_pagoVtaMapEf[keyV] || 0);
+                        const sumItemEf  = items.reduce((s,it)=>s+(Number(it.pagoEfectivo||0)||0),0) || Number(v.efectivo||0);
+                        const sumItemCr  = items.reduce((s,it)=>s+(Number(it.pagoCredito||0)||0),0)  || Number(v.deuda||0);
+                        const _vSumTotPanel = (sumItemEf + sumItemCr) || 1;
                         const dinRecVenta = items.reduce((s,it)=>s+panelDRItem(it),0);
-                        const pagoEfVenta = items.reduce((s,it)=>s+(Number(it.pagoEfectivo||0)||0),0);
-                        const ganBrutaVenta = esEspecial ? 0 : Math.max(0, totalVenta - dinRecVenta);
-                        const ganEfVenta = (!esEspecial && pagoEfVenta > dinRecVenta)
-                            ? Math.min(pagoEfVenta - dinRecVenta, ganBrutaVenta) : 0;
-                        const ganBrutaItemsVenta = items.reduce((s,it)=>s+Math.max(0,(Number(it.precio||0)||0)*(Number(it.cantidad)||1)-panelDRItem(it)),0);
+                        const ganEfV2Panel = esEspecial ? 0 : Math.max(0, sumItemEf - dinRecVenta);
 
                         items.forEach(it => {
                             const pn = normProvEf(it.proveedor || it.PROVEEDOR);
                             const rec = panelAsegurarProv(pn);
                             if (!rec) return;
-                            const pagoEfItem = Number(it.pagoEfectivo || 0) || 0;
-                            const ganBrutaItem = Math.max(0, (Number(it.precio||0)||0)*(Number(it.cantidad)||1) - panelDRItem(it));
-                            const ganShare = ganBrutaItemsVenta > 0 ? ganBrutaItem / ganBrutaItemsVenta : 0;
-                            const ganItem = esEspecial ? 0 : Math.min(ganBrutaItem, ganEfVenta * ganShare);
-                            rec.ventasEf += pagoEfItem;
-                            rec.gananciasEf += ganItem;
-                            if (esCasaErazo) rec.casaErazoDR += panelDRItem(it);
+                            const _itEf = Number(it.pagoEfectivo || 0) || 0;
+                            const _itCr = Number(it.pagoCredito  || 0) || 0;
+                            const _itDR = panelDRItem(it);
+                            let _ef, _ganEf;
+                            if (esEspecial) {
+                                _ef = _itDR; _ganEf = 0;
+                                if (esCasaErazo) rec.casaErazoDR += _itDR;
+                            } else if (_itEf > 0 || _itCr > 0) {
+                                const _ratio     = (_itEf + _itCr) / _vSumTotPanel;
+                                _ef    = _itEf + _vPagadoPanel * _ratio;
+                                _ganEf = ganEfV2Panel * _ratio;
+                            } else {
+                                const _itTot = Number(it.subtotal||it.pagoTotal||0)||(Number(it.precio||0)*(Number(it.cantidad)||1));
+                                const _ratio = _itTot / _vSumTotPanel;
+                                _ef    = (sumItemEf + _vPagadoPanel) * _ratio;
+                                _ganEf = ganEfV2Panel * _ratio;
+                            }
+                            rec.ventasEf    += _ef;
+                            rec.gananciasEf += _ganEf;
                         });
-                    });
-
-                    // Sumar monto de pago ventas por proveedor (ya filtrado en pagoVentasPorProv)
-                    Object.entries(pagoVentasPorProv).forEach(([pn, monto]) => {
-                        const rec = panelAsegurarProv(pn);
-                        if (rec) rec.ventasEf += monto;
                     });
                     (window._sheetCompras || []).forEach(c => {
                         if (!_efEnRango(c)) return;
@@ -15976,6 +16060,34 @@ if (indicator) indicator.classList.remove('hidden');
                         const totCasaErazo  = filasProv.reduce((s,[,r])=>s+(r.casaErazo||0),0);
                         const totErrorVenta = filasProv.reduce((s,[,r])=>s+(r.errorVenta||0),0);
                         const totCompras    = filasProv.reduce((s,[,r])=>s+(r.comprasEf||0)+(r.pagoCompras||0),0);
+
+                        // ── Actualizar "Ventas Efectivo" del negocio con datos reales de proveedores ──
+                        // = TOTAL columna VENTAS − TOTAL columna GANANCIA de la tabla Efectivo a Entregar por Proveedor
+                        negVentasEfectivo = totVentas - totGanancia;
+                        negTotalIngresos  = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
+                        neto = (negTotalIngresos + persTotalIngresos) - (negTotalEgresos + persTotalEgresos);
+                        // Re-render sección NEGOCIO con el valor corregido
+                        const _negIngDiv2 = document.getElementById('efNegIngresosDetalle');
+                        if (_negIngDiv2) _negIngDiv2.innerHTML =
+                            _efFila('Ventas Efectivo',      negVentasEfectivo) +
+                            _efFila('Ventas a Casa Erazo',  negVentasCasaErazo) +
+                            _efFila('Error Venta',          negErrorVenta,     '#fde68a') +
+                            _efFila('Ingresos del Negocio', negIngresosNegocio);
+                        const _elNegTI2 = document.getElementById('efNegTotalIngresos');
+                        if (_elNegTI2) _elNegTI2.textContent = fmt$(negTotalIngresos);
+                        const _negTG2 = negTotalIngresos - negTotalEgresos;
+                        const _elNegTG2 = document.getElementById('efNegTotalGeneral');
+                        if (_elNegTG2) { _elNegTG2.textContent = fmt$(_negTG2); _elNegTG2.style.color = _negTG2 >= 0 ? '#34d399' : '#f87171'; }
+                        const _elNeto2 = document.getElementById('cajaDiferencia');
+                        if (_elNeto2) { _elNeto2.textContent = fmt$(neto); _elNeto2.style.color = neto >= 0 ? '#34d399' : '#f87171'; }
+                        const _elCaja2 = document.getElementById('efCajaTotal');
+                        if (_elCaja2) { _elCaja2.textContent = fmt$(neto); _elCaja2.style.color = neto >= 0 ? '#34d399' : '#f87171'; }
+                        const _elFecha2 = document.getElementById('efTotalFecha');
+                        if (_elFecha2) { _elFecha2.textContent = fmt$(neto); _elFecha2.style.color = neto >= 0 ? '#ffffff' : '#f87171'; }
+                        const _elBillete2 = document.getElementById('efFechaBilleteMonto');
+                        if (_elBillete2) _elBillete2.textContent = fmt$(neto);
+                        const _elDesc2 = document.getElementById('efTotalFechaDesc');
+                        if (_elDesc2) _elDesc2.textContent = neto >= 0 ? 'Entradas - Salidas por fecha: superavit' : 'Atencion: deficit por fecha';
 
                         let tbl = panelesEfHtml
                             + '<div style="overflow-x:auto;border-radius:14px;border:1px solid #10b98130;margin-top:4px;">'
@@ -17258,6 +17370,104 @@ if (indicator) indicator.classList.remove('hidden');
             }
         });
 
+        // ====== FILTRO PROVEEDOR (multi-select) ======
+        window._regFiltroProvSelected = new Set();
+        window._regFiltroProvAllOpts  = [];
+
+        function _poblarMultiSelectProv(values) {
+            const opts = [...new Set(values.map(v => String(v||'').trim()).filter(v => v && v !== '?'))].sort();
+            const optsStr = opts.join('|');
+            if (window._regFiltroProvAllOpts.join('|') === optsStr) return;
+            window._regFiltroProvAllOpts = opts;
+            const sel = window._regFiltroProvSelected;
+            window._regFiltroProvSelected = new Set([...sel].filter(v => opts.includes(v)));
+            _renderMultiSelectProv('');
+            _actualizarLabelProv();
+        }
+
+        function _renderMultiSelectProv(busqueda) {
+            const contenedor = document.getElementById('regFiltroProvOpciones');
+            if (!contenedor) return;
+            const opts = window._regFiltroProvAllOpts;
+            const sel  = window._regFiltroProvSelected;
+            const q    = busqueda.toLowerCase().trim();
+            const filtrados = q ? opts.filter(o => o.toLowerCase().includes(q)) : opts;
+            contenedor.innerHTML = filtrados.map(o => {
+                const checked = sel.has(o);
+                return `<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:11px;color:#e2e8f0;font-weight:700;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">
+                    <input type="checkbox" value="${o.replace(/"/g,'&quot;')}" ${checked?'checked':''} onchange="toggleOpcionProv(this)" style="accent-color:#f97316;width:14px;height:14px;cursor:pointer;">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o}</span>
+                </label>`;
+            }).join('') || '<p style="padding:10px 12px;color:#475569;font-size:11px;font-weight:700;">Sin resultados</p>';
+        }
+
+        function filtrarOpcionesProv() {
+            const q = (document.getElementById('regFiltroProvSearch')?.value||'');
+            _renderMultiSelectProv(q);
+        }
+
+        function toggleOpcionProv(checkbox) {
+            const val = checkbox.value;
+            if (checkbox.checked) window._regFiltroProvSelected.add(val);
+            else window._regFiltroProvSelected.delete(val);
+            _actualizarLabelProv();
+            renderRegistros();
+        }
+
+        function regFiltroProvSelAll() {
+            window._regFiltroProvAllOpts.forEach(o => window._regFiltroProvSelected.add(o));
+            const q = (document.getElementById('regFiltroProvSearch')?.value||'');
+            _renderMultiSelectProv(q);
+            _actualizarLabelProv();
+            renderRegistros();
+        }
+
+        function regFiltroProvClearAll() {
+            window._regFiltroProvSelected.clear();
+            const q = (document.getElementById('regFiltroProvSearch')?.value||'');
+            _renderMultiSelectProv(q);
+            _actualizarLabelProv();
+            renderRegistros();
+        }
+
+        function _actualizarLabelProv() {
+            const label = document.getElementById('regFiltroProvLabel');
+            if (!label) return;
+            const sel = window._regFiltroProvSelected;
+            const btn = document.getElementById('regFiltroProvBtn');
+            if (sel.size === 0) {
+                label.textContent = 'Todos';
+                if (btn) btn.style.borderColor = '#334155';
+            } else if (sel.size === 1) {
+                label.textContent = [...sel][0];
+                if (btn) btn.style.borderColor = '#f97316';
+            } else {
+                label.textContent = sel.size + ' seleccionados';
+                if (btn) btn.style.borderColor = '#f97316';
+            }
+        }
+
+        function toggleMultiSelectProv() {
+            const dd = document.getElementById('regFiltroProvDropdown');
+            if (!dd) return;
+            const visible = dd.style.display !== 'none';
+            dd.style.display = visible ? 'none' : 'block';
+            if (!visible) {
+                setTimeout(() => {
+                    const s = document.getElementById('regFiltroProvSearch');
+                    if (s) { s.value = ''; s.focus(); _renderMultiSelectProv(''); }
+                }, 50);
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('regFiltroProvWrap');
+            const dd   = document.getElementById('regFiltroProvDropdown');
+            if (dd && wrap && !wrap.contains(e.target)) {
+                dd.style.display = 'none';
+            }
+        });
+
         function regSetPeriodo(dias) {
             const desde = new Date(); desde.setHours(0,0,0,0);
             const hasta = new Date();
@@ -17285,6 +17495,11 @@ if (indicator) indicator.classList.remove('hidden');
             _actualizarLabelQui();
             var dd = document.getElementById('regFiltroQuiDropdown');
             if (dd) dd.style.display = 'none';
+            // Limpiar multi-select de proveedor
+            window._regFiltroProvSelected = new Set();
+            _actualizarLabelProv();
+            var ddProv = document.getElementById('regFiltroProvDropdown');
+            if (ddProv) ddProv.style.display = 'none';
             renderRegistros();
         }
 
@@ -28102,7 +28317,7 @@ if (enviosPagoCompra.length) {
             if(monto<=0) { mostrarToast('Ingresá un monto válido','error'); return; }
             const idSheet = _getIdSheetNN(r);
             const ahora = new Date(); const id = Utils.genId();
-            _sheetPagoIngNeg.push({ IDPAGOSINGRESOSNEGOCIO:id, IDINGRESOSNEGOCIO:idSheet, FECHA:fechaSheet(ahora), CLIENTE:r.cliente||'', 'FORMA DE PAGO':_pagoIngNegFP, MONTO:monto, 'FECHA ORIGINAL':r.fecha||'' });
+            _sheetPagoIngNeg.push({ IDPAGOSINGRESOSNEGOCIO:id, IDINGRESOSNEGOCIO:idSheet, FECHA:fechaSheet(ahora), CLIENTE:r.cliente||'', 'FORMA DE PAGO':_pagoIngNegFP, MONTO:monto, 'FECHA ORIGINAL':r.fecha||'', fechaOriginal:r.fecha||'' });
           
 
 /*dbg*/0&&console.log("FECHA ENVIADA:", fechaSheet(ahora));
@@ -31043,6 +31258,7 @@ function verDetalleProveedor(tipo, id){
                 let efConGanancia = 0, efSinGanancia = 0;
                 let crConGanancia = 0, crSinGanancia = 0;
                 let totConGanancia = 0, totSinGanancia = 0;
+                let ganEfV2 = 0, ganCrV2 = 0, ganTotV = 0;
                 if (esEsp) {
                     // Casa Erazo / Error Venta: ef = dineroRecuperado por ítem (costo real)
                     const dinRecV = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
@@ -31065,12 +31281,12 @@ function verDetalleProveedor(tipo, id){
                     efConGanancia  = ef;  efSinGanancia  = ef;
                     crConGanancia  = cr;  crSinGanancia  = cr;
                     totConGanancia = tot; totSinGanancia = tot;
-                    // Ganancia a nivel de venta completa (para distribuir entre ítems si no tienen datos propios)
+                    // Ganancia a nivel de venta completa (para distribuir entre ítems)
                     const costoVN  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
                     const dinRecVN = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVN;
-                    const ganTotV  = Math.max(0, (sumItemEf + sumItemCr) - dinRecVN);
-                    const ganEfV2  = Math.max(0, sumItemEf - dinRecVN);
-                    const ganCrV2  = Math.max(0, ganTotV - ganEfV2);
+                    ganTotV  = Math.max(0, (sumItemEf + sumItemCr) - dinRecVN);
+                    ganEfV2  = Math.max(0, sumItemEf - dinRecVN);
+                    ganCrV2  = Math.max(0, ganTotV - ganEfV2);
                 }
                 const items = v.items||[];
                 // Para esEsp: _vSumTot = suma de dineroRecuperado por ítem (o costo)
@@ -31080,7 +31296,7 @@ function verDetalleProveedor(tipo, id){
                     const _vCr0  = Number(v.deuda||0);
                     const _vTot0 = Number(v.total||0) || (_vEf0 + _vCr0);
                     const _vEst0 = (_vTot0 > 0 && _vEf0 >= _vTot0) ? 'FINALIZADO' : (_vCr0 > 0 && _vEf0 === 0) ? 'PENDIENTE' : (_vEf0 > 0 && _vCr0 > 0) ? 'MIXTO' : 'FINALIZADO';
-                    rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ganEf: 0, ganCr: 0, ganTot: 0, estado: _vEst0, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
+                    rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', proveedorItem: '', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ganEf: 0, ganCr: 0, ganTot: 0, estado: _vEst0, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                 } else {
                     const _vSumTot = esEsp ? _vSumDinRec : (((v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0)||Number(v.efectivo||0)) + ((v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)||Number(v.deuda||0)) || 1);
                     // Estado de pago de la venta completa
@@ -31120,10 +31336,11 @@ function verDetalleProveedor(tipo, id){
                             _cr   = Math.max(0, _itCr - _itPagado);
                             _tot  = _ef + _cr;
                             _efCG = _ef; _crCG = _cr; _totCG = _tot;
-                            // Ganancias: lo que supera el dineroRecuperado
-                            _ganTot = Math.max(0, _itTotBase - _itDR);
-                            _ganEf  = Math.max(0, _itEf - _itDR);
-                            _ganCr  = Math.max(0, _ganTot - _ganEf);
+                            // Ganancias: distribuir ganEfV2/ganCrV2/ganTotV proporcionalmente
+                            // (misma lógica que renderEfectivo: ganEf = max(0, sumItemEf - dinRecVN) repartido por ratio)
+                            _ganEf  = ganEfV2  * _ratio;
+                            _ganCr  = ganCrV2  * _ratio;
+                            _ganTot = ganTotV   * _ratio;
                         } else if (items.length > 1 && _itTot > 0) {
                             const _ratio = _itTot / _vSumTot;
                             _ef   = ef  * _ratio; _cr = cr * _ratio; _tot = tot * _ratio;
@@ -31139,7 +31356,7 @@ function verDetalleProveedor(tipo, id){
                             _ganCr  = i===0 ? ganCrV2  : 0;
                             _ganTot = i===0 ? ganTotV   : 0;
                         }
-                        rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', fecha: v.fechaISO||v.fecha, detalle: it.nombre||'?', prodFotoKey: _itNomUp, prodIdKey: _itId, prodFotoUrl: _itFoto, cantidad: _itCant, esPeso: it.esPeso||false, cantidadDisplay: it.cantidadDisplay||null, ef: _ef, efConGanancia: _efCG, efSinGanancia: _ef, cr: _cr, crConGanancia: _crCG, crSinGanancia: _cr, tot: _tot, totConGanancia: _totCG, totSinGanancia: _tot, ganEf: _ganEf, ganCr: _ganCr, ganTot: _ganTot, estado: _vEstado, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
+                        rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', proveedorItem: String(it.proveedor||_itProd.proveedor||'').trim(), fecha: v.fechaISO||v.fecha, detalle: it.nombre||'?', prodFotoKey: _itNomUp, prodIdKey: _itId, prodFotoUrl: _itFoto, cantidad: _itCant, esPeso: it.esPeso||false, cantidadDisplay: it.cantidadDisplay||null, ef: _ef, efConGanancia: _efCG, efSinGanancia: _ef, cr: _cr, crConGanancia: _crCG, crSinGanancia: _cr, tot: _tot, totConGanancia: _totCG, totSinGanancia: _tot, ganEf: _ganEf, ganCr: _ganCr, ganTot: _ganTot, estado: _vEstado, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                     });
                 }
             });
@@ -31360,6 +31577,28 @@ function verDetalleProveedor(tipo, id){
             // Ordenar por fecha desc
             rows.sort((a,b) => (b.ts||0) - (a.ts||0));
 
+            // ↗↗ Calcular columnas separadas Cliente / Proveedor ↗↗
+            const _TIPOS_VENTA   = ['VENTA','PAGO VENTAS','PAGO ING.NEG','ING. NEGOCIO'];
+            const _TIPOS_COMPRA  = ['COMPRA','PAGO COMPRAS','PAGO EGR.NEG','EGR. NEGOCIO'];
+            const _TIPOS_NEUTRAL = ['INGRESO','EGRESO','PAGO INGRESOS','PAGO EGRESOS'];
+            rows.forEach(r => {
+                const q = String(r.quien||'').trim();
+                const p = String(r.proveedorItem||'').trim();
+                if (_TIPOS_VENTA.includes(r.tipo)) {
+                    r.clienteCol   = q && q !== '?' ? q : '';
+                    r.proveedorCol = p && p !== '?' ? p : '';
+                } else if (_TIPOS_COMPRA.includes(r.tipo)) {
+                    r.clienteCol   = '';
+                    r.proveedorCol = q && q !== '?' ? q : '';
+                } else if (_TIPOS_NEUTRAL.includes(r.tipo)) {
+                    r.clienteCol   = '';
+                    r.proveedorCol = '';
+                } else {
+                    r.clienteCol   = q && q !== '?' ? q : '';
+                    r.proveedorCol = p && p !== '?' ? p : '';
+                }
+            });
+
             // ↗↗ Poblar selects con opciones únicas de los datos actuales ↗↗
             const _poblarSelect = (id, values) => {
                 const sel = document.getElementById(id);
@@ -31373,15 +31612,19 @@ function verDetalleProveedor(tipo, id){
             // ↗↗ Filtros por columna ↗↗
             const fOpSet  = window._regFiltroOpSelected || new Set();
             const fQuiSet = window._regFiltroQuiSelected || new Set();
+            const fProvSet = window._regFiltroProvSelected || new Set();
             const fDet = (document.getElementById('regFiltroDet')?.value||'').trim();
 
-            // Poblar Qui con filas filtradas solo por Op (sin filtro Qui) → permite elegir múltiples
+            // Poblar filtro Cliente con clientes únicos de las filas filtradas por Op
             const rowsFiltPorOp = fOpSet.size > 0 ? rows.filter(r => fOpSet.has(String(r.tipo||'').trim())) : rows;
-            _poblarMultiSelectQui(rowsFiltPorOp.map(r => r.quien));
+            _poblarMultiSelectQui(rowsFiltPorOp.map(r => r.clienteCol).filter(Boolean));
+            // Poblar filtro Proveedor con proveedores únicos
+            _poblarMultiSelectProv(rowsFiltPorOp.map(r => r.proveedorCol).filter(Boolean));
 
             const rowsFiltradas = rows.filter(r => {
                 if (fOpSet.size > 0 && !fOpSet.has(String(r.tipo||'').trim())) return false;
-                if (fQuiSet.size > 0 && !fQuiSet.has(String(r.quien||'').trim())) return false;
+                if (fQuiSet.size > 0 && r.clienteCol && !fQuiSet.has(r.clienteCol)) return false;
+                if (fProvSet.size > 0 && r.proveedorCol && !fProvSet.has(r.proveedorCol)) return false;
                 if (fDet && r.detalle !== fDet) return false;
                 return true;
             });
@@ -31389,7 +31632,7 @@ function verDetalleProveedor(tipo, id){
             _poblarSelect('regFiltroDet', rowsFiltradas.map(r => r.detalle));
 
             if (!rowsFiltradas.length) {
-                tbody.innerHTML = '<tr><td colspan="12" class="py-8 text-center text-slate-500 font-bold uppercase">Sin registros en el período</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="16" class="py-8 text-center text-slate-500 font-bold uppercase">Sin registros en el período</td></tr>';
                 if (totEl) totEl.innerHTML = '';
                 return;
             }
@@ -31530,8 +31773,14 @@ function verDetalleProveedor(tipo, id){
                     </td>
                     <td style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
-                            ${cliFoto}
-                            <span style="${_quienStyle}">${r.quien}</span>
+                            ${r.clienteCol ? cliFoto : ''}
+                            <span style="${_quienStyle}">${r.clienteCol || '<span style="color:#334155;font-size:9px;">—</span>'}</span>
+                        </div>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            ${r.proveedorCol ? `<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f9731622,#f9731644);border:2px solid #f9731655;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fb923c;flex-shrink:0;">${String(r.proveedorCol)[0].toUpperCase()}</span>` : ''}
+                            <span style="font-size:11px;font-weight:800;color:#fb923c;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.proveedorCol || '<span style="color:#334155;font-size:9px;">—</span>'}</span>
                         </div>
                     </td>
                     <td style="padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;letter-spacing:.01em;">${r.esGanancias ? '<span style="color:#f59e0b99;font-style:italic;font-size:9px;">' + r.detalle + '</span>' : r.esConsumoNegocio ? '<span style="color:#fb923c99;font-style:italic;font-size:9px;">' + r.detalle + '</span>' : fmtFecha(r.fecha)}</td>
