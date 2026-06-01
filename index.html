@@ -8176,7 +8176,9 @@ _sheetEgresosNegocio.forEach(e => {
                         const _rowEf = parseSheetNum(row['PAGO EFECTIVO']||row['Pago Efectivo']||0);
                         const _rowCr = parseSheetNum(row['PAGO CREDITO'] ||row['Pago credito']||row['Pago Credito']||0);
                         const rawCant = parseSheetNum(row['CANTIDAD']||row['Cantidad']||row['Cantidad Introducida']);
-                        const _ventaFilaKey = [
+                        // Usar _rowIdx como parte de la clave para evitar descartar filas
+                        // con los mismos valores (ej: mismo producto comprado dos veces en la misma venta)
+                        const _ventaFilaKey = _rowIdx + '|' + [
                             String(row['PRODUCTO']||row['Producto']||'').trim().toUpperCase(),
                             rawCant,
                             pagoTotalRow,
@@ -8415,6 +8417,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     producto:    String(row['PRODUCTO'] || '').trim(),
     formaPago:   String(row['FORMA DE PAGO'] || '').trim(),
     fechaOrig:   String(row['FECHA ORIGINAL'] || '').trim(),
+    proveedor:   String(row['PROVEEDOR'] || row['Proveedor'] || '').trim().toUpperCase(),
     imagen:      String(row['IMAGEN DEL PRODUCTO'] || row['IMAGEN'] || '').trim(),
     fotoProducto:String(row['IMAGEN DEL PRODUCTO'] || row['IMAGEN'] || '').trim()
 })).filter(p => p.monto > 0);
@@ -15691,20 +15694,34 @@ if (indicator) indicator.classList.remove('hidden');
                     const hNum2 = hEl2?.value ? parseFechaNum(hEl2.value + 'T23:59:59') : null;
                     const enR2 = fn => { if(!fn) return false; if(dNum2&&fn<dNum2) return false; if(hNum2&&fn>hNum2) return false; return true; };
 
-                    const cobrosPorVenta2 = {};
+                    // ── Normalizar nombre de proveedor ──────────────────────────────
+                    const normProvEf = v => String(v || '').trim().toUpperCase().replace(/\s+/g, ' ');
+
+                    // ── PASO 1A: PAGO VENTAS – monto por proveedor (fecha original) ─
+                    // Suma directamente por PROVEEDOR de la tabla Pago Ventas.
+                    const pagoVentasPorProv = {}; // PROVEEDOR → monto total
                     const pagosVentasOriginal = (_pagoVentasSheet && _pagoVentasSheet.length)
                         ? _pagoVentasSheet
                         : (_sheetPagoVentas || []);
+
                     pagosVentasOriginal.forEach(p => {
-                        if (!_efEnRangoOriginal(p)) return;
+                        const fechaOrigStr = p.fechaOrig || p.fechaOriginal || p['FECHA ORIGINAL'] || '';
+                        if (!_efEnRangoOriginal(fechaOrigStr)) return;
                         const fp = String(p.formaPago || p.FORMAPAGO || p['FORMA DE PAGO'] || '').toUpperCase().trim();
                         if (fp && fp !== 'EFECTIVO') return;
-                        const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                        if (!idV) return;
-                        cobrosPorVenta2[idV] = (cobrosPorVenta2[idV]||0) + Number(p.monto||p.MONTO||0);
+                        const pn = normProvEf(p.proveedor || p.PROVEEDOR || '');
+                        if (!pn) return;
+                        const monto = Number(p.monto || p.MONTO || 0);
+                        if (!monto) return;
+                        pagoVentasPorProv[pn] = (pagoVentasPorProv[pn] || 0) + monto;
                     });
 
-                    const normProvEf = v => String(v || '').trim().toUpperCase().replace(/\s+/g, ' ');
+                    // ── PASO 1B: VENTAS – pagoEfectivo del ítem por proveedor (fecha original) ─
+                    // Suma directamente por PROVEEDOR del ítem en la tabla Ventas.
+                    const pagoEfVentasPorProv = {}; // PROVEEDOR → pagoEfectivo total
+                    // (se acumula en PASO 4 al recorrer ventas)
+
+                    // ── PASO 2: COMPRAS – pagoEfectivo de items ──────────────────────
                     const comprasEfPorProv = {};
                     (window._sheetCompras || []).forEach(c => {
                         if (!_efEnRango(c)) return;
@@ -15715,6 +15732,7 @@ if (indicator) indicator.classList.remove('hidden');
                         comprasEfPorProv[pn] = (comprasEfPorProv[pn] || 0) + efCompra;
                     });
 
+                    // ── PASO 3: PAGO COMPRAS – monto por proveedor ───────────────────
                     const pagoComprasPorProv = {};
                     (window._sheetPagoCompras || []).forEach(p => {
                         if (!_efEnRangoOriginal(p)) return;
@@ -15723,64 +15741,95 @@ if (indicator) indicator.classList.remove('hidden');
                         pagoComprasPorProv[pn] = (pagoComprasPorProv[pn] || 0) + parseSheetNum(p.monto || p.MONTO || 0);
                     });
 
+                    // ── PASO 4: Recorrer ventas → acumular pagoEfectivo por proveedor ──
+                    // provMapEf[pn] = { ventas, casaErazo, errorVenta, comprasEf, pagoCompras, totalParaProv }
                     const provMapEf = {};
+                    const _asegurarProv2 = pn => {
+                        if (!provMapEf[pn]) provMapEf[pn] = { ventas:0, casaErazo:0, errorVenta:0, comprasEf:0, pagoCompras:0, totalParaProv:0, totalDR:0 };
+                        return provMapEf[pn];
+                    };
+
                     const vistasEf = new Set();
                     todasV.forEach(v => {
                         if (!_efEnRangoOriginal(v) || vistasEf.has(v.id)) return;
                         vistasEf.add(v.id);
-                        const totalVenta = Number(v.total||0)||1;
-                        const ef = Number(v.efectivo||0);
-                        const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
-                        const cli = String(v.cliente||'').toUpperCase().trim();
-                        const esEsp = ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
-                        const cobrosExtraVenta = (cobrosPorVenta2[idVSheet]||0)+(cobrosPorVenta2[String(v.id||'')]||0);
-                        const cobEfVenta = ef + cobrosExtraVenta;
-                        const dinRecVenta = (v.items||[]).reduce((s,i)=>s+(Number(i.dineroRecuperado||0)||0),0);
-                        const ganBrutaVenta = esEsp ? 0 : Math.max(0, totalVenta - dinRecVenta);
-                        const ganEfVenta = (!esEsp && cobEfVenta > dinRecVenta)
-                            ? Math.min(cobEfVenta - dinRecVenta, ganBrutaVenta)
-                            : 0;
-                        const ganBrutaItemsVenta = (v.items||[]).reduce((s, it) => {
-                            const precioIt = Number(it.precio||0) * (Number(it.cantidad)||1);
-                            const costoIt = Number(it.costo||0) * (Number(it.cantidad)||1);
-                            const drIt = Number(it.dineroRecuperado||0) || costoIt;
-                            return s + Math.max(0, precioIt - drIt);
-                        }, 0);
-                        (v.items||[]).forEach(i => {
-                            const pn = normProvEf(i.proveedor);
-                            if (!pn) return;
-                            if (!provMapEf[pn]) provMapEf[pn] = { totalParaProv:0, totalGan:0, totalDR:0, totalCobrado:0, totalComprasEf:0, totalPagoCompras:0 };
-                            const cantItem = Number(i.cantidad)||1;
-                            const costoItemBase = Number(i.costo||0) * cantItem;
-                            const dr = Number(i.dineroRecuperado||0) || (esEsp ? costoItemBase : 0);
-                            provMapEf[pn].totalDR += dr;
-                            if (esEsp) {
-                                // CASA ERAZO / ERROR VENTA: entra al proveedor como DINERO RECUPERADO.
-                                provMapEf[pn].totalCobrado += dr;
-                                provMapEf[pn].totalParaProv += dr;
-                            } else {
-                                const precioItem = Number(i.precio||0)*cantItem;
-                                const prop = totalVenta>0 ? precioItem/totalVenta : 0;
-                                const cobradoProp = cobEfVenta * prop;
-                                const costoItem = costoItemBase;
-                                const ganBrutaItem = Math.max(0, precioItem - (dr || costoItem));
-                                const ganShare = ganBrutaItemsVenta > 0 ? (ganBrutaItem / ganBrutaItemsVenta) : 0;
-                                const gananciaEfItem = Math.min(ganBrutaItem, ganEfVenta * ganShare);
-                                provMapEf[pn].totalCobrado += cobradoProp;
-                                provMapEf[pn].totalGan += gananciaEfItem;
-                                provMapEf[pn].totalParaProv += cobradoProp - gananciaEfItem;
-                            }
-                        });
+
+                        const cli           = String(v.cliente || '').toUpperCase().trim();
+                        const esCasaErazo   = cli === 'CASA ERAZO';
+                        const esErrorVenta  = cli === 'ERROR VENTA' || cli === 'ERROR VENTAS';
+                        const esEsp         = esCasaErazo || esErrorVenta;
+                        const items         = Array.isArray(v.items) ? v.items.filter(Boolean) : [];
+
+                        if (esEsp) {
+                            // Venta especial: acumular DINERO RECUPERADO por proveedor
+                            items.forEach(i => {
+                                const pn = normProvEf(i.proveedor);
+                                if (!pn) return;
+                                const cant = Number(i.cantidad) || 1;
+                                const dr   = Number(i.dineroRecuperado || 0) || (Number(i.costo || 0) * cant);
+                                if (!dr) return;
+                                const rec = _asegurarProv2(pn);
+                                rec.totalDR += dr;
+                                if (esCasaErazo) rec.casaErazo  += dr;
+                                else             rec.errorVenta += dr;
+                            });
+                        } else {
+                            // Venta normal: sumar pagoEfectivo del ítem por proveedor
+                            // y calcular ganancia efectivo por proveedor (mismo criterio que sección personal)
+                            const totalVenta   = Math.max(Number(v.total || 0) || 0,
+                                items.reduce((s,i) => s + (Number(i.precio||0))*(Number(i.cantidad)||1), 0), 1);
+                            const pagoEfVenta  = items.reduce((s,i) => s + (Number(i.pagoEfectivo||0)||0), 0);
+                            const dinRecVenta  = items.reduce((s,i) => s + (Number(i.dineroRecuperado||0)||0), 0)
+                                || items.reduce((s,i) => s + (Number(i.costo||0)*(Number(i.cantidad)||1)), 0);
+                            const ganBrutaVenta = Math.max(0, totalVenta - dinRecVenta);
+                            const ganEfVenta    = pagoEfVenta > dinRecVenta
+                                ? Math.min(pagoEfVenta - dinRecVenta, ganBrutaVenta) : 0;
+                            const ganBrutaItemsTotal = items.reduce((s,i) =>
+                                s + Math.max(0, (Number(i.precio||0))*(Number(i.cantidad)||1) - (Number(i.dineroRecuperado||0)||Number(i.costo||0)*(Number(i.cantidad)||1))), 0);
+
+                            items.forEach(i => {
+                                const pn = normProvEf(i.proveedor);
+                                if (!pn) return;
+                                const pagoEfItem  = Number(i.pagoEfectivo || 0);
+                                const rec = _asegurarProv2(pn);
+                                rec.ventas += pagoEfItem;
+
+                                // Ganancia efectivo proporcional al ítem (igual que sección personal)
+                                const ganBrutaItem = Math.max(0,
+                                    (Number(i.precio||0))*(Number(i.cantidad)||1)
+                                    - (Number(i.dineroRecuperado||0)||Number(i.costo||0)*(Number(i.cantidad)||1)));
+                                const ganShare = ganBrutaItemsTotal > 0 ? ganBrutaItem / ganBrutaItemsTotal : 0;
+                                rec.ganancia = (rec.ganancia || 0) + ganEfVenta * ganShare;
+                            });
+                        }
                     });
 
+                    // Agregar pagoVentas por proveedor (tabla Pago Ventas, fecha original)
+                    Object.entries(pagoVentasPorProv).forEach(([pn, monto]) => {
+                        const rec = _asegurarProv2(pn);
+                        rec.ventas += monto;
+                    });
+
+                    // ── PASO 5: Sumar compras y calcular TOTAL por proveedor ─────────
+                    // Asegurar que proveedores que solo tienen compras también aparezcan
+                    [...Object.keys(comprasEfPorProv), ...Object.keys(pagoComprasPorProv)].forEach(pn => {
+                        _asegurarProv2(pn);
+                    });
                     Object.keys(provMapEf).forEach(pn => {
-                        const comprasEf = comprasEfPorProv[pn] || 0;
-                    const pagoCompras = pagoComprasPorProv[pn] || 0;
-                        provMapEf[pn].totalComprasEf = comprasEf;
-                        provMapEf[pn].totalPagoCompras = pagoCompras;
-                        provMapEf[pn].totalParaProv = provMapEf[pn].totalCobrado - provMapEf[pn].totalGan - comprasEf - pagoCompras;
+                        const r = provMapEf[pn];
+                        r.comprasEf    = comprasEfPorProv[pn] || 0;
+                        r.pagoCompras  = pagoComprasPorProv[pn] || 0;
+                        r.ganancia     = r.ganancia || 0;
+                        // TOTAL = VENTAS - GANANCIA + CASA ERAZO + ERROR VENTA - COMPRAS
+                        r.totalParaProv = r.ventas - r.ganancia + r.casaErazo + r.errorVenta - r.comprasEf - r.pagoCompras;
+                        // totalCobrado (compat con panel superior)
+                        r.totalCobrado = r.ventas + r.casaErazo + r.errorVenta;
+                        r.totalComprasEf  = r.comprasEf;
+                        r.totalPagoCompras = r.pagoCompras;
                     });
 
+                    // ── PANEL SUPERIOR: ventasEf y gananciasEf por proveedor ────────
+                    // ventasEf = pagoEfectivo ítem (ventas, fecha original) + monto pago ventas (fecha original)
                     const panelProvCalc = {};
                     const panelAsegurarProv = pn => {
                         pn = normProvEf(pn);
@@ -15788,58 +15837,50 @@ if (indicator) indicator.classList.remove('hidden');
                         if (!panelProvCalc[pn]) panelProvCalc[pn] = { ventasEf:0, gananciasEf:0, comprasEf:0, pagosCompras:0, casaErazoDR:0 };
                         return panelProvCalc[pn];
                     };
-                    const panelIdsVenta = v => {
-                        const ids = new Set();
-                        const idLocal = String(v?.id || '').trim();
-                        const idSheet = v?.idSheet ? String(v.idSheet).trim() : (idLocal.startsWith('sheet_V_') ? idLocal.replace('sheet_V_', '') : idLocal);
-                        if (idLocal) ids.add(idLocal);
-                        if (idSheet) ids.add(idSheet);
-                        return [...ids];
-                    };
-                    const panelPrecioItem = it => (Number(it.precio || 0) || 0) * (Number(it.cantidad) || 1);
                     const panelDRItem = it => {
                         const cant = Number(it.cantidad) || 1;
                         return Number(it.dineroRecuperado || 0) || ((Number(it.costo || it.precioCosto || 0) || 0) * cant);
                     };
+
+                    // Acumular pagoEfectivo de ítems de ventas por proveedor (fecha original)
                     const panelVentasVistas = new Set();
                     todasV.forEach(v => {
                         const keyV = String(v.idSheet || v.id || '').trim();
                         if (keyV && panelVentasVistas.has(keyV)) return;
                         if (keyV) panelVentasVistas.add(keyV);
-                        const idsV = panelIdsVenta(v);
-                        const cobrosPagoVenta = idsV.reduce((s,id)=>s+(Number(cobrosPorVenta2[id]||0)||0),0);
-                        const ventaEnRango = _efEnRangoOriginal(v);
-                        const efectivoVenta = ventaEnRango ? (Number(v.efectivo || 0) || 0) : 0;
-                        const cobEfVenta = efectivoVenta + cobrosPagoVenta;
-                        if (!cobEfVenta) return;
-
-                        const items = Array.isArray(v.items) ? v.items.filter(Boolean) : [];
-                        if (!items.length) return;
-                        const totalItems = items.reduce((s,it)=>s+panelPrecioItem(it),0);
-                        const totalVenta = Math.max(Number(v.total || 0) || 0, totalItems, 1);
+                        if (!_efEnRangoOriginal(v)) return;
                         const cli = String(v.cliente || '').trim().toUpperCase();
                         const esCasaErazo = cli === 'CASA ERAZO';
                         const esEspecial = ['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli);
+                        const items = Array.isArray(v.items) ? v.items.filter(Boolean) : [];
+                        if (!items.length) return;
+
+                        const totalVenta = Math.max(Number(v.total || 0) || 0, items.reduce((s,it)=>(s+(Number(it.precio||0)||0)*(Number(it.cantidad)||1)),0), 1);
                         const dinRecVenta = items.reduce((s,it)=>s+panelDRItem(it),0);
+                        const pagoEfVenta = items.reduce((s,it)=>s+(Number(it.pagoEfectivo||0)||0),0);
                         const ganBrutaVenta = esEspecial ? 0 : Math.max(0, totalVenta - dinRecVenta);
-                        const ganEfVenta = (!esEspecial && cobEfVenta > dinRecVenta)
-                            ? Math.min(cobEfVenta - dinRecVenta, ganBrutaVenta)
-                            : 0;
-                        const ganBrutaItemsVenta = items.reduce((s,it)=>s+Math.max(0, panelPrecioItem(it)-panelDRItem(it)),0);
+                        const ganEfVenta = (!esEspecial && pagoEfVenta > dinRecVenta)
+                            ? Math.min(pagoEfVenta - dinRecVenta, ganBrutaVenta) : 0;
+                        const ganBrutaItemsVenta = items.reduce((s,it)=>s+Math.max(0,(Number(it.precio||0)||0)*(Number(it.cantidad)||1)-panelDRItem(it)),0);
 
                         items.forEach(it => {
                             const pn = normProvEf(it.proveedor || it.PROVEEDOR);
                             const rec = panelAsegurarProv(pn);
                             if (!rec) return;
-                            const prop = totalVenta > 0 ? panelPrecioItem(it) / totalVenta : 0;
-                            const cobradoItem = cobEfVenta * prop;
-                            const ganBrutaItem = Math.max(0, panelPrecioItem(it) - panelDRItem(it));
+                            const pagoEfItem = Number(it.pagoEfectivo || 0) || 0;
+                            const ganBrutaItem = Math.max(0, (Number(it.precio||0)||0)*(Number(it.cantidad)||1) - panelDRItem(it));
                             const ganShare = ganBrutaItemsVenta > 0 ? ganBrutaItem / ganBrutaItemsVenta : 0;
                             const ganItem = esEspecial ? 0 : Math.min(ganBrutaItem, ganEfVenta * ganShare);
-                            rec.ventasEf += cobradoItem;
+                            rec.ventasEf += pagoEfItem;
                             rec.gananciasEf += ganItem;
                             if (esCasaErazo) rec.casaErazoDR += panelDRItem(it);
                         });
+                    });
+
+                    // Sumar monto de pago ventas por proveedor (ya filtrado en pagoVentasPorProv)
+                    Object.entries(pagoVentasPorProv).forEach(([pn, monto]) => {
+                        const rec = panelAsegurarProv(pn);
+                        if (rec) rec.ventasEf += monto;
                     });
                     (window._sheetCompras || []).forEach(c => {
                         if (!_efEnRango(c)) return;
@@ -15870,44 +15911,99 @@ if (indicator) indicator.classList.remove('hidden');
                     efProvDiv.innerHTML = panelesEfHtml;
 
                     const filasProv = Object.entries(provMapEf)
-                        .filter(([,r]) => r.totalDR > 0)
+                        .filter(([,r]) => (r.ventas||0) + (r.casaErazo||0) + (r.errorVenta||0) + (r.comprasEf||0) + (r.pagoCompras||0) > 0)
                         .sort((a,b) => b[1].totalParaProv - a[1].totalParaProv);
 
                     if (!filasProv.length) {
                         efProvDiv.innerHTML = panelesEfHtml;
                     } else {
                         const granTotalEf = filasProv.reduce((s,[,r])=>s+r.totalParaProv, 0);
-                        const totalGuapitoEf = panelSepararGuapito;
-                        const totalSinGuapitoEf = panelSepararSinGuapito;
-                        const totalGananciasEf = panelGananciasNetas;
-                        const panelCaja = (titulo, valor, color, sub) =>
-                            '<div style="background:#0f172a;border:1.5px solid '+color+'55;border-left:4px solid '+color+';border-radius:14px;padding:10px 12px;min-width:0;">'
-                            + '<div style="font-size:8px;font-weight:900;color:'+color+';text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+titulo+'</div>'
-                            + '<div style="font-family:monospace;font-size:18px;font-weight:900;color:#f8fafc;line-height:1;">'+fmt$(valor)+'</div>'
-                            + '<div style="font-size:8px;color:#64748b;font-weight:800;text-transform:uppercase;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+sub+'</div>'
-                            + '</div>';
-                        let tbl = panelesEfHtml
-                            + '<div style="overflow-x:auto;border-radius:12px;border:1px solid #10b98133;">'
-                            + '<table style="width:100%;border-collapse:collapse;min-width:360px;">'
-                            + '<thead><tr style="background:#0a1a0e;">'
-                            + '<th style="padding:8px 12px;text-align:left;font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;">Proveedor</th>'
-                            + '<th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:900;color:#94a3b8;text-transform:uppercase;">Din. Rec.</th>'
-                            + '<th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:900;color:#fbbf24;text-transform:uppercase;">Ganancia</th>'
-                            + '<th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:900;color:#34d399;text-transform:uppercase;">🛒?µ Para Prov.</th>'
-                            + '</tr></thead><tbody>';
+
+                        // ── Tabla estilo Excel ──────────────────────────────────────────
+                        const TH = (txt, color) => '<th style="padding:9px 10px;font-size:9px;font-weight:900;color:'+(color||'#94a3b8')+';text-transform:uppercase;letter-spacing:.06em;text-align:right;white-space:nowrap;">'+txt+'</th>';
+                        const TD = (val, color, bold) => '<td style="padding:7px 10px;font-family:monospace;font-size:'+(bold?'12':'11')+'px;font-weight:'+(bold?'900':'700')+';color:'+(color||'#94a3b8')+';text-align:right;white-space:nowrap;">'+(val!==null&&val!==undefined?fmt$(val):'<span style="color:#334155;">—</span>')+'</td>';
+                        const TDtxt = (txt, color, size) => '<td style="padding:7px 10px;font-size:'+(size||'10')+'px;font-weight:900;color:'+(color||'#f1f5f9')+';text-transform:uppercase;white-space:nowrap;">'+Utils.escHtml(txt)+'</td>';
+
+                        let provBlocks = '';
                         filasProv.forEach(([pn, r], i) => {
-                            tbl += '<tr style="background:' + (i%2===0?'#0f172a':'#0a1120') + ';border-bottom:1px solid #1e293b;">'
-                                + '<td style="padding:7px 12px;font-size:10px;font-weight:900;color:#f1f5f9;text-transform:uppercase;">' + Utils.escHtml(pn) + '</td>'
-                                + '<td style="padding:7px 12px;text-align:right;font-family:monospace;font-size:11px;color:#64748b;">' + fmt$(r.totalDR) + '</td>'
-                                + '<td style="padding:7px 12px;text-align:right;font-family:monospace;font-size:11px;color:#fbbf24;">' + (r.totalGan>0?fmt$(r.totalGan):'<span style="color:#475569;">-</span>') + '</td>'
-                                + '<td style="padding:7px 12px;text-align:right;font-family:monospace;font-size:12px;font-weight:900;color:#34d399;">' + fmt$(r.totalParaProv) + '</td>'
+                            const bg0 = i%2===0 ? '#0f172a' : '#0a1120';
+                            const bg1 = i%2===0 ? '#0d1520' : '#08101c';
+                            const bg2 = i%2===0 ? '#0a1118' : '#060e18';
+
+                            const ventasEf    = r.ventas || 0;
+                            const gananciaEf  = r.ganancia || 0;
+                            const casaErazo   = r.casaErazo || 0;
+                            const errorVenta  = r.errorVenta || 0;
+                            const totalProv   = r.totalParaProv || 0;
+                            const totalCompras = (r.comprasEf || 0) + (r.pagoCompras || 0);
+
+                            // ── fila nombre + ventas ──
+                            provBlocks += '<tr style="background:'+bg0+';border-bottom:1px solid #1e293b22;">'
+                                + TDtxt(pn, '#f1f5f9', '10')
+                                + TD(ventasEf, '#94a3b8', false)
+                                + TD(gananciaEf > 0 ? gananciaEf : null, '#fbbf24', false)
+                                + TD(casaErazo > 0 ? casaErazo : null, '#64748b', false)
+                                + TD(errorVenta > 0 ? errorVenta : null, '#f87171', false)
+                                + TD(totalProv, totalProv >= 0 ? '#34d399' : '#f87171', true)
+                                + '<td style="padding:7px 6px;">'
+                                  + '<div style="height:6px;min-width:40px;width:100%;background:#020617;border-radius:999px;overflow:hidden;border:1px solid #1e293b;">'
+                                  + '<div style="height:100%;width:'+Math.max(4,Math.min(100,granTotalEf>0?Math.abs(totalProv)/Math.abs(granTotalEf)*100:4)).toFixed(0)+'%;background:linear-gradient(90deg,#34d399,#6ee7b7);border-radius:999px;"></div>'
+                                  + '</div></td>'
+                                + TD(totalProv, totalProv >= 0 ? '#34d399' : '#f87171', true)
+                                + '</tr>';
+
+                            // ── fila vacía ──
+                            provBlocks += '<tr style="background:'+bg1+';border-bottom:1px solid #1e293b11;">'
+                                + '<td style="padding:3px 10px;"></td>'
+                                + '<td style="padding:3px 10px;font-family:monospace;font-size:10px;color:#1e293b;text-align:right;">0</td>'
+                                + '<td colspan="2"></td>'
+                                + '<td style="padding:3px 10px;font-family:monospace;font-size:10px;color:#1e293b;text-align:right;">0</td>'
+                                + '<td></td><td></td>'
+                                + '</tr>';
+
+                            // ── fila COMPRAS ──
+                            provBlocks += '<tr style="background:'+bg2+';border-bottom:2px solid #1e293b;">'
+                                + '<td style="padding:4px 10px 8px;font-size:9px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.06em;padding-left:18px;">COMPRAS</td>'
+                                + TD(totalCompras > 0 ? totalCompras : null, '#475569', false)
+                                + '<td colspan="2"></td>'
+                                + '<td></td><td></td><td></td>'
                                 + '</tr>';
                         });
-                        tbl += '<tr style="background:#111827;border-top:2px solid #334155;">'
-                            + '<td style="padding:8px 12px;font-size:10px;font-weight:900;color:#f1f5f9;text-transform:uppercase;" colspan="3">TOTAL</td>'
-                            + '<td style="padding:8px 12px;text-align:right;font-family:monospace;font-size:13px;font-weight:900;color:#34d399;">' + fmt$(granTotalEf) + '</td>'
-                            + '</tr></tbody></table></div>';
-                        efProvDiv.innerHTML = panelesEfHtml;
+
+                        // totales finales
+                        const totVentas     = filasProv.reduce((s,[,r])=>s+(r.ventas||0),0);
+                        const totGanancia   = filasProv.reduce((s,[,r])=>s+(r.ganancia||0),0);
+                        const totCasaErazo  = filasProv.reduce((s,[,r])=>s+(r.casaErazo||0),0);
+                        const totErrorVenta = filasProv.reduce((s,[,r])=>s+(r.errorVenta||0),0);
+                        const totCompras    = filasProv.reduce((s,[,r])=>s+(r.comprasEf||0)+(r.pagoCompras||0),0);
+
+                        let tbl = panelesEfHtml
+                            + '<div style="overflow-x:auto;border-radius:14px;border:1px solid #10b98130;margin-top:4px;">'
+                            + '<table style="width:100%;border-collapse:collapse;min-width:420px;">'
+                            + '<thead><tr style="background:linear-gradient(90deg,#042f1e,#0a1a0e);border-bottom:2px solid #10b98155;">'
+                            + '<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.08em;">Proveedor</th>'
+                            + TH('VENTAS','#94a3b8')
+                            + TH('GANANCIA','#fbbf24')
+                            + TH('CASA ERAZO','#64748b')
+                            + TH('ERROR VENTA','#f87171')
+                            + TH('TOTAL','#34d399')
+                            + '<th style="padding:9px 10px;min-width:80px;"></th>'
+                            + TH('TOTAL','#34d399')
+                            + '</tr></thead>'
+                            + '<tbody>' + provBlocks + '</tbody>'
+                            + '<tfoot><tr style="background:#0d2518;border-top:2px solid #10b981;">'
+                            + '<td style="padding:9px 10px;font-size:10px;font-weight:900;color:#10b981;text-transform:uppercase;letter-spacing:.06em;">TOTAL GENERAL</td>'
+                            + TD(totVentas,'#94a3b8',false)
+                            + TD(totGanancia>0?totGanancia:null,'#fbbf24',false)
+                            + TD(totCasaErazo>0?totCasaErazo:null,'#64748b',false)
+                            + TD(totErrorVenta>0?totErrorVenta:null,'#f87171',false)
+                            + TD(granTotalEf, granTotalEf>=0?'#34d399':'#f87171', true)
+                            + '<td></td>'
+                            + TD(granTotalEf, granTotalEf>=0?'#34d399':'#f87171', true)
+                            + '</tr></tfoot>'
+                            + '</table></div>';
+
+                        efProvDiv.innerHTML = tbl;
                     }
                     } catch (errEfProv) {
                         console.error('Error render efectivo proveedor', errEfProv);
