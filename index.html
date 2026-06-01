@@ -31196,28 +31196,23 @@ function verDetalleProveedor(tipo, id){
             const totEl = document.getElementById('tablaRegistrosTotales');
             if (!tbody) return;
 
-            const fdTs = desde ? new Date(desde).getTime() : null;
-            const fhTs = hasta ? new Date(hasta).getTime() : null;
+            // parseFechaNum maneja correctamente el timezone:
+            // - fechaISO con Z (UTC) -> convierte a hora local via dateToNum
+            // - datetime-local del input (sin zona) -> toma literal como hora local
+            // Asi ambos lados de la comparacion estan en hora local, sin desfase de 3hs
+            const fdNum = desde ? parseFechaNum(desde) : null;
+            const _fhNumFull = hasta ? parseFechaNum(hasta.length === 16 ? hasta + ':59' : hasta) : null;
 
             const _parseFechaReg = fechaRaw => {
-                if (!fechaRaw) return NaN;
-                // Intentar parse nativo primero (ISO, etc.)
-                let ts = new Date(fechaRaw).getTime();
-                if (!isNaN(ts)) return ts;
-                // Formato DD/MM/YYYY HH:MM:SS o DD/MM/YYYY
-                const m = String(fechaRaw).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s,T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
-                if (m) {
-                    const d = new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0));
-                    return d.getTime();
-                }
-                return NaN;
+                if (!fechaRaw) return null;
+                return parseFechaNum(String(fechaRaw));
             };
             const enRango = fechaRaw => {
-                if (!fechaRaw) return !fdTs && !fhTs;
-                const ts = _parseFechaReg(fechaRaw);
-                if (isNaN(ts)) return false;
-                if (fdTs && ts < fdTs) return false;
-                if (fhTs && ts > fhTs) return false;
+                if (!fechaRaw) return !fdNum && !_fhNumFull;
+                const num = _parseFechaReg(fechaRaw);
+                if (!num) return false;
+                if (fdNum && num < fdNum) return false;
+                if (_fhNumFull && num > _fhNumFull) return false;
                 return true;
             };
 
