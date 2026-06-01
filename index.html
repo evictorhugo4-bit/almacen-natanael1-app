@@ -31374,6 +31374,11 @@ function verDetalleProveedor(tipo, id){
             const fOpSet  = window._regFiltroOpSelected || new Set();
             const fQuiSet = window._regFiltroQuiSelected || new Set();
             const fDet = (document.getElementById('regFiltroDet')?.value||'').trim();
+
+            // Poblar Qui con filas filtradas solo por Op (sin filtro Qui) → permite elegir múltiples
+            const rowsFiltPorOp = fOpSet.size > 0 ? rows.filter(r => fOpSet.has(String(r.tipo||'').trim())) : rows;
+            _poblarMultiSelectQui(rowsFiltPorOp.map(r => r.quien));
+
             const rowsFiltradas = rows.filter(r => {
                 if (fOpSet.size > 0 && !fOpSet.has(String(r.tipo||'').trim())) return false;
                 if (fQuiSet.size > 0 && !fQuiSet.has(String(r.quien||'').trim())) return false;
@@ -31381,8 +31386,6 @@ function verDetalleProveedor(tipo, id){
                 return true;
             });
 
-            // Poblar multiselects con valores ya filtrados por operación
-            _poblarMultiSelectQui(rowsFiltradas.map(r => r.quien));
             _poblarSelect('regFiltroDet', rowsFiltradas.map(r => r.detalle));
 
             if (!rowsFiltradas.length) {
