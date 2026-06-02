@@ -10005,25 +10005,33 @@ if (indicator) indicator.classList.remove('hidden');
 
             const deptoFiltroStock = (document.getElementById('filtroDepartamentoStock')?.value || '').trim().toUpperCase();
 
-            if (!proveedor && !deptoFiltroStock) {
+            // value="" = Todos los proveedores: mostrar todo
+            // Sin ninguna selección (select no existe aún): mostrar placeholder
+            const _selProvEl = document.getElementById('filtroProveedorStat');
+            if (!_selProvEl && !deptoFiltroStock) {
                 resetFotoProveedorStat('-');
                 if (wrap) wrap.classList.add('hidden');
                 if (placeholder) { placeholder.style.display='block'; placeholder.textContent='Elegí un proveedor para ver el detalle'; }
                 return;
             }
 
-            const provObjStat = [...(_sheetProveedoresNegocio || []), ...(_sheetProveedoresGastos || [])]
-                .find(p => String(p.nombre || '').trim().toUpperCase() === proveedor.toUpperCase());
-            const provImgStat = normalizarImgProveedorStat(
-                provObjStat?.imagen || provObjStat?.foto || ''
-            );
-            if (provImgStat && fotoEl && fotoFallbackEl) {
-                fotoEl.src = provImgStat.startsWith('data:') ? provImgStat : driveUrl(provImgStat);
-                fotoEl.style.display = 'block';
-                fotoEl.onerror = function() { resetFotoProveedorStat(String(proveedor || '-').charAt(0).toUpperCase() || '-'); };
-                fotoFallbackEl.style.display = 'none';
+            if (!proveedor) {
+                // "Todos los proveedores" — mostrar icono genérico
+                resetFotoProveedorStat('★');
             } else {
-                resetFotoProveedorStat(String(proveedor || '-').charAt(0).toUpperCase() || '-');
+                const provObjStat = [...(_sheetProveedoresNegocio || []), ...(_sheetProveedoresGastos || [])]
+                    .find(p => String(p.nombre || '').trim().toUpperCase() === proveedor.toUpperCase());
+                const provImgStat = normalizarImgProveedorStat(
+                    provObjStat?.imagen || provObjStat?.foto || ''
+                );
+                if (provImgStat && fotoEl && fotoFallbackEl) {
+                    fotoEl.src = provImgStat.startsWith('data:') ? provImgStat : driveUrl(provImgStat);
+                    fotoEl.style.display = 'block';
+                    fotoEl.onerror = function() { resetFotoProveedorStat(String(proveedor || '-').charAt(0).toUpperCase() || '-'); };
+                    fotoFallbackEl.style.display = 'none';
+                } else {
+                    resetFotoProveedorStat(String(proveedor).charAt(0).toUpperCase() || '-');
+                }
             }
 
             const productos = _sheetProductos.filter(p =>
@@ -32003,7 +32011,7 @@ function verDetalleProveedor(tipo, id){
                 const prevProv = selProv.value;
                 selProv.innerHTML = '<option value="">- Todos los proveedores -</option>' +
                     proveedores.map(pr => `<option value="${pr}" ${pr===prevProv?'selected':''}>${pr}</option>`).join('');
-                if (prevProv) renderStockProveedor();
+                if (prevProv !== undefined) renderStockProveedor();
             }
 
             const selDepStock = document.getElementById('filtroDepartamentoStock');
