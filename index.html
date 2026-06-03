@@ -15660,14 +15660,13 @@ if (indicator) indicator.classList.remove('hidden');
                 const negTotalEgresos = negComprasEfectivo + negEgresosNegocio;
 
                 // === PERSONAL INGRESOS ===
-                // E) INGRESOS EN EFECTIVO:
-                //    ganancia en efectivo del sistema
-                //    + PAGO EFECTIVO tabla INGRESOS (por fecha)
-                //    + MONTO tabla PAGO INGRESOS (por FECHA ORIGINAL)
-                const persIngEfectivo = _calcGananciaEfNeg
-                    + _efSumaEfectivo(window._sheetIngresos || [])
+                // E1) GANANCIAS EN EFECTIVO: ganancia en efectivo del sistema (ventas)
+                const persGananciasEf = _calcGananciaEfNeg;
+                // E2) INGRESOS EN EFECTIVO: PAGO EFECTIVO tabla INGRESOS + MONTO tabla PAGO INGRESOS
+                const persIngSoloEf = _efSumaEfectivo(window._sheetIngresos || [])
                     + _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
 
+                const persIngEfectivo = persGananciasEf + persIngSoloEf;
                 const persTotalIngresos = persIngEfectivo;
 
                 // === PERSONAL EGRESOS ===
@@ -15711,7 +15710,8 @@ if (indicator) indicator.classList.remove('hidden');
                 // ↗↗ RENDER PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const persIngDiv = document.getElementById('efPersIngresosDetalle');
                 if (persIngDiv) persIngDiv.innerHTML =
-                    _efFila('Ingresos en Efectivo', persIngEfectivo);
+                    _efFila('Ganancias en Efectivo', persGananciasEf) +
+                    _efFila('Ingresos en Efectivo', persIngSoloEf);
 
                 const persEgrDiv = document.getElementById('efPersEgresosDetalle');
                 if (persEgrDiv) persEgrDiv.innerHTML =
@@ -16178,19 +16178,14 @@ if (indicator) indicator.classList.remove('hidden');
                 }
 
                 // ↗↗ PERSONAL → Ganancia neta en efectivo ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
-                // Calcular ganancia cobrada en efectivo proporcional al cobro de cada venta
+                // Usa la misma lógica exacta que ESTADISTICAS - REGISTRO:
+                // ganEf = max(0, sumItemEf - dineroRecuperado)
                 const todasVPers = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : [];
-                const cobrosPorVentaPers = {};
-                const pagosVentasPersOriginal = (_pagoVentasSheet && _pagoVentasSheet.length)
-                    ? _pagoVentasSheet
-                    : (_sheetPagoVentas || []);
-                pagosVentasPersOriginal.forEach(p => {
-                    if (!_efEnRangoOriginal(p)) return;
-                    const fp = String(p.formaPago || p.FORMAPAGO || p['FORMA DE PAGO'] || '').toUpperCase().trim();
-                    if (fp && fp !== 'EFECTIVO') return;
-                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
-                    if (!idV) return;
-                    cobrosPorVentaPers[idV] = (cobrosPorVentaPers[idV]||0) + Number(p.monto||p.MONTO||0);
+                const _pagoVtaMapPers = {};
+                (_pagoVentasSheet||[]).forEach(p => {
+                    const id = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!id) return;
+                    _pagoVtaMapPers[id] = (_pagoVtaMapPers[id]||0) + Number(p.monto||p.MONTO||0);
                 });
                 const vistasPersPers = new Set();
                 let gananciaEfectivoPers = 0;
@@ -16199,34 +16194,11 @@ if (indicator) indicator.classList.remove('hidden');
                     vistasPersPers.add(v.id);
                     const cli = String(v.cliente||'').toUpperCase().trim();
                     if (['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
-                    const totalVenta = Number(v.total||0);
-                    if (!totalVenta) return;
-                    const ef = Number(v.efectivo||0);
-                    const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
-                    const cobrosExtra = (cobrosPorVentaPers[idVSheet]||0) + (cobrosPorVentaPers[String(v.id||'')]||0);
-                    const totalCobrado = ef + cobrosExtra;
-                    const dinRec = (v.items||[]).reduce((s,i)=>s+(Number(i.dineroRecuperado||0)||0),0)
-                        || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*(Number(i.cantidad)||1)),0);
-                    const ganBruta = Math.max(0, totalVenta - dinRec);
-                    gananciaEfectivoPers += totalCobrado > dinRec
-                        ? Math.min(totalCobrado - dinRec, ganBruta)
-                        : 0;
-                    /*
-                    const gananciaVenta = (v.items||[]).reduce((s, i) => {
-                        const precio = Number(i.precio||0);
-                        const costo  = Number(i.costo||0);
-                        const cant   = Number(i.cantidad||1);
-                        const pagoIt = Number(i.pagoEfectivo||0) + Number(i.pagoCredito||0);
-                        const dr     = Number(i.dineroRecuperado||0);
-                        const gan    = i.esPeso
-                            ? Math.max(0, pagoIt - dr)
-                            : Math.max(0, (precio - costo) * cant);
-                        return s + gan;
-                    }, 0);
-                    // Proporción cobrada en efectivo respecto al total de la venta
-                    const prop = totalVenta > 0 ? Math.min(totalCobrado / totalVenta, 1) : 0;
-                    gananciaEfectivoPers += gananciaVenta * prop;
-                    */
+                    const sumItemEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const costoVN   = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                    const dinRecVN  = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVN;
+                    const ganEf     = Math.max(0, sumItemEf - dinRecVN);
+                    gananciaEfectivoPers += ganEf;
                 });
 
                 // Consumo del negocio: ventas a CASA ERAZO, se descuenta por DINERO RECUPERADO.
