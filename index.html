@@ -4985,19 +4985,10 @@ Agregar
     <input type="number" id="inputMontoInicialCaja"
         class="w-full text-xl font-black text-center text-white bg-slate-900 border-2 border-slate-700 rounded-xl p-3 outline-none focus:border-emerald-500"
         placeholder="0">
-    <input type="time" id="inputHoraCaja"
-        class="w-full text-sm font-black text-center text-white bg-slate-900 border-2 border-slate-700 rounded-xl p-2 outline-none focus:border-emerald-500">
     <p id="montoInicialFecha" class="text-[9px] font-black text-slate-500 text-center"></p>
 </div>
 
-<div class="flex flex-col gap-2 text-left mt-3">
-    <label class="text-[10px] font-black text-emerald-500 uppercase">
-        Tengo en caja
-    </label>
-    <input type="number" id="inputTengoEnCaja"
-        class="w-full text-xl font-black text-center text-white bg-slate-900 border-2 border-slate-700 rounded-xl p-3 outline-none focus:border-emerald-500"
-        placeholder="0">
-</div>
+<input type="number" id="inputTengoEnCaja" style="display:none;" value="0">
 
 <div class="grid grid-cols-2 gap-3">
     
@@ -28908,18 +28899,7 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
         function abrirModalHorarioCaja() {
             const ctrl = cajaControl || {};
             document.getElementById('inputMontoInicialCaja').value = ctrl.montoInicial || '';
-            document.getElementById('inputTengoEnCaja').value = ctrl.tengoEnCaja || '';
-            // Precargar hora guardada, o la hora actual si no hay
-            const horaEl = document.getElementById('inputHoraCaja');
-            if (horaEl) {
-                if (ctrl.horaInicio) {
-                    const d = new Date(ctrl.horaInicio);
-                    horaEl.value = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-                } else {
-                    const ahora = new Date();
-                    horaEl.value = String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
-                }
-            }
+            // Mostrar fecha/hora guardada anteriormente
             const fechaEl = document.getElementById('montoInicialFecha');
             if (fechaEl) {
                 fechaEl.textContent = ctrl.horaInicio
@@ -28940,21 +28920,11 @@ const idCliente = cli ? (cli.id || cli.idSheet || '') : '';
 
         function guardarHorarioCaja() {
     const inputMonto = document.getElementById('inputMontoInicialCaja');
-    const inputTengo = document.getElementById('inputTengoEnCaja');
-    const inputHora  = document.getElementById('inputHoraCaja');
     const montoInicial = inputMonto ? parseFloat(inputMonto.value) || 0 : 0;
-    const tengoEnCaja  = inputTengo ? parseFloat(inputTengo.value) || 0 : 0;
-    const horaElegida  = inputHora ? inputHora.value : '';
+    const tengoEnCaja  = 0;
 
-    // Armar fecha = hoy + hora elegida en hora LOCAL (sin conversión UTC)
-    const hoy = new Date();
-    let fechaBase;
-    if (horaElegida) {
-        const [h, m] = horaElegida.split(':').map(Number);
-        fechaBase = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), h, m, 0);
-    } else {
-        fechaBase = hoy;
-    }
+    // Usar la fecha y hora actual en el momento de guardar
+    const fechaBase = new Date();
     const fechaHora = _isoLocalCaja(fechaBase);
 
     cajaControl.tengoEnCaja  = tengoEnCaja;
