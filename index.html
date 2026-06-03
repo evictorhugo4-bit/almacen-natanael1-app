@@ -11007,9 +11007,7 @@ if (indicator) indicator.classList.remove('hidden');
                     epBloques[sub][cat][tipo] += val;
                 });
             };
-            epAddDyn(_sheetIngresos, 'ing');
             epAddDyn(_sheetIngresosNegocio, 'ing');
-            epAddDyn(_sheetEgresos, 'egr');
             epAddDyn(_sheetEgresosNegocio, 'egr');
             const epSortBloques = (a,b) => {
                 const na = Number((a.match(/\d+/)||[])[0] || 9999);
