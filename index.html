@@ -15660,13 +15660,14 @@ if (indicator) indicator.classList.remove('hidden');
                 const negTotalEgresos = negComprasEfectivo + negEgresosNegocio;
 
                 // === PERSONAL INGRESOS ===
-                // E1) GANANCIAS EN EFECTIVO: ganancia en efectivo del sistema (ventas)
-                const persGananciasEf = _calcGananciaEfNeg;
-                // E2) INGRESOS EN EFECTIVO: PAGO EFECTIVO tabla INGRESOS + MONTO tabla PAGO INGRESOS
-                const persIngSoloEf = _efSumaEfectivo(window._sheetIngresos || [])
+                // E) INGRESOS EN EFECTIVO:
+                //    ganancia en efectivo del sistema
+                //    + PAGO EFECTIVO tabla INGRESOS (por fecha)
+                //    + MONTO tabla PAGO INGRESOS (por FECHA ORIGINAL)
+                const persIngEfectivo = _calcGananciaEfNeg
+                    + _efSumaEfectivo(window._sheetIngresos || [])
                     + _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
 
-                const persIngEfectivo = persGananciasEf + persIngSoloEf;
                 const persTotalIngresos = persIngEfectivo;
 
                 // === PERSONAL EGRESOS ===
@@ -15710,8 +15711,7 @@ if (indicator) indicator.classList.remove('hidden');
                 // ↗↗ RENDER PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const persIngDiv = document.getElementById('efPersIngresosDetalle');
                 if (persIngDiv) persIngDiv.innerHTML =
-                    _efFila('Ganancias en Efectivo', persGananciasEf) +
-                    _efFila('Ingresos en Efectivo', persIngSoloEf);
+                    _efFila('Ingresos en Efectivo', persIngEfectivo);
 
                 const persEgrDiv = document.getElementById('efPersEgresosDetalle');
                 if (persEgrDiv) persEgrDiv.innerHTML =
@@ -15844,6 +15844,17 @@ if (indicator) indicator.classList.remove('hidden');
                         comprasEfPorProv[pn] = (comprasEfPorProv[pn] || 0) + efCompra;
                     });
 
+                    // ── PASO 2b: COMPRAS – pagoCredito de items (deuda generada con proveedor) ──
+                    const comprasCreditoPorProv = {};
+                    (window._sheetCompras || []).forEach(c => {
+                        if (!_efEnRango(c)) return;
+                        const pn = normProvEf(c.proveedor || c.PROVEEDOR);
+                        if (!pn) return;
+                        const crItems = (c.items || []).reduce((s, i) => s + (Number(i.pagoCredito || 0) || 0), 0);
+                        const crCompra = crItems > 0 ? crItems : (Number(c.credito || c.pagoCredito || c['PAGO CREDITO'] || 0) || 0);
+                        comprasCreditoPorProv[pn] = (comprasCreditoPorProv[pn] || 0) + crCompra;
+                    });
+
                     // ── PASO 3: PAGO COMPRAS – monto por proveedor ───────────────────
                     const pagoComprasPorProv = {};
                     (window._sheetPagoCompras || []).forEach(p => {
@@ -15857,7 +15868,7 @@ if (indicator) indicator.classList.remove('hidden');
                     // provMapEf[pn] = { ventas, casaErazo, errorVenta, comprasEf, pagoCompras, totalParaProv }
                     const provMapEf = {};
                     const _asegurarProv2 = pn => {
-                        if (!provMapEf[pn]) provMapEf[pn] = { ventas:0, casaErazo:0, errorVenta:0, comprasEf:0, pagoCompras:0, totalParaProv:0, totalDR:0 };
+                        if (!provMapEf[pn]) provMapEf[pn] = { ventas:0, casaErazo:0, errorVenta:0, comprasEf:0, pagoCompras:0, totalParaProv:0, totalDR:0, deudaProv:0 };
                         return provMapEf[pn];
                     };
 
@@ -15944,7 +15955,7 @@ if (indicator) indicator.classList.remove('hidden');
 
                     // ── PASO 5: Sumar compras y calcular TOTAL por proveedor ─────────
                     // Asegurar que proveedores que solo tienen compras también aparezcan
-                    [...Object.keys(comprasEfPorProv), ...Object.keys(pagoComprasPorProv)].forEach(pn => {
+                    [...Object.keys(comprasEfPorProv), ...Object.keys(comprasCreditoPorProv), ...Object.keys(pagoComprasPorProv)].forEach(pn => {
                         _asegurarProv2(pn);
                     });
                     Object.keys(provMapEf).forEach(pn => {
@@ -15952,7 +15963,9 @@ if (indicator) indicator.classList.remove('hidden');
                         r.comprasEf    = comprasEfPorProv[pn] || 0;
                         r.pagoCompras  = pagoComprasPorProv[pn] || 0;
                         r.ganancia     = r.ganancia || 0;
-                        // TOTAL = VENTAS - GANANCIA + CASA ERAZO + ERROR VENTA - COMPRAS
+                        // DEUDA AL PROVEEDOR = crédito generado - pagos ya realizados
+                        r.deudaProv    = Math.max(0, (comprasCreditoPorProv[pn] || 0) - (pagoComprasPorProv[pn] || 0));
+                        // A PAGAR = VENTAS + CASA ERAZO + ERROR VENTA - GANANCIA - COMPRAS EF - PAGO COMPRAS
                         r.totalParaProv = r.ventas - r.ganancia + r.casaErazo + r.errorVenta - r.comprasEf - r.pagoCompras;
                         // totalCobrado (compat con panel superior)
                         r.totalCobrado = r.ventas + r.casaErazo + r.errorVenta;
@@ -16073,6 +16086,7 @@ if (indicator) indicator.classList.remove('hidden');
                             const errorVenta  = r.errorVenta || 0;
                             const totalProv   = r.totalParaProv || 0;
                             const totalCompras = (r.comprasEf || 0) + (r.pagoCompras || 0);
+                            const deudaProv   = r.deudaProv || 0;
 
                             // ── fila nombre + ventas ──
                             provBlocks += '<tr style="background:'+bg0+';border-bottom:1px solid #1e293b22;">'
@@ -16086,7 +16100,7 @@ if (indicator) indicator.classList.remove('hidden');
                                   + '<div style="height:6px;min-width:40px;width:100%;background:#020617;border-radius:999px;overflow:hidden;border:1px solid #1e293b;">'
                                   + '<div style="height:100%;width:'+Math.max(4,Math.min(100,granTotalEf>0?Math.abs(totalProv)/Math.abs(granTotalEf)*100:4)).toFixed(0)+'%;background:linear-gradient(90deg,#34d399,#6ee7b7);border-radius:999px;"></div>'
                                   + '</div></td>'
-                                + TD(totalProv, totalProv >= 0 ? '#34d399' : '#f87171', true)
+                                + TD(deudaProv > 0 ? deudaProv : null, '#f87171', true)
                                 + '</tr>';
 
                             // ── fila vacía ──
@@ -16095,7 +16109,7 @@ if (indicator) indicator.classList.remove('hidden');
                                 + '<td style="padding:3px 10px;font-family:monospace;font-size:10px;color:#1e293b;text-align:right;">0</td>'
                                 + '<td colspan="2"></td>'
                                 + '<td style="padding:3px 10px;font-family:monospace;font-size:10px;color:#1e293b;text-align:right;">0</td>'
-                                + '<td></td><td></td>'
+                                + '<td></td><td></td><td></td>'
                                 + '</tr>';
 
                             // ── fila COMPRAS ──
@@ -16103,7 +16117,7 @@ if (indicator) indicator.classList.remove('hidden');
                                 + '<td style="padding:4px 10px 8px;font-size:9px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.06em;padding-left:18px;">COMPRAS</td>'
                                 + TD(totalCompras > 0 ? totalCompras : null, '#475569', false)
                                 + '<td colspan="2"></td>'
-                                + '<td></td><td></td><td></td>'
+                                + '<td></td><td></td><td></td><td></td>'
                                 + '</tr>';
                         });
 
@@ -16113,6 +16127,7 @@ if (indicator) indicator.classList.remove('hidden');
                         const totCasaErazo  = filasProv.reduce((s,[,r])=>s+(r.casaErazo||0),0);
                         const totErrorVenta = filasProv.reduce((s,[,r])=>s+(r.errorVenta||0),0);
                         const totCompras    = filasProv.reduce((s,[,r])=>s+(r.comprasEf||0)+(r.pagoCompras||0),0);
+                        const totDeuda      = filasProv.reduce((s,[,r])=>s+(r.deudaProv||0),0);
 
                         // ── Actualizar "Ventas Efectivo" del negocio con datos reales de proveedores ──
                         // = TOTAL columna VENTAS − TOTAL columna GANANCIA de la tabla Efectivo a Entregar por Proveedor
@@ -16151,9 +16166,9 @@ if (indicator) indicator.classList.remove('hidden');
                             + TH('GANANCIA','#fbbf24')
                             + TH('CASA ERAZO','#64748b')
                             + TH('ERROR VENTA','#f87171')
-                            + TH('TOTAL','#34d399')
+                            + TH('A PAGAR','#34d399')
                             + '<th style="padding:9px 10px;min-width:80px;"></th>'
-                            + TH('TOTAL','#34d399')
+                            + TH('DEUDA AL PROVEEDOR','#f87171')
                             + '</tr></thead>'
                             + '<tbody>' + provBlocks + '</tbody>'
                             + '<tfoot><tr style="background:#0d2518;border-top:2px solid #10b981;">'
@@ -16164,7 +16179,7 @@ if (indicator) indicator.classList.remove('hidden');
                             + TD(totErrorVenta>0?totErrorVenta:null,'#f87171',false)
                             + TD(granTotalEf, granTotalEf>=0?'#34d399':'#f87171', true)
                             + '<td></td>'
-                            + TD(granTotalEf, granTotalEf>=0?'#34d399':'#f87171', true)
+                            + TD(totDeuda>0?totDeuda:null,'#f87171',true)
                             + '</tr></tfoot>'
                             + '</table></div>';
 
@@ -16178,14 +16193,19 @@ if (indicator) indicator.classList.remove('hidden');
                 }
 
                 // ↗↗ PERSONAL → Ganancia neta en efectivo ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
-                // Usa la misma lógica exacta que ESTADISTICAS - REGISTRO:
-                // ganEf = max(0, sumItemEf - dineroRecuperado)
+                // Calcular ganancia cobrada en efectivo proporcional al cobro de cada venta
                 const todasVPers = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : [];
-                const _pagoVtaMapPers = {};
-                (_pagoVentasSheet||[]).forEach(p => {
-                    const id = String(p.idVenta||p.IDVENTAS||'').trim();
-                    if (!id) return;
-                    _pagoVtaMapPers[id] = (_pagoVtaMapPers[id]||0) + Number(p.monto||p.MONTO||0);
+                const cobrosPorVentaPers = {};
+                const pagosVentasPersOriginal = (_pagoVentasSheet && _pagoVentasSheet.length)
+                    ? _pagoVentasSheet
+                    : (_sheetPagoVentas || []);
+                pagosVentasPersOriginal.forEach(p => {
+                    if (!_efEnRangoOriginal(p)) return;
+                    const fp = String(p.formaPago || p.FORMAPAGO || p['FORMA DE PAGO'] || '').toUpperCase().trim();
+                    if (fp && fp !== 'EFECTIVO') return;
+                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!idV) return;
+                    cobrosPorVentaPers[idV] = (cobrosPorVentaPers[idV]||0) + Number(p.monto||p.MONTO||0);
                 });
                 const vistasPersPers = new Set();
                 let gananciaEfectivoPers = 0;
@@ -16194,11 +16214,34 @@ if (indicator) indicator.classList.remove('hidden');
                     vistasPersPers.add(v.id);
                     const cli = String(v.cliente||'').toUpperCase().trim();
                     if (['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
-                    const sumItemEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                    const costoVN   = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
-                    const dinRecVN  = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVN;
-                    const ganEf     = Math.max(0, sumItemEf - dinRecVN);
-                    gananciaEfectivoPers += ganEf;
+                    const totalVenta = Number(v.total||0);
+                    if (!totalVenta) return;
+                    const ef = Number(v.efectivo||0);
+                    const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
+                    const cobrosExtra = (cobrosPorVentaPers[idVSheet]||0) + (cobrosPorVentaPers[String(v.id||'')]||0);
+                    const totalCobrado = ef + cobrosExtra;
+                    const dinRec = (v.items||[]).reduce((s,i)=>s+(Number(i.dineroRecuperado||0)||0),0)
+                        || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*(Number(i.cantidad)||1)),0);
+                    const ganBruta = Math.max(0, totalVenta - dinRec);
+                    gananciaEfectivoPers += totalCobrado > dinRec
+                        ? Math.min(totalCobrado - dinRec, ganBruta)
+                        : 0;
+                    /*
+                    const gananciaVenta = (v.items||[]).reduce((s, i) => {
+                        const precio = Number(i.precio||0);
+                        const costo  = Number(i.costo||0);
+                        const cant   = Number(i.cantidad||1);
+                        const pagoIt = Number(i.pagoEfectivo||0) + Number(i.pagoCredito||0);
+                        const dr     = Number(i.dineroRecuperado||0);
+                        const gan    = i.esPeso
+                            ? Math.max(0, pagoIt - dr)
+                            : Math.max(0, (precio - costo) * cant);
+                        return s + gan;
+                    }, 0);
+                    // Proporción cobrada en efectivo respecto al total de la venta
+                    const prop = totalVenta > 0 ? Math.min(totalCobrado / totalVenta, 1) : 0;
+                    gananciaEfectivoPers += gananciaVenta * prop;
+                    */
                 });
 
                 // Consumo del negocio: ventas a CASA ERAZO, se descuenta por DINERO RECUPERADO.
