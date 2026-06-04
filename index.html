@@ -3198,6 +3198,15 @@ GUARDAR PRODUCTO
                             <option value="compras0">⚠️ Sin compras primero</option>
                         </select>
                     </div>
+                    <!-- Botón compartir lista de compras -->
+                    <div style="padding:8px 14px 4px;">
+                        <button onclick="compartirListaCompras()"
+                            style="width:100%;background:linear-gradient(135deg,#1e293b,#0f172a);border:2px solid #6366f155;border-radius:12px;color:#a5b4fc;font-size:11px;font-weight:900;padding:10px 16px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"
+                            onmouseover="this.style.borderColor='#6366f1';this.style.color='#c7d2fe'"
+                            onmouseout="this.style.borderColor='#6366f155';this.style.color='#a5b4fc'">
+                            <span style="font-size:16px;">📋</span> Compartir lista de compras
+                        </button>
+                    </div>
                     <table class="w-full text-[10px]">
                         <thead>
                             <tr class="border-b border-slate-700">
@@ -9959,6 +9968,58 @@ if (indicator) indicator.classList.remove('hidden');
         };
 
 
+        window.compartirListaCompras = function() {
+            // Recopilar todas las filas visibles de la tabla con comprar < 0
+            const tbody = document.getElementById('tablaStockProveedorBody');
+            if (!tbody) { alert('Primero seleccioná un proveedor para ver el inventario.'); return; }
+
+            const lineas = [];
+            // Buscar filas de categoría (tienen el valor COMPRAR)
+            tbody.querySelectorAll('tr[data-cat]').forEach(tr => {
+                const comprarTd = tr.querySelector('td[data-comprar]');
+                if (!comprarTd) return;
+                const val = parseFloat(comprarTd.dataset.comprar || '0');
+                if (val >= 0) return; // solo los negativos (faltan)
+                const cat = tr.dataset.cat || '';
+                lineas.push('• ' + cat + ': ' + Math.abs(val));
+            });
+
+            // Fallback: buscar por texto en celdas si no hay data attrs
+            if (lineas.length === 0) {
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const tds = tr.querySelectorAll('td');
+                    if (tds.length < 3) return;
+                    // col 0 = inicio, col 1 = producto/cat, col 2 = comprar
+                    const catTd = tr.querySelector('td.cat-nombre, td[data-cat]');
+                    const comprarTd = tds[2];
+                    if (!comprarTd) return;
+                    const txt = comprarTd.textContent.trim().replace(',', '.');
+                    const val = parseFloat(txt);
+                    if (isNaN(val) || val >= 0) return;
+                    const nombre = catTd ? catTd.textContent.trim() : tds[1].textContent.trim();
+                    if (nombre) lineas.push('• ' + nombre + ': ' + Math.abs(val));
+                });
+            }
+
+            if (lineas.length === 0) {
+                alert('No hay categorías para comprar (todos los valores son 0 o positivos).');
+                return;
+            }
+
+            const fecha = new Date().toLocaleDateString('es-AR');
+            const texto = '🛒 Lista de compras Almacén Natanael\n📅 ' + fecha + '\n\n' + lineas.join('\n');
+
+            if (navigator.share) {
+                navigator.share({ title: '🛒 Lista de compras', text: texto })
+                    .catch(e => { if (e.name !== 'AbortError') { navigator.clipboard.writeText(texto); if(typeof mostrarToast==='function') mostrarToast('Copiado al portapapeles ✓', 'success'); } });
+            } else {
+                navigator.clipboard.writeText(texto).then(() => {
+                    if (typeof mostrarToast === 'function') mostrarToast('Lista copiada al portapapeles ✓', 'success');
+                    else alert('Lista copiada:\n\n' + texto);
+                });
+            }
+        };
+
         window.renderStockProveedor = function() {
             const proveedor = (document.getElementById('filtroProveedorStat')?.value || '').trim();
             const wrap = document.getElementById('tablaStockProveedorWrap');
@@ -10468,7 +10529,7 @@ if (indicator) indicator.classList.remove('hidden');
 
                 rowsHtml += `
                 <!-- FILA CATEGORÍA -->
-                <tr id="catheader_${catId}" onclick="(function(){var b=window._stockProvCatOpen||{};b['${cat}']=!(b['${cat}']===true);window._stockProvCatOpen=b;var rows=document.querySelectorAll('.catrows_${catId}');var isNowOpen=b['${cat}']===true;rows.forEach(function(r){r.style.display=isNowOpen?'':'none';});var arrow=document.getElementById('arrow_${catId}');if(arrow)arrow.style.transform=isNowOpen?'rotate(0deg)':'rotate(-90deg)';}).call(this)"
+                <tr id="catheader_${catId}" data-cat="${Utils.escHtml(cat)}" data-comprar="${catDiffVenta}" onclick="(function(){var b=window._stockProvCatOpen||{};b['${cat}']=!(b['${cat}']===true);window._stockProvCatOpen=b;var rows=document.querySelectorAll('.catrows_${catId}');var isNowOpen=b['${cat}']===true;rows.forEach(function(r){r.style.display=isNowOpen?'':'none';});var arrow=document.getElementById('arrow_${catId}');if(arrow)arrow.style.transform=isNowOpen?'rotate(0deg)':'rotate(-90deg)';}).call(this)"
                     style="background:linear-gradient(90deg,#0f2231,#0f172a);border-bottom:2px solid #1e3a5f;cursor:pointer;user-select:none;">
                     <td colspan="2" style="padding:10px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
@@ -10994,11 +11055,16 @@ if (indicator) indicator.classList.remove('hidden');
             const epSubName = r => String(r.subcategoria || r.SUBCATEGORIA || r['SUBCATEGORIA'] || '').trim().toUpperCase();
             const epVal = r => Number(r[campoEP] || r[campoFil] || 0);
             const epBloques = {};
-            const epAddDyn = (rows, tipo) => {
+            // Supercats ya contabilizadas en sumSC — NO deben entrar en epAddDyn para evitar duplicación
+            const _epScExclIng = ['INGRESOS PROPIOS','INGRESOS AJENOS'];
+            const _epScExclEgr = ['EGRESOS PROPIOS','EGRESOS AJENOS'];
+            const epAddDyn = (rows, tipo, excluirSC) => {
                 (rows||[]).forEach(r => {
                     if(!enRango(parseFechaNum(r.fechaISO||r.fecha||''))) return;
                     const sub = epSubName(r);
                     if(!/^BLOQUE\s*\d+/i.test(sub)) return;
+                    // excluir supercats que ya se suman por otro camino
+                    if(excluirSC && excluirSC.includes(normSC(r.proveedor||r.supercategoria||''))) return;
                     const cat = epCatName(r);
                     const val = epVal(r);
                     if(!val) return;
@@ -11007,8 +11073,10 @@ if (indicator) indicator.classList.remove('hidden');
                     epBloques[sub][cat][tipo] += val;
                 });
             };
-            epAddDyn(_sheetIngresosNegocio, 'ing');
-            epAddDyn(_sheetEgresosNegocio, 'egr');
+            epAddDyn(_sheetIngresos,        'ing', _epScExclIng);
+            epAddDyn(_sheetIngresosNegocio, 'ing', []);
+            epAddDyn(_sheetEgresos,         'egr', _epScExclEgr);
+            epAddDyn(_sheetEgresosNegocio,  'egr', []);
             const epSortBloques = (a,b) => {
                 const na = Number((a.match(/\d+/)||[])[0] || 9999);
                 const nb = Number((b.match(/\d+/)||[])[0] || 9999);
@@ -11940,7 +12008,7 @@ if (indicator) indicator.classList.remove('hidden');
             const pagoIngNegCr = sumPagoFechaOrig(_sheetPagoIngNeg);
 
             // BALANCE NEGOCIO CR??DITO = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr)
-            const balNegCr     = (ventasCr - ganCrDirectaEN - pagoVentCr) - (comprasCr - pagoCompCr);
+            const balNegCr     = (ventasCr - ganCrDirectaEN - pagoVentCr) - (comprasTot - comprasEf - pagoCompCr);
             // BALANCE COMPLEMENTARIO CR??DITO = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr) ? mínimo 0 por componente
             const balCompCr    = Math.max(0, ingNegCr - pagoIngNegCr) - Math.max(0, egrNegCr - pagoEgrNegCr);
             // BALANCE CR??DITO = balNegCr + balCompCr
@@ -12035,7 +12103,7 @@ if (indicator) indicator.classList.remove('hidden');
                 }
                 if (_enFiltro === 'credito') {
                     const ing1crG = ventasCr - ganCrDirectaEN - pagoVentCr;
-                    const egr1crG = comprasCr - pagoCompCr;
+                    const egr1crG = comprasTot - comprasEf - pagoCompCr;
                     const ing2crG = Math.max(0, ingNegCr - pagoIngNegCr);
                     const egr2crG = Math.max(0, egrNegCr - pagoEgrNegCr);
                     return {
@@ -12072,7 +12140,7 @@ if (indicator) indicator.classList.remove('hidden');
                 }
                 if (_enFiltro === 'credito') {
                     const ventas = ventasCr - ganCrDirectaEN - pagoVentCr;
-                    const compras = comprasCr - pagoCompCr;
+                    const compras = comprasTot - comprasEf - pagoCompCr;
                     const ingresos = Math.max(0, ingNegCr - pagoIngNegCr);
                     const egresos = Math.max(0, egrNegCr - pagoEgrNegCr);
                     return {
@@ -12150,8 +12218,7 @@ if (indicator) indicator.classList.remove('hidden');
             } else {
                 // Crédito: deuda pendiente = total crédito MENOS lo que ya se cobró/pagó vía Pago Ventas/Compras
                 const ing1cr   = ventasCr - ganCrDirectaEN - pagoVentCr;
-                const egr1cr   = comprasCr - pagoCompCr;
-                console.log('[DEBUG CREDITO] comprasCr=', comprasCr, 'pagoCompCr=', pagoCompCr, 'egr1cr=', egr1cr, 'comprasEf=', comprasEf, 'pagoCompEf=', pagoCompEf, 'ventasCr=', ventasCr, 'ganCrDirectaEN=', ganCrDirectaEN, 'pagoVentCr=', pagoVentCr);
+                const egr1cr   = comprasTot - comprasEf - pagoCompCr; // deuda crédito = total - efectivo directo - pagos de deuda
                 const bal1cr   = ing1cr - egr1cr;
                 // Neg crédito: deuda pendiente = crédito MENOS pagos ya aplicados (mínimo 0)
                 const ing2cr   = Math.max(0, ingNegCr - pagoIngNegCr);
