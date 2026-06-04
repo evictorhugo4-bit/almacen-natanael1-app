@@ -11855,6 +11855,7 @@ if (indicator) indicator.classList.remove('hidden');
             });
             const todasVEN = ventasParaCalculo();
             const _vVistasEN = new Set();
+            let ganEfDirectaEN = 0; // ganancias efectivo solo del cobro directo (sin pagos de deuda)
             todasVEN.forEach(v => {
                 const fn = parseFechaNum(v.fechaISO||v.fecha||'');
                 if(!enRango(fn)||_vVistasEN.has(v.id)) return;
@@ -11871,8 +11872,13 @@ if (indicator) indicator.classList.remove('hidden');
                 const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
                 ganTotEN += ganEfV + Math.max(0, ganBruta - ganEfV);
                 ganEfEN  += ganEfV;
+                // ganancia efectivo usando solo el pago directo (ef), sin pagos de deuda
+                const ganEfDirectaV = ef > dinRec ? Math.min(ef - dinRec, ganBruta) : 0;
+                ganEfDirectaEN += ganEfDirectaV;
             });
             const ganCrEN = Math.max(0, ganTotEN - ganEfEN);
+            // ganancia crédito usando solo efectivo directo (para mostrar deuda crédito correcta)
+            const ganCrDirectaEN = Math.max(0, ganTotEN - ganEfDirectaEN);
 
             // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
             // BLOQUE TOTAL
@@ -11934,7 +11940,7 @@ if (indicator) indicator.classList.remove('hidden');
             const pagoIngNegCr = sumPagoFechaOrig(_sheetPagoIngNeg);
 
             // BALANCE NEGOCIO CR??DITO = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr)
-            const balNegCr     = (ventasCr - ganCrEN - pagoVentCr) - (comprasCr - pagoCompCr);
+            const balNegCr     = (ventasCr - ganCrDirectaEN - pagoVentCr) - (comprasCr - pagoCompCr);
             // BALANCE COMPLEMENTARIO CR??DITO = (ingNegCr - pagoIngNegCr) - (egrNegCr - pagoEgrNegCr) ? mínimo 0 por componente
             const balCompCr    = Math.max(0, ingNegCr - pagoIngNegCr) - Math.max(0, egrNegCr - pagoEgrNegCr);
             // BALANCE CR??DITO = balNegCr + balCompCr
@@ -12014,7 +12020,7 @@ if (indicator) indicator.classList.remove('hidden');
 
             const enGraficos = (() => {
                 if (_enFiltro === 'efectivo') {
-                    const v3efG      = ventasEf - ganEfEN;
+                    const v3efG      = ventasEf - ganEfDirectaEN;
                     const ingresosG  = [v3efG, pagoVentEf, casaErazo, errorVenta, ingNegEf, pagoIngNegEf];
                     const egresosG   = [0, 0, 0, 0, comprasEf + pagoCompEf, egrNegEf + pagoEgrNegEf];
                     const labelsG    = ['Ventas s/gan.', 'Pago ventas', 'Casa Erazo', 'Error venta', 'Compras + pagos', 'Egr. negocio'];
@@ -12028,7 +12034,7 @@ if (indicator) indicator.classList.remove('hidden');
                     };
                 }
                 if (_enFiltro === 'credito') {
-                    const ing1crG = ventasCr - ganCrEN - pagoVentCr;
+                    const ing1crG = ventasCr - ganCrDirectaEN - pagoVentCr;
                     const egr1crG = comprasCr - pagoCompCr;
                     const ing2crG = Math.max(0, ingNegCr - pagoIngNegCr);
                     const egr2crG = Math.max(0, egrNegCr - pagoEgrNegCr);
@@ -12054,7 +12060,7 @@ if (indicator) indicator.classList.remove('hidden');
             enGraficos.balance = enGraficos.totalIngresos - enGraficos.totalEgresos;
             const enComparador = (() => {
                 if (_enFiltro === 'efectivo') {
-                    const ventas = (ventasEf - ganEfEN) + casaErazo + errorVenta + pagoVentEf;
+                    const ventas = (ventasEf - ganEfDirectaEN) + casaErazo + errorVenta + pagoVentEf;
                     const compras = comprasEf + pagoCompEf;
                     const ingresos = ingNegEf + pagoIngNegEf;
                     const egresos = egrNegEf + pagoEgrNegEf;
@@ -12065,8 +12071,8 @@ if (indicator) indicator.classList.remove('hidden');
                     };
                 }
                 if (_enFiltro === 'credito') {
-                    const ventas = ventasCr - ganCrEN - pagoVentCr;
-                    const compras = Math.max(0, comprasCr - pagoCompCr);
+                    const ventas = ventasCr - ganCrDirectaEN - pagoVentCr;
+                    const compras = comprasCr - pagoCompCr;
                     const ingresos = Math.max(0, ingNegCr - pagoIngNegCr);
                     const egresos = Math.max(0, egrNegCr - pagoEgrNegCr);
                     return {
@@ -12112,7 +12118,7 @@ if (indicator) indicator.classList.remove('hidden');
 
             } else if (_enFiltro === 'efectivo') {
                 // Ventas 3eros efectivo SIN sumar pagoVentas (va en fila separada)
-                const v3ef       = ventasEf - ganEfEN;
+                const v3ef       = ventasEf - ganEfDirectaEN; // usa ganancia solo del efectivo directo, sin pagos de deuda (que van en su propia fila)
                 // Compras efectivo SIN sumar pagoCompras (va en fila separada)
                 const egr1ef     = comprasEf;
                 const ing1ef     = v3ef + casaErazo + errorVenta + pagoVentEf;
@@ -12143,8 +12149,9 @@ if (indicator) indicator.classList.remove('hidden');
 
             } else {
                 // Crédito: deuda pendiente = total crédito MENOS lo que ya se cobró/pagó vía Pago Ventas/Compras
-                const ing1cr   = ventasCr - ganCrEN - pagoVentCr;
+                const ing1cr   = ventasCr - ganCrDirectaEN - pagoVentCr;
                 const egr1cr   = comprasCr - pagoCompCr;
+                console.log('[DEBUG CREDITO] comprasCr=', comprasCr, 'pagoCompCr=', pagoCompCr, 'egr1cr=', egr1cr, 'comprasEf=', comprasEf, 'pagoCompEf=', pagoCompEf, 'ventasCr=', ventasCr, 'ganCrDirectaEN=', ganCrDirectaEN, 'pagoVentCr=', pagoVentCr);
                 const bal1cr   = ing1cr - egr1cr;
                 // Neg crédito: deuda pendiente = crédito MENOS pagos ya aplicados (mínimo 0)
                 const ing2cr   = Math.max(0, ingNegCr - pagoIngNegCr);
