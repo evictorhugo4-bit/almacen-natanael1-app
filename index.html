@@ -9969,55 +9969,113 @@ if (indicator) indicator.classList.remove('hidden');
 
 
         window.compartirListaCompras = function() {
-            // Recopilar todas las filas visibles de la tabla con comprar < 0
             const tbody = document.getElementById('tablaStockProveedorBody');
             if (!tbody) { alert('Primero seleccioná un proveedor para ver el inventario.'); return; }
 
-            const lineas = [];
-            // Buscar filas de categoría (tienen el valor COMPRAR)
+            const items = [];
             tbody.querySelectorAll('tr[data-cat]').forEach(tr => {
-                const comprarTd = tr.querySelector('td[data-comprar]');
-                if (!comprarTd) return;
-                const val = parseFloat(comprarTd.dataset.comprar || '0');
-                if (val >= 0) return; // solo los negativos (faltan)
-                const cat = tr.dataset.cat || '';
-                lineas.push('• ' + cat + ': ' + Math.abs(val));
+                const val = parseFloat(tr.dataset.comprar || '0');
+                if (val >= 0) return;
+                items.push({ cat: tr.dataset.cat || '', cantidad: Math.abs(val) });
             });
 
-            // Fallback: buscar por texto en celdas si no hay data attrs
-            if (lineas.length === 0) {
-                tbody.querySelectorAll('tr').forEach(tr => {
-                    const tds = tr.querySelectorAll('td');
-                    if (tds.length < 3) return;
-                    // col 0 = inicio, col 1 = producto/cat, col 2 = comprar
-                    const catTd = tr.querySelector('td.cat-nombre, td[data-cat]');
-                    const comprarTd = tds[2];
-                    if (!comprarTd) return;
-                    const txt = comprarTd.textContent.trim().replace(',', '.');
-                    const val = parseFloat(txt);
-                    if (isNaN(val) || val >= 0) return;
-                    const nombre = catTd ? catTd.textContent.trim() : tds[1].textContent.trim();
-                    if (nombre) lineas.push('• ' + nombre + ': ' + Math.abs(val));
-                });
-            }
-
-            if (lineas.length === 0) {
-                alert('No hay categorías para comprar (todos los valores son 0 o positivos).');
+            if (items.length === 0) {
+                alert('No hay categorías para comprar.');
                 return;
             }
 
+            // Construir modal checklist
             const fecha = new Date().toLocaleDateString('es-AR');
-            const texto = '🛒 Lista de compras Almacén Natanael\n📅 ' + fecha + '\n\n' + lineas.join('\n');
+            const itemsHtml = items.map((it, i) => `
+                <label id="lc_label_${i}" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:background .15s;background:#0f172a;margin-bottom:6px;"
+                    onmouseover="this.style.background='#1e293b'" onmouseout="if(!document.getElementById('lc_chk_${i}').checked)this.style.background='#0f172a'">
+                    <input type="checkbox" id="lc_chk_${i}" data-idx="${i}"
+                        style="width:18px;height:18px;accent-color:#6366f1;cursor:pointer;flex-shrink:0;"
+                        onchange="window._lcToggle(${i})">
+                    <span id="lc_txt_${i}" style="flex:1;font-size:12px;font-weight:700;color:#e2e8f0;text-transform:uppercase;letter-spacing:.04em;">${it.cat}</span>
+                    <span style="font-size:12px;font-weight:900;color:#f87171;min-width:32px;text-align:right;">${it.cantidad}</span>
+                </label>`).join('');
 
-            if (navigator.share) {
-                navigator.share({ title: '🛒 Lista de compras', text: texto })
-                    .catch(e => { if (e.name !== 'AbortError') { navigator.clipboard.writeText(texto); if(typeof mostrarToast==='function') mostrarToast('Copiado al portapapeles ✓', 'success'); } });
-            } else {
-                navigator.clipboard.writeText(texto).then(() => {
-                    if (typeof mostrarToast === 'function') mostrarToast('Lista copiada al portapapeles ✓', 'success');
-                    else alert('Lista copiada:\n\n' + texto);
+            const modalHtml = `
+            <div id="modalListaCompras" style="position:fixed;inset:0;background:#000a;z-index:999999999;display:flex;align-items:center;justify-content:center;padding:16px;">
+              <div style="background:#1e293b;border-radius:18px;width:100%;max-width:480px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 25px 60px #0008;border:1.5px solid #334155;">
+                <!-- Header -->
+                <div style="padding:18px 20px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                  <div>
+                    <div style="font-size:15px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.06em;">🛒 Lista de compras</div>
+                    <div style="font-size:10px;color:#64748b;margin-top:2px;">📅 ${fecha} &nbsp;·&nbsp; <span id="lc_pendiente">${items.length}</span> pendientes</div>
+                  </div>
+                  <button onclick="document.getElementById('modalListaCompras').remove()"
+                    style="background:#0f172a;border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;font-weight:900;">✕</button>
+                </div>
+                <!-- Acciones rápidas -->
+                <div style="padding:10px 20px;border-bottom:1px solid #1e293b;display:flex;gap:8px;flex-shrink:0;">
+                  <button onclick="window._lcMarcarTodos(true)"
+                    style="flex:1;background:#0f172a;border:1.5px solid #334155;color:#94a3b8;font-size:10px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer;text-transform:uppercase;">✔ Marcar todos</button>
+                  <button onclick="window._lcMarcarTodos(false)"
+                    style="flex:1;background:#0f172a;border:1.5px solid #334155;color:#94a3b8;font-size:10px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer;text-transform:uppercase;">✖ Desmarcar todos</button>
+                  <button onclick="window._lcCompartir()"
+                    style="flex:1;background:#312e81;border:1.5px solid #6366f1;color:#a5b4fc;font-size:10px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer;text-transform:uppercase;">📤 Compartir</button>
+                </div>
+                <!-- Lista scrollable -->
+                <div style="overflow-y:auto;padding:14px 16px;flex:1;">
+                  ${itemsHtml}
+                </div>
+              </div>
+            </div>`;
+
+            document.getElementById('modalListaCompras')?.remove();
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Guardar items en window para usarlos en funciones auxiliares
+            window._lcItems = items;
+
+            window._lcToggle = function(i) {
+                const chk = document.getElementById('lc_chk_' + i);
+                const lbl = document.getElementById('lc_label_' + i);
+                const txt = document.getElementById('lc_txt_' + i);
+                if (chk.checked) {
+                    lbl.style.background = '#0f2a1a';
+                    txt.style.textDecoration = 'line-through';
+                    txt.style.color = '#475569';
+                } else {
+                    lbl.style.background = '#0f172a';
+                    txt.style.textDecoration = 'none';
+                    txt.style.color = '#e2e8f0';
+                }
+                const pendientes = document.querySelectorAll('#modalListaCompras input[type=checkbox]:not(:checked)').length;
+                const el = document.getElementById('lc_pendiente');
+                if (el) el.textContent = pendientes;
+            };
+
+            window._lcMarcarTodos = function(estado) {
+                window._lcItems.forEach((_, i) => {
+                    const chk = document.getElementById('lc_chk_' + i);
+                    if (chk && chk.checked !== estado) { chk.checked = estado; window._lcToggle(i); }
                 });
-            }
+            };
+
+            window._lcCompartir = function() {
+                const fecha2 = new Date().toLocaleDateString('es-AR');
+                const lineas = window._lcItems.map((it, i) => {
+                    const chk = document.getElementById('lc_chk_' + i);
+                    const done = chk && chk.checked;
+                    return (done ? '✅' : '⬜') + ' ' + it.cat + ': ' + it.cantidad;
+                });
+                const texto = '🛒 Lista de compras Almacén Natanael\n📅 ' + fecha2 + '\n\n' + lineas.join('\n');
+                if (navigator.share) {
+                    navigator.share({ title: '🛒 Lista de compras', text: texto }).catch(() => {});
+                } else {
+                    navigator.clipboard.writeText(texto).then(() => {
+                        if (typeof mostrarToast === 'function') mostrarToast('Lista copiada ✓', 'success');
+                    });
+                }
+            };
+
+            // Cerrar al click en fondo
+            document.getElementById('modalListaCompras').addEventListener('click', function(e) {
+                if (e.target === this) this.remove();
+            });
         };
 
         window.renderStockProveedor = function() {
