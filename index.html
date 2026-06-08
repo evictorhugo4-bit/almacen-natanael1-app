@@ -9972,6 +9972,8 @@ if (indicator) indicator.classList.remove('hidden');
             const tbody = document.getElementById('tablaStockProveedorBody');
             if (!tbody) { alert('Primero seleccioná un proveedor para ver el inventario.'); return; }
 
+            const proveedorSel = (document.getElementById('filtroProveedorStat')?.value || '').trim();
+
             const items = [];
             tbody.querySelectorAll('tr[data-cat]').forEach(tr => {
                 const val = parseFloat(tr.dataset.comprar || '0');
@@ -10002,7 +10004,7 @@ if (indicator) indicator.classList.remove('hidden');
                 <!-- Header -->
                 <div style="padding:18px 20px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
                   <div>
-                    <div style="font-size:15px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.06em;">🛒 Lista de compras</div>
+                    <div style="font-size:15px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.06em;">🛒 ${proveedorSel || 'Lista de compras'}</div>
                     <div style="font-size:10px;color:#64748b;margin-top:2px;">📅 ${fecha} &nbsp;·&nbsp; <span id="lc_pendiente">${items.length}</span> pendientes</div>
                   </div>
                   <button onclick="document.getElementById('modalListaCompras').remove()"
@@ -10029,6 +10031,7 @@ if (indicator) indicator.classList.remove('hidden');
 
             // Guardar items en window para usarlos en funciones auxiliares
             window._lcItems = items;
+            window._lcProveedor = proveedorSel;
 
             window._lcToggle = function(i) {
                 const chk = document.getElementById('lc_chk_' + i);
@@ -10060,14 +10063,18 @@ if (indicator) indicator.classList.remove('hidden');
                 const lineas = window._lcItems.map((it, i) => {
                     const chk = document.getElementById('lc_chk_' + i);
                     const done = chk && chk.checked;
-                    return (done ? '✅' : '⬜') + ' ' + it.cat + ': ' + it.cantidad;
+                    // [ ] al inicio = Google Keep lo convierte en checkbox automaticamente
+                    return (done ? '[x] ' : '[ ] ') + it.cat + ': ' + it.cantidad;
                 });
-                const texto = '🛒 Lista de compras Almacén Natanael\n📅 ' + fecha2 + '\n\n' + lineas.join('\n');
-                if (navigator.share) {
+                // Titulo + una linea por item
+                const tituloProveedor = window._lcProveedor ? '🏪 ' + window._lcProveedor + '\n' : '';
+                const texto = tituloProveedor + '🛒 Lista de compras - ' + fecha2 + '\n' + lineas.join('\n');
+                const esAndroid = /android/i.test(navigator.userAgent);
+                if (esAndroid && navigator.share) {
                     navigator.share({ title: '🛒 Lista de compras', text: texto }).catch(() => {});
                 } else {
                     navigator.clipboard.writeText(texto).then(() => {
-                        if (typeof mostrarToast === 'function') mostrarToast('Lista copiada ✓', 'success');
+                        if (typeof mostrarToast === 'function') mostrarToast('Lista copiada ✓ — pegá en Google Keep', 'success');
                     });
                 }
             };
