@@ -7610,8 +7610,6 @@ _sheetEgresosNegocio.forEach(e => {
             }
         }
 
-        _natanaelAplicarCacheLocalInicial();
-
         async function vozBuscarProducto(inputId, filtroFnName, btn) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const input = document.getElementById(inputId);
@@ -30330,6 +30328,7 @@ function calcularCajaEsperada() {
         // ============================================================
         window.onload = () => {
             _aplicarCajaDesdeLocal();
+            _natanaelAplicarCacheLocalInicial();
 
             // 1) Cargar caché instantáneo ANTES de ir al sheet
             const tuvimosCachee = _renderCacheInicial();
