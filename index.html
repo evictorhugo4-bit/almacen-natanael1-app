@@ -9973,20 +9973,19 @@ if (indicator) indicator.classList.remove('hidden');
 
             const _selProv = document.getElementById('filtroProveedorStat');
             const proveedorSel = (_selProv && _selProv.selectedIndex > 0 ? _selProv.options[_selProv.selectedIndex].text : '').trim();
+            const _selDepto = document.getElementById('filtroDepartamentoStock');
+            const deptoSel = (_selDepto && _selDepto.selectedIndex > 0 ? _selDepto.options[_selDepto.selectedIndex].text : '').trim();
+            const tituloModal = proveedorSel || deptoSel || 'Lista de compras';
 
             const items = [];
             tbody.querySelectorAll('tr[data-cat]').forEach(tr => {
                 const comprar = parseFloat(tr.dataset.comprar ?? '0');
                 if (comprar >= 0) return;
                 const esPeso = tr.dataset.espeso === '1';
-                const tds = tr.querySelectorAll('td');
-                // td[0]=nombre(colspan2), td[1]=COMPRAR, td[2]=STOCK
-                const stockText = tds[2] ? tds[2].textContent.trim().replace(/[^0-9.\-]/g, '') : '0';
-                const stock = parseFloat(stockText) || 0;
-                const cantidad = esPeso ? stock + ' gr' : stock;
-                items.push({ cat: tr.dataset.cat || '', cantidad, _stock: stock, _esPeso: esPeso });
+                const cantidad = esPeso ? Math.abs(comprar) + ' gr' : Math.abs(comprar);
+                items.push({ cat: tr.dataset.cat || '', cantidad, _comprar: comprar, _esPeso: esPeso });
             });
-            items.sort((a, b) => a._stock - b._stock);
+            items.sort((a, b) => a._comprar - b._comprar);
 
             if (items.length === 0) {
                 alert('No hay categorías para comprar.');
@@ -10011,7 +10010,7 @@ if (indicator) indicator.classList.remove('hidden');
                 <!-- Header -->
                 <div style="padding:18px 20px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
                   <div>
-                    <div style="font-size:15px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.06em;">🛒 ${proveedorSel || 'Lista de compras'}</div>
+                    <div style="font-size:15px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.06em;">🛒 ${tituloModal}</div>
                     <div style="font-size:10px;color:#64748b;margin-top:2px;">📅 ${fecha} &nbsp;·&nbsp; <span id="lc_pendiente">${items.length}</span> pendientes</div>
                   </div>
                   <button onclick="document.getElementById('modalListaCompras').remove()"
@@ -10038,7 +10037,7 @@ if (indicator) indicator.classList.remove('hidden');
 
             // Guardar items en window para usarlos en funciones auxiliares
             window._lcItems = items;
-            window._lcProveedor = proveedorSel;
+            window._lcProveedor = tituloModal;
 
             window._lcToggle = function(i) {
                 const chk = document.getElementById('lc_chk_' + i);
