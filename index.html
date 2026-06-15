@@ -974,6 +974,8 @@ z-index:999999999;
 
             <div id="widgetComprarStock7d" class="hidden"></div>
 
+            <div id="widgetAFavor" class="hidden"></div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="ventasMainGrid">
                 <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500" id="colVentasRecientes">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
@@ -8427,6 +8429,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                     if (typeof _guardarCache === 'function') _guardarCache();
                      
                     renderClientes();
+                    if (typeof renderAlertaAFavor === 'function') renderAlertaAFavor();
                 }
 
                 // ? Sincronizar PAGOS desde Sheet ?
@@ -20619,6 +20622,7 @@ function calcularDeudaTotalCliente(idCl) {
             clientesDB[idx].aFavor = monto;
             window.clientesDB = clientesDB;
             if (typeof _guardarCache === 'function') _guardarCache();
+            if (typeof renderAlertaAFavor === 'function') renderAlertaAFavor();
 
             // Enviar al Sheet (columna A FAVOR)
             const c = clientesDB[idx];
@@ -25382,6 +25386,29 @@ if (!window._alertaCompra7dTimer) {
         if (document.getElementById('vistaVentas')?.classList.contains('hidden')) return;
         if (typeof recalcularTodosLosStocks === 'function') recalcularTodosLosStocks();
     }, 15000);
+}
+
+
+function renderAlertaAFavor() {
+    const widget = document.getElementById('widgetAFavor');
+    if (!widget) return;
+    const clientes = (typeof clientesDB !== 'undefined' ? clientesDB : []) || [];
+    const conDeuda = clientes.filter(c => parseFloat(c.aFavor) > 0)
+        .sort((a, b) => (parseFloat(b.aFavor) || 0) - (parseFloat(a.aFavor) || 0));
+    if (!conDeuda.length) { widget.classList.add('hidden'); widget.innerHTML = ''; return; }
+    const total = conDeuda.reduce((s, c) => s + (parseFloat(c.aFavor) || 0), 0);
+    const colores = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+    const tarjetas = conDeuda.map(c => {
+        const iniciales = (c.nombre || '?').split(' ').slice(0,2).map(w => w[0]||'').join('').toUpperCase();
+        const color = colores[(c.nombre||'').charCodeAt(0) % colores.length];
+        const av = c.imagen
+            ? `<img src="${c.imagen}" style="width:2rem;height:2rem;border-radius:9999px;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:2rem;height:2rem;border-radius:9999px;background:${color}20;border:1px solid ${color}50;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:${color}">${iniciales}</div>`
+            : `<div style="width:2rem;height:2rem;border-radius:9999px;background:${color}20;border:1px solid ${color}50;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:${color}">${iniciales}</div>`;
+        const idSafe = String(c.id||c.nombre||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<div onclick="typeof abrirModalCliente==='function'&&abrirModalCliente('${idSafe}')" style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e3a5f;border-radius:12px;padding:6px 10px;flex-shrink:0;cursor:pointer">${av}<div style="line-height:1.2"><div style="font-size:10px;font-weight:900;color:#e2e8f0;text-transform:uppercase;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre||'?'}</div><div style="font-size:11px;font-weight:900;color:#3b82f6">$${Utils.fmt(parseFloat(c.aFavor))}</div></div></div>`;
+    }).join('');
+    widget.innerHTML = `<div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:16px;padding:12px 16px;margin-bottom:4px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px">💙</span><span style="font-size:10px;font-weight:900;color:#60a5fa;text-transform:uppercase;letter-spacing:.1em">A Favor de Clientes</span><span style="font-size:9px;font-weight:700;background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:999px">${conDeuda.length} cliente${conDeuda.length!==1?'s':''}</span></div><span style="font-size:13px;font-weight:900;color:#3b82f6">Total $${Utils.fmt(total)}</span></div><div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px" class="custom-scrollbar">${tarjetas}</div></div>`;
+    widget.classList.remove('hidden');
 }
 
 function calcularWidgetGastoFamiliar() {
