@@ -674,7 +674,8 @@ img, video { max-width: 100%; height: auto; }
     background-color: #0f172a;
     color: #ffffff;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: hidden;
+    height: 100vh;
 }
 
 
@@ -915,7 +916,7 @@ z-index:999999999;
     </div>
 
     <!-- MODAL CONFIG FIREBASE -->
-    <div id="modalFirebase" class="modal-overlay" style="z-index:400;">
+    <div id="modalFirebase" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-5 border-2 border-blue-500/40">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
@@ -1471,7 +1472,7 @@ GUARDAR PRODUCTO
 </div>
 
    <!-- MODAL DETALLE PROVEEDOR -->
-<div id="modalDetalleProveedor" class="modal-overlay" style="z-index:99999999;">
+<div id="modalDetalleProveedor" class="modal-overlay">
     <div class="glass-card w-full max-w-2xl rounded-[2rem] flex flex-col border-2 border-slate-700 overflow-hidden m-4 max-h-[90vh]">
 
         <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
@@ -2150,7 +2151,7 @@ GUARDAR PRODUCTO
     </main>
 
     <!-- MODAL NUEVO/EDITAR ?TEM LISTA CAT -->
-    <div id="modalLcEdit" class="modal-overlay" style="z-index:9999999999;">
+    <div id="modalLcEdit" class="modal-overlay">
         <div id="modalLcEditCard" class="glass-card w-full max-w-sm rounded-[2rem] p-6 space-y-4 border-2 border-emerald-500/40 m-4">
             <div class="flex justify-between items-center">
                 <h3 id="modalLcEditTitle" class="text-sm font-black text-emerald-400 uppercase italic">+ Nuevo ítem</h3>
@@ -2182,7 +2183,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL PAGO RAPIDO -->
-    <div id="modalPagoRapido" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalPagoRapido" class="modal-overlay">
         <div class="glass-card w-full max-w-md rounded-[2rem] p-6 space-y-4 border-2 border-emerald-500/40 m-4 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center shrink-0">
                 <div>
@@ -2223,7 +2224,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL PAGO RAPIDO PROVEEDOR -->
-    <div id="modalPagoRapidoProv" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalPagoRapidoProv" class="modal-overlay">
         <div class="glass-card w-full max-w-md rounded-[2rem] p-6 space-y-4 border-2 border-emerald-500/40 m-4 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center shrink-0">
                 <div>
@@ -2260,7 +2261,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL PROVEEDOR -->
-    <div id="modalProveedor" class="modal-overlay" style="z-index:300;">
+    <div id="modalProveedor" class="modal-overlay">
         <div class="glass-card w-full max-w-lg rounded-[2rem] p-7 space-y-4 border-2 border-slate-700 max-h-[92vh] overflow-y-auto custom-scrollbar m-4">
             <div class="flex justify-between items-center">
                 <h2 id="tituloModalProveedor" class="text-xl font-black text-white uppercase italic">Proveedor</h2>
@@ -2319,7 +2320,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL ELIMINAR PROVEEDOR -->
-    <div id="modalEliminarProveedor" class="modal-overlay" style="z-index:310;">
+    <div id="modalEliminarProveedor" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-2xl p-7 space-y-5 border border-red-500/30 m-4">
             <h2 class="text-lg font-black text-white uppercase italic">¿Eliminar proveedor?</h2>
             <p id="descEliminarProveedor" class="text-sm text-slate-300"></p>
@@ -3430,7 +3431,7 @@ GUARDAR PRODUCTO
 
 
     <!-- MODAL EDITAR INGRESO/EGRESO NEGOCIO -->
-    <div id="modalEditarIngNeg" class="modal-overlay" style="z-index:500;">
+    <div id="modalEditarIngNeg" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-4 border-2 border-emerald-500/40 m-4">
             <div class="flex justify-between items-center">
                 <h3 id="tituloEditarIngNeg" class="text-sm font-black text-white uppercase">Editar</h3>
@@ -3494,7 +3495,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL ELIMINAR INGRESO/EGRESO NEGOCIO -->
-    <div id="modalEliminarIngNeg" class="modal-overlay" style="z-index:500;">
+    <div id="modalEliminarIngNeg" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-5 border-2 border-red-500/40 m-4 text-center">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-white uppercase">Eliminar Registro</h3>
@@ -3511,7 +3512,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL NUEVO INGRESO/EGRESO NEGOCIO (Créditos) -->
-    <div id="modalIngNeg" class="modal-overlay" style="z-index:200;">
+    <div id="modalIngNeg" class="modal-overlay">
         <div class="glass-card w-full max-w-lg rounded-[2.5rem] flex flex-col border-2 border-slate-700 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <h2 id="tituloIngNeg" class="text-xl font-black text-white uppercase italic tracking-tighter">Nuevo Ingreso Negocio</h2>
@@ -3604,7 +3605,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL NUEVA INGRESO/EGRESO -->
-    <div id="modalIngEgr" class="modal-overlay" style="z-index:200;">
+    <div id="modalIngEgr" class="modal-overlay">
         <div class="glass-card w-full max-w-lg rounded-[2.5rem] flex flex-col border-2 border-slate-700 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <h2 id="tituloIngEgr" class="text-xl font-black text-white uppercase italic tracking-tighter">Nuevo Ingreso</h2>
@@ -3730,7 +3731,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL CAT?LOGO ING/EGR -->
-    <div id="modalCatalogoIngEgr" class="modal-overlay" style="z-index:300;">
+    <div id="modalCatalogoIngEgr" class="modal-overlay">
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-emerald-500 uppercase italic">Seleccionar Producto</h3>
@@ -3850,7 +3851,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL CANTIDAD ING/EGR -->
-    <div id="modalCantidadIngEgr" class="modal-overlay" style="z-index:350;">
+    <div id="modalCantidadIngEgr" class="modal-overlay">
         <div class="glass-card w-full max-w-sm p-8 rounded-[2rem] text-center space-y-5 border-2 border-emerald-500">
             <h3 id="txtProdIngEgr" class="text-xl font-black text-white uppercase italic">Producto</h3>
             <input type="number" id="inputCantIngEgr" value="1" min="1" step="any" class="w-full bg-slate-950 text-4xl p-4 rounded-2xl text-center font-black text-white outline-none border-2 border-transparent focus:border-emerald-500">
@@ -3862,7 +3863,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL ELIMINAR ING/EGR -->
-    <div id="modalEliminarIngEgr" class="modal-overlay" style="z-index:500;">
+    <div id="modalEliminarIngEgr" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-5 border-2 border-red-500/40 m-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
@@ -3880,7 +3881,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL PAGO INGRESO -->
-    <div id="modalPagoIngreso" class="modal-overlay" style="z-index:500;">
+    <div id="modalPagoIngreso" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2.5rem] flex flex-col border-2 border-emerald-500/40 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <div class="flex items-center gap-3">
@@ -3939,7 +3940,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL PAGO EGRESO -->
-    <div id="modalPagoEgreso" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalPagoEgreso" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2.5rem] flex flex-col border-2 border-red-500/40 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <div class="flex items-center gap-3">
@@ -3995,7 +3996,7 @@ GUARDAR PRODUCTO
     </div>
 
     <!-- MODAL PAGO COMPRA -->
-    <div id="modalPagoCompra" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalPagoCompra" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2.5rem] flex flex-col border-2 border-blue-500/40 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <div class="flex items-center gap-3"><span class="text-2xl">🧾</span>
@@ -4028,7 +4029,7 @@ CONFIRMAR PAGO
     </div></div>
 
     <!-- MODAL PAGO ING NEGOCIO -->
-    <div id="modalPagoIngNeg" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalPagoIngNeg" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2.5rem] flex flex-col border-2 border-emerald-500/40 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <div class="flex items-center gap-3"><span class="text-2xl">🧾</span>
@@ -4057,7 +4058,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL PAGO EGR NEGOCIO -->
-    <div id="modalPagoEgrNeg" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalPagoEgrNeg" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2.5rem] flex flex-col border-2 border-orange-500/40 overflow-hidden m-4" style="max-height:92vh;">
             <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/50 shrink-0">
                 <div class="flex items-center gap-3"><span class="text-2xl">🧾</span>
@@ -4124,7 +4125,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL EDITAR ING/EGR -->
-    <div id="modalEditarIngEgr" class="modal-overlay" style="z-index:500;">
+    <div id="modalEditarIngEgr" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-4 border-2 border-emerald-500/40 m-4" style="overflow:visible;">
             <div class="flex justify-between items-center">
                 <h3 id="tituloEditarIngEgr" class="text-sm font-black text-white uppercase">Editar</h3>
@@ -4305,7 +4306,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL EDITAR COMPRA -->
-    <div id="modalEditarCompra" class="modal-overlay" style="z-index:350;">
+    <div id="modalEditarCompra" class="modal-overlay">
         <div class="glass-card rounded-[2rem] p-6 w-full max-w-sm space-y-5 border-2 border-blue-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-blue-400 uppercase">Editar Compra</h3>
@@ -4397,20 +4398,32 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL MOVIMIENTOS PRODUCTO (STOCK POR PROVEEDOR) -->
-    <div id="modalMovimientosProdProv" class="modal-overlay" style="z-index:360;">
-        <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-3 border border-blue-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
-            <div class="flex justify-between items-center">
-                <h3 id="mmpTitulo" class="text-sm font-black text-blue-400 uppercase"></h3>
-                <button onclick="toggleModal('modalMovimientosProdProv',false)" class="text-slate-500 hover:text-white text-lg font-black">X</button>
+    <div id="modalMovimientosProdProv" class="modal-overlay">
+        <div class="glass-card rounded-2xl w-full max-w-sm border border-blue-500/30 m-4" style="max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+            <!-- Header fijo -->
+            <div style="padding:16px 20px 10px;flex-shrink:0;border-bottom:1px solid #1e293b;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 id="mmpTitulo" class="text-sm font-black text-blue-400 uppercase"></h3>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <button onclick="generarPDFMovimientosProdProv()" title="Descargar PDF" style="background:#1e3a5f;border:none;color:#60a5fa;width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h2"/><path d="M9 19h6"/></svg>
+                        </button>
+                        <button onclick="toggleModal('modalMovimientosProdProv',false)" class="text-slate-500 hover:text-white text-lg font-black">X</button>
+                    </div>
+                </div>
+                <div id="mmpProducto" class="text-[10px] font-black text-slate-400 uppercase mt-1"></div>
             </div>
-            <div id="mmpProducto" class="text-[10px] font-black text-slate-400 uppercase"></div>
-            <div id="mmpLista" class="space-y-1"></div>
-            <button onclick="toggleModal('modalMovimientosProdProv',false)" class="w-full py-2 rounded-xl text-xs font-black uppercase" style="background:#1e293b;color:#94a3b8;">Cerrar</button>
+            <!-- Lista scrolleable -->
+            <div id="mmpLista" class="custom-scrollbar" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:6px;"></div>
+            <!-- Footer fijo -->
+            <div style="padding:10px 16px;flex-shrink:0;border-top:1px solid #1e293b;">
+                <button onclick="toggleModal('modalMovimientosProdProv',false)" class="w-full py-2 rounded-xl text-xs font-black uppercase" style="background:#1e293b;color:#94a3b8;">Cerrar</button>
+            </div>
         </div>
     </div>
 
     <!-- MODAL DETALLE VENTA (KARDEX) -->
-    <div id="modalDetalleVentaKardex" class="modal-overlay" style="z-index:370;">
+    <div id="modalDetalleVentaKardex" class="modal-overlay">
         <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4 border border-red-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-red-400 uppercase">📦 Detalle de Venta</h3>
@@ -4441,7 +4454,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL DETALLE COMPRA (KARDEX) -->
-    <div id="modalDetalleCompraKardex" class="modal-overlay" style="z-index:370;">
+    <div id="modalDetalleCompraKardex" class="modal-overlay">
         <div class="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4 border border-emerald-500/30 m-4 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-emerald-400 uppercase">Detalle de Compra</h3>
@@ -4471,7 +4484,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL CAT?LOGO COMPRA -->
-    <div id="modalCatalogoCompra" class="modal-overlay" style="z-index:199999999;">
+    <div id="modalCatalogoCompra" class="modal-overlay">
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-emerald-500 uppercase italic">Seleccionar Producto</h3>
@@ -4604,7 +4617,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL SELECTOR CANTIDAD COMPRA -->
-    <div id="modalSelectorCompra" class="modal-overlay" style="z-index:299999999;">
+    <div id="modalSelectorCompra" class="modal-overlay">
         <div class="glass-card w-full max-w-sm p-8 rounded-[2rem] text-center space-y-5 border-2 border-emerald-500">
             <div class="flex flex-col items-center gap-2">
                 <div class="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center bg-slate-900 border border-slate-700">
@@ -4626,7 +4639,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL ELIMINAR VENTA -->
-    <div id="modalEliminarVenta" class="modal-overlay" style="z-index:500;">
+    <div id="modalEliminarVenta" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-5 border-2 border-red-500/40 m-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
@@ -4650,7 +4663,7 @@ CONFIRMAR PAGO
     </div>
 
     <!-- MODAL EDITAR VENTA -->
-    <div id="modalEditarVenta" class="modal-overlay" style="z-index:500;">
+    <div id="modalEditarVenta" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-7 space-y-5 border-2 border-emerald-500/40 m-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -4790,7 +4803,7 @@ SCAN
         </div>
     </div>
 
-    <div id="modalClienteVentaInvalido" class="modal-overlay" style="z-index:999999999;">
+    <div id="modalClienteVentaInvalido" class="modal-overlay">
         <div class="glass-card w-full max-w-md p-6 rounded-[2rem] border-2 border-red-500/40 space-y-4">
             <div class="flex items-center justify-between gap-3">
                 <h3 class="text-sm font-black text-red-400 uppercase tracking-widest italic">Cliente incorrecto</h3>
@@ -4810,7 +4823,7 @@ SCAN
     </div>
 
     <!-- MODAL BUSCADOR CAT?LOGO -->
-    <div id="modalCatalogo" class="modal-overlay" style="z-index:199999999;">
+    <div id="modalCatalogo" class="modal-overlay">
         <div class="glass-card w-full max-w-lg p-6 rounded-[2.5rem] space-y-4 border-2 border-emerald-500/30">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-emerald-500 uppercase italic">Catalogo</h3>
@@ -4826,7 +4839,7 @@ SCAN
         </div>
     </div>
 
-    <div id="modalSelector" class="modal-overlay" style="z-index:199999999;">
+    <div id="modalSelector" class="modal-overlay">
         <div class="glass-card w-full max-w-sm p-8 rounded-[2rem] text-center space-y-5 border-2 border-emerald-500">
             <!-- Foto del producto -->
             <div class="flex flex-col items-center gap-2">
@@ -4973,7 +4986,7 @@ Agregar
     </div>
 
     <!-- MODAL HORARIO CAJA -->
-    <div id="modalHorarioCaja" class="modal-overlay" style="z-index: 300;">
+    <div id="modalHorarioCaja" class="modal-overlay">
         <div class="glass-card w-full max-w-xs rounded-[2rem] p-7 space-y-5 border-2 border-emerald-500/40 text-center">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
@@ -5011,7 +5024,7 @@ Agregar
     </div>
 
     <!-- MODAL DETALLE EFECTIVO EN CAJA -->
-    <div id="modalDetalleCaja" class="modal-overlay" style="z-index: 320;">
+    <div id="modalDetalleCaja" class="modal-overlay">
         <div class="glass-card w-full max-w-3xl rounded-[2rem] p-6 md:p-7 border-2 border-emerald-500/30 m-4" style="max-height:92vh;overflow:hidden;">
             <div class="flex justify-between items-center mb-4">
                 <div>
@@ -5356,8 +5369,19 @@ _sheetProductos.forEach(p => {
 
     if (show) {
         el.classList.add('modal-active');
+        // Bloquear scroll de la vista activa
+        document.querySelectorAll('[id^="vista"]').forEach(function(v) {
+            if (!v.classList.contains('hidden')) v.style.overflowY = 'hidden';
+        });
     } else {
         el.classList.remove('modal-active');
+        // Restaurar scroll solo si no quedan modales abiertos
+        const hayAbierto = document.querySelectorAll('.modal-overlay.modal-active').length > 0;
+        if (!hayAbierto) {
+            document.querySelectorAll('[id^="vista"]').forEach(function(v) {
+                v.style.overflowY = '';
+            });
+        }
     }
 
     try { lucide.createIcons(); } catch(e) {}
@@ -10013,7 +10037,7 @@ if (indicator) indicator.classList.remove('hidden');
                     <div style="font-size:15px;font-weight:900;color:#e2e8f0;text-transform:uppercase;letter-spacing:.06em;">🛒 ${tituloModal}</div>
                     <div style="font-size:10px;color:#64748b;margin-top:2px;">📅 ${fecha} &nbsp;·&nbsp; <span id="lc_pendiente">${items.length}</span> pendientes</div>
                   </div>
-                  <button onclick="document.getElementById('modalListaCompras').remove()"
+                  <button onclick="document.getElementById('modalListaCompras').remove();"
                     style="background:#0f172a;border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;font-weight:900;">✕</button>
                 </div>
                 <!-- Acciones rápidas -->
@@ -10032,7 +10056,8 @@ if (indicator) indicator.classList.remove('hidden');
               </div>
             </div>`;
 
-            document.getElementById('modalListaCompras')?.remove();
+            const _existente = document.getElementById('modalListaCompras');
+            if (_existente) _existente.remove();
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
             // Guardar items en window para usarlos en funciones auxiliares
@@ -26152,16 +26177,18 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
 
         function verTicketCompra(idx) {
             const c = _sheetCompras[idx];
-            if (!c || !c.ticket) return;
+            if (!c) return;
+            const tickets = (c.tickets && c.tickets.length) ? c.tickets : (c.ticket ? [c.ticket] : []);
+            if (!tickets.length) return;
             const overlay = document.getElementById('modalTicketViewer');
             const inner   = document.getElementById('ticketViewerInner');
             const titulo  = document.getElementById('ticketViewerTitulo');
             titulo.textContent = 'TICKET - ' + (c.proveedor||'').toUpperCase() + ' ' + (c.fecha||'');
-            if (c.ticket.startsWith('data:application/pdf')) {
-                inner.innerHTML = `<iframe src="${c.ticket}" style="width:100%;height:70vh;border:none;border-radius:8px;"></iframe>`;
-            } else {
-                inner.innerHTML = `<img src="${c.ticket}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">`;
-            }
+            inner.innerHTML = tickets.map(t =>
+                t.startsWith('data:application/pdf')
+                    ? `<iframe src="${t}" style="width:100%;height:70vh;border:none;border-radius:8px;margin-bottom:8px;"></iframe>`
+                    : `<img src="${t}" style="max-width:100%;object-fit:contain;border-radius:8px;display:block;margin:0 auto 8px;">`
+            ).join('');
             overlay.classList.remove('hidden');
             overlay.style.display = 'flex';
         }
@@ -32444,17 +32471,22 @@ function verDetalleProveedor(tipo, id){
                 });
                 movs.sort((a,b) => (parseFechaNum(b.fecha) || 0) - (parseFechaNum(a.fecha) || 0));
                 if (!movs.length) { listaEl.innerHTML = '<p style="font-size:10px;color:#475569;text-align:center;padding:12px;">Sin compras en este período</p>'; }
-                else listaEl.innerHTML = movs.map(m => `
-                    <div onclick="verDetalleCompraKardex('${String(m.id).replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;cursor:pointer;" class="hover:border-blue-500/50">
-                        <div>
-                            <div style="font-size:9px;color:#10b981;font-weight:900;">${String(m.fecha).substring(0,16)}</div>
-                            <div style="font-size:10px;color:#e2e8f0;font-weight:700;">${Utils.escHtml(m.detalle)}</div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                            <span style="font-size:13px;font-weight:900;color:#60a5fa;">+${Utils.fmt(m.cantidad)}</span>
-                            <span style="font-size:9px;color:#60a5fa;">📦</span>
-                        </div>
-                    </div>`).join('');
+                else listaEl.innerHTML = movs.map(m => {
+                    const cpIdx = _sheetCompras.findIndex(x => String(x.id||'').trim() === String(m.id).trim());
+                    const cp = cpIdx >= 0 ? _sheetCompras[cpIdx] : null;
+                    const tieneTicket = cp && (cp.ticket || (cp.tickets||[]).length > 0);
+                    const btnTicket = tieneTicket ? '<button onclick=\"event.stopPropagation();verTicketCompra(' + cpIdx + ')\" title=\"Ver ticket\" style=\"background:#1e3a5f;border:none;color:#60a5fa;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px;\">🧾</button>' : '';
+                    return '<div onclick=\"verDetalleCompraKardex(\'' + String(m.id).replace(/\'/g,"\\'") + '\')\" style=\"display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;cursor:pointer;\" class=\"hover:border-blue-500/50\">' +
+                        '<div>' +
+                            '<div style=\"font-size:9px;color:#10b981;font-weight:900;\">' + String(m.fecha).substring(0,16) + '</div>' +
+                            '<div style=\"font-size:10px;color:#e2e8f0;font-weight:700;\">' + Utils.escHtml(m.detalle) + '</div>' +
+                        '</div>' +
+                        '<div style=\"display:flex;align-items:center;gap:6px;\">' +
+                            '<span style=\"font-size:13px;font-weight:900;color:#60a5fa;\">+' + Utils.fmt(m.cantidad) + '</span>' +
+                            btnTicket +
+                        '</div>' +
+                    '</div>';
+                }).join('');
             } else {
                 const todasV = ventasParaCalculo();
                 const movs = [];
@@ -32481,7 +32513,79 @@ function verDetalleProveedor(tipo, id){
                         </div>
                     </div>`).join('');
             }
+            // Guardar para PDF
+            window._mmpDatos = { titulo: document.getElementById('mmpTitulo').textContent, producto: nombreProd, esCompra };
             toggleModal('modalMovimientosProdProv', true);
+        }
+
+        function generarPDFMovimientosProdProv() {
+            if (!window.jspdf) { mostrarToast('PDF no disponible', 'error'); return; }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
+            let y = 0;
+            // Header
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, W, 40, 'F');
+            insertarLogoPDF(doc, W - 42, 6, 28, 28);
+            const nombreEmp = localStorage.getItem('natanael_empresa') || 'ALMACEN NATANAEL';
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(52, 211, 153);
+            doc.text(nombreEmp.toUpperCase(), 10, 17);
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            const d = window._mmpDatos || {};
+            doc.text((d.titulo || 'MOVIMIENTOS').toUpperCase(), 10, 25);
+            doc.setFontSize(9);
+            doc.setTextColor(226, 232, 240);
+            doc.text((d.producto || '').toUpperCase(), 10, 33);
+            y = 50;
+            // Leer filas del modal
+            const filas = document.querySelectorAll('#mmpLista > div');
+            if (!filas.length) { mostrarToast('Sin datos para exportar', 'error'); return; }
+            // Encabezado tabla
+            doc.setFillColor(d.esCompra ? 16 : 249, d.esCompra ? 185 : 115, d.esCompra ? 129 : 22);
+            doc.rect(8, y, W - 16, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(0, 0, 0);
+            doc.text('FECHA', 12, y + 5.5);
+            doc.text('PROVEEDOR / DETALLE', 55, y + 5.5);
+            doc.text('CANT.', W - 22, y + 5.5, { align: 'right' });
+            y += 10;
+            filas.forEach(function(fila, i) {
+                const divs = fila.querySelectorAll('div > div');
+                const fecha = divs[0] ? divs[0].textContent.trim() : '';
+                const detalle = divs[1] ? divs[1].textContent.trim() : '';
+                const cantEl = fila.querySelector('span');
+                const cant = cantEl ? cantEl.textContent.trim() : '';
+                const bg = i % 2 === 0 ? [15, 23, 42] : [2, 6, 23];
+                doc.setFillColor(bg[0], bg[1], bg[2]);
+                doc.rect(8, y - 3, W - 16, 9, 'F');
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(16, 185, 129);
+                doc.text(fecha.substring(0, 16), 12, y + 2.5);
+                doc.setTextColor(226, 232, 240);
+                doc.text(detalle.substring(0, 50), 55, y + 2.5);
+                doc.setTextColor(96, 165, 250);
+                doc.text(cant, W - 22, y + 2.5, { align: 'right' });
+                y += 9;
+                if (y > 270) { doc.addPage(); y = 15; }
+            });
+            // Total
+            y += 4;
+            doc.setFillColor(15, 23, 42);
+            doc.rect(8, y, W - 16, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            doc.text('TOTAL: ' + filas.length + ' movimientos', 12, y + 5.5);
+            doc.setTextColor(96, 165, 250);
+            doc.text(new Date().toLocaleDateString('es-AR'), W - 22, y + 5.5, { align: 'right' });
+            const nombreArchivo = 'movimientos_' + (d.producto || 'producto').replace(/\s+/g,'_').toLowerCase() + '.pdf';
+            doc.save(nombreArchivo);
         }
 
         function verDetalleVentaKardex(ventaId) {
@@ -33352,7 +33456,7 @@ function verDetalleProveedor(tipo, id){
     </script>
 
     <!-- MODAL ELIMINAR PRODUCTO -->
-    <div id="modalEliminarProd" class="modal-overlay" style="z-index:599999999;">
+    <div id="modalEliminarProd" class="modal-overlay">
         <div style="background:#0f172a;border:2px solid rgba(239,68,68,0.4);border-radius:1.5rem;padding:1.75rem;width:100%;max-width:22rem;margin:1rem;display:flex;flex-direction:column;gap:1.25rem;">
             <div style="display:flex;align-items:center;gap:.75rem;">
                 <div style="width:2.5rem;height:2.5rem;background:rgba(239,68,68,0.1);border-radius:.75rem;display:flex;align-items:center;justify-content:center;">
@@ -34444,9 +34548,92 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="glass-card w-full max-w-2xl rounded-2xl border border-slate-700 overflow-hidden flex flex-col" style="max-height:90vh;">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80 shrink-0">
                 <span id="ticketViewerTitulo" class="text-[11px] font-black text-emerald-400 uppercase tracking-widest"></span>
-                <button onclick="cerrarTicketViewer()" class="text-slate-400 hover:text-white font-black text-lg">&times;</button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button onclick="ticketZoomOut()" title="Alejar" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:8px;width:30px;height:30px;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">−</button>
+                    <span id="ticketZoomLabel" style="font-size:10px;font-weight:900;color:#64748b;min-width:36px;text-align:center;">100%</span>
+                    <button onclick="ticketZoomIn()" title="Acercar" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:8px;width:30px;height:30px;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
+                    <button onclick="ticketZoomReset()" title="Restablecer" style="background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:8px;padding:0 8px;height:30px;font-size:9px;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;">1:1</button>
+                    <button onclick="cerrarTicketViewer()" class="text-slate-400 hover:text-white font-black text-lg" style="margin-left:4px;">&times;</button>
+                </div>
             </div>
-            <div id="ticketViewerInner" class="p-4 overflow-auto flex-1 bg-slate-950"></div>
+            <div id="ticketViewerInner" class="p-4 overflow-auto flex-1 bg-slate-950" style="touch-action:pinch-zoom;"></div>
+            <script>
+            (function(){
+                var _tvScale = 1;
+                var _tvPinchDist = null;
+
+                function _tvApply() {
+                    var inner = document.getElementById('ticketViewerInner');
+                    if (!inner) return;
+                    var imgs = inner.querySelectorAll('img');
+                    imgs.forEach(function(img){
+                        img.style.transform = 'scale(' + _tvScale + ')';
+                        img.style.transformOrigin = 'top center';
+                        img.style.transition = 'transform .15s ease';
+                    });
+                    var lbl = document.getElementById('ticketZoomLabel');
+                    if (lbl) lbl.textContent = Math.round(_tvScale * 100) + '%';
+                }
+
+                window.ticketZoomIn = function() {
+                    _tvScale = Math.min(_tvScale + 0.25, 5);
+                    _tvApply();
+                };
+                window.ticketZoomOut = function() {
+                    _tvScale = Math.max(_tvScale - 0.25, 0.25);
+                    _tvApply();
+                };
+                window.ticketZoomReset = function() {
+                    _tvScale = 1;
+                    _tvApply();
+                };
+
+                // Restablecer zoom al cerrar
+                var _origCerrar = window.cerrarTicketViewer;
+                window.cerrarTicketViewer = function() {
+                    _tvScale = 1;
+                    var lbl = document.getElementById('ticketZoomLabel');
+                    if (lbl) lbl.textContent = '100%';
+                    if (_origCerrar) _origCerrar();
+                };
+
+                // Rueda del mouse
+                document.addEventListener('wheel', function(e) {
+                    var inner = document.getElementById('ticketViewerInner');
+                    if (!inner || !inner.contains(e.target)) return;
+                    e.preventDefault();
+                    if (e.deltaY < 0) window.ticketZoomIn();
+                    else window.ticketZoomOut();
+                }, { passive: false });
+
+                // Pellizco táctil (pinch-to-zoom)
+                document.addEventListener('touchstart', function(e) {
+                    if (e.touches.length === 2) {
+                        var dx = e.touches[0].clientX - e.touches[1].clientX;
+                        var dy = e.touches[0].clientY - e.touches[1].clientY;
+                        _tvPinchDist = Math.sqrt(dx*dx + dy*dy);
+                    }
+                }, { passive: true });
+
+                document.addEventListener('touchmove', function(e) {
+                    var inner = document.getElementById('ticketViewerInner');
+                    if (!inner) return;
+                    if (e.touches.length === 2 && _tvPinchDist !== null) {
+                        var dx = e.touches[0].clientX - e.touches[1].clientX;
+                        var dy = e.touches[0].clientY - e.touches[1].clientY;
+                        var newDist = Math.sqrt(dx*dx + dy*dy);
+                        var ratio = newDist / _tvPinchDist;
+                        _tvScale = Math.min(Math.max(_tvScale * ratio, 0.25), 5);
+                        _tvPinchDist = newDist;
+                        _tvApply();
+                    }
+                }, { passive: true });
+
+                document.addEventListener('touchend', function(e) {
+                    if (e.touches.length < 2) _tvPinchDist = null;
+                }, { passive: true });
+            })();
+            </script>
         </div>
     </div>
 
@@ -35335,7 +35522,7 @@ setTimeout(function() {
 </script>
 
     <!-- MODAL EDITAR VENCIMIENTO WIDGET -->
-    <div id="modalEditVenc" class="modal-overlay" style="z-index:500;">
+    <div id="modalEditVenc" class="modal-overlay">
         <div class="glass-card w-full max-w-sm rounded-[2rem] p-6 space-y-4 border-2 border-amber-500/40 m-4">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-black text-amber-400 uppercase italic">Editar Vencimiento</h3>
