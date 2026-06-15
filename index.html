@@ -1213,10 +1213,14 @@ z-index:999999999;
             <input type="text" id="inputFiltroClientes" placeholder="Buscar cliente..." oninput="_dbounce('clientes',()=>filtrarClientes(this.value))" class="w-full text-xs px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500">
 
             <!-- KPIs globales de deuda -->
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 gap-3">
                 <div class="glass-card p-4 rounded-2xl text-center border border-red-500/30">
                     <span class="text-[9px] font-black text-red-400 uppercase tracking-widest block mb-1">&#128179; Total Debe</span>
                     <span id="kpiClientesTotalDebe" class="text-xl font-black text-red-400 font-mono">$0</span>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center border border-emerald-500/30" style="background:linear-gradient(135deg,#001a0d 0%,#0f172a 100%);">
+                    <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest block mb-1">&#9989; Total A Favor</span>
+                    <span id="kpiClientesTotalAFavor" class="text-xl font-black text-emerald-300 font-mono">$0</span>
                 </div>
                 <div class="glass-card p-4 rounded-2xl text-center border border-amber-500/30" style="background:linear-gradient(135deg,#1a1100 0%,#0f172a 100%);">
                     <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest block mb-1">&#128176; Total Capital</span>
@@ -7176,8 +7180,8 @@ _sheetEgresosNegocio.forEach(e => {
                 }
             }
         }
-        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
-        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycby3CyPN2earoREL4T8sPnGYiqOTd3fvtIVeTaB-fUlbPAecnX-IW1J1O0FmGp9Hqrmi/exec';
+        const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbwUSL27ouLrJ8ah2JoB9w-I7rvc4HI3momsHtoBY3mXj3yTUTBfjQKk56C_gNeCeHEW/exec';
+        const SHEETS_URL2 = 'https://script.google.com/macros/s/AKfycbwUSL27ouLrJ8ah2JoB9w-I7rvc4HI3momsHtoBY3mXj3yTUTBfjQKk56C_gNeCeHEW/exec';
         // ↗↗ COLA DE ENV?OS PENDIENTES ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
         // Cuando no hay internet, los POSTs se guardan en localStorage.
         // Al recuperar conexión se reenvían automáticamente.
@@ -8109,8 +8113,8 @@ _sheetEgresosNegocio.forEach(e => {
                     return;
                 }
                 _log('✅ Etapa 1 OK ? inventario:' + (dataRapido.inventario||[]).length + ' ventas:' + (dataRapido.ventas||[]).length, '#10b981');
-                if ((dataRapido.ventas||[]).length > 0)     { _syncStatus.ventas = true;     actualizarIndicadorSync(); }
-                if ((dataRapido.pagoVentas||[]).length > 0) { _syncStatus.pagoVentas = true;  actualizarIndicadorSync(); }
+                _syncStatus.ventas = true; actualizarIndicadorSync();
+                _syncStatus.pagoVentas = true; actualizarIndicadorSync();
 
                 // Construir data inicial con lo que llegó rápido + arrays vacíos para el resto
                 data = {
@@ -8345,7 +8349,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     _inventarioCacheInicialCount = 0;
     try { localStorage.setItem('natanael_inventario_full_count_v1', String(_sheetProductos.length)); } catch(e) {}
     /*dbg*/0&&console.log('✅ Inventario: ' + _sheetProductos.length + ' productos del sheet (limpio, sin duplicados)');
-    if (_sheetProductos.length > 0) { _syncStatus.productos = true; actualizarIndicadorSync(); }
+    _syncStatus.productos = true; actualizarIndicadorSync();
     indexarProductos();
     if (typeof DB !== 'undefined' && DB.saveInventario) DB.saveInventario();
     if (typeof _guardarCache === 'function') _guardarCache();
@@ -8375,7 +8379,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                         const telefono = String(row['TELEFONO'] || '').trim();
                         const direccion= String(row['DIRECCION'] || '').trim();
                         const imagen   = String(row['IMAGEN'] || '').trim();
-                        const email    = String(row['EMAIL'] || '').trim();
+                        const aFavor   = parseFloat(String(row['EMAIL'] || row['A FAVOR'] || '').replace(/[^\d.-]/g,'')) || 0;
                         clientesSheet.push({
                             id:        idSheet,
                             idSheet:   idSheet,
@@ -8383,7 +8387,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                             celular:   telefono,
                             direccion: direccion,
                             foto:      imagen,
-                            email:     email,
+                            aFavor:    aFavor,
                             pagos:     [],
                             fromSheet: true
                         });
@@ -8402,7 +8406,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
     if (telefono)  existe.celular  = telefono;
     if (direccion) existe.direccion= direccion;
     if (imagen)    existe.foto     = imagen;
-    if (email)     existe.email    = email;
+    existe.aFavor = aFavor;
 
 } else {
                             clientesDB.push({
@@ -8412,7 +8416,7 @@ if (Array.isArray(data.inventario) && data.inventario.length > 0) {
                                 celular:   telefono,
                                 direccion: direccion,
                                 foto:      imagen,
-                                email:     email,
+                                aFavor:    aFavor,
                                 pagos:     [],
                                 fromSheet: true
                             });
@@ -9037,7 +9041,7 @@ if (indicator) indicator.classList.remove('hidden');
                 if (Array.isArray(data.pagoCompras))          { _sheetPagoCompras         = data.pagoCompras.map(r=>{ const idC=String(r['IDCOMPRAS']||r['NUMERO DE COMPRAS']||r['NUMERO_DE_COMPRAS']||r['Numero de Compras']||r['idCompra']||r['ID Compra']||'').trim(); return {IDCOMPRAS:idC,idCompra:idC, MONTO:parseSheetNum(r['MONTO']||0), monto:parseSheetNum(r['MONTO']||0), fecha:String(r['FECHA']||'').trim(), fechaISO:String(r['FECHA']||'').trim(), 'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||r['FECHA']||'').trim(), proveedor:String(r['PROVEEDOR']||r['Proveedor']||'').trim().toUpperCase(), producto:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), PRODUCTO:String(r['PRODUCTO']||r['Producto']||r['PRODUCTOS PAGADOS']||r['Productos Pagados']||'').trim(), imagen:String(r['IMAGEN DE LA COMPRA']||r['IMAGEN']||'').trim(), formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()}; }); window._sheetPagoCompras = _sheetPagoCompras; }
                 if (Array.isArray(data.pagoIngresos))         { _sheetPagoIngresos        = data.pagoIngresos.map(r=>({IDINGRESOS:String(r['IDINGRESOS']||r['ID_INGRESOS']||r['Id_Ingresos']||r['NUMERO DE INGRESOS']||r['NUMERO_DE_INGRESOS']||r['numeroIngreso']||'').trim(),ID_INGRESOS:String(r['ID_INGRESOS']||r['Id_Ingresos']||r['IDINGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaISO:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim()})); window._sheetPagoIngresos = _sheetPagoIngresos; }
                 if (Array.isArray(data.pagoEgresos))          { _sheetPagoEgresos         = data.pagoEgresos.map(r=>({IDEGRESOS:String(r['IDEGRESOS']||r['ID_GASTOS']||r['Id_Gastos']||r['NUMERO DE EGRESOS']||r['NUMERO_DE_EGRESOS']||'').trim(),ID_GASTOS:String(r['ID_GASTOS']||r['Id_Gastos']||r['IDEGRESOS']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),FECHA:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fecha:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaISO:String(r['FECHA']||r['FECHA ORIGINAL']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||r['Forma de Pago']||'').trim(),proveedor:String(r['SUPERCATEGORIA']||r['Supercategoria']||r['PROVEEDOR']||r['Proveedor']||'').trim(),categoria:String(r['CATEGORIA']||r['Categoria']||'').trim()})); window._sheetPagoEgresos = _sheetPagoEgresos; }
-                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; if (_sheetPagoIngNeg.length > 0) { _syncStatus.pagoIngresosNegocio = true; actualizarIndicadorSync(); } }
+                if (Array.isArray(data.pagoIngresosNegocio))  { _sheetPagoIngNeg          = data.pagoIngresosNegocio.map(r=>({IDPAGOSINGRESOSNEGOCIO:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOSINGRESOSNEGOCIO']||r['IDPAGOINGRESOSNEGOCIO']||r['NUMERO DE PAGO INGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_INGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),IDINGRESOSNEGOCIO:String(r['IDINGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),'FECHA ORIGINAL':String(r['FECHA ORIGINAL']||r['Fecha Original']||'').trim(),fechaOriginal:String(r['FECHA ORIGINAL']||r['Fecha Original']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),cliente:String(r['CLIENTE']||r['Cliente']||'').trim(),CLIENTE:String(r['CLIENTE']||r['Cliente']||'').trim(),fromSheet:true})); _pagoIngNegSheet = _sheetPagoIngNeg; window._sheetPagoIngNeg = _sheetPagoIngNeg; window._pagoIngNegSheet = _pagoIngNegSheet; _syncStatus.pagoIngresosNegocio = true; actualizarIndicadorSync(); }
                 if (Array.isArray(data.pagoEgresosNegocio))   { _pagoEgrNegSheet        = data.pagoEgresosNegocio.map(r=>({IDPAGOEGRESOSNEGOCIO:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),id:String(r['IDPAGOEGRESOSNEGOCIO']||r['IDPAGOSINGRESOSNEGOCIO']||r['NUMERO DE PAGO EGRESOS NEGOCIO']||r['NUMERO_DE_PAGO_EGRESOS_NEGOCIO']||r['ID']||r['id']||'').trim(),idEgresoNeg:String(r['IDEGRESOSNEGOCIO']||'').trim(),IDEGRESOSNEGOCIO:String(r['IDEGRESOSNEGOCIO']||'').trim(),MONTO:parseSheetNum(r['MONTO']||0),monto:parseSheetNum(r['MONTO']||0),fecha:String(r['FECHA']||'').trim(),FECHA:String(r['FECHA']||'').trim(),fechaISO:String(r['FECHA']||'').trim(),formaPago:String(r['FORMA DE PAGO']||'').trim(),fromSheet:true})).filter(p=>p.monto>0); _sheetPagoEgrNeg = _pagoEgrNegSheet; window._sheetPagoEgrNeg = _sheetPagoEgrNeg; }
                 // Ingresos Negocio / Egresos Negocio
                 if (typeof window.syncIngEgrNeg === 'function') {
@@ -9045,7 +9049,7 @@ if (indicator) indicator.classList.remove('hidden');
                     window.syncIngEgrNeg(data.egresosNegocio,  _sheetEgresosNegocio,  saveEgresosNeg,  'egresosNegocio',  _supercatsEgrNegSheet, _catsEgrNegSheet);
                     window._sheetIngresosNegocio = _sheetIngresosNegocio;
                     window._sheetEgresosNegocio  = _sheetEgresosNegocio;
-                    if ((data.ingresosNegocio||[]).length > 0) { _syncStatus.ingresosNegocio = true; actualizarIndicadorSync(); }
+                    _syncStatus.ingresosNegocio = true; actualizarIndicadorSync();
                 }
                 // Proveedores
                 syncProveedoresDesdeSheet(data.proveedoresNegocio, 'negocio');
@@ -20552,7 +20556,9 @@ function calcularDeudaTotalCliente(idCl) {
                     nombre,
                     celular,
                     direccion,
-                    email:     clienteExistente ? clienteExistente.email || '' : '',
+                    aFavor:    clienteExistente ? (clienteExistente.aFavor || 0) : 0,
+                    'A FAVOR': clienteExistente ? (clienteExistente.aFavor || 0) : 0,
+                    email:     clienteExistente ? (clienteExistente.aFavor || 0) : 0,
                     imagen:    fotoFinal      // IMAGEN ? requiere que el Apps Script lo incluya en el mapping
                 };
                 fetchSheets({ method: 'POST', body: JSON.stringify(clientePayload) });
@@ -20589,6 +20595,49 @@ function calcularDeudaTotalCliente(idCl) {
              
             renderClientes();
             mostrarToast(`✅ Cliente eliminado`);
+        }
+
+        // --- A Favor ---
+        var _aFavorClienteId = null;
+
+        function abrirModalAFavor(id) {
+            _aFavorClienteId = id;
+            const c = clientesDB.find(c => c.id === id);
+            if (!c) return;
+            document.getElementById('modalAFavorNombre').textContent = c.nombre;
+            document.getElementById('modalAFavorActual').textContent = '$' + Utils.fmt(c.aFavor || 0);
+            document.getElementById('inputAFavor').value = c.aFavor || '';
+            toggleModal('modalAFavor', true);
+        }
+
+        function guardarAFavor() {
+            const id = _aFavorClienteId;
+            if (!id) return;
+            const monto = parseFloat(document.getElementById('inputAFavor').value) || 0;
+            const idx = clientesDB.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            clientesDB[idx].aFavor = monto;
+            window.clientesDB = clientesDB;
+            if (typeof _guardarCache === 'function') _guardarCache();
+
+            // Enviar al Sheet (columna A FAVOR)
+            const c = clientesDB[idx];
+            const payload = {
+                tipo:      'cliente',
+                id:        c.idSheet || c.id || '',
+                nombre:    c.nombre,
+                celular:   c.celular || '',
+                direccion: c.direccion || '',
+                aFavor:    monto,
+                'A FAVOR': monto,
+                email:     monto,
+                imagen:    c.foto || ''
+            };
+            fetchSheets({ method: 'POST', body: JSON.stringify(payload) });
+
+            toggleModal('modalAFavor', false);
+            renderClientes();
+            mostrarToast('A Favor actualizado: $' + Utils.fmt(monto), 'success');
         }
 
         // --- Render lista ---
@@ -20839,12 +20888,15 @@ function calcularDeudaTotalCliente(idCl) {
                     });
                 });
             });
+            const _kpiAFavor = datos.reduce((s, c) => s + (parseFloat(c.aFavor) || 0), 0);
             const _elD = document.getElementById('kpiClientesTotalDebe');
             const _elC = document.getElementById('kpiClientesTotalCapital');
             const _elG = document.getElementById('kpiClientesTotalGanancia');
+            const _elA = document.getElementById('kpiClientesTotalAFavor');
             if (_elD) _elD.textContent = '$' + Utils.fmt(Math.round(_kpiDebe));
             if (_elC) _elC.textContent = '$' + Utils.fmt(Math.round(_kpiCapital));
             if (_elG) _elG.textContent = '$' + Utils.fmt(Math.round(_kpiGanancia));
+            if (_elA) _elA.textContent = '$' + Utils.fmt(Math.round(_kpiAFavor));
 
             // ↗↗ Render HTML usando valores pre-calculados ? cero recálculos ↗↗
             container.innerHTML = datosOrdenados.map(c => {
@@ -20878,15 +20930,21 @@ function calcularDeudaTotalCliente(idCl) {
                                 </div>`}
                         <span class="text-[9px] text-slate-600" style="display:block;margin-top:6px;">${ventasCliente.length} compra${ventasCliente.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <div class="flex gap-1.5 shrink-0">
-                        <button onclick="abrirDetalleCliente('${c.id}')" class="p-2 bg-slate-800 hover:bg-emerald-500 hover:text-black text-slate-400 rounded-lg transition-all" title="Ver detalle">
-                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="abrirEditorCliente('${c.id}')" class="p-2 bg-slate-800 hover:text-emerald-500 text-slate-400 rounded-lg transition-all" title="Editar">
-                            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="eliminarCliente('${c.id}')" class="p-2 bg-slate-800 hover:bg-red-500 hover:text-white text-slate-500 rounded-lg transition-all" title="Eliminar">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <div class="flex flex-col gap-1.5 shrink-0">
+                        <div class="flex gap-1.5">
+                            <button onclick="abrirDetalleCliente('${c.id}')" class="p-2 bg-slate-800 hover:bg-emerald-500 hover:text-black text-slate-400 rounded-lg transition-all" title="Ver detalle">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="abrirEditorCliente('${c.id}')" class="p-2 bg-slate-800 hover:text-emerald-500 text-slate-400 rounded-lg transition-all" title="Editar">
+                                <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="eliminarCliente('${c.id}')" class="p-2 bg-slate-800 hover:bg-red-500 hover:text-white text-slate-500 rounded-lg transition-all" title="Eliminar">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                        <button onclick="abrirModalAFavor('${c.id}')" class="w-full py-1 px-2 rounded-lg font-black text-[9px] uppercase tracking-wide transition-all"
+                            style="background:linear-gradient(135deg,rgba(6,95,70,.35),rgba(4,120,87,.15));border:1px solid rgba(52,211,153,.35);color:#34d399;">
+                            &#9989; A Favor ${c.aFavor > 0 ? '$'+Utils.fmt(c.aFavor) : '+ Agregar'}
                         </button>
                     </div>
                 </div>`;
@@ -21143,7 +21201,7 @@ resetSeccionesDetalleCliente();
             // ↗↗ Header ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
             document.getElementById('detalleClienteNombre').textContent = c.nombre || '';
             document.getElementById('detalleClienteInfo').textContent   =
-                [c.telefono, c.email].filter(Boolean).join(' · ') || 'Sin datos de contacto';
+                [c.telefono, c.direccion].filter(Boolean).join(' · ') || 'Sin datos de contacto';
             const fotoEl  = document.getElementById('detalleClienteFoto');
             const phEl    = document.getElementById('detalleClientePlaceholder');
             if (c.foto) {
@@ -29909,7 +29967,7 @@ function calcularCajaEsperada() {
                 direccion: c.direccion || c.DIRECCION || '',
                 foto: c.foto || c.imagen || c.IMAGEN || '',
                 imagen: c.imagen || c.foto || c.IMAGEN || '',
-                email: c.email || c.EMAIL || '',
+                aFavor: c.aFavor || 0,
                 pagos: Array.isArray(c.pagos) ? c.pagos : [],
                 fromSheet: !!c.fromSheet
             };
@@ -31297,7 +31355,7 @@ function verDetalleProveedor(tipo, id){
                     'PORCENTAJE DE GANANCIA':  registro.porcentaje,
                     'DIRECCION':               registro.direccion,
                     'TELEFONO':                registro.telefono,
-                    'EMAIL':                   registro.email,
+                    'EMAIL':                   registro.aFavor || 0,
                     'WEB':                     registro.web,
                     'REDES SOCIALES':          registro.redes,
                     'IMAGEN':                  registro.imagen || ''
@@ -31309,7 +31367,7 @@ function verDetalleProveedor(tipo, id){
                     'NOMBRE':              registro.nombre,
                     'DIRECCION':           registro.direccion,
                     'TELEFONO':            registro.telefono,
-                    'EMAIL':               registro.email,
+                    'EMAIL':               registro.aFavor || 0,
                     'WEB':                 registro.web,
                     'RED SOCIAL':          registro.redes,
                     'IMAGEN':              registro.imagen || ''
@@ -31384,7 +31442,7 @@ function verDetalleProveedor(tipo, id){
             porcentaje: String(row['PORCENTAJE DE GANANCIA'] || '').trim(),
             direccion: String(row['DIRECCION'] || '').trim(),
             telefono: String(row['TELEFONO'] || '').trim(),
-            email: String(row['EMAIL'] || '').trim(),
+            aFavor: parseFloat(String(row['EMAIL'] || row['A FAVOR'] || '').replace(/[^\d.-]/g,'')) || 0,
             web: String(row['WEB'] || '').trim(),
             redes: String(row['REDES SOCIALES'] || row['RED SOCIAL'] || '').trim(),
             imagen: imagenFinal
@@ -35640,6 +35698,33 @@ setTimeout(function() {
         };
     })();
     </script>
+
+
+    <!-- MODAL A FAVOR -->
+    <div id="modalAFavor" class="modal-overlay">
+        <div class="glass-card w-full max-w-sm rounded-[2rem] p-6 space-y-4 border-2 border-emerald-500/40 m-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-black text-emerald-400 uppercase italic">&#9989; Monto A Favor</h3>
+                <button onclick="toggleModal('modalAFavor',false)" class="text-slate-500 hover:text-white text-lg font-black">✕</button>
+            </div>
+            <p id="modalAFavorNombre" class="text-white font-black text-sm text-center uppercase"></p>
+            <div class="glass-card p-3 rounded-xl text-center border border-emerald-500/20">
+                <span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Saldo Actual A Favor</span>
+                <span id="modalAFavorActual" class="text-2xl font-black text-emerald-300 font-mono">$0</span>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase">Nuevo Monto Total A Favor</label>
+                <input type="number" id="inputAFavor" min="0" step="1" placeholder="0"
+                    class="w-full text-sm bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500"
+                    style="font-family:ui-monospace,monospace;">
+                <p class="text-[9px] text-slate-500">Ingresá el monto total acumulado a favor del cliente.</p>
+            </div>
+            <button onclick="guardarAFavor()" class="w-full py-3 font-black rounded-xl uppercase text-xs transition-colors"
+                style="background:linear-gradient(135deg,#059669,#047857);color:#fff;">
+                Guardar A Favor
+            </button>
+        </div>
+    </div>
 
 </body>
 </html>
