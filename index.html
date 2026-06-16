@@ -3170,7 +3170,7 @@ GUARDAR PRODUCTO
                             style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">7D</button>
                         <button onclick="setRangoProductosRapido('stock','30d')"
                             style="background:#1e293b;color:#e2e8f0;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">30D</button>
-                        <button onclick="document.getElementById('provStatDesde').value='';document.getElementById('provStatHasta').value='';document.getElementById('filtroDepartamentoStock').value='';renderStockProveedor();"
+                        <button onclick="document.getElementById('provStatDesde').value='';document.getElementById('provStatHasta').value='';document.getElementById('filtroDepartamentoStock').value='';var _stv=document.getElementById('stockProvTipoVenta');if(_stv)_stv.value='';renderStockProveedor();"
                             style="background:#1e293b;color:#94a3b8;border:2px solid #334155;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;">↺</button>
                     </div>
                 </div>
@@ -3206,6 +3206,15 @@ GUARDAR PRODUCTO
                             <option value="stock0">⚠️ Stock 0 o menos primero</option>
                             <option value="compras0">⚠️ Sin compras primero</option>
                             <option value="comprar">🛒 Comprar: negativos + stock 0/1 o ≤50gr</option>
+                        </select>
+                    </div>
+                    <!-- Filtro tipo de venta -->
+                    <div style="padding:4px 14px 0;">
+                        <select id="stockProvTipoVenta" onchange="renderStockProveedor()"
+                            style="width:100%;box-sizing:border-box;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:11px;font-weight:900;padding:8px 10px;outline:none;text-transform:uppercase;">
+                            <option value="">Todo (Unidad + Gramos)</option>
+                            <option value="unidad">Solo Unidad</option>
+                            <option value="gramos">Solo Gramos</option>
                         </select>
                     </div>
                     <!-- Botón compartir lista de compras -->
@@ -10194,10 +10203,17 @@ if (indicator) indicator.classList.remove('hidden');
                 }
             }
 
-            const productos = _sheetProductos.filter(p =>
-                (!proveedor || String(p.proveedor||'').trim().toUpperCase() === proveedor.toUpperCase())
-                && (!deptoFiltroStock || String(p.depto||'').trim().toUpperCase() === deptoFiltroStock)
-            );
+            const _tipoVentaFiltro = (document.getElementById('stockProvTipoVenta')?.value || '').trim().toLowerCase();
+            const productos = _sheetProductos.filter(p => {
+                if (proveedor && String(p.proveedor||'').trim().toUpperCase() !== proveedor.toUpperCase()) return false;
+                if (deptoFiltroStock && String(p.depto||'').trim().toUpperCase() !== deptoFiltroStock) return false;
+                if (_tipoVentaFiltro === 'gramos') {
+                    if (!esTipoVenta(p.tipoVenta)) return false;
+                } else if (_tipoVentaFiltro === 'unidad') {
+                    if (esTipoVenta(p.tipoVenta)) return false;
+                }
+                return true;
+            });
 
             if (!productos.length) {
                 if (wrap) wrap.classList.add('hidden');
