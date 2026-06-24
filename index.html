@@ -26154,8 +26154,7 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
     const idx = realIdx;
     const todosItems = [...(c.items||[]), ...extraItems];
     const totalProductosGrupo = todosItems.reduce((sum, i) => {
-        const totalItem = parseFloat(i.total || 0) || ((parseFloat(i.costo || 0) || 0) * (parseFloat(i.cantidad || 1) || 1));
-        return sum + totalItem;
+        return sum + (parseFloat(i.pagoTotal || i.subtotal || 0) || 0);
     }, 0);
     const totalMostradoCompra = totalProductosGrupo > 0 ? totalProductosGrupo : (parseFloat(c.total || 0) || 0);
 
