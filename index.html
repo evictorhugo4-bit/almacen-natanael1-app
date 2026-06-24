@@ -13930,10 +13930,10 @@ if (indicator) indicator.classList.remove('hidden');
 
             if (_tcTipo === 'todos' || _tcTipo === 'egresos') {
                 (_sheetEgresos||[]).forEach(e => {
-                    if ((e.formaPago||'').toUpperCase() !== 'TARJETA') return;
-                    const fd = (e.fechaISO||e.fecha||'').substring(0,10);
-                    if (desde && fd < desde) return;
-                    if (hasta && fd > hasta) return;
+                    if ((e.formaPago||'').toUpperCase().trim() !== 'TARJETA') return;
+                    const fn = parseFechaNum(e.fechaISO||e.fecha||'');
+                    if (desde) { const fdn = parseFechaNum(desde + 'T00:00:00'); if (fdn && fn && fn < fdn) return; }
+                    if (hasta) { const fhn = parseFechaNum(hasta + 'T23:59:59'); if (fhn && fn && fn > fhn) return; }
                     const totalEgreso = parseFloat(e.total || 0) || 0;
                     const idEgreso = String(e.idSheet || e.id || e.IDEGRESOS || e.ID_GASTOS || '').trim();
                     const pagadoReal = Math.max(0, pagosEgresosTarjetaMap[idEgreso] || 0);
