@@ -13907,14 +13907,19 @@ if (indicator) indicator.classList.remove('hidden');
                         compras.push(reg);
                     });
                 } else {
+                    const _idsComprasVistos = new Set();
                     (_sheetCompras||[]).forEach(c => {
                         const resumenTarjeta = resumenCompraParaTarjeta(c);
                         if (!resumenTarjeta) return;
                         const fd = (c.fechaISO||c.fecha||'').substring(0,10);
                         if (desde && fd < desde) return;
                         if (hasta && fd > hasta) return;
+                        const _idC = String(c.idSheet||c.id||'').trim();
+                        // Deduplicar por ID para evitar registros duplicados por sync
+                        if (_idC && _idsComprasVistos.has(_idC)) return;
+                        if (_idC) _idsComprasVistos.add(_idC);
                         const reg = {
-                            id:String(c.idSheet||c.id||'').trim(),
+                            id:_idC,
                             tipo:'COMPRA', fecha:c.fecha||'', fechaISO:c.fechaISO||c.fecha||'',
                             concepto:c.proveedor||'?',
                             credito:resumenTarjeta.credito, pagado:resumenTarjeta.pagado, total:resumenTarjeta.total,
@@ -13929,6 +13934,7 @@ if (indicator) indicator.classList.remove('hidden');
             }
 
             if (_tcTipo === 'todos' || _tcTipo === 'egresos') {
+                const _idsEgresosVistos = new Set();
                 (_sheetEgresos||[]).forEach(e => {
                     if ((e.formaPago||'').toUpperCase().trim() !== 'TARJETA') return;
                     const fn = parseFechaNum(e.fechaISO||e.fecha||'');
@@ -13936,6 +13942,9 @@ if (indicator) indicator.classList.remove('hidden');
                     if (hasta) { const fhn = parseFechaNum(hasta + 'T23:59:59'); if (fhn && fn && fn > fhn) return; }
                     const totalEgreso = parseFloat(e.total || 0) || 0;
                     const idEgreso = String(e.idSheet || e.id || e.IDEGRESOS || e.ID_GASTOS || '').trim();
+                    // Deduplicar por ID para evitar registros duplicados por sync
+                    if (idEgreso && _idsEgresosVistos.has(idEgreso)) return;
+                    if (idEgreso) _idsEgresosVistos.add(idEgreso);
                     const pagadoReal = Math.max(0, pagosEgresosTarjetaMap[idEgreso] || 0);
                     const ticketsEgreso = String(e.ticket || e.TICKET || '').trim()
                         ? String(e.ticket || e.TICKET || '').trim().split('|').map(t=>t.trim()).filter(Boolean)
@@ -14032,11 +14041,25 @@ if (indicator) indicator.classList.remove('hidden');
                 };
                 const getProveedorThumbTarjeta = function(nombreProveedor) {
                     const nombreUp = String(nombreProveedor || '').trim().toUpperCase();
+                    // Buscar en proveedores del negocio y de gastos
                     const provObj = [...(_sheetProveedoresNegocio||[]), ...(_sheetProveedoresGastos||[])]
                         .find(function(p) { return String(p.nombre||'').trim().toUpperCase() === nombreUp; });
-                    const provImg = normalizarImgProveedorTarjeta(
+                    let provImg = normalizarImgProveedorTarjeta(
                         (provObj && (provObj.imagen || provObj.foto)) || ''
                     );
+                    // Si no encontró imagen, buscar en lista de egresos e ingresos (categorías)
+                    if (!provImg) {
+                        const catObj = [...(window._listaEgresos||[]), ...(window._listaIngresos||[])]
+                            .find(function(c) { return String(c.nombre||'').trim().toUpperCase() === nombreUp; });
+                        provImg = normalizarImgProveedorTarjeta((catObj && catObj.imagen) || '');
+                    }
+                    // Si tampoco, buscar con _getCatImg
+                    if (!provImg && typeof window._getCatImg === 'function') {
+                        provImg = normalizarImgProveedorTarjeta(
+                            window._getCatImg('categoria', nombreProveedor) ||
+                            window._getCatImg('supercat', nombreProveedor) || ''
+                        );
+                    }
                     const ini = Utils.escHtml((nombreProveedor || '?').charAt(0).toUpperCase());
                     return provImg
                         ? `<img src="${provImg.startsWith('data:') || provImg.startsWith('http') ? provImg : driveUrl(provImg)}" style="width:24px;height:24px;border-radius:7px;object-fit:cover;border:1px solid #334155;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt=""><span style="display:none;width:24px;height:24px;border-radius:7px;background:#1e293b;border:1px solid #334155;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#94a3b8;flex-shrink:0;">${ini}</span>`
@@ -14044,10 +14067,22 @@ if (indicator) indicator.classList.remove('hidden');
                 };
                 const getCategoriaThumbTarjeta = function(nombreCategoria) {
                     const nom = String(nombreCategoria || '').trim();
-                    const categoriaObj = (window._listaEgresos || []).find(function(c) {
-                        return String(c.nombre || '').trim().toUpperCase() === nom.toUpperCase();
+                    const nomUp = nom.toUpperCase();
+                    // Buscar en lista de egresos e ingresos
+                    const categoriaObj = [...(window._listaEgresos || []), ...(window._listaIngresos || [])].find(function(c) {
+                        return String(c.nombre || '').trim().toUpperCase() === nomUp;
                     });
-                    const rawImg = (categoriaObj && categoriaObj.imagen) || ((typeof window._getCatImg === 'function') ? window._getCatImg('categoria', nom) : '');
+                    let rawImg = (categoriaObj && categoriaObj.imagen) || '';
+                    // Si no, buscar en proveedores
+                    if (!rawImg) {
+                        const provObj = [...(_sheetProveedoresNegocio||[]), ...(_sheetProveedoresGastos||[])]
+                            .find(function(p) { return String(p.nombre||'').trim().toUpperCase() === nomUp; });
+                        rawImg = (provObj && (provObj.imagen || provObj.foto)) || '';
+                    }
+                    // Si no, usar _getCatImg
+                    if (!rawImg && typeof window._getCatImg === 'function') {
+                        rawImg = window._getCatImg('categoria', nom) || window._getCatImg('supercat', nom) || '';
+                    }
                     const img = normalizarImgProveedorTarjeta(rawImg);
                     const ini = Utils.escHtml((nom || '-').charAt(0).toUpperCase() || '-');
                     return img
