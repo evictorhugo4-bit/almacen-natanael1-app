@@ -35842,6 +35842,17 @@ setTimeout(function() {
         </div>
     </div>
 
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    console.log('Service Worker registrado:', reg.scope);
+  }).catch(function(err) {
+    console.warn('Service Worker error:', err);
+  });
+}
+</script>
+
 </body>
 </html>
 
