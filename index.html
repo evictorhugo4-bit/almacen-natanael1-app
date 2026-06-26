@@ -20371,7 +20371,7 @@ cargarOpcionesProducto();
                 cantidad:         numVal('pCantidad'),
                 stock:            numVal('pStock') ?? 0,
                 stockSeguro:      numVal('pStockSeguro'),
-                minimo:           numVal('pMinimo'),
+                minimo:           (() => { const v = numVal('pMinimo'); if (v !== null && v !== undefined && v !== 0 && !isNaN(v)) return v; const prev = index !== '-1' ? (_sheetProductos[index]?.stockMin ?? _sheetProductos[index]?.minimo) : undefined; return (prev !== null && prev !== undefined && prev !== 0) ? prev : (v ?? null); })(),
                 stockInicio:      numVal('pStockInicio'),
                 fechaInicio:      val('pFechaInicio'),
                 stockVerificado:  numVal('pStockVerificado'),
@@ -20422,7 +20422,7 @@ cargarOpcionesProducto();
                 departamento: data.depto,
                 vencimiento: data.vencimiento,
                 fechaVencimiento: data.fechaVencimiento,
-                minimoCategoria: data.minimo,
+                minimoCategoria: (data.minimo !== null && data.minimo !== undefined && data.minimo !== 0 && !isNaN(data.minimo)) ? data.minimo : (index !== '-1' ? (_sheetProductos[index]?.stockMin ?? _sheetProductos[index]?.minimo ?? data.minimo) : data.minimo),
                 stock1: data.stock,
                 stockComienzo: data.stockInicio,
                 fechaStockVerif: data.fechaVerif,
@@ -25704,7 +25704,7 @@ producto.vencimiento = nuevoVencimiento;
             departamento: producto.depto || '',
             vencimiento: producto.vencimiento || '',
             fechaVencimiento: producto.fechaVencimiento || '',
-            minimoCategoria: producto.minimo || 0,
+            minimoCategoria: producto.stockMin || producto.minimo || 0,
             stock1: producto.stock || 0,
             stockComienzo: producto.stockInicio || 0,
             fechaStockVerif: producto.fechaVerif || '',
@@ -35841,17 +35841,6 @@ setTimeout(function() {
             </button>
         </div>
     </div>
-
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-    console.log('Service Worker registrado:', reg.scope);
-  }).catch(function(err) {
-    console.warn('Service Worker error:', err);
-  });
-}
-</script>
 
 </body>
 </html>
