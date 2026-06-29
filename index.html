@@ -10880,11 +10880,14 @@ if (indicator) indicator.classList.remove('hidden');
             // GANANCIAS (siempre calculadas sobre ventas en rango)
             // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
             let ganTotal=0, ganEf=0, casaErazoTotal=0;
-            const _ppv = {};
+            const _ppv = {}, _ppvVis = new Set();
             (_pagoVentasSheet||[]).forEach(p => {
+                const pid = String(p.id||p.IDPAGODEVENTAS||'').trim();
+                if (pid && _ppvVis.has(pid)) return;
+                if (pid) _ppvVis.add(pid);
                 const idV = String(p.idVenta||p.IDVENTAS||'').trim();
                 if(!idV) return;
-                if(!enRango(parseFechaNum(p.fecha||p.FECHA||p.fechaOrig||''))) return;
+                if(!enRango(parseFechaNum(p.fechaOrig||p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||''))) return;
                 _ppv[idV] = (_ppv[idV]||0) + Number(p.monto||p.MONTO||0);
             });
             const _vVistas = new Set();
@@ -10892,7 +10895,9 @@ if (indicator) indicator.classList.remove('hidden');
                 const fn = parseFechaNum(v.fechaISO||v.fecha||'');
                 if(!enRango(fn)||_vVistas.has(v.id)) return;
                 _vVistas.add(v.id);
-                const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                const total = Number(v.total||0);
+                // PAGO EFECTIVO es el campo correcto (no v.efectivo que es el total cobrado)
+                const pagoEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
                 const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
                 const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
                 const cli = String(v.cliente||'').toUpperCase().trim();
@@ -10900,7 +10905,8 @@ if (indicator) indicator.classList.remove('hidden');
                 if(cli==='CASA ERAZO') { const _drCE=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); casaErazoTotal += _drCE>0?_drCE:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0); }
                 if(esEsp) return;
                 const ganBruta = Math.max(0, total - dinRec);
-                const cobEf = ef + (_ppv[String(v.id)]||0);
+                // pagoEfectivo + MONTO de Pago Ventas en efectivo - dineroRecuperado = ganancia efectivo
+                const cobEf = pagoEf + (_ppv[String(v.id)]||0);
                 const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
                 const ganCrV = Math.max(0, ganBruta - ganEfV);
                 ganTotal += ganEfV + ganCrV;
@@ -11387,11 +11393,12 @@ if (indicator) indicator.classList.remove('hidden');
                     const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
                     if (cli === 'CASA ERAZO') { const _drCE2=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); _casaErazoEfNeg += _drCE2>0?_drCE2:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0); }
                     if (esEsp) return;
-                    const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                    const total = Number(v.total||0);
+                    const pagoEfNeg = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
                     const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
                     const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
                     const ganBruta = Math.max(0, total - dinRec);
-                    const cobEf = ef + (_ppvNeg[String(v.id)]||0);
+                    const cobEf = pagoEfNeg + (_ppvNeg[String(v.id)]||0);
                     const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
                     _ganEfNeg += ganEfV;
                 });
@@ -16509,10 +16516,14 @@ if (indicator) indicator.classList.remove('hidden');
                     if (['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
                     const totalVenta = Number(v.total||0);
                     if (!totalVenta) return;
-                    const ef = Number(v.efectivo||0);
+                    // PAGO EFECTIVO de los ítems (columna correcta)
+                    const pagoEfPers = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
                     const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
-                    const cobrosExtra = (cobrosPorVentaPers[idVSheet]||0) + (cobrosPorVentaPers[String(v.id||'')]||0);
-                    const totalCobrado = ef + cobrosExtra;
+                    const _cobro1 = cobrosPorVentaPers[idVSheet]||0;
+                    const _cobro2 = (idVSheet !== String(v.id||'')) ? (cobrosPorVentaPers[String(v.id||'')]||0) : 0;
+                    const cobrosExtra = _cobro1 + _cobro2;
+                    // pagoEfectivo + MONTO Pago Ventas efectivo - dineroRecuperado = ganancia efectivo
+                    const totalCobrado = pagoEfPers + cobrosExtra;
                     const dinRec = (v.items||[]).reduce((s,i)=>s+(Number(i.dineroRecuperado||0)||0),0)
                         || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*(Number(i.cantidad)||1)),0);
                     const ganBruta = Math.max(0, totalVenta - dinRec);
@@ -31736,24 +31747,29 @@ function verDetalleProveedor(tipo, id){
                     const costoVN  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
                     const dinRecVN = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVN;
                     ganTotV  = Math.max(0, (sumItemEf + sumItemCr) - dinRecVN);
-                    ganEfV2  = Math.max(0, sumItemEf - dinRecVN);
+                    // sumItemEf + pagado = total cobrado en efectivo (pago directo + cobros de deuda)
+                    ganEfV2  = Math.max(0, Math.min(sumItemEf + pagado - dinRecVN, ganTotV));
                     ganCrV2  = Math.max(0, ganTotV - ganEfV2);
                 }
                 const items = v.items||[];
                 // Para esEsp: _vSumTot = suma de dineroRecuperado por ítem (o costo)
                 const _vSumDinRec = esEsp ? (items.reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || items.reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0) || 1) : 1;
                 if (items.length === 0) {
-                    const _vEf0  = Number(v.efectivo||0);
-                    const _vCr0  = Number(v.deuda||0);
-                    const _vTot0 = Number(v.total||0) || (_vEf0 + _vCr0);
+                    const _vEf0Base = Number(v.efectivo||0);
+                    const _vCr0Base = Number(v.deuda||0);
+                    const _vEf0  = _vEf0Base + pagado;
+                    const _vCr0  = Math.max(0, _vCr0Base - pagado);
+                    const _vTot0 = Number(v.total||0) || (_vEf0Base + _vCr0Base);
                     const _vEst0 = (_vTot0 > 0 && _vEf0 >= _vTot0) ? 'FINALIZADO' : (_vCr0 > 0 && _vEf0 === 0) ? 'PENDIENTE' : (_vEf0 > 0 && _vCr0 > 0) ? 'MIXTO' : 'FINALIZADO';
                     rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', proveedorItem: '', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ganEf: 0, ganCr: 0, ganTot: 0, estado: _vEst0, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                 } else {
                     const _vSumTot = esEsp ? _vSumDinRec : (((v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0)||Number(v.efectivo||0)) + ((v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)||Number(v.deuda||0)) || 1);
-                    // Estado de pago de la venta completa
-                    const _vEfTotal  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                    const _vCrTotal  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
-                    const _vTotTotal = Number(v.total||0) || (_vEfTotal + _vCrTotal);
+                    // Estado de pago de la venta completa (incluyendo Pago Ventas)
+                    const _vEfBase   = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const _vCrBase   = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
+                    const _vEfTotal  = _vEfBase + pagado;
+                    const _vCrTotal  = Math.max(0, _vCrBase - pagado);
+                    const _vTotTotal = Number(v.total||0) || (_vEfBase + _vCrBase);
                     const _vEstado   = (_vTotTotal > 0 && _vEfTotal >= _vTotTotal) ? 'FINALIZADO'
                                      : (_vCrTotal > 0 && _vEfTotal === 0)          ? 'PENDIENTE'
                                      : (_vEfTotal > 0 && _vCrTotal > 0)            ? 'MIXTO'
