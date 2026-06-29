@@ -15778,7 +15778,6 @@ if (indicator) indicator.classList.remove('hidden');
                         vistos.add(v.id);
                         const cli   = String(v.cliente || '').toUpperCase().trim();
                         const esEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
-                        const pagado = Number(_pagoVtaMapEf[String(v.idSheet||v.id||'').trim()]||0);
 
                         if (esEsp) {
                             // Casa Erazo / Error Venta: no se cuentan en Ventas Efectivo
@@ -15786,8 +15785,8 @@ if (indicator) indicator.classList.remove('hidden');
                         }
 
                         const sumItemEf = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoEfectivo||0); }, 0) || Number(v.efectivo||0);
-                        const sumItemCr = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoCredito||0);  }, 0) || Number(v.deuda||0);
-                        const ef = sumItemEf + pagado;
+                        // pagado (Pago de Ventas) se excluye de Ventas Efectivo; se muestra por separado
+                        const ef = sumItemEf;
 
                         const costoVN  = (v.items||[]).reduce(function(s,i){ return s + Number(i.costo||0)*Number(i.cantidad||1); }, 0);
                         const dinRecVN = (v.items||[]).reduce(function(s,i){ return s + Number(i.dineroRecuperado||0); }, 0) || costoVN;
@@ -15798,8 +15797,11 @@ if (indicator) indicator.classList.remove('hidden');
                     });
                 })();
 
-                // VENTAS EFECTIVO = ef (incluye pagos extra) - ganancia ef = capital recuperado en efectivo
+                // VENTAS EFECTIVO = ef (solo pago directo, sin Pago de Ventas) - ganancia ef = capital recuperado en efectivo
                 let negVentasEfectivo = _ventasEfRaw - _calcGananciaEfNeg;
+
+                // PAGO DE VENTAS: montos de la tabla Pago Ventas por fecha original
+                const negPagoVentas = _efSumaMontoPagosOriginal(window._pagoVentasSheet || [], null);
 
                 // === NEGOCIO INGRESOS ===
 
@@ -15854,7 +15856,7 @@ if (indicator) indicator.classList.remove('hidden');
                         return s + (parseFloat(r.monto || r.MONTO || 0) || 0);
                     }, 0);
 
-                let negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
+                let negTotalIngresos = negVentasEfectivo + negPagoVentas + negVentasCasaErazo + negErrorVenta;
 
                 // === NEGOCIO EGRESOS ===
                 // D) COMPRAS EFECTIVO:
@@ -15862,6 +15864,9 @@ if (indicator) indicator.classList.remove('hidden');
                 //    + MONTO tabla PAGO COMPRAS (por FECHA ORIGINAL)
                 const negComprasEfectivo = _efSumaPagoEfectivoCompras()
                     + _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
+
+                // PAGO DE COMPRAS: solo los montos de la tabla Pago Compras por fecha original
+                const negPagoCompras = _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
 
                 // E) EGRESOS NEGOCIO:
                 //    PAGO EFECTIVO tabla EGRESOS NEGOCIO (por fecha) excluyendo HUGO/LEO/SILVIA
@@ -15894,25 +15899,32 @@ if (indicator) indicator.classList.remove('hidden');
                 // F) EGRESOS CASA ERAZO: mismo valor que Ventas a Casa Erazo
                 const negEgresosCasaErazo = negVentasCasaErazo;
 
-                const negTotalEgresos = negComprasEfectivo + negEgresosNegocio;
+                const negTotalEgresos = negComprasEfectivo + negPagoCompras;
 
                 // === PERSONAL INGRESOS ===
                 // E) INGRESOS EN EFECTIVO:
-                //    ganancia en efectivo del sistema
-                //    + PAGO EFECTIVO tabla INGRESOS (por fecha)
-                //    + MONTO tabla PAGO INGRESOS (por FECHA ORIGINAL)
-                const persIngEfectivo = _calcGananciaEfNeg
-                    + _efSumaEfectivo(window._sheetIngresos || [])
-                    + _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
+                //    SOLO suma columna PAGO EFECTIVO de la tabla INGRESOS (por fecha)
+                const persIngEfectivoBase = _efSumaEfectivo(window._sheetIngresos || []);
 
-                const persTotalIngresos = persIngEfectivo;
+                // PAGO INGRESOS: montos de la tabla Pago Ingresos por fecha original
+                const persPagoIngresos = _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
+
+                // GANANCIAS EN EFECTIVO: ganancia neta calculada
+                const persGananciasEfectivo = _calcGananciaEfNeg;
+
+                const persIngEfectivo = persIngEfectivoBase + persPagoIngresos;
+
+                const persTotalIngresos = persIngEfectivo + persGananciasEfectivo;
 
                 // === PERSONAL EGRESOS ===
                 // F) EGRESOS EN EFECTIVO:
                 //    PAGO EFECTIVO tabla EGRESOS (por fecha)
-                //    + MONTO tabla PAGO EGRESOS (por FECHA ORIGINAL)
-                const persEgresosEfectivo = _efSumaPagoEfectivoEgresos()
-                    + _efSumaMontoPagosOriginal(window._sheetPagoEgresos || [], null);
+                const persEgresosEfectivoBase = _efSumaPagoEfectivoEgresos();
+
+                // PAGO EGRESOS: montos de la tabla Pago Egresos por fecha original
+                const persPagoEgresos = _efSumaMontoPagosOriginal(window._sheetPagoEgresos || [], null);
+
+                const persEgresosEfectivo = persEgresosEfectivoBase + persPagoEgresos;
 
                 const persTotalEgresos = persEgresosEfectivo + negEgresosCasaErazo;
 
@@ -15923,14 +15935,14 @@ if (indicator) indicator.classList.remove('hidden');
                 const negIngDiv = document.getElementById('efNegIngresosDetalle');
                 if (negIngDiv) negIngDiv.innerHTML =
                     _efFila('Ventas Efectivo',     negVentasEfectivo) +
+                    _efFila('Pago de Ventas',      negPagoVentas) +
                     _efFila('Ventas a Casa Erazo', negVentasCasaErazo) +
-                    _efFila('Error Venta',         negErrorVenta,     '#fde68a') +
-                    _efFila('Ingresos del Negocio', negIngresosNegocio);
+                    _efFila('Error Venta',         negErrorVenta,     '#fde68a');
 
                 const negEgrDiv = document.getElementById('efNegEgresosDetalle');
                 if (negEgrDiv) negEgrDiv.innerHTML =
                     _efFila('Compras Efectivo',    negComprasEfectivo,    '#f87171') +
-                    _efFila('Egresos Negocio',     negEgresosNegocio,     '#f87171');
+                    _efFila('Pago de Compras',     negPagoCompras,        '#f87171');
 
                 const elNegTI = document.getElementById('efNegTotalIngresos');
                 if (elNegTI) elNegTI.textContent = fmt$(negTotalIngresos);
@@ -15948,12 +15960,15 @@ if (indicator) indicator.classList.remove('hidden');
                 // ↗↗ RENDER PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const persIngDiv = document.getElementById('efPersIngresosDetalle');
                 if (persIngDiv) persIngDiv.innerHTML =
-                    _efFila('Ingresos en Efectivo', persIngEfectivo);
+                    _efFila('Ingresos en Efectivo',  persIngEfectivoBase) +
+                    _efFila('Pago Ingresos',          persPagoIngresos) +
+                    _efFila('Ganancias en Efectivo',  persGananciasEfectivo);
 
                 const persEgrDiv = document.getElementById('efPersEgresosDetalle');
                 if (persEgrDiv) persEgrDiv.innerHTML =
-                    _efFila('Egresos en Efectivo', persEgresosEfectivo, '#f87171') +
-                    _efFila('Egresos Casa Erazo',  negEgresosCasaErazo,  '#f87171');
+                    _efFila('Egresos en Efectivo', persEgresosEfectivoBase, '#f87171') +
+                    _efFila('Pago Egresos',        persPagoEgresos,         '#f87171') +
+                    _efFila('Egresos Casa Erazo',  negEgresosCasaErazo,     '#f87171');
 
                 const elPersTI = document.getElementById('efPersTotalIngresos');
                 if (elPersTI) elPersTI.textContent = fmt$(persTotalIngresos);
@@ -16174,12 +16189,16 @@ if (indicator) indicator.classList.remove('hidden');
                                     const _itPagado  = _vPagado * _ratio;
                                     _ef    = _itEf + _itPagado;
                                     _ganEf = ganEfV2 * _ratio;
+                                    // ventasSinPago: solo pagoEfectivo del item, sin pagado
+                                    rec.ventasSinPago = (rec.ventasSinPago || 0) + _itEf;
                                 } else {
                                     // Sin datos propios: distribuir ef total de la venta
                                     const _itTot = Number(i.subtotal||i.pagoTotal||0) || (Number(i.precio||0)*(Number(i.cantidad)||1));
                                     const _ratio = _itTot / _vSumTot;
                                     _ef    = (sumItemEf + _vPagado) * _ratio;
                                     _ganEf = ganEfV2 * _ratio;
+                                    // ventasSinPago: solo pagoEfectivo proporcional, sin pagado
+                                    rec.ventasSinPago = (rec.ventasSinPago || 0) + (sumItemEf * _ratio);
                                 }
                                 rec.ventas   += _ef;
                                 rec.ganancia  = (rec.ganancia || 0) + _ganEf;
@@ -16362,19 +16381,20 @@ if (indicator) indicator.classList.remove('hidden');
                         const totCasaErazo  = filasProv.reduce((s,[,r])=>s+(r.casaErazo||0),0);
                         const totErrorVenta = filasProv.reduce((s,[,r])=>s+(r.errorVenta||0),0);
                         const totCompras    = filasProv.reduce((s,[,r])=>s+(r.comprasEf||0)+(r.pagoCompras||0),0);
+                        // totVentasSinPago: suma de pagoEfectivo puro (sin Pago de Ventas) de todos los proveedores
+                        const totVentasSinPago = filasProv.reduce((s,[,r])=>s+(r.ventasSinPago||0),0);
 
-                        // ── Actualizar "Ventas Efectivo" del negocio con datos reales de proveedores ──
-                        // = TOTAL columna VENTAS − TOTAL columna GANANCIA de la tabla Efectivo a Entregar por Proveedor
-                        negVentasEfectivo = totVentas - totGanancia;
-                        negTotalIngresos  = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
+                        // ── Actualizar "Ventas Efectivo" del negocio: solo pagoEfectivo tabla Ventas − ganancia ──
+                        negVentasEfectivo = totVentasSinPago - totGanancia;
+                        negTotalIngresos  = negVentasEfectivo + negPagoVentas + negVentasCasaErazo + negErrorVenta;
                         neto = (negTotalIngresos + persTotalIngresos) - (negTotalEgresos + persTotalEgresos);
                         // Re-render sección NEGOCIO con el valor corregido
                         const _negIngDiv2 = document.getElementById('efNegIngresosDetalle');
                         if (_negIngDiv2) _negIngDiv2.innerHTML =
                             _efFila('Ventas Efectivo',      negVentasEfectivo) +
+                            _efFila('Pago de Ventas',       negPagoVentas) +
                             _efFila('Ventas a Casa Erazo',  negVentasCasaErazo) +
-                            _efFila('Error Venta',          negErrorVenta,     '#fde68a') +
-                            _efFila('Ingresos del Negocio', negIngresosNegocio);
+                            _efFila('Error Venta',          negErrorVenta,     '#fde68a');
                         const _elNegTI2 = document.getElementById('efNegTotalIngresos');
                         if (_elNegTI2) _elNegTI2.textContent = fmt$(negTotalIngresos);
                         const _negTG2 = negTotalIngresos - negTotalEgresos;
@@ -20371,7 +20391,7 @@ cargarOpcionesProducto();
                 cantidad:         numVal('pCantidad'),
                 stock:            numVal('pStock') ?? 0,
                 stockSeguro:      numVal('pStockSeguro'),
-                minimo:           (() => { const v = numVal('pMinimo'); if (v !== null && v !== undefined && v !== 0 && !isNaN(v)) return v; const prev = index !== '-1' ? (_sheetProductos[index]?.stockMin ?? _sheetProductos[index]?.minimo) : undefined; return (prev !== null && prev !== undefined && prev !== 0) ? prev : (v ?? null); })(),
+                minimo:           numVal('pMinimo'),
                 stockInicio:      numVal('pStockInicio'),
                 fechaInicio:      val('pFechaInicio'),
                 stockVerificado:  numVal('pStockVerificado'),
@@ -20422,7 +20442,7 @@ cargarOpcionesProducto();
                 departamento: data.depto,
                 vencimiento: data.vencimiento,
                 fechaVencimiento: data.fechaVencimiento,
-                minimoCategoria: (data.minimo !== null && data.minimo !== undefined && data.minimo !== 0 && !isNaN(data.minimo)) ? data.minimo : (index !== '-1' ? (_sheetProductos[index]?.stockMin ?? _sheetProductos[index]?.minimo ?? data.minimo) : data.minimo),
+                minimoCategoria: data.minimo,
                 stock1: data.stock,
                 stockComienzo: data.stockInicio,
                 fechaStockVerif: data.fechaVerif,
@@ -25704,7 +25724,7 @@ producto.vencimiento = nuevoVencimiento;
             departamento: producto.depto || '',
             vencimiento: producto.vencimiento || '',
             fechaVencimiento: producto.fechaVencimiento || '',
-            minimoCategoria: producto.stockMin || producto.minimo || 0,
+            minimoCategoria: producto.minimo || 0,
             stock1: producto.stock || 0,
             stockComienzo: producto.stockInicio || 0,
             fechaStockVerif: producto.fechaVerif || '',
