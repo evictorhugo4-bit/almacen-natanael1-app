@@ -15784,11 +15784,10 @@ if (indicator) indicator.classList.remove('hidden');
                         if (esEsp) return;
 
                         const sumItemEf = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoEfectivo||0); }, 0) || Number(v.efectivo||0);
-                        const pagado    = Number(_pagoVtaMapEf[String(v.idSheet||v.id||'').trim()]||0);
                         const costoVN   = (v.items||[]).reduce(function(s,i){ return s + Number(i.costo||0)*Number(i.cantidad||1); }, 0);
                         const dinRecVN  = (v.items||[]).reduce(function(s,i){ return s + Number(i.dineroRecuperado||0); }, 0) || costoVN;
-                        // pagoEfectivo + monto PagoVentas - dineroRecuperado = ganancia efectivo
-                        const ganEf = Math.max(0, sumItemEf + pagado - dinRecVN);
+                        // pagoEfectivo - dineroRecuperado = ganancia efectivo (sin incluir monto de Pago de Ventas)
+                        const ganEf = Math.max(0, sumItemEf - dinRecVN);
 
                         _ventasEfRaw       += sumItemEf;
                         _calcGananciaEfNeg += ganEf;
