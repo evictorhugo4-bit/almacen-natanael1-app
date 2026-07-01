@@ -942,7 +942,10 @@ z-index:999999999;
     <main id="vistaVentas" class="flex-1 p-6 lg:p-8 overflow-y-auto h-screen custom-scrollbar">
         <div class="max-w-5xl mx-auto space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-3">
-                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic">Panel de Control</h1>
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic flex items-center gap-2">
+                    <span style="display:inline-flex;width:38px;height:38px;border-radius:12px;align-items:center;justify-content:center;font-size:19px;background:linear-gradient(145deg,#10b981,#065f46);box-shadow:0 6px 16px -6px rgba(16,185,129,.6);">&#128202;</span>
+                    Panel de Control
+                </h1>
                 <div class="flex gap-2 flex-wrap items-center">
                     <!-- INDICADOR DE SINCRONIZACIÓN -->
                     <div id="syncStatusBadge" title="Cargando datos del sheet..." style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;background:#1e293b;border:1.5px solid #334155;color:#94a3b8;cursor:default;transition:all .4s ease;">
@@ -978,20 +981,33 @@ z-index:999999999;
 
             <div id="widgetDeudores" class="hidden"></div>
 
+            <style>
+                @keyframes kpiFloat { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-3px);} }
+                .kpi-card{ position:relative; overflow:hidden; transition:transform .25s ease, box-shadow .25s ease; }
+                .kpi-card:hover{ transform:translateY(-4px); }
+                .kpi-card::after{ content:attr(data-wm); position:absolute; right:-10px; bottom:-18px; font-size:64px; opacity:.08; pointer-events:none; line-height:1; filter:grayscale(1); }
+                .kpi-icon-badge{ width:46px; height:46px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), 0 4px 10px -2px rgba(0,0,0,.4); animation:kpiFloat 4s ease-in-out infinite; }
+                .kpi-glow-emerald{ box-shadow:0 0 0 1px rgba(16,185,129,.18), 0 10px 26px -10px rgba(16,185,129,.45); }
+                .kpi-glow-blue{ box-shadow:0 0 0 1px rgba(56,189,248,.18), 0 10px 26px -10px rgba(56,189,248,.45); }
+                .kpi-glow-violet{ box-shadow:0 0 0 1px rgba(167,139,250,.18), 0 10px 26px -10px rgba(167,139,250,.45); }
+                .kpi-glow-amber{ box-shadow:0 0 0 1px rgba(251,191,36,.18), 0 10px 26px -10px rgba(251,191,36,.45); }
+                .kpi-bar{ height:4px; border-radius:999px; margin-top:10px; background:rgba(255,255,255,.06); overflow:hidden; }
+                .kpi-bar > span{ display:block; height:100%; border-radius:999px; }
+            </style>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="ventasMainGrid">
-                <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500" id="colVentasRecientes">
+                <div class="lg:col-span-2 glass-card p-5 rounded-[2rem] border-l-4 border-l-emerald-500 kpi-card kpi-glow-emerald" data-wm="🧾" id="colVentasRecientes">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
-                        <h3 class="text-xs font-black uppercase text-emerald-500 tracking-widest italic">Ventas Recientes</h3>
+                        <h3 class="text-xs font-black uppercase text-emerald-500 tracking-widest italic flex items-center gap-1.5"><span style="font-size:14px;">🧾</span>Ventas Recientes</h3>
                         <input type="text" placeholder="Buscar cliente o producto..." oninput="filtroHistorial=this.value;_dbounce('hist',renderHistorial)" class="text-[10px] px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 placeholder-slate-600 outline-none focus:border-emerald-500 w-44">
                     </div>
                     <div id="listaHistorial" class="space-y-1"><p style="font-size:10px;color:#475569;font-weight:700;text-align:center;padding:1.5rem;text-transform:uppercase;">Sin ventas registradas</p></div>
                 </div>
                 <div class="space-y-4" id="colKpisDia">
                     <!-- EFECTIVO EN CAJA MINI -->
-                    <div id="kpiCajaCard" class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-emerald-900/40 to-slate-900 border border-emerald-500/20 cursor-pointer" onclick="abrirModalHorarioCaja()" title="Configurar monto inicial de caja">
-                        <div class="flex items-center justify-between mb-1">
-                            <div class="flex items-center gap-2">
-                                <span style="font-size:20px;">&#128181;</span>
+                    <div id="kpiCajaCard" class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-emerald-900/40 to-slate-900 border border-emerald-500/20 cursor-pointer kpi-card kpi-glow-emerald" data-wm="💵" onclick="abrirModalHorarioCaja()" title="Configurar monto inicial de caja">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                                <div class="kpi-icon-badge" style="background:linear-gradient(145deg,#059669,#065f46);">&#128181;</div>
                                 <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Efectivo en Caja</span>
                             </div>
                             <div class="flex items-center gap-2">
@@ -1034,27 +1050,27 @@ z-index:999999999;
                         </div>
                     </div>
                     <!-- KPIs del día -->
-                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span style="font-size:20px;">&#128722;</span>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ventas del Dia</span>
+                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900 kpi-card kpi-glow-blue" data-wm="🛒">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="kpi-icon-badge" style="background:linear-gradient(145deg,#0284c7,#0369a1);">&#128722;</div>
+                            <span class="text-[10px] font-black text-sky-400 uppercase tracking-widest">Ventas del Dia</span>
                         </div>
                         <div id="kpiVentasDia" class="text-3xl font-black text-white font-mono">$0</div>
                         <div id="kpiVentasDiaInfo" class="text-[9px] text-slate-600 font-bold mt-1">0 transacciones</div>
                     </div>
-                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span style="font-size:20px;">&#128200;</span>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ganancias del Dia</span>
+                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900 kpi-card kpi-glow-violet" data-wm="📈">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="kpi-icon-badge" style="background:linear-gradient(145deg,#7c3aed,#5b21b6);">&#128200;</div>
+                            <span class="text-[10px] font-black text-violet-400 uppercase tracking-widest">Ganancias del Dia</span>
                         </div>
                         <div id="kpiGananciasDia" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
                         <div id="kpiGananciasDiaInfo" class="text-[9px] text-slate-600 font-bold mt-1">precio - costo</div>
                     </div>
                     <!-- IDs requeridos por JS ↗ ocultos -->
-                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span style="font-size:20px;">&#128178;</span>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ganancia Neta</span>
+                    <div class="glass-card p-5 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900 kpi-card kpi-glow-amber" data-wm="💎">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="kpi-icon-badge" style="background:linear-gradient(145deg,#f59e0b,#b45309);">&#128178;</div>
+                            <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest">Ganancia Neta</span>
                         </div>
                         <div id="kpiGananciaNeta" class="text-3xl font-black text-emerald-400 font-mono">$0</div>
                         <div id="kpiGananciaNetaInfo" class="text-[9px] text-slate-600 font-bold mt-1">ganancias - consumo - comida</div>
@@ -10877,38 +10893,37 @@ if (indicator) indicator.classList.remove('hidden');
             }, 0);
 
             // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
-            // GANANCIAS — misma lógica exacta que renderRegistros
-            let casaErazoTotal=0;
-            {
-                const _ceVis = new Set();
-                (ventasParaCalculo()||[]).forEach(v => {
-                    if (!enRango(parseFechaNum(v.fechaISO||v.fecha||'')) || _ceVis.has(v.id)) return;
-                    _ceVis.add(v.id);
-                    if (String(v.cliente||'').toUpperCase().trim() !== 'CASA ERAZO') return;
-                    const _drCE = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-                    casaErazoTotal += _drCE>0?_drCE:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
-                });
-            }
-            let ganEf=0, ganTotal=0;
-            {
-                const _pvMap={}, vis=new Set();
-                (_pagoVentasSheet||[]).forEach(p=>{ const id=String(p.idVenta||p.IDVENTAS||'').trim(); if(id) _pvMap[id]=(_pvMap[id]||0)+Number(p.monto||p.MONTO||0); });
-                (ventasParaCalculo()||[]).forEach(v=>{
-                    const fn=parseFechaNum(v.fechaISO||v.fecha||'');
-                    if(!enRango(fn)||vis.has(v.id)) return; vis.add(v.id);
-                    const cli=String(v.cliente||'').toUpperCase().trim();
-                    if(['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
-                    const pagado=Number(_pvMap[String(v.idSheet||v.id||'').trim()]||0);
-                    const pagoEfR=(v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0)||Number(v.efectivo||0);
-                    const sumItemCr=(v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)||Number(v.deuda||0);
-                    const costoVN=(v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
-                    const dinRecVN=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoVN;
-                    const ganTotV=Math.max(0,(pagoEfR+sumItemCr)-dinRecVN);
-                    const ganEfV=Math.max(0, pagoEfR + pagado - dinRecVN);
-                    ganEf+=ganEfV; ganTotal+=ganTotV;
-                });
-            }
+            // GANANCIAS (siempre calculadas sobre ventas en rango)
+            // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
+            let ganTotal=0, ganEf=0, casaErazoTotal=0;
+            const _ppv = {};
+            (_pagoVentasSheet||[]).forEach(p => {
+                const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                if(!idV) return;
+                if(!enRango(parseFechaNum(p.fecha||p.FECHA||p.fechaOrig||''))) return;
+                _ppv[idV] = (_ppv[idV]||0) + Number(p.monto||p.MONTO||0);
+            });
+            const _vVistas = new Set();
+            (_sheetVentas||[]).forEach(v => {
+                const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                if(!enRango(fn)||_vVistas.has(v.id)) return;
+                _vVistas.add(v.id);
+                const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+                const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+                const cli = String(v.cliente||'').toUpperCase().trim();
+                const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
+                if(cli==='CASA ERAZO') { const _drCE=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); casaErazoTotal += _drCE>0?_drCE:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0); }
+                if(esEsp) return;
+                const ganBruta = Math.max(0, total - dinRec);
+                const cobEf = ef + (_ppv[String(v.id)]||0);
+                const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
+                const ganCrV = Math.max(0, ganBruta - ganEfV);
+                ganTotal += ganEfV + ganCrV;
+                ganEf    += ganEfV;
+            });
             const ganCr = Math.max(0, ganTotal - ganEf);
+
             // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
             // CALCULAR TODAS LAS VARIABLES SEG?šN FILTRO
             // →→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→
@@ -11366,36 +11381,36 @@ if (indicator) indicator.classList.remove('hidden');
                     }, 0);
                 };
 
-                // Ganancias efectivo negocio — misma lógica que renderRegistros
-                let _casaErazoEfNeg = 0;
-                {
-                    const _drCEVis2 = new Set();
-                    (ventasParaCalculo()||[]).forEach(v => {
-                        if (!enRango(parseFechaNum(v.fechaISO||v.fecha||'')) || _drCEVis2.has(v.id)) return;
-                        _drCEVis2.add(v.id);
-                        const cli = String(v.cliente||'').toUpperCase().trim();
-                        if (cli !== 'CASA ERAZO') return;
-                        const _drCE2 = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0);
-                        _casaErazoEfNeg += _drCE2>0?_drCE2:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
-                    });
-                }
-                const _ganEfNeg = (() => {
-                    const _pvM={}, _vis=new Set();
-                    (_pagoVentasSheet||[]).forEach(p=>{ const id=String(p.idVenta||p.IDVENTAS||'').trim(); if(id) _pvM[id]=(_pvM[id]||0)+Number(p.monto||p.MONTO||0); });
-                    let _gef=0;
-                    (ventasParaCalculo()||[]).forEach(v=>{
-                        const fn=parseFechaNum(v.fechaISO||v.fecha||'');
-                        if(!enRango(fn)||_vis.has(v.id)) return; _vis.add(v.id);
-                        const cli=String(v.cliente||'').toUpperCase().trim();
-                        if(['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
-                        const pagoEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                        const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)
-                                    || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
-                        const pagado = Number(_pvM[String(v.idSheet||v.id||'').trim()]||0);
-                        _gef += Math.max(0, pagoEf + pagado - dinRec);
-                    });
-                    return _gef;
-                })();
+                // Ganancias efectivo negocio (mismo rango que Estado Personal)
+                let _ganEfNeg = 0, _casaErazoEfNeg = 0;
+                const _ppvNeg = {}, _ppvNegVis = new Set();
+                (_pagoVentasSheet||[]).forEach(p => {
+                    const pid = String(p.id||p.IDPAGODEVENTAS||'').trim();
+                    if (pid && _ppvNegVis.has(pid)) return;
+                    if (pid) _ppvNegVis.add(pid);
+                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!idV) return;
+                    const fOrig = parseFechaNum(p.fechaOrig||p['FECHA ORIGINAL']||p['Fecha Original']||p.fechaOriginal||p.fecha||p.FECHA||p.fechaISO||'');
+                    if (!enRango(fOrig)) return;
+                    _ppvNeg[idV] = (_ppvNeg[idV]||0) + Number(p.monto||p.MONTO||0);
+                });
+                const _vVisNeg = new Set();
+                (ventasParaCalculo()).forEach(v => {
+                    const fn = parseFechaNum(v.fechaISO||v.fecha||'');
+                    if (!enRango(fn) || _vVisNeg.has(v.id)) return;
+                    _vVisNeg.add(v.id);
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(cli);
+                    if (cli === 'CASA ERAZO') { const _drCE2=(v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0); _casaErazoEfNeg += _drCE2>0?_drCE2:(v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0); }
+                    if (esEsp) return;
+                    const total = Number(v.total||0), ef = Number(v.efectivo||0);
+                    const costoV = (v.items||[]).reduce((s,i)=>s+Number(i.costo||0)*(Number(i.cantidad)||1),0);
+                    const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)||costoV;
+                    const ganBruta = Math.max(0, total - dinRec);
+                    const cobEf = ef + (_ppvNeg[String(v.id)]||0);
+                    const ganEfV = cobEf > dinRec ? Math.min(cobEf - dinRec, ganBruta) : 0;
+                    _ganEfNeg += ganEfV;
+                });
                 let _errorVentaEfNeg = 0;
                 (ventasParaCalculo()).forEach(v => {
                     const fn = parseFechaNum(v.fechaISO||v.fecha||'');
@@ -14314,28 +14329,26 @@ if (indicator) indicator.classList.remove('hidden');
             const _idsVistas = new Set();
             let gananciaEf = 0;
             let consumoPersonal = 0;
-            // Pre-calcular mapa de Pago Ventas por IDVENTAS
-            const _pvMapEfKpi = {};
-            (_pagoVentasSheet||[]).forEach(p => {
-                const id = String(p.idVenta||p.IDVENTAS||'').trim();
-                if (id) _pvMapEfKpi[id] = (_pvMapEfKpi[id]||0) + Number(p.monto||p.MONTO||0);
-            });
             _todasV.forEach(v => {
                 if (!enRango(v.fechaISO||v.fecha)) return;
                 if (_idsVistas.has(v.id)) return;
                 _idsVistas.add(v.id);
+                const ef    = Number(v.efectivo||0);
+                const total = Number(v.total||0);
                 const esEsp = ['ERROR VENTA','ERROR VENTAS','CASA ERAZO'].includes(String(v.cliente||'').toUpperCase().trim());
-                const pagoEf  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                const pagado  = Number(_pvMapEfKpi[String(v.idSheet||v.id||'').trim()]||0);
-                const cobradoEf = pagoEf + pagado;
+                const pagosExtra = (_pagoVentasSheet||[])
+                    .filter(p=>enRango(p.fecha||p.fechaISO)&&String(p.idVenta||p.IDVENTAS||'').trim()===String(v.id).trim())
+                    .reduce((s,p)=>s+Number(p.monto||p.MONTO||0),0);
+                const cobradoEf = ef + pagosExtra;
                 ventasEf += cobradoEf;
                 if (esEsp) {
                     consumoPersonal += cobradoEf;
                 } else {
-                    const dineroRecup = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)
-                        || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
-                    // pagoEfectivo + monto PagoVentas - dineroRecuperado = ganancia efectivo
-                    gananciaEf += Math.max(0, pagoEf + pagado - dineroRecup);
+                    const costoVenta  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
+                    const dineroRecup = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVenta;
+                    const ganBruta    = Math.max(0, total - dineroRecup);
+                    const ganEfVenta  = cobradoEf > dineroRecup ? Math.min(cobradoEf - dineroRecup, ganBruta) : 0;
+                    gananciaEf += ganEfVenta;
                 }
             });
 
@@ -15781,24 +15794,28 @@ if (indicator) indicator.classList.remove('hidden');
                         vistos.add(v.id);
                         const cli   = String(v.cliente || '').toUpperCase().trim();
                         const esEsp = ['CASA ERAZO', 'ERROR VENTA', 'ERROR VENTAS'].includes(cli);
-                        if (esEsp) return;
+                        const pagado = Number(_pagoVtaMapEf[String(v.idSheet||v.id||'').trim()]||0);
+
+                        if (esEsp) {
+                            // Casa Erazo / Error Venta: no se cuentan en Ventas Efectivo
+                            return;
+                        }
 
                         const sumItemEf = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoEfectivo||0); }, 0) || Number(v.efectivo||0);
-                        const costoVN   = (v.items||[]).reduce(function(s,i){ return s + Number(i.costo||0)*Number(i.cantidad||1); }, 0);
-                        const dinRecVN  = (v.items||[]).reduce(function(s,i){ return s + Number(i.dineroRecuperado||0); }, 0) || costoVN;
-                        // pagoEfectivo - dineroRecuperado = ganancia efectivo (sin incluir monto de Pago de Ventas)
-                        const ganEf = Math.max(0, sumItemEf - dinRecVN);
+                        const sumItemCr = (v.items||[]).reduce(function(s,i){ return s+Number(i.pagoCredito||0);  }, 0) || Number(v.deuda||0);
+                        const ef = sumItemEf + pagado;
 
-                        _ventasEfRaw       += sumItemEf;
+                        const costoVN  = (v.items||[]).reduce(function(s,i){ return s + Number(i.costo||0)*Number(i.cantidad||1); }, 0);
+                        const dinRecVN = (v.items||[]).reduce(function(s,i){ return s + Number(i.dineroRecuperado||0); }, 0) || costoVN;
+                        const ganEf    = Math.max(0, sumItemEf - dinRecVN);
+
+                        _ventasEfRaw       += ef;
                         _calcGananciaEfNeg += ganEf;
                     });
                 })();
 
-                // VENTAS EFECTIVO = ef (solo pago directo, sin Pago de Ventas) - ganancia ef = capital recuperado en efectivo
+                // VENTAS EFECTIVO = ef (incluye pagos extra) - ganancia ef = capital recuperado en efectivo
                 let negVentasEfectivo = _ventasEfRaw - _calcGananciaEfNeg;
-
-                // PAGO DE VENTAS: montos de la tabla Pago Ventas por fecha original
-                const negPagoVentas = _efSumaMontoPagosOriginal(window._pagoVentasSheet || [], null);
 
                 // === NEGOCIO INGRESOS ===
 
@@ -15853,7 +15870,7 @@ if (indicator) indicator.classList.remove('hidden');
                         return s + (parseFloat(r.monto || r.MONTO || 0) || 0);
                     }, 0);
 
-                let negTotalIngresos = negVentasEfectivo + negPagoVentas + negVentasCasaErazo + negErrorVenta;
+                let negTotalIngresos = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
 
                 // === NEGOCIO EGRESOS ===
                 // D) COMPRAS EFECTIVO:
@@ -15861,9 +15878,6 @@ if (indicator) indicator.classList.remove('hidden');
                 //    + MONTO tabla PAGO COMPRAS (por FECHA ORIGINAL)
                 const negComprasEfectivo = _efSumaPagoEfectivoCompras()
                     + _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
-
-                // PAGO DE COMPRAS: solo los montos de la tabla Pago Compras por fecha original
-                const negPagoCompras = _efSumaMontoPagosOriginal(window._sheetPagoCompras || [], null);
 
                 // E) EGRESOS NEGOCIO:
                 //    PAGO EFECTIVO tabla EGRESOS NEGOCIO (por fecha) excluyendo HUGO/LEO/SILVIA
@@ -15896,32 +15910,25 @@ if (indicator) indicator.classList.remove('hidden');
                 // F) EGRESOS CASA ERAZO: mismo valor que Ventas a Casa Erazo
                 const negEgresosCasaErazo = negVentasCasaErazo;
 
-                const negTotalEgresos = negComprasEfectivo + negPagoCompras;
+                const negTotalEgresos = negComprasEfectivo + negEgresosNegocio;
 
                 // === PERSONAL INGRESOS ===
                 // E) INGRESOS EN EFECTIVO:
-                //    SOLO suma columna PAGO EFECTIVO de la tabla INGRESOS (por fecha)
-                const persIngEfectivoBase = _efSumaEfectivo(window._sheetIngresos || []);
+                //    ganancia en efectivo del sistema
+                //    + PAGO EFECTIVO tabla INGRESOS (por fecha)
+                //    + MONTO tabla PAGO INGRESOS (por FECHA ORIGINAL)
+                const persIngEfectivo = _calcGananciaEfNeg
+                    + _efSumaEfectivo(window._sheetIngresos || [])
+                    + _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
 
-                // PAGO INGRESOS: montos de la tabla Pago Ingresos por fecha original
-                const persPagoIngresos = _efSumaMontoPagosOriginal(window._sheetPagoIngresos || [], null);
-
-                // GANANCIAS EN EFECTIVO: ganancia neta calculada
-                const persGananciasEfectivo = _calcGananciaEfNeg;
-
-                const persIngEfectivo = persIngEfectivoBase + persPagoIngresos;
-
-                const persTotalIngresos = persIngEfectivo + persGananciasEfectivo;
+                const persTotalIngresos = persIngEfectivo;
 
                 // === PERSONAL EGRESOS ===
                 // F) EGRESOS EN EFECTIVO:
                 //    PAGO EFECTIVO tabla EGRESOS (por fecha)
-                const persEgresosEfectivoBase = _efSumaPagoEfectivoEgresos();
-
-                // PAGO EGRESOS: montos de la tabla Pago Egresos por fecha original
-                const persPagoEgresos = _efSumaMontoPagosOriginal(window._sheetPagoEgresos || [], null);
-
-                const persEgresosEfectivo = persEgresosEfectivoBase + persPagoEgresos;
+                //    + MONTO tabla PAGO EGRESOS (por FECHA ORIGINAL)
+                const persEgresosEfectivo = _efSumaPagoEfectivoEgresos()
+                    + _efSumaMontoPagosOriginal(window._sheetPagoEgresos || [], null);
 
                 const persTotalEgresos = persEgresosEfectivo + negEgresosCasaErazo;
 
@@ -15932,14 +15939,14 @@ if (indicator) indicator.classList.remove('hidden');
                 const negIngDiv = document.getElementById('efNegIngresosDetalle');
                 if (negIngDiv) negIngDiv.innerHTML =
                     _efFila('Ventas Efectivo',     negVentasEfectivo) +
-                    _efFila('Pago de Ventas',      negPagoVentas) +
                     _efFila('Ventas a Casa Erazo', negVentasCasaErazo) +
-                    _efFila('Error Venta',         negErrorVenta,     '#fde68a');
+                    _efFila('Error Venta',         negErrorVenta,     '#fde68a') +
+                    _efFila('Ingresos del Negocio', negIngresosNegocio);
 
                 const negEgrDiv = document.getElementById('efNegEgresosDetalle');
                 if (negEgrDiv) negEgrDiv.innerHTML =
                     _efFila('Compras Efectivo',    negComprasEfectivo,    '#f87171') +
-                    _efFila('Pago de Compras',     negPagoCompras,        '#f87171');
+                    _efFila('Egresos Negocio',     negEgresosNegocio,     '#f87171');
 
                 const elNegTI = document.getElementById('efNegTotalIngresos');
                 if (elNegTI) elNegTI.textContent = fmt$(negTotalIngresos);
@@ -15957,15 +15964,12 @@ if (indicator) indicator.classList.remove('hidden');
                 // ↗↗ RENDER PERSONAL ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
                 const persIngDiv = document.getElementById('efPersIngresosDetalle');
                 if (persIngDiv) persIngDiv.innerHTML =
-                    _efFila('Ingresos en Efectivo',  persIngEfectivoBase) +
-                    _efFila('Pago Ingresos',          persPagoIngresos) +
-                    _efFila('Ganancias en Efectivo',  persGananciasEfectivo);
+                    _efFila('Ingresos en Efectivo', persIngEfectivo);
 
                 const persEgrDiv = document.getElementById('efPersEgresosDetalle');
                 if (persEgrDiv) persEgrDiv.innerHTML =
-                    _efFila('Egresos en Efectivo', persEgresosEfectivoBase, '#f87171') +
-                    _efFila('Pago Egresos',        persPagoEgresos,         '#f87171') +
-                    _efFila('Egresos Casa Erazo',  negEgresosCasaErazo,     '#f87171');
+                    _efFila('Egresos en Efectivo', persEgresosEfectivo, '#f87171') +
+                    _efFila('Egresos Casa Erazo',  negEgresosCasaErazo,  '#f87171');
 
                 const elPersTI = document.getElementById('efPersTotalIngresos');
                 if (elPersTI) elPersTI.textContent = fmt$(persTotalIngresos);
@@ -16186,16 +16190,12 @@ if (indicator) indicator.classList.remove('hidden');
                                     const _itPagado  = _vPagado * _ratio;
                                     _ef    = _itEf + _itPagado;
                                     _ganEf = ganEfV2 * _ratio;
-                                    // ventasSinPago: solo pagoEfectivo del item, sin pagado
-                                    rec.ventasSinPago = (rec.ventasSinPago || 0) + _itEf;
                                 } else {
                                     // Sin datos propios: distribuir ef total de la venta
                                     const _itTot = Number(i.subtotal||i.pagoTotal||0) || (Number(i.precio||0)*(Number(i.cantidad)||1));
                                     const _ratio = _itTot / _vSumTot;
                                     _ef    = (sumItemEf + _vPagado) * _ratio;
                                     _ganEf = ganEfV2 * _ratio;
-                                    // ventasSinPago: solo pagoEfectivo proporcional, sin pagado
-                                    rec.ventasSinPago = (rec.ventasSinPago || 0) + (sumItemEf * _ratio);
                                 }
                                 rec.ventas   += _ef;
                                 rec.ganancia  = (rec.ganancia || 0) + _ganEf;
@@ -16378,20 +16378,19 @@ if (indicator) indicator.classList.remove('hidden');
                         const totCasaErazo  = filasProv.reduce((s,[,r])=>s+(r.casaErazo||0),0);
                         const totErrorVenta = filasProv.reduce((s,[,r])=>s+(r.errorVenta||0),0);
                         const totCompras    = filasProv.reduce((s,[,r])=>s+(r.comprasEf||0)+(r.pagoCompras||0),0);
-                        // totVentasSinPago: suma de pagoEfectivo puro (sin Pago de Ventas) de todos los proveedores
-                        const totVentasSinPago = filasProv.reduce((s,[,r])=>s+(r.ventasSinPago||0),0);
 
-                        // ── Actualizar "Ventas Efectivo" del negocio: solo pagoEfectivo tabla Ventas − ganancia ──
-                        negVentasEfectivo = totVentasSinPago - totGanancia;
-                        negTotalIngresos  = negVentasEfectivo + negPagoVentas + negVentasCasaErazo + negErrorVenta;
+                        // ── Actualizar "Ventas Efectivo" del negocio con datos reales de proveedores ──
+                        // = TOTAL columna VENTAS − TOTAL columna GANANCIA de la tabla Efectivo a Entregar por Proveedor
+                        negVentasEfectivo = totVentas - totGanancia;
+                        negTotalIngresos  = negVentasEfectivo + negVentasCasaErazo + negErrorVenta + negIngresosNegocio;
                         neto = (negTotalIngresos + persTotalIngresos) - (negTotalEgresos + persTotalEgresos);
                         // Re-render sección NEGOCIO con el valor corregido
                         const _negIngDiv2 = document.getElementById('efNegIngresosDetalle');
                         if (_negIngDiv2) _negIngDiv2.innerHTML =
                             _efFila('Ventas Efectivo',      negVentasEfectivo) +
-                            _efFila('Pago de Ventas',       negPagoVentas) +
                             _efFila('Ventas a Casa Erazo',  negVentasCasaErazo) +
-                            _efFila('Error Venta',          negErrorVenta,     '#fde68a');
+                            _efFila('Error Venta',          negErrorVenta,     '#fde68a') +
+                            _efFila('Ingresos del Negocio', negIngresosNegocio);
                         const _elNegTI2 = document.getElementById('efNegTotalIngresos');
                         if (_elNegTI2) _elNegTI2.textContent = fmt$(negTotalIngresos);
                         const _negTG2 = negTotalIngresos - negTotalEgresos;
@@ -16482,24 +16481,57 @@ if (indicator) indicator.classList.remove('hidden');
                     }
                 }
 
-                // ↗↗ PERSONAL → Ganancia neta en efectivo — misma lógica que renderRegistros ↗↗
-                const gananciaEfectivoPers = (() => {
-                    const _pvM={}, _vis=new Set();
-                    (_pagoVentasSheet||[]).forEach(p=>{ const id=String(p.idVenta||p.IDVENTAS||'').trim(); if(id) _pvM[id]=(_pvM[id]||0)+Number(p.monto||p.MONTO||0); });
-                    let _gef=0;
-                    (ventasParaCalculo()||[]).forEach(v=>{
-                        const fn=parseFechaNum(v.fechaISO||v.fecha||'');
-                        if(!enRango(fn)||_vis.has(v.id)) return; _vis.add(v.id);
-                        const cli=String(v.cliente||'').toUpperCase().trim();
-                        if(['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
-                        const pagoEf = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                        const dinRec = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0)
-                                    || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
-                        const pagado = Number(_pvM[String(v.idSheet||v.id||'').trim()]||0);
-                        _gef += Math.max(0, pagoEf + pagado - dinRec);
-                    });
-                    return _gef;
-                })();
+                // ↗↗ PERSONAL → Ganancia neta en efectivo ↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗↗
+                // Calcular ganancia cobrada en efectivo proporcional al cobro de cada venta
+                const todasVPers = (typeof ventasParaCalculo === 'function') ? ventasParaCalculo() : [];
+                const cobrosPorVentaPers = {};
+                const pagosVentasPersOriginal = (_pagoVentasSheet && _pagoVentasSheet.length)
+                    ? _pagoVentasSheet
+                    : (_sheetPagoVentas || []);
+                pagosVentasPersOriginal.forEach(p => {
+                    if (!_efEnRangoOriginal(p)) return;
+                    const fp = String(p.formaPago || p.FORMAPAGO || p['FORMA DE PAGO'] || '').toUpperCase().trim();
+                    if (fp && fp !== 'EFECTIVO') return;
+                    const idV = String(p.idVenta||p.IDVENTAS||'').trim();
+                    if (!idV) return;
+                    cobrosPorVentaPers[idV] = (cobrosPorVentaPers[idV]||0) + Number(p.monto||p.MONTO||0);
+                });
+                const vistasPersPers = new Set();
+                let gananciaEfectivoPers = 0;
+                todasVPers.forEach(v => {
+                    if (!_efEnRangoOriginal(v) || vistasPersPers.has(v.id)) return;
+                    vistasPersPers.add(v.id);
+                    const cli = String(v.cliente||'').toUpperCase().trim();
+                    if (['CASA ERAZO','ERROR VENTA','ERROR VENTAS'].includes(cli)) return;
+                    const totalVenta = Number(v.total||0);
+                    if (!totalVenta) return;
+                    const ef = Number(v.efectivo||0);
+                    const idVSheet = v.idSheet ? String(v.idSheet).trim() : String(v.id||'').replace('sheet_V_','');
+                    const cobrosExtra = (cobrosPorVentaPers[idVSheet]||0) + (cobrosPorVentaPers[String(v.id||'')]||0);
+                    const totalCobrado = ef + cobrosExtra;
+                    const dinRec = (v.items||[]).reduce((s,i)=>s+(Number(i.dineroRecuperado||0)||0),0)
+                        || (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*(Number(i.cantidad)||1)),0);
+                    const ganBruta = Math.max(0, totalVenta - dinRec);
+                    gananciaEfectivoPers += totalCobrado > dinRec
+                        ? Math.min(totalCobrado - dinRec, ganBruta)
+                        : 0;
+                    /*
+                    const gananciaVenta = (v.items||[]).reduce((s, i) => {
+                        const precio = Number(i.precio||0);
+                        const costo  = Number(i.costo||0);
+                        const cant   = Number(i.cantidad||1);
+                        const pagoIt = Number(i.pagoEfectivo||0) + Number(i.pagoCredito||0);
+                        const dr     = Number(i.dineroRecuperado||0);
+                        const gan    = i.esPeso
+                            ? Math.max(0, pagoIt - dr)
+                            : Math.max(0, (precio - costo) * cant);
+                        return s + gan;
+                    }, 0);
+                    // Proporción cobrada en efectivo respecto al total de la venta
+                    const prop = totalVenta > 0 ? Math.min(totalCobrado / totalVenta, 1) : 0;
+                    gananciaEfectivoPers += gananciaVenta * prop;
+                    */
+                });
 
                 // Consumo del negocio: ventas a CASA ERAZO, se descuenta por DINERO RECUPERADO.
                 const vistasConsumoNegocio = new Set();
@@ -26138,7 +26170,8 @@ container.innerHTML = grupos.map(({c, realIdx, extraItems}) => {
     const idx = realIdx;
     const todosItems = [...(c.items||[]), ...extraItems];
     const totalProductosGrupo = todosItems.reduce((sum, i) => {
-        return sum + (parseFloat(i.pagoTotal || i.subtotal || 0) || 0);
+        const totalItem = parseFloat(i.total || 0) || ((parseFloat(i.costo || 0) || 0) * (parseFloat(i.cantidad || 1) || 1));
+        return sum + totalItem;
     }, 0);
     const totalMostradoCompra = totalProductosGrupo > 0 ? totalProductosGrupo : (parseFloat(c.total || 0) || 0);
 
@@ -31700,29 +31733,24 @@ function verDetalleProveedor(tipo, id){
                     const costoVN  = (v.items||[]).reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0);
                     const dinRecVN = (v.items||[]).reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || costoVN;
                     ganTotV  = Math.max(0, (sumItemEf + sumItemCr) - dinRecVN);
-                    // sumItemEf + pagado = total cobrado en efectivo (pago directo + cobros de deuda)
-                    ganEfV2  = Math.max(0, Math.min(sumItemEf + pagado - dinRecVN, ganTotV));
+                    ganEfV2  = Math.max(0, sumItemEf - dinRecVN);
                     ganCrV2  = Math.max(0, ganTotV - ganEfV2);
                 }
                 const items = v.items||[];
                 // Para esEsp: _vSumTot = suma de dineroRecuperado por ítem (o costo)
                 const _vSumDinRec = esEsp ? (items.reduce((s,i)=>s+Number(i.dineroRecuperado||0),0) || items.reduce((s,i)=>s+(Number(i.costo||0)*Number(i.cantidad||1)),0) || 1) : 1;
                 if (items.length === 0) {
-                    const _vEf0Base = Number(v.efectivo||0);
-                    const _vCr0Base = Number(v.deuda||0);
-                    const _vEf0  = _vEf0Base + pagado;
-                    const _vCr0  = Math.max(0, _vCr0Base - pagado);
-                    const _vTot0 = Number(v.total||0) || (_vEf0Base + _vCr0Base);
+                    const _vEf0  = Number(v.efectivo||0);
+                    const _vCr0  = Number(v.deuda||0);
+                    const _vTot0 = Number(v.total||0) || (_vEf0 + _vCr0);
                     const _vEst0 = (_vTot0 > 0 && _vEf0 >= _vTot0) ? 'FINALIZADO' : (_vCr0 > 0 && _vEf0 === 0) ? 'PENDIENTE' : (_vEf0 > 0 && _vCr0 > 0) ? 'MIXTO' : 'FINALIZADO';
                     rows.push({ tipo:'VENTA', color:'#10b981', quien: v.cliente||'?', proveedorItem: '', fecha: v.fechaISO||v.fecha, detalle:'?', prodFotoKey:'', ef, efConGanancia, efSinGanancia, cr, crConGanancia, crSinGanancia, tot, totConGanancia, totSinGanancia, ganEf: 0, ganCr: 0, ganTot: 0, estado: _vEst0, idSheet: String(v.idSheet||v.IDVENTAS||v.id||''), ts: _parseFechaReg(v.fechaISO||v.fecha), esEgreso: false });
                 } else {
                     const _vSumTot = esEsp ? _vSumDinRec : (((v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0)||Number(v.efectivo||0)) + ((v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)||Number(v.deuda||0)) || 1);
-                    // Estado de pago de la venta completa (incluyendo Pago Ventas)
-                    const _vEfBase   = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
-                    const _vCrBase   = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
-                    const _vEfTotal  = _vEfBase + pagado;
-                    const _vCrTotal  = Math.max(0, _vCrBase - pagado);
-                    const _vTotTotal = Number(v.total||0) || (_vEfBase + _vCrBase);
+                    // Estado de pago de la venta completa
+                    const _vEfTotal  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoEfectivo||0),0) || Number(v.efectivo||0);
+                    const _vCrTotal  = (v.items||[]).reduce((s,i)=>s+Number(i.pagoCredito||0),0)  || Number(v.deuda||0);
+                    const _vTotTotal = Number(v.total||0) || (_vEfTotal + _vCrTotal);
                     const _vEstado   = (_vTotTotal > 0 && _vEfTotal >= _vTotTotal) ? 'FINALIZADO'
                                      : (_vCrTotal > 0 && _vEfTotal === 0)          ? 'PENDIENTE'
                                      : (_vEfTotal > 0 && _vCrTotal > 0)            ? 'MIXTO'
