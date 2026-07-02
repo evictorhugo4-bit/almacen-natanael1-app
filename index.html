@@ -35859,6 +35859,17 @@ setTimeout(function() {
         </div>
     </div>
 
+    <script>
+    // Registra el Service Worker para que la app cargue desde caché
+    // (instantáneo) y solo descargue lo nuevo cuando cambie algo.
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => {
+                console.warn('No se pudo registrar el Service Worker:', err);
+            });
+        });
+    }
+    </script>
 </body>
 </html>
 
