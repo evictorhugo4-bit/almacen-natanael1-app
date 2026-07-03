@@ -991,6 +991,10 @@ z-index:999999999;
                 .kpi-glow-blue{ box-shadow:0 0 0 1px rgba(56,189,248,.18), 0 10px 26px -10px rgba(56,189,248,.45); }
                 .kpi-glow-violet{ box-shadow:0 0 0 1px rgba(167,139,250,.18), 0 10px 26px -10px rgba(167,139,250,.45); }
                 .kpi-glow-amber{ box-shadow:0 0 0 1px rgba(251,191,36,.18), 0 10px 26px -10px rgba(251,191,36,.45); }
+                @keyframes shimmerSweep{ 0%{ transform:translateX(-120%) skewX(-20deg);} 100%{ transform:translateX(220%) skewX(-20deg);} }
+                .kpi-card::before{ content:''; position:absolute; top:0; left:0; height:100%; width:35%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent); animation:shimmerSweep 5s ease-in-out infinite; pointer-events:none; }
+                .kpi-icon-badge{ position:relative; }
+                .kpi-icon-badge::after{ content:''; position:absolute; inset:-3px; border-radius:inherit; border:1.5px solid currentColor; opacity:.35; animation:kpiFloat 4s ease-in-out infinite reverse; }
                 .kpi-bar{ height:4px; border-radius:999px; margin-top:10px; background:rgba(255,255,255,.06); overflow:hidden; }
                 .kpi-bar > span{ display:block; height:100%; border-radius:999px; }
             </style>
