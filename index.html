@@ -744,9 +744,72 @@ z-index:999999999;
         .btn-action:active { transform: scale(0.95); }
 
         .nav-link.active {
-            background: #10b981;
+            background: linear-gradient(135deg,#10b981,#059669);
             color: #000;
-            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 20px -4px rgba(16, 185, 129, 0.45);
+        }
+
+        /* === Sidebar visual upgrade === */
+        #mainSidebar { background: linear-gradient(180deg,#020617 0%,#050b1c 100%); }
+        #mainSidebar .sidebar-label {
+            font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+            color: #475569; padding: 0 0.75rem; margin: 0.25rem 0 0.15rem;
+        }
+        #mainSidebar nav { position: relative; }
+        #mainSidebar .nav-link {
+            position: relative;
+            border: 1px solid transparent;
+            background: rgba(255,255,255,0.025);
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, color 0.2s ease;
+        }
+        #mainSidebar .nav-link:hover {
+            background: rgba(148,163,184,0.08);
+            border-color: rgba(148,163,184,0.15);
+            color: #f1f5f9;
+            transform: translateX(2px);
+        }
+        #mainSidebar .nav-link svg {
+            border-radius: 9px;
+            padding: 5px;
+            box-sizing: content-box;
+            background: rgba(148,163,184,0.10);
+            transition: background 0.2s ease, transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        #mainSidebar .nav-link:hover svg { transform: scale(1.08); }
+        #mainSidebar .nav-link.active {
+            border-color: rgba(16,185,129,0.5);
+        }
+        #mainSidebar .nav-link.active svg {
+            background: rgba(0,0,0,0.18);
+        }
+        #mainSidebar .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: -0.85rem;
+            top: 4px; bottom: 4px;
+            width: 4px;
+            border-radius: 0 6px 6px 0;
+            background: #34d399;
+            box-shadow: 0 0 8px rgba(52,211,153,0.8);
+        }
+        /* Acentos de color por seccion (icono) */
+        #mainSidebar nav .nav-link:nth-of-type(1) svg { color: #34d399; }
+        #mainSidebar nav .nav-link:nth-of-type(2) svg { color: #60a5fa; }
+        #mainSidebar nav .nav-link:nth-of-type(3) svg { color: #c084fc; }
+        #mainSidebar nav .nav-link:nth-of-type(4) svg { color: #fb923c; }
+        #mainSidebar nav .nav-link:nth-of-type(5) svg { color: #2dd4bf; }
+        #mainSidebar nav .nav-link:nth-of-type(6) svg { color: #38bdf8; }
+        #mainSidebar nav .nav-link:nth-of-type(7) svg { color: #f87171; }
+        #mainSidebar nav .nav-link:nth-of-type(8) svg { color: #a3e635; }
+        #mainSidebar nav .nav-link:nth-of-type(9) svg { color: #fb7185; }
+        #mainSidebar nav .nav-link:nth-of-type(10) svg { color: #818cf8; }
+        #mainSidebar nav .nav-link:nth-of-type(11) svg { color: #fbbf24; }
+        #mainSidebar nav .nav-link:nth-of-type(12) svg { color: #94a3b8; }
+        #mainSidebar nav .nav-link.active svg { color: #000 !important; }
+        #mainSidebar nav .nav-link span { transition: color 0.2s ease; }
+        @media (min-width: 768px) {
+            #mainSidebar .nav-link span { font-size: 10.5px !important; letter-spacing: 0.5px; }
         }
 
         .table-row:hover { background-color: rgba(255, 255, 255, 0.03); }
@@ -838,6 +901,7 @@ z-index:999999999;
             <button id="btnGuardar" onclick="guardarYDescargar()" style="display:none;"></button>
         </div>
 
+        <div class="sidebar-label hidden md:block">Menú</div>
         <nav style="display:flex;flex-direction:row;gap:4px;flex:1;overflow-x:auto;align-items:center;" class="md:flex-col md:gap-2">
             <button onclick="cambiarVista('ventas')" id="btnVentas" class="nav-link flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:p-3 rounded-xl text-slate-400 font-bold transition-all" style="flex-shrink:0;min-width:52px;" data-navbtn="true active">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="shopping-cart" aria-hidden="true" class="lucide lucide-shopping-cart w-5 h-5"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>
@@ -890,6 +954,7 @@ z-index:999999999;
         </nav>
         <!-- Firebase config btn -->
         <div style="flex-shrink:0;margin-left:auto;" class="md:mt-auto md:pt-4 md:border-t md:border-slate-800">
+            <div class="sidebar-label hidden md:block" style="margin-bottom:4px;">Sistema</div>
             <button onclick="abrirConfigFirebase()" class="nav-link flex items-center gap-3 p-3 rounded-xl text-slate-600 hover:text-slate-300 font-bold w-full transition-all" title="Configurar Firebase">
                 <div class="relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="wifi" aria-hidden="true" class="lucide lucide-wifi w-5 h-5"><path d="M12 20h.01"></path><path d="M2 8.82a15 15 0 0 1 20 0"></path><path d="M5 12.859a10 10 0 0 1 14 0"></path><path d="M8.5 16.429a5 5 0 0 1 7 0"></path></svg>
@@ -9150,6 +9215,18 @@ if (indicator) indicator.classList.remove('hidden');
                 if (typeof _guardarCache === 'function') _guardarCache();
             } catch(e) {
                 console.error('Error procesando datos secundarios:', e);
+                try {
+                    const panel = document.getElementById('syncDebugPanel');
+                    if (panel) {
+                        const line = document.createElement('div');
+                        line.style.cssText = 'font-size:11px;padding:4px 0;color:#f87171;font-weight:900;';
+                        line.textContent = new Date().toLocaleTimeString('es-AR') + ' ❌ ETAPA 2 FALLÓ: ' + e.message + (e.stack ? (' | ' + e.stack.split('\n')[0]) : '');
+                        panel.prepend(line);
+                    }
+                    if (typeof mostrarToast === 'function') {
+                        mostrarToast('❌ Sync etapa 2 falló: ' + e.message, 'error');
+                    }
+                } catch(e2) { /* no romper la app si falla el logging */ }
             }
         }
 
