@@ -6832,7 +6832,12 @@ _sheetEgresosNegocio.forEach(e => {
                 const efectivoHist = esClienteEspecialHist ? totalEspecialHist : (hayItemsDuplicadosHist && efectivoItemsSinDuplicarHist > 0 ? efectivoItemsSinDuplicarHist : Number(v.efectivo || 0));
                 const totalHist = esClienteEspecialHist ? totalEspecialHist : (hayItemsDuplicadosHist && totalItemsSinDuplicarHist > 0 ? totalItemsSinDuplicarHist : Number(v.total || 0));
 
-                rows += '<div style="background:linear-gradient(145deg,#0f172a,#0c1424);border:1px solid #1e293b;border-left:3px solid '+(credito>0?'#f59e0b':'#10b981')+';border-radius:12px;padding:9px 10px;margin-bottom:6px;box-shadow:0 3px 10px -4px rgba(0,0,0,.5);transition:transform .15s;">';
+                // Estado de la venta: FINALIZADO (pagado completo), PENDIENTE (nada pagado en efectivo), MIXTO (pago parcial ef+cr)
+                var _estCardKey = credito <= 0 ? 'FIN' : (efectivoHist > 0 ? 'MIX' : 'PEN');
+                var _estCardCol = _estCardKey === 'FIN' ? '#10b981' : (_estCardKey === 'MIX' ? '#f59e0b' : '#ef4444');
+                var _estCardBg  = _estCardKey === 'FIN' ? 'linear-gradient(145deg,#052e1f,#0c1424)' : (_estCardKey === 'MIX' ? 'linear-gradient(145deg,#2a1a05,#0c1424)' : 'linear-gradient(145deg,#2a0a0a,#0c1424)');
+
+                rows += '<div style="background:'+_estCardBg+';border:1px solid '+_estCardCol+'44;border-left:4px solid '+_estCardCol+';border-radius:12px;padding:9px 10px;margin-bottom:6px;box-shadow:0 3px 12px -4px '+_estCardCol+'33;transition:transform .15s;">';
                 // Line 1: fecha + cliente
                 const clienteObj = (clientesDB||[]).find(function(c){ return (c.nombre||'').trim().toUpperCase() === clienteNombreUpper; });
                 const clienteInitials = (v.cliente||'-').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
@@ -6880,12 +6885,13 @@ _sheetEgresosNegocio.forEach(e => {
                 } else {
                     rows += '<div style="margin-bottom:5px;"><span style="font-size:9px;color:#475569;">-</span></div>';
                 }
-                // Estado: Pendiente si deuda > 0, Finalizado si pagado completo
-                const estadoVenta = credito > 0 ? 'PENDIENTE' : 'FINALIZADO';
-                const estadoColor = credito > 0 ? '#f87171' : '#34d399';
-                const estadoBg    = credito > 0 ? '#7f1d1d44' : '#05603a44';
+                // Estado: FINALIZADO (pagado completo), PENDIENTE (nada pagado en efectivo), MIXTO (pago parcial)
+                const estadoVenta = _estCardKey === 'FIN' ? 'FINALIZADO' : (_estCardKey === 'MIX' ? 'MIXTO' : 'PENDIENTE');
+                const estadoColor = _estCardCol;
+                const estadoBg    = _estCardKey === 'FIN' ? '#05603a44' : (_estCardKey === 'MIX' ? '#78350f44' : '#7f1d1d44');
+                const estadoIcono = _estCardKey === 'FIN' ? '✓ ' : (_estCardKey === 'MIX' ? '◑ ' : '● ');
                 rows += '<div style="margin-bottom:4px;">';
-                rows += '<span style="font-size:8px;font-weight:900;text-transform:uppercase;color:' + estadoColor + ';background:' + estadoBg + ';padding:2px 8px;border-radius:4px;border:1px solid ' + estadoColor + '44;">' + estadoVenta + '</span>';
+                rows += '<span style="font-size:8px;font-weight:900;text-transform:uppercase;color:' + estadoColor + ';background:' + estadoBg + ';padding:2px 8px;border-radius:4px;border:1px solid ' + estadoColor + '44;">' + estadoIcono + estadoVenta + '</span>';
                 rows += '</div>';
                 // Line 3: montos + botones
                 rows += '<div style="display:flex;justify-content:space-between;align-items:center;">';
